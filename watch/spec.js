@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M5i',
-  label: 'normalized escapement impulse work transfer',
-  note: 'M5i retains the M5h finite polygon contact solver and M5f integrated balance, then replaces the remaining fixed-size admitted Δω packet with normalized work transfer. Remaining spring drive defines an available work budget for each center-crossing opportunity. The polygon solver measures how far the escape tooth can follow the active pallet impulse surface and the quality of that finite-surface contact; those quantities produce an educational transfer efficiency, delivered-work value, and rejected/lost-work value. M5f now accepts a continuous impulse scale from the geometry layer, and the balance kick is scaled by the square root of transferred work fraction rather than being identical for every admitted contact. Work units, path normalization, contact efficiency, impulse gain and all dynamic coefficients remain educational reconstruction parameters, not joules, measured pallet efficiency, or ETA torque data.'
+  id: 'M6a',
+  label: 'barrel arbor / drum power separation',
+  note: 'M6a begins the shared-system mechanics phase. The M5i polygonal impulse-work model remains active, but its available-work budget no longer comes directly from remaining reserve. Stored reserve is interpreted as normalized mainspring twist; a reconstructed mainspring torque curve converts twist into barrel torque, then an explicit static train load and transmission efficiency reduce that torque to the normalized work budget arriving at the escapement. Winding belongs to the barrel-arbor/ratchet side, while reserve consumption advances a separately modeled barrel-drum release angle with the click holding the arbor during running. The 8-drum-turn full-release mapping, torque curve, train load, transmission efficiency, and all work units remain educational reconstruction parameters rather than ETA production torque, mainspring-turn, or efficiency data.'
 };
