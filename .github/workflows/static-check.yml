@@ -1,0 +1,22 @@
+name: static syntax check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          find . -type f -name '*.js' -not -path './node_modules/*' -print0 \
+            | xargs -0 -n1 node --check
+      - name: Check gallery manifest JSON
+        run: node -e "JSON.parse(require('fs').readFileSync('demos.json','utf8'))"
