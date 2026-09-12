@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mechanical Watch — Exploded Functional Anatomy</title>
+  <meta name="description" content="Interactive exploded reconstruction of an ETA/Unitas 6497-2 mechanical wristwatch movement." />
+  <title>ETA / Unitas 6497-2 — Exploded Watch Anatomy</title>
   <link rel="stylesheet" href="./style.css" />
   <script type="importmap">
   {
@@ -18,58 +19,107 @@
   <div id="app">
     <canvas id="scene"></canvas>
 
-    <aside class="panel left-panel">
-      <div class="eyebrow">INTERACTIVE HOROLOGY</div>
-      <h1>Mechanical Wristwatch</h1>
-      <p class="lede">
-        A procedural, semi-realistic exploded-view model showing the functional layers
-        of a hand-wound mechanical watch.
-      </p>
+    <header class="topbar panel">
+      <a class="gallery-link" href="../">← Gallery</a>
+      <div class="identity">
+        <div class="eyebrow">REFERENCE RECONSTRUCTION · M1</div>
+        <h1>ETA / Unitas 6497-2</h1>
+        <p>OP XI / PAM111 lineage · 44 mm exhibition wristwatch shell</p>
+      </div>
+      <a class="docs-link" href="../docs/watch-eta-6497-2.md">Documentation ↗</a>
+    </header>
 
-      <div class="control-block">
-        <label for="explode">
+    <aside class="controls panel" aria-label="Watch controls">
+      <section>
+        <div class="section-title">Assembly</div>
+        <label class="range-row" for="explode">
           <span>Exploded view</span>
-          <output id="explodeValue">0%</output>
+          <output id="explodeValue">22%</output>
         </label>
-        <input id="explode" type="range" min="0" max="100" value="0" />
-      </div>
+        <input id="explode" type="range" min="0" max="100" value="22" />
+        <div class="button-row">
+          <button id="assembleBtn" class="secondary">Assemble</button>
+          <button id="explodeBtn">Explode</button>
+        </div>
+        <button id="resetBtn" class="secondary wide">Reset camera</button>
+      </section>
 
-      <div class="button-row">
-        <button id="explodeBtn">Explode</button>
-        <button id="assembleBtn">Assemble</button>
-        <button id="resetBtn" class="secondary">Reset camera</button>
-      </div>
+      <section>
+        <div class="section-title">Functional layers</div>
+        <div class="toggles" id="layerToggles">
+          <label><input type="checkbox" data-layer="case" checked /> Case</label>
+          <label><input type="checkbox" data-layer="display" checked /> Display</label>
+          <label><input type="checkbox" data-layer="motion" checked /> Motion works</label>
+          <label><input type="checkbox" data-layer="winding" checked /> Winding</label>
+          <label><input type="checkbox" data-layer="power" checked /> Power</label>
+          <label><input type="checkbox" data-layer="train" checked /> Wheel train</label>
+          <label><input type="checkbox" data-layer="escapement" checked /> Escapement</label>
+          <label><input type="checkbox" data-layer="regulation" checked /> Regulation</label>
+          <label><input type="checkbox" data-layer="structure" checked /> Structure</label>
+        </div>
+      </section>
 
-      <div class="toggles">
-        <label><input type="checkbox" data-layer="display" checked /> Display</label>
-        <label><input type="checkbox" data-layer="case" checked /> Case</label>
-        <label><input type="checkbox" data-layer="movement" checked /> Movement</label>
-        <label><input type="checkbox" data-layer="power" checked /> Power</label>
-        <label><input type="checkbox" data-layer="regulation" checked /> Regulation</label>
-      </div>
+      <section class="lighting-controls">
+        <div class="section-heading-row">
+          <div class="section-title">Inspection light</div>
+          <span class="hard-light-badge">HARD KEY</span>
+        </div>
 
-      <div class="hint">
-        Drag to orbit · Wheel to zoom · Click a component for details
-      </div>
+        <label class="select-row">
+          <span>Preset</span>
+          <select id="lightPreset">
+            <option value="hard" selected>Hard inspection</option>
+            <option value="raking">Raking side</option>
+            <option value="top">Top inspection</option>
+            <option value="backlit">Backlit skeleton</option>
+            <option value="studio">Studio</option>
+            <option value="dark">Dark presentation</option>
+          </select>
+        </label>
+
+        <label class="range-row"><span>Azimuth</span><output id="lightAzimuthValue">35°</output></label>
+        <input id="lightAzimuth" type="range" min="-180" max="180" value="35" />
+
+        <label class="range-row"><span>Elevation</span><output id="lightElevationValue">42°</output></label>
+        <input id="lightElevation" type="range" min="5" max="85" value="42" />
+
+        <label class="range-row"><span>Distance</span><output id="lightDistanceValue">58 mm</output></label>
+        <input id="lightDistance" type="range" min="28" max="110" value="58" />
+
+        <label class="range-row"><span>Intensity</span><output id="lightIntensityValue">145</output></label>
+        <input id="lightIntensity" type="range" min="0" max="260" value="145" />
+
+        <label class="range-row"><span>Ambient</span><output id="ambientValue">0.24</output></label>
+        <input id="ambient" type="range" min="0" max="100" value="24" />
+
+        <div class="inline-toggles">
+          <label><input id="shadows" type="checkbox" checked /> Shadows</label>
+          <label><input id="lightGizmo" type="checkbox" checked /> Show light</label>
+        </div>
+      </section>
+
+      <div class="hint">Drag to orbit · Wheel to zoom · Click a component to inspect it</div>
     </aside>
 
-    <aside class="panel info-panel" id="infoPanel">
-      <div class="eyebrow" id="infoCategory">SELECT A PART</div>
-      <h2 id="infoName">Component inspector</h2>
-      <p id="infoText">
-        Click the crystal, dial, gear train, balance wheel, mainspring barrel, rotor,
-        bridges, caseback, or another highlighted component.
-      </p>
+    <aside class="inspector panel" id="infoPanel">
+      <div class="inspector-topline">
+        <div class="eyebrow" id="infoCategory">SELECT A COMPONENT</div>
+        <span class="provenance approximate" id="infoProvenance">approximate</span>
+      </div>
+      <h2 id="infoName">Mechanical component inspector</h2>
+      <p id="infoText">Click the barrel, crown wheel, train, balance, pallet fork, bridges, dial, case, or another component. Provenance labels distinguish documented facts from reconstructed geometry.</p>
+      <dl class="part-facts" id="partFacts"></dl>
     </aside>
 
-    <div class="legend panel">
-      <span><i class="dot display-dot"></i>time display</span>
-      <span><i class="dot movement-dot"></i>transmission</span>
-      <span><i class="dot power-dot"></i>stored energy</span>
+    <div class="legend panel" aria-label="Functional color legend">
+      <span><i class="dot display-dot"></i>display</span>
+      <span><i class="dot power-dot"></i>power</span>
+      <span><i class="dot train-dot"></i>train</span>
       <span><i class="dot regulation-dot"></i>regulation</span>
+      <span><i class="dot structure-dot"></i>structure</span>
     </div>
 
-    <div id="loading">Building movement…</div>
+    <div id="loading">Constructing 6497-2 reference…</div>
   </div>
 
   <script type="module" src="./main.js"></script>
