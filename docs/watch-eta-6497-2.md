@@ -2,7 +2,7 @@
 
 ## Current state
 
-**Milestone: M6d — closed-loop normalized movement mechanics.**
+**Milestone: M6e — stage-resolved closed-loop normalized movement mechanics.**
 
 This remains an educational reconstruction, not manufacturing CAD or calibrated watchmaking physics. Official movement facts, reference-derived geometry, approximate geometry, and presentation/simulation assumptions remain distinct provenance classes.
 
@@ -26,11 +26,11 @@ Primary source: https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/
 
 M3 established train topology and stack geometry. M4 introduced winding, setting and stored reserve. M5 progressively made the escapement event-resolved, geometry-constrained, finite-surface-based, and coupled to an integrated balance oscillator through variable work-scaled impulse.
 
-M6 closes the current normalized mechanical architecture around that escapement.
+M6 closes the current normalized mechanical architecture around that escapement and then resolves more of the formerly anonymous train load into the actual reconstructed gear-train stages.
 
 The live causal loop is now approximately:
 
-> crown → barrel arbor winding → spring twist → barrel torque → dynamic train reaction load → train transmission → available escapement work → finite polygon work transfer → delivered Δω → integrated balance θ/ω → pallet / escape release → train → hands
+> crown → barrel arbor winding → spring twist → barrel torque → stage-resolved train reaction load → compounded transmission → available escapement work → finite polygon work transfer → delivered Δω → integrated balance θ/ω → pallet / escape release → train → hands
 
 with a feedback path:
 
@@ -63,17 +63,7 @@ These are not ETA service values.
 
 M6a still used one static train load. M6b lets the downstream mechanism push back upstream.
 
-The reaction-load target now incorporates normalized contributions from:
-
-- baseline train load;
-- ordinary running demand;
-- recent delivered escapement work;
-- rejected / lost escapement work as backpressure;
-- low oscillator amplitude;
-- unhealthy polygon contact;
-- stalled movement state.
-
-The load target is smoothed over time rather than applied as a discontinuous jump.
+The reaction-load target incorporates normalized contributions from ordinary running, recent delivered escapement work, rejected work/backpressure, low oscillator amplitude, unhealthy polygon contact, and stalled movement state. The target is smoothed rather than applied as a discontinuous jump.
 
 Increasing reaction load also reduces transmission efficiency. The resulting quantities are approximately:
 
@@ -85,14 +75,16 @@ That post-load drive becomes M5i's available work budget.
 
 A major consequence is that **reserve and usable power are now separate concepts**. If dynamic reaction load consumes the available torque margin, the movement can stop with reserve remaining.
 
+M6b also exposes a pluggable load-model interface. Later M6 passes can therefore replace the aggregate load target with a structured train model while preserving the same upstream/downstream feedback architecture.
+
 Current M6b reconstruction values include roughly:
 
 - base normalized train load: **0.075**;
-- nominal transmission: **0.94** before load-dependent loss;
+- nominal transmission ceiling before later stage resolution: **0.94**;
 - torque-margin stall threshold: approximately **0.018 normalized**;
 - explicit feedback gains for impulse demand, rejected work, low amplitude, geometry failure, and stalled state.
 
-Again, these are educational parameters rather than measured ETA losses.
+These are educational parameters rather than measured ETA losses.
 
 ## M6c — shared normalized work ledger
 
@@ -110,13 +102,11 @@ For each detailed escapement opportunity it records:
 
 > = balance-delivered work
 
-The arithmetic residual is exposed directly in the UI.
-
-Under the current accounting:
+The arithmetic residual is exposed directly in the UI:
 
 > residual = spring budget − train loss − contact loss − delivered work
 
-and the intended residual is numerically zero within tolerance.
+The intended residual is numerically zero within tolerance.
 
 This does not turn normalized units into joules. It does make hidden bookkeeping inconsistency much harder: later improvements to train losses, contact efficiency or spring torque have to reconcile through the same ledger.
 
@@ -149,18 +139,66 @@ Current educational thresholds are approximately:
 
 Winding or reduced downstream demand can therefore restore enough margin to restart without the state flickering rapidly around one boundary.
 
+M6d refreshes the current load/torque feedback before making that latch decision so winding can release a stall as soon as the reconstructed torque margin actually recovers.
+
 ### System-level diagnostics
 
-The M6d panel reports:
+The M6d panel reports operating mode, torque-stall latch state, normalized balance-energy proxy based on oscillator amplitude², end-to-end delivered fraction, modeled total-loss fraction, spring-torque / train-load ratio, reserve, and causal work-ledger closure residual.
 
-- operating mode;
-- torque-stall latch state;
-- normalized balance-energy proxy based on oscillator amplitude²;
-- end-to-end delivered fraction from spring opportunity budget to balance-delivered work;
-- total modeled loss fraction;
-- spring-torque / train-load ratio;
-- reserve;
-- causal work-ledger closure residual.
+## M6e — stage-resolved train path
+
+M6e removes another anonymous scalar from the power path. Instead of treating the train reaction load as one undifferentiated number, the load model is now decomposed into stages matching the active reconstructed 6497 topology.
+
+The currently modeled stages are:
+
+- **centre wheel 80 → third pinion 10**;
+- **third wheel 60 → fourth pinion 8**;
+- **fourth wheel 120 → escape pinion 10**;
+- staff pivot / jewel load;
+- motion-works / display load;
+- standing and dynamic escapement demand.
+
+### Stage base loads
+
+Current normalized educational base-load contributions are approximately:
+
+- centre → third: **0.012**;
+- third → fourth: **0.011**;
+- fourth → escape: **0.013**;
+- pivots / jewels: **0.014**;
+- motion works / display: **0.008**;
+- standing escapement demand: **0.017**.
+
+Dynamic running demand, delivered-work demand, rejected-work backpressure, low amplitude, geometry blockage and stall penalties are added primarily on the escapement/load side.
+
+### Stage transmission
+
+Each stage also carries an explicit educational efficiency:
+
+- centre → third: **99.1%**;
+- third → fourth: **98.9%**;
+- fourth → escape: **98.6%**;
+- pivots / jewels: **99.2%**;
+- motion works / display: **99.5%**.
+
+Those stage values multiply to form the transmission ceiling used by the M6b load-feedback layer. M6b can then reduce actual transmission further as the current reaction load rises.
+
+The important architectural change is not the numerical values—they are reconstructed placeholders. It is that later measured or better-founded losses can now be attached to **specific mechanical stages** instead of replacing one opaque efficiency scalar.
+
+### Live M6e diagnostics
+
+The **Stage-resolved train path · M6e** panel shows:
+
+- centre→third load;
+- third→fourth load;
+- fourth→escape load;
+- pivot/jewel load;
+- motion-works load;
+- escapement + feedback load;
+- compounded stage transmission ceiling;
+- total stage-derived target load.
+
+These values feed the same M6b torque-margin calculation, the M6c ledger, and the M6d movement-level stall / operating-state logic.
 
 ## The M5 escapement remains the mechanical gate
 
@@ -176,7 +214,7 @@ The live path still includes:
 - continuously scaled impulse rather than one fixed admitted kick;
 - geometry-derived escape release as the timing source for the downstream wheel train.
 
-The important difference is that the strength of that impulse is now downstream of barrel torque, dynamic load and train transmission.
+The important difference is that the strength of that impulse is now downstream of barrel torque, stage-resolved train load, dynamic feedback and transmission.
 
 ## End-to-end normalized closure
 
@@ -187,18 +225,19 @@ At the present educational level, the movement now couples:
 3. normalized spring twist;
 4. normalized spring torque;
 5. separate drum release state;
-6. dynamic train reaction load;
-7. load-dependent transmission;
-8. escapement-side available work;
-9. finite polygon contact transfer;
-10. rejected / delivered work;
-11. balance angular state and amplitude;
-12. geometry / amplitude / torque stall conditions;
-13. escape-wheel release;
-14. wheel-train progress;
-15. displayed time.
+6. stage-resolved train load;
+7. downstream demand feedback;
+8. stage-compounded and load-dependent transmission;
+9. escapement-side available work;
+10. finite polygon contact transfer;
+11. rejected / delivered work;
+12. balance angular state and amplitude;
+13. geometry / amplitude / torque stall conditions;
+14. escape-wheel release;
+15. wheel-train progress;
+16. displayed time.
 
-The downstream system also feeds back into the upstream load state, so the architecture is no longer one-way.
+The downstream system feeds back into the upstream load state, so the architecture is no longer one-way.
 
 ## What remains normalized or approximate
 
@@ -214,6 +253,7 @@ The model still does **not** contain measured:
 - gear-tooth force vectors;
 - pivot and jewel-bearing friction curves;
 - lubrication losses;
+- measured per-stage train efficiencies;
 - pallet friction and physical efficiency;
 - elastic impact / contact stress / compliance;
 - balance inertia;
@@ -235,14 +275,15 @@ For the clearest M6 inspection:
 3. switch to **Escapement**;
 4. enable the M5h tooth / pallet polygon overlay;
 5. run at `0.1×` or `0.25×`;
-6. compare M6b dynamic load and drive margin with M5i available / delivered / lost work;
-7. compare M6c ledger closure with M5f last Δω and oscillator amplitude;
-8. use the M6d panel to see whether the full movement regards itself as running, paused, torque-stalled, geometry-blocked, oscillator-stalled or unwound;
-9. use `3600×` only for accelerated reserve / torque-falloff inspection.
+6. compare the M6e stage target with M6b dynamic load and drive margin;
+7. compare M5i available / delivered / lost work with M6c ledger closure;
+8. compare M5f last Δω and oscillator amplitude with the delivered-work state;
+9. use the M6d panel to see whether the full movement regards itself as running, paused, torque-stalled, geometry-blocked, oscillator-stalled or unwound;
+10. use `3600×` only for accelerated reserve / torque-falloff inspection.
 
 ## Provenance boundary
 
-Current M6-specific values such as the 8-turn full-release mapping, normalized torque curve, reaction-load gains, load-dependent transmission law, stall thresholds and work units are transparent **simulation parameters**.
+Current M6-specific values such as the 8-turn full-release mapping, normalized torque curve, stage loads and efficiencies, feedback gains, load-dependent transmission law, stall thresholds and work units are transparent **simulation parameters**.
 
 They should not be confused with the source-backed ETA anchors: caliber identity, 36.60 mm diameter, 4.50 mm height, 3 Hz / 21,600 A/h rate, 17 jewels, 44° lift angle, and 53 h minimum / 60 h typical reserve.
 
