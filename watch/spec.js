@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M6d',
-  label: 'closed-loop normalized movement mechanics',
-  note: 'M6a–M6d close the current normalized system architecture. M6a separates barrel-arbor winding from barrel-drum release and inserts a spring-twist → torque → train-side work path upstream of M5i. M6b replaces fixed train load with smoothed reaction load derived from escapement work demand, rejected contact work, oscillator amplitude, geometry faults and stall state; insufficient torque margin can now hold the movement with reserve remaining. M6c reconciles spring-side budget, train/load loss, contact loss and balance-delivered work in one explicit normalized ledger and exposes its arithmetic residual. M6d coordinates those states into one operating mode and adds hysteretic torque-stall behavior to prevent load chatter. The architecture is now closed-loop at the normalized educational level, but torque, load, spring turns, efficiency, balance inertia, friction and work units remain reconstruction parameters rather than calibrated ETA production measurements.'
+  id: 'M6e',
+  label: 'stage-resolved closed-loop movement mechanics',
+  note: 'M6a–M6e close the current normalized system architecture. M6a separates barrel-arbor winding from barrel-drum release and inserts spring twist → torque → train-side work upstream of M5i. M6b adds downstream reaction-load feedback and torque-margin stalls. M6c reconciles spring-side budget, train/load loss, contact loss and balance-delivered work in one ledger. M6d coordinates the movement into explicit operating/fault states with hysteretic torque-stall behavior. M6e then decomposes the formerly anonymous train reaction load into the reconstructed centre 80→third pinion 10, third 60→fourth pinion 8, and fourth 120→escape pinion 10 stages plus pivot/jewel, display and escapement contributions; their normalized stage efficiencies compound into the transmission ceiling that feeds the same M6 feedback loop. All M6 torque, load, stage-efficiency, spring-turn and work values remain educational reconstruction parameters rather than calibrated ETA production measurements.'
 };
