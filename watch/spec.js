@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M3c',
-  label: 'mesh-derived train geometry',
-  note: 'The visible train keeps the M3b reference tooth/leaf counts and now derives nominal pitch radii and per-mesh module values from the current reference-derived centre coordinates. The coordinates themselves remain reconstruction geometry rather than manufacturing CAD.'
+  id: 'M3d',
+  label: 'compound train planes and staff alignment',
+  note: 'M3c solved nominal pitch radii from the current reference-derived centre coordinates. M3d now separates the compound wheel bodies into explicit z-planes and places each driven pinion in the plane of the upstream wheel that meshes with it. Heights remain reconstruction geometry, not ETA manufacturing dimensions.'
 };
