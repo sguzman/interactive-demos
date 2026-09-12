@@ -2,7 +2,7 @@
 
 ## Current state
 
-**Milestone: M4c — energy-gated power release.**
+**Milestone: M5a — event-resolved Swiss lever release.**
 
 The project remains an educational reconstruction, not manufacturing CAD. Official movement facts, reference-derived geometry, approximation, and presentation-only simulation assumptions remain separate provenance classes.
 
@@ -77,64 +77,100 @@ The visible reconstruction currently uses:
 
 The setting-wheel and minute-wheel motion is causal inside the educational model. The final mapping from minute-wheel movement to the hand-setting displacement remains reconstruction-level rather than an asserted ETA production ratio.
 
-## M4c — power release
+## M4c — energy-gated power release
 
-M4c closes the first causal power loop.
+M4c closed the first causal power loop. The watch now starts **stopped and unwound**. Crown winding creates reserve, positive reserve opens the power gate, running consumes reserve, and zero reserve freezes mechanical elapsed time.
 
-The watch now starts **stopped and unwound**. The train no longer advances from wall-clock time by itself.
+Reserve depletion is intentionally normalized and linear against the sourced **60 h typical** endpoint. It is not a production torque curve.
 
-The runtime is now:
+## M5a — event-resolved Swiss lever release
 
-1. crown winding creates stored mainspring reserve;
-2. any positive reserve opens the power gate;
-3. one shared **mechanical elapsed time** advances;
-4. balance, pallet/escapement presentation, escape wheel, fourth/seconds wheel, third wheel, centre wheel, small seconds, minute hand and hour hand all derive from that same mechanical clock;
-5. running consumes reserve;
-6. reserve reaching zero freezes the mechanical clock and therefore stops the movement.
+M5a changes the escapement from a decorative timing animation into an explicit event sequence.
 
-This removes the previous contradiction where a visibly unwound watch could continue running.
+### Six beats per second
 
-### Reserve depletion model
+A 3 Hz balance completes three full oscillations per second, giving **six alternations / beats per second**. M5a therefore treats one beat as **1/6 s** of mechanical time.
 
-For M4c, depletion is intentionally simple and explicit:
+The balance still uses a prescribed educational oscillator rather than a solved spring-mass dynamic system, but its center crossings now define the cadence for escapement events.
 
-- normalized stored energy is mapped linearly to the sourced **60 h typical reserve**;
-- one simulated second of running consumes one second from that reserve at 1×;
-- winding while the watch is running can replenish reserve;
-- hand setting remains possible independently of whether the movement has power.
+### Lock → unlock → impulse → relock
 
-This is a **normalized runtime model**, not a production torque curve. It does not yet model declining torque, friction losses, position-dependent rate error, or escapement efficiency.
+Each beat is resolved into four presentation states:
 
-### Mechanical time scale
+1. **LOCK · ENTRY** — the escape wheel is held;
+2. **UNLOCK** — the pallet moves off the locked tooth;
+3. **IMPULSE** — the escape wheel advances while the fork crosses toward the opposite bank;
+4. **LOCK · EXIT** — the next pallet holds the next tooth and the train waits.
 
-The old train-only speed control is now a **mechanical time scale** because M4c ties visible motion and reserve depletion to the same simulated clock.
+The exact fractional timing of these windows is **reconstruction timing for visibility**, not an ETA production lift/lock specification.
 
-Available modes include:
+### Half-tooth release
 
-- `0×` — paused, reserve preserved;
-- `1×` — real-time simulation;
-- `10×`, `60×`, `300×` — inspection speeds;
-- `3600×` — reserve demonstration mode, where one simulated hour passes per real second.
+The reference escape wheel has **15 teeth**. In a Swiss lever escapement, M5a advances the escape wheel by **one half-tooth per beat**, or 12° per release event. Thirty half-tooth releases therefore produce one full escape-wheel revolution, matching the existing 5 s/rev reference period at six beats per second.
 
-At 3600×, a full nominal 60 h reserve can therefore be observed running down in about one real minute. This is explicitly a simulation-time acceleration, not a claim about watch behavior.
+The escape wheel no longer advances continuously across the whole beat. It remains stationary in the lock windows and advances only through the reconstructed unlock/impulse window.
 
-## What M4c intentionally does not claim
+### Escapement now meters train progress
 
-M4c does **not yet** model:
+This is the most important architectural change in M5a.
 
-- production mainspring torque curves;
-- exact barrel-arbor vs barrel-drum release geometry;
-- friction losses through each wheel/pinion pair;
-- escapement efficiency;
-- amplitude decay as reserve falls;
-- positional rate error;
-- exact keyless clutch/Breguet-tooth geometry;
-- exact crown-turn count to full wind.
+Previously, the balance, pallet, escape wheel and train all derived independently from the same mechanical clock. They were synchronized, but the escapement was not actually the thing releasing the train.
 
-The power model currently decides whether the mechanical clock may advance and how long nominal reserve remains. It does not yet calculate force transmission through the train.
+M5a now converts **escape-wheel released angle back into released train time**. The fourth/seconds wheel, third wheel, centre wheel, small-seconds hand, minute hand and hour hand all use that released time.
+
+Therefore:
+
+- while the escape wheel is locked, the train visibly waits;
+- during unlock/impulse, released train time advances;
+- after relock, the train stops again until the next beat.
+
+This is still an event-resolved educational model, not a rigid-body contact solver, but the causal direction is now much closer to the real mechanism: **oscillator cadence → pallet release → escape-wheel release → train progress**.
+
+### Added escapement geometry
+
+M5a also adds geometry that was missing from the earlier broad pallet/balance representation:
+
+- roller table;
+- guard roller;
+- ruby impulse jewel;
+- fork horns;
+- safety dart;
+- banking pins;
+- optional escape-wheel → pallet → balance center-line guides;
+- a temporary impulse-contact flash during the impulse window.
+
+These additions are **reference-derived / presentation geometry**. Their existence and functional roles are real; their exact dimensions, clearances and face angles are not yet asserted as ETA production geometry.
+
+### Beat stepping and slow motion
+
+The simulation now includes `0.1×`, `0.25×` and `0.5×` mechanical-time modes for escapement inspection.
+
+At `0× paused`, **Step exactly one beat** advances the power-gated mechanism by one 1/6 s beat while consuming the corresponding nominal reserve. This makes the lock/unlock/impulse/relock sequence much easier to inspect than watching it only at full speed.
+
+## What M5a intentionally does not claim
+
+M5a does **not yet** model:
+
+- exact entry/exit pallet locking-face geometry;
+- exact impulse-face geometry;
+- draw angle;
+- drop;
+- lock depth;
+- exact banking-pin placement;
+- exact roller-jewel path and fork-slot clearance;
+- horn safety clearances;
+- impulse energy transfer into balance amplitude;
+- free balance amplitude determined from spring torque and losses;
+- friction or lubrication at pallet/escape contact;
+- production torque transfer through the train.
+
+The oscillator frequency is still prescribed from the official 3 Hz rate. M5a makes release event-driven and causal at the timing/topology level; it does not yet solve contact mechanics.
 
 ## Inspection tools retained
 
+- **Escapement** close view with optional center-line guides;
+- exact-one-beat step control;
+- slow mechanical-time modes;
 - **Train mesh** view;
 - pitch-circle/contact guides;
 - **Train stack** side view;
@@ -149,17 +185,25 @@ The power model currently decides whether the mechanical clock may advance and h
 - **official** — directly supported by technical material;
 - **reference-derived** — reconstructed from service diagrams, teardown photographs, or multiple references;
 - **approximate** — simplified geometry preserving mechanical role and relationship;
-- **presentation** — geometry, controls, or simulation assumptions added for readability and interaction.
+- **presentation** — geometry, controls or simulation assumptions added for readability and interaction.
 
 ## Next milestones
 
-### M5 — escapement fidelity
+### M5b — pallet-face and safety geometry
 
-- locking and impulse faces;
-- banking limits;
-- roller jewel / fork interaction;
-- discrete causal escape release rather than merely sharing a timing clock;
-- begin relating balance amplitude to delivered impulse.
+- explicit entry and exit locking faces;
+- explicit impulse faces;
+- improve fork-slot / roller-jewel geometry;
+- more defensible banking limits;
+- show lock depth and drop diagnostically;
+- constrain escape-to-pallet contact with geometry rather than only phase windows.
+
+### M5c — impulse / oscillator coupling
+
+- model a normalized impulse packet delivered at each beat;
+- let delivered impulse affect balance amplitude;
+- let insufficient reserve reduce amplitude and eventually stop reliable unlocking;
+- stop prescribing perfect amplitude independently of power state.
 
 ### M6 — system simulation
 
