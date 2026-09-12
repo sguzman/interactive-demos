@@ -13,11 +13,11 @@
 <main>
   <nav class="top"><a href="../">← Interactive Demos</a><a href="../watch/">Open 3D demo ↗</a></nav>
 
-  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M4A</div>
+  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M4B</div>
   <h1>ETA / Unitas 6497-2</h1>
-  <p class="lead">M4a is the first user-operated causal subsystem: crown input now drives the crown wheel and ratchet, the click blocks reverse ratchet motion, and accepted winding accumulates a visible stored mainspring-energy state.</p>
+  <p class="lead">M4b turns the crown into a two-state control: pushed in for winding, pulled out for hand setting. The reconstructed sliding pinion, yoke and setting lever now visibly transition between those modes.</p>
 
-  <div class="callout"><strong>Accuracy contract.</strong><p>The demo is not manufacturing CAD. Official movement facts remain separate from reference-derived reconstruction geometry and presentation assumptions. The 45-crown-turn full-wind mapping used for interaction is explicitly not an ETA service specification.</p></div>
+  <div class="callout"><strong>Accuracy contract.</strong><p>The demo is not manufacturing CAD. Official movement facts remain separate from reference-derived reconstruction geometry and presentation assumptions. Stem travel and setting ratios in M4b are deliberately labeled as reconstruction values.</p></div>
 
   <h2>Official movement facts</h2>
   <div class="specs">
@@ -29,44 +29,38 @@
     <div class="spec"><span>Power reserve</span><strong>53 h min / 60 h typical</strong></div>
   </div>
 
-  <h2>Geometry foundation retained from M3</h2>
-  <p>The current reconstruction keeps the reference-derived 6497 train topology: centre 80 teeth, third 60 / 10-leaf pinion, seconds/fourth 120 / 8-leaf pinion, escape 15 / 10-leaf pinion. Pitch-radius-native train geometry, separate compound-wheel planes, stepped staffs, jewel spans, pitch/contact guides, endshake diagnostics and wheel-body gap diagnostics all remain available.</p>
+  <h2>M4a winding remains active</h2>
+  <p>In stem Position 0 the demo retains the causal M4a winding state: crown input advances crown wheel and ratchet, the click blocks reverse ratchet motion, and accepted winding accumulates a normalized mainspring-energy state. The 45-turn full-wind mapping remains an interaction assumption rather than an ETA specification.</p>
 
-  <h2>M4a — interactive crown</h2>
-  <p><strong>Wind crown</strong> advances the crown in the winding direction; <strong>Return crown</strong> rotates the crown itself back. Both controls can be clicked for a visible step or held continuously. Keyboard shortcuts are <code>W</code> and <code>R</code>.</p>
-  <p>The current return path is deliberately simplified as an upstream winding-clutch/free-return behavior: the crown moves back while the visible crown wheel and ratchet remain stationary. That keeps the visible gear mesh coherent rather than allowing meshed teeth to pass through one another.</p>
-  <p>An indexed crown overlay makes axial rotation legible even though the crown itself is round.</p>
-
-  <h2>Crown wheel → ratchet</h2>
+  <h2>M4b — two stem positions</h2>
   <div class="specs">
-    <div class="spec"><span>Visible crown wheel</span><strong>34 teeth</strong></div>
-    <div class="spec"><span>Visible ratchet</span><strong>44 teeth</strong></div>
-    <div class="spec"><span>Direction</span><strong>one-way storage</strong></div>
+    <div class="spec"><span>Position 0</span><strong>Winding</strong></div>
+    <div class="spec"><span>Position 1</span><strong>Hand setting</strong></div>
+    <div class="spec"><span>Visible pull</span><strong>1.35 mm reconstruction</strong></div>
   </div>
-  <p>The interaction model uses that visible 34:44 relationship to advance the ratchet during positive winding. It is a causal reconstruction relation, not a complete manufacturing model of every intermediate keyless-work detail.</p>
+  <p>Pulling to Position 1 translates the visible crown/stem outward, disables the winding controls, shifts the reconstructed sliding pinion toward the setting wheel, and moves the yoke and setting-lever geometry with the selection state.</p>
 
-  <h2>One-way click constraint</h2>
-  <p>The old decorative ratchet oscillation is gone. Ratchet angle now persists. Forward input advances crown wheel and ratchet; return input moves only the crown in the simplified free-return path. The click prevents reverse ratchet motion. The UI reports <strong>RATCHETING</strong>, <strong>LOCKED / RETURN</strong>, or <strong>SEATED</strong>.</p>
-  <p>The reconstructed click receives a deliberately tiny tooth-lift motion during forward winding and remains seated on return.</p>
+  <h2>Setting path</h2>
+  <p>Once the stem is in Position 1, the setting controls rotate the visible keyless wheels and change the hour/minute display without adding mainspring energy. A dedicated <strong>Keyless works</strong> inspection camera centers the dial-side mechanism.</p>
+  <div class="specs">
+    <div class="spec"><span>Sliding pinion</span><strong>14 teeth</strong></div>
+    <div class="spec"><span>Setting wheel</span><strong>22 teeth</strong></div>
+    <div class="spec"><span>Minute wheel</span><strong>28 teeth</strong></div>
+  </div>
+  <p>Those constructive counts drive the visible intermediate-wheel rotations. M4b then uses minute-wheel rotation as a simplified proxy for the final cannon-pinion/minute-hand setting displacement. That last mapping is a reconstruction simplification, not a production ratio claim.</p>
 
-  <h2>Stored mainspring energy</h2>
-  <p>Accepted winding increments a normalized energy state from 0 to 1. The demo exposes that state as stored-energy percentage, equivalent reserve scaled to the official 60 h typical figure, accumulated ratchet-click count, and a blue procedural mainspring overlay that contracts and intensifies as energy rises.</p>
-
-  <div class="callout"><strong>Interaction assumption.</strong><p>The current model maps full wind to <strong>45 crown turns</strong> so the mechanism can be explored comfortably. That number is a presentation/reconstruction assumption. The 60 h typical reserve endpoint is the sourced ETA figure.</p></div>
-
-  <h2>Full-wind stop</h2>
-  <p>When the normalized energy state reaches 1.0, further positive winding is blocked. Return motion remains available. This gives the winding subsystem a meaningful terminal state instead of permitting infinite decorative rotation.</p>
-
-  <h2>What is still deliberately uncoupled</h2>
-  <p>M4a does not yet claim a production torque curve, exact clutch/Breguet-tooth geometry, friction model, exact crown-turn count, barrel bridle behavior, or escapement losses. Most importantly, stored energy does not yet gate train release: the existing train and hand timing graph can continue to run at zero stored energy. That coupling is reserved for the next power-release stage rather than being silently faked.</p>
-
-  <h2>Inspection tools retained</h2>
+  <h2>Mode isolation</h2>
   <ul>
-    <li><strong>Train mesh</strong> — pitch circles, centre lines and tangent/contact markers.</li>
-    <li><strong>Train stack</strong> — side-on staffs, jewel regions and bridge/mainplate clearances.</li>
-    <li>Endshake guides with 1× nominal and exaggerated diagnostic motion.</li>
-    <li>Wheel-body axial-gap guides.</li>
+    <li>Winding position can add mainspring energy and cannot use the setting controls.</li>
+    <li>Setting position can move the hour/minute hands and cannot add mainspring energy.</li>
+    <li>Returning to winding position preserves the time offset set in Position 1.</li>
   </ul>
+
+  <h2>Geometry foundation retained</h2>
+  <p>The M3 train reconstruction remains: true-pitch wheel/pinion semantics, constrained compound-wheel planes, stepped staffs, jewel spans, pitch/contact diagnostics, endshake inspection and wheel-body gap guides.</p>
+
+  <h2>What is still deliberately approximate</h2>
+  <p>M4b does not yet claim exact ETA stem travel, clutch/Breguet tooth geometry, yoke/setting-lever pivots, keyless friction/backlash, or the exact production setting ratio. The barrel still does not gate train motion; that is M4c.</p>
 
   <h2>Lighting</h2>
   <p>Camera-aligned balanced lighting remains the default, with a movable manual key, combined mode, large intensity/exposure range, and the intentionally excessive Full bright / diagnostic preset.</p>
@@ -78,12 +72,12 @@
   <p><span class="badge presentation">presentation</span> Geometry, controls or simulation assumptions added for readability and interaction.</p>
 
   <h2>Next work</h2>
-  <h3>M4b — keyless / setting state</h3>
-  <p>Explicit stem positions, yoke/sliding-pinion state transition, winding vs hand-setting mode, and motion-works coupling without simultaneously winding the barrel.</p>
   <h3>M4c — power release</h3>
-  <p>Let stored mainspring energy gate train motion and deplete with simulated running time, while keeping torque normalized until escapement/friction modeling is credible.</p>
-  <h3>M5 / M6</h3>
-  <p>Escapement locking/impulse geometry, roller-jewel interaction, then a shared system state where barrel energy, escapement release, balance timing and hands are causally connected.</p>
+  <p>Stored mainspring energy will begin gating train motion and depleting with simulated running time, so an unwound movement finally stops.</p>
+  <h3>M5 — escapement fidelity</h3>
+  <p>Locking and impulse faces, banking limits, roller-jewel/fork interaction, and causal escape release.</p>
+  <h3>M6 — shared system state</h3>
+  <p>Barrel energy, escapement release, oscillator state, wheel train and hands converge into one causal simulation.</p>
 
   <h2>Sources</h2>
   <div class="source"><strong>ETA — current 6497-2 Technical Communication</strong><p><a href="https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/">official dimensions, rate, reserve, lift angle and service data</a></p></div>
