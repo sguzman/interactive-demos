@@ -66,9 +66,9 @@ export function createMaterials() {
       roughness: .56
     }),
     dial: new THREE.MeshStandardMaterial({
-      color: 0x111317,
-      metalness: .08,
-      roughness: .54
+      color: 0xffffff,
+      metalness: .02,
+      roughness: .58
     }),
     lume: new THREE.MeshStandardMaterial({
       color: 0xe2e7cd,
