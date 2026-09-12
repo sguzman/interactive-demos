@@ -1,52 +1,53 @@
 import * as THREE from 'three';
 
 const DEG = Math.PI / 180;
-const SPOT_CANDELA_SCALE = 115;
-const CAMERA_DIRECTIONAL_SCALE = 0.024;
+const SPOT_CANDELA_SCALE = 92;
+const CAMERA_DIRECTIONAL_SCALE = 0.017;
 
 // Lighting is an inspection instrument, not just presentation. The default is
-// deliberately bright and camera-aligned so small bridge, tooth, jewel and screw
-// features remain readable. The manual key remains available for raking light.
+// camera-aligned but deliberately balanced: bright enough to read small metal
+// features without flattening the entire movement into white. Full bright stays
+// available as an explicit diagnostic escape hatch.
 export const LIGHT_PRESETS = {
   camera: {
     mode: 'camera', azimuth: 35, elevation: 46, distance: 60,
-    intensity: 260, cameraIntensity: 430, ambient: .82, rim: 1.35, warm: .12,
-    exposure: 1.95
+    intensity: 230, cameraIntensity: 235, ambient: .52, rim: 1.18, warm: .10,
+    exposure: 1.55
   },
   fullbright: {
     mode: 'both', azimuth: 28, elevation: 52, distance: 54,
-    intensity: 420, cameraIntensity: 620, ambient: 1.00, rim: 1.10, warm: .08,
-    exposure: 2.35
+    intensity: 390, cameraIntensity: 560, ambient: .95, rim: 1.05, warm: .06,
+    exposure: 2.15
   },
   hard: {
     mode: 'both', azimuth: 35, elevation: 46, distance: 58,
-    intensity: 330, cameraIntensity: 300, ambient: .62, rim: 1.50, warm: .16,
-    exposure: 1.85
+    intensity: 285, cameraIntensity: 205, ambient: .44, rim: 1.42, warm: .14,
+    exposure: 1.58
   },
   raking: {
     mode: 'manual', azimuth: -20, elevation: 12, distance: 45,
-    intensity: 430, cameraIntensity: 220, ambient: .42, rim: 1.05, warm: .04,
-    exposure: 1.90
+    intensity: 370, cameraIntensity: 160, ambient: .34, rim: 1.00, warm: .03,
+    exposure: 1.62
   },
   top: {
     mode: 'both', azimuth: 92, elevation: 82, distance: 54,
-    intensity: 380, cameraIntensity: 250, ambient: .54, rim: .75, warm: .04,
-    exposure: 1.85
+    intensity: 330, cameraIntensity: 175, ambient: .42, rim: .72, warm: .03,
+    exposure: 1.60
   },
   backlit: {
     mode: 'manual', azimuth: 168, elevation: 24, distance: 50,
-    intensity: 440, cameraIntensity: 180, ambient: .34, rim: 3.10, warm: .02,
-    exposure: 1.92
+    intensity: 390, cameraIntensity: 120, ambient: .26, rim: 2.75, warm: .02,
+    exposure: 1.68
   },
   studio: {
     mode: 'both', azimuth: 40, elevation: 52, distance: 64,
-    intensity: 285, cameraIntensity: 290, ambient: .78, rim: 1.70, warm: .28,
-    exposure: 1.78
+    intensity: 245, cameraIntensity: 190, ambient: .58, rim: 1.48, warm: .24,
+    exposure: 1.52
   },
   dark: {
     mode: 'manual', azimuth: -42, elevation: 26, distance: 44,
-    intensity: 180, cameraIntensity: 120, ambient: .18, rim: .85, warm: .08,
-    exposure: 1.35
+    intensity: 165, cameraIntensity: 90, ambient: .14, rim: .80, warm: .06,
+    exposure: 1.26
   }
 };
 
@@ -64,8 +65,8 @@ export function createLightingRig(scene, materials) {
   scene.add(key);
   scene.add(key.target);
 
-  // Broad non-shadowing fill: geometry inspection should not lose whole faces
-  // just because the hard key is grazing them.
+  // Broad non-shadowing fill: enough to keep metal readable without erasing
+  // relief. User controls still have much more headroom than the balanced preset.
   const fill = new THREE.DirectionalLight(0xe5efff, 1.0);
   fill.position.set(-26, 34, 44);
   scene.add(fill);
@@ -78,9 +79,9 @@ export function createLightingRig(scene, materials) {
   warm.position.set(-25, -23, 30);
   scene.add(warm);
 
-  // Explicit camera-axis inspection source. A directional light is intentional:
-  // its readability does not collapse with camera distance. It sits conceptually
-  // just behind the camera and shines exactly down the viewing axis.
+  // Camera-axis inspection source. It sits conceptually just behind the camera
+  // and shines through the orbit target. Directional lighting makes readability
+  // independent of zoom distance.
   const cameraKey = new THREE.DirectionalLight(0xffffff, 1.0);
   scene.add(cameraKey);
   scene.add(cameraKey.target);
@@ -130,26 +131,25 @@ export function createLightingRig(scene, materials) {
     key.intensity = manualEnabled() ? state.intensity * SPOT_CANDELA_SCALE : 0;
     key.castShadow = state.shadows && manualEnabled();
 
-    ambient.intensity = .68 + state.ambient * 2.35;
-    fill.intensity = .95 + state.ambient * 1.65;
+    ambient.intensity = .42 + state.ambient * 1.45;
+    fill.intensity = .58 + state.ambient * .98;
     rim.intensity = state.rim;
-    warm.intensity = state.warm * 3000;
+    warm.intensity = state.warm * 2400;
 
     cameraKey.intensity = cameraEnabled() ? state.cameraIntensity * CAMERA_DIRECTIONAL_SCALE : 0;
-    cameraFill.intensity = cameraEnabled() ? Math.max(.6, state.cameraIntensity * .0055) : 0;
+    cameraFill.intensity = cameraEnabled() ? Math.max(.30, state.cameraIntensity * .0038) : 0;
     applyPosition();
   }
 
   function followCamera(camera, target) {
     const axis = camera.position.clone().sub(target).normalize();
 
-    // Put the conceptual lamp a little behind the camera, pointing through the
-    // camera target. DirectionalLight position determines direction only.
     cameraKey.position.copy(camera.position).addScaledVector(axis, 12);
     cameraKey.target.position.copy(target);
     cameraKey.target.updateMatrixWorld();
 
-    // Slightly offset secondary camera fill keeps relief on nearly frontal metal.
+    // A slightly offset secondary source restores some shape to nearly frontal
+    // metal without overpowering the camera-axis key.
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
     cameraFill.position.copy(camera.position)
       .addScaledVector(axis, 8)
