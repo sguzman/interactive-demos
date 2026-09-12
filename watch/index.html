@@ -16,7 +16,7 @@
   </script>
 
   <style>
-    .power-state{display:grid;gap:9px;margin-top:9px}.power-meter{width:100%;height:12px;accent-color:#d8b36a}.power-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px}.power-stat{border:1px solid #ffffff12;border-radius:8px;padding:7px 8px;background:#ffffff05}.power-stat span{display:block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#727c86}.power-stat output{display:block;margin-top:3px;font-size:12px;color:#dce2e7}.winding-note{font-size:10px;line-height:1.45;color:#7f8993;margin-top:7px}.winding-buttons button,.setting-buttons button{touch-action:none;user-select:none}.winding-buttons button:disabled,.setting-buttons button:disabled{opacity:.42;cursor:not-allowed}.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.mode-stat{border:1px solid #ffffff12;border-radius:8px;padding:7px 8px;background:#ffffff05}.mode-stat span{display:block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#727c86}.mode-stat output{display:block;margin-top:3px;font-size:11px;color:#dce2e7}.mode-accent{color:#e4c87c!important}
+    .power-state{display:grid;gap:9px;margin-top:9px}.power-meter{width:100%;height:12px;accent-color:#d8b36a}.power-stats,.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.power-stat,.mode-stat{border:1px solid #ffffff12;border-radius:8px;padding:7px 8px;background:#ffffff05}.power-stat span,.mode-stat span{display:block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#727c86}.power-stat output,.mode-stat output{display:block;margin-top:3px;font-size:11px;color:#dce2e7}.winding-note{font-size:10px;line-height:1.45;color:#7f8993;margin-top:7px}.winding-buttons button,.setting-buttons button{touch-action:none;user-select:none}.winding-buttons button:disabled,.setting-buttons button:disabled{opacity:.42;cursor:not-allowed}.mode-grid{margin-top:8px}.mode-accent{color:#e4c87c!important}.power-running{color:#8fd2a1!important}
   </style>
 </head>
 <body>
@@ -26,9 +26,9 @@
     <header class="topbar panel">
       <a class="gallery-link" href="../">← Gallery</a>
       <div class="identity">
-        <div class="eyebrow">REFERENCE RECONSTRUCTION · M4B</div>
+        <div class="eyebrow">REFERENCE RECONSTRUCTION · M4C</div>
         <h1>ETA / Unitas 6497-2</h1>
-        <p>stem positions + keyless transition + causal hand setting</p>
+        <p>stored mainspring energy now gates and powers the movement</p>
       </div>
       <a class="docs-link" href="../docs/watch-eta-6497-2.html">Documentation ↗</a>
     </header>
@@ -36,10 +36,7 @@
     <aside class="controls panel" aria-label="Watch controls">
       <section>
         <div class="section-title">Assembly</div>
-        <label class="range-row" for="explode">
-          <span>Exploded view</span>
-          <output id="explodeValue">22%</output>
-        </label>
+        <label class="range-row" for="explode"><span>Exploded view</span><output id="explodeValue">22%</output></label>
         <input id="explode" type="range" min="0" max="100" value="22" />
         <div class="button-row">
           <button id="assembleBtn" class="secondary">Assemble</button>
@@ -65,12 +62,14 @@
       <section>
         <div class="section-title">Simulation</div>
         <label class="select-row">
-          <span>Train time scale</span>
+          <span>Mechanical time scale</span>
           <select id="trainScale">
+            <option value="0">0× paused</option>
             <option value="1" selected>1× real time</option>
             <option value="10">10× inspect</option>
             <option value="60">60× inspect</option>
             <option value="300">300× inspect</option>
+            <option value="3600">3600× reserve demo</option>
           </select>
         </label>
         <label class="select-row">
@@ -88,6 +87,17 @@
           <label><input id="endshakeGuides" type="checkbox" /> Show endshake guides</label>
           <label><input id="bodyGapGuides" type="checkbox" /> Show wheel-body gap guides</label>
         </div>
+      </section>
+
+      <section>
+        <div class="section-title">Power release · M4c</div>
+        <div class="mode-grid">
+          <div class="mode-stat"><span>Movement state</span><output id="movementStateValue" class="power-running">STOPPED · UNWOUND</output></div>
+          <div class="mode-stat"><span>Power flow</span><output id="powerFlowValue">NO RELEASE</output></div>
+          <div class="mode-stat"><span>Mechanical elapsed</span><output id="runElapsedValue">00:00:00</output></div>
+          <div class="mode-stat"><span>Energy gate</span><output id="energyGateValue">BLOCKED · NO ENERGY</output></div>
+        </div>
+        <div class="winding-note">The watch now starts genuinely unwound. Give it energy with the crown and the balance, escapement, wheel train and hands begin advancing from one shared mechanical clock. When reserve reaches zero, that clock freezes. 3600× drains one simulated hour per real second for a quick reserve demo.</div>
       </section>
 
       <section>
@@ -118,9 +128,9 @@
           <button id="windCrownBtn">Wind crown ↻</button>
           <button id="returnCrownBtn" class="secondary">Return crown ↺</button>
         </div>
-        <button id="resetWindBtn" class="secondary wide">Reset stored energy</button>
+        <button id="resetWindBtn" class="secondary wide">Reset / fully unwind</button>
         <div class="power-state">
-          <label class="range-row"><span>Mainspring reserve</span><output id="reserveValue">0.0 h / 60 h</output></label>
+          <label class="range-row"><span>Mainspring reserve</span><output id="reserveValue">0.00 h / 60 h</output></label>
           <progress id="powerMeter" class="power-meter" max="1" value="0"></progress>
           <div class="power-stats">
             <div class="power-stat"><span>Stored energy</span><output id="energyValue">0%</output></div>
@@ -129,7 +139,7 @@
             <div class="power-stat"><span>Action</span><output id="windingActionValue">idle</output></div>
           </div>
         </div>
-        <div class="winding-note">Winding controls are automatically disabled while the stem is in hand-setting position. The 45-turn full-wind mapping remains a reconstruction assumption for interaction, not an ETA service specification.</div>
+        <div class="winding-note">Winding controls are disabled while the stem is in hand-setting position. The 45-turn full-wind mapping remains a reconstruction assumption; the 60 h typical reserve is the sourced ETA endpoint.</div>
       </section>
 
       <section>
@@ -153,47 +163,35 @@
           <span class="hard-light-badge">BALANCED DEFAULT</span>
         </div>
 
-        <label class="select-row">
-          <span>Preset</span>
-          <select id="lightPreset">
-            <option value="camera" selected>Camera aligned / balanced</option>
-            <option value="fullbright">Full bright / diagnostic</option>
-            <option value="hard">Hard inspection</option>
-            <option value="raking">Raking side</option>
-            <option value="top">Top inspection</option>
-            <option value="backlit">Backlit skeleton</option>
-            <option value="studio">Studio</option>
-            <option value="dark">Dark presentation</option>
-          </select>
-        </label>
+        <label class="select-row"><span>Preset</span><select id="lightPreset">
+          <option value="camera" selected>Camera aligned / balanced</option>
+          <option value="fullbright">Full bright / diagnostic</option>
+          <option value="hard">Hard inspection</option>
+          <option value="raking">Raking side</option>
+          <option value="top">Top inspection</option>
+          <option value="backlit">Backlit skeleton</option>
+          <option value="studio">Studio</option>
+          <option value="dark">Dark presentation</option>
+        </select></label>
 
-        <label class="select-row">
-          <span>Light mode</span>
-          <select id="lightMode">
-            <option value="camera" selected>Camera aligned</option>
-            <option value="manual">Manual key only</option>
-            <option value="both">Camera + manual key</option>
-          </select>
-        </label>
+        <label class="select-row"><span>Light mode</span><select id="lightMode">
+          <option value="camera" selected>Camera aligned</option>
+          <option value="manual">Manual key only</option>
+          <option value="both">Camera + manual key</option>
+        </select></label>
 
         <label class="range-row"><span>Camera intensity</span><output id="cameraIntensityValue">235</output></label>
         <input id="cameraIntensity" type="range" min="0" max="700" value="235" />
-
         <label class="range-row"><span>Manual azimuth</span><output id="lightAzimuthValue">35°</output></label>
         <input id="lightAzimuth" type="range" min="-180" max="180" value="35" />
-
         <label class="range-row"><span>Manual elevation</span><output id="lightElevationValue">46°</output></label>
         <input id="lightElevation" type="range" min="5" max="85" value="46" />
-
         <label class="range-row"><span>Manual distance</span><output id="lightDistanceValue">60 mm</output></label>
         <input id="lightDistance" type="range" min="28" max="110" value="60" />
-
         <label class="range-row"><span>Manual intensity</span><output id="lightIntensityValue">230</output></label>
         <input id="lightIntensity" type="range" min="0" max="700" value="230" />
-
         <label class="range-row"><span>Ambient / fill</span><output id="ambientValue">0.52</output></label>
         <input id="ambient" type="range" min="0" max="120" value="52" />
-
         <label class="range-row"><span>Exposure</span><output id="exposureValue">1.55×</output></label>
         <input id="exposure" type="range" min="70" max="320" value="155" />
 
@@ -203,7 +201,7 @@
         </div>
       </section>
 
-      <div class="hint">M4b makes the crown a mode selector rather than only a winding input. Position 0 preserves the M4a winding path. Position 1 pulls the crown/stem outward, shifts the reconstructed sliding pinion and selector parts, disables barrel winding, and routes crown input into the setting/minute wheels and visible hour/minute hands. Exact clutch geometry and setting ratios remain reconstruction-level.</div>
+      <div class="hint">M4c closes the first power loop: crown winding creates reserve; reserve opens the movement gate; the shared mechanical clock drives balance, escapement, train and hands; running consumes reserve; an empty mainspring stops them. Torque magnitude and escapement losses are still normalized rather than falsely simulated.</div>
     </aside>
 
     <aside class="inspector panel" id="infoPanel">
@@ -212,7 +210,7 @@
         <span class="provenance approximate" id="infoProvenance">approximate</span>
       </div>
       <h2 id="infoName">Mechanical component inspector</h2>
-      <p id="infoText">M4b retains causal winding and adds a second stem state: the crown can be pulled into hand-setting position, where the reconstructed keyless parts shift and setting input moves the visible hour/minute display without adding mainspring energy.</p>
+      <p id="infoText">M4c connects the persistent mainspring state to the movement runtime. The watch now begins stopped and unwound; stored reserve permits one shared mechanical clock to advance, and reserve depletion stops that clock at zero.</p>
       <dl class="part-facts" id="partFacts"></dl>
     </aside>
 
@@ -224,9 +222,9 @@
       <span><i class="dot structure-dot"></i>structure</span>
     </div>
 
-    <div id="loading">Constructing 6497-2 M4b keyless state…</div>
+    <div id="loading">Constructing 6497-2 M4c power state…</div>
   </div>
 
-  <script type="module" src="./main-m4b.js"></script>
+  <script type="module" src="./main-m4c.js"></script>
 </body>
 </html>
