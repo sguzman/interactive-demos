@@ -2,7 +2,7 @@
 
 ## Current state
 
-**Milestone: M3f — true-pitch train teeth + stepped staffs + clearance-aware axial stack.**
+**Milestone: M3g — endshake, pivot shoulders, and bearing-stack clearance.**
 
 The project remains an educational reconstruction, not manufacturing CAD. Official movement facts, reference-derived geometry, approximation, and presentation-only geometry remain separate provenance classes.
 
@@ -63,87 +63,76 @@ The current nominal mesh solve remains:
 
 Those pitch radii close against the current centre distances by construction. The XY centres themselves are still **reference-derived reconstruction coordinates**, not ETA manufacturing coordinates.
 
-## M3f — true-pitch tooth semantics
+## M3f — true-pitch train and stepped staffs
 
-The earlier constructive `gear()` primitive did not use its input radius as a strict pitch radius. That meant the mathematics could close while the rendered teeth still looked visibly disconnected.
+M3f replaced the earlier decorative train tooth radius with a dedicated train-only spur construction whose input has exact pitch-radius semantics. The tooth flank shape is still educational rather than a generated manufacturing profile, but the pitch circles, contact points, and visible tooth envelopes now belong to the same geometric model.
 
-M3f adds a dedicated train-only spur construction whose input **is** the pitch radius. It uses:
-
-- a pitch circle with exact semantic meaning;
-- approximate addendum and dedendum around that pitch line;
-- tooth width of roughly half a circular pitch at the pitch circle;
-- narrower tooth tips and wider roots;
-- a hub/rim/spoke structure independent of tooth placement.
-
-The profile is still **not a generated involute**. It is an educational tooth form designed so a solved pitch pair visibly meets where the pitch circles are tangent. This is a materially stronger claim than the old decorative radius while remaining below manufacturing CAD.
-
-### Contact diagnostics
-
-**Show pitch mesh guides** now displays for each train mesh:
-
-- both pitch circles;
-- the line of centres;
-- a bright contact marker at the pitch tangent point.
-
-The dedicated **Train mesh** camera view enables those guides automatically.
-
-## M3f — clearance-aware axial stack
-
-M3f also tightens the reconstructed bridge-side stack. Current wheel planes are:
+M3f also tightened the bridge-side stack and replaced uniform rods with stepped staffs. Current large-wheel planes are:
 
 - centre: **z = -0.90 mm**;
 - third: **z = -1.23 mm**;
 - seconds/fourth: **z = -1.55 mm**;
 - escape: **z = -0.92 mm**.
 
-Driven pinions remain in the plane of the wheel that drives them:
+Driven pinions remain in the plane of the wheel that drives them. The reconstruction uses the visible mainplate and bridge geometry as an internal clearance envelope rather than pretending those z dimensions came from ETA production drawings.
 
-- third pinion → centre-wheel plane;
-- seconds/fourth pinion → third-wheel plane;
-- escape pinion → seconds/fourth-wheel plane.
+## M3g — bearing stack and endshake
 
-The current clearance envelope uses visible reconstruction surfaces already present in the model:
+M3g turns the axial stack from a static placement decision into an explicit inspection model.
 
-- mainplate bridge-side reference surface: about **z = -0.57 mm**;
-- barrel-bridge underside reference: about **z = -1.91 mm**;
-- train-bridge underside reference: about **z = -1.93 mm**;
-- mainplate jewel centre: about **z = -0.68 mm**;
-- centre-wheel upper jewel centre: about **z = -2.70 mm**;
-- train-wheel upper jewel centres: about **z = -2.72 mm**.
+### Pivot finishing
 
-These are reconstruction dimensions, not sourced ETA stack heights. They are used to make the current model internally coherent and to expose remaining interference rather than hide it.
+The centre, third, seconds/fourth, and escape staffs now receive additional bearing-shape cues:
 
-## M3f — stepped staffs and pivots
+- narrow conical pivot noses;
+- explicit wheel-seat shoulders;
+- narrower bridge-side pivot regions;
+- visible relation between the staff and the mainplate/bridge jewel centres.
 
-The old train used generic uniform rods. M3f hides those presentation arbors and adds separate stepped staffs for the centre, third, seconds/fourth and escape assemblies.
+These diameters are **reconstruction geometry**. Their purpose is to make the mechanical role legible and give later refinement a concrete target.
 
-Each staff now has:
+### Endshake targets
 
-- a narrow mainplate-side pivot;
-- a central arbor;
-- a wider wheel-seat collar;
-- a narrower bridge neck;
-- a small polished bridge-side pivot extending into the visible jewel plane.
+M3g introduces small nominal axial-play targets:
 
-This is still schematic, but it gives the wheel/pinion/bridge stack a recognizable bearing relationship instead of making the wheels float on identical cylinders.
+- centre wheel: **0.040 mm**;
+- third wheel: **0.040 mm**;
+- seconds/fourth wheel: **0.040 mm**;
+- escape wheel: **0.035 mm**.
 
-### Staff / clearance diagnostics
+These values are deliberately classified as **reconstruction targets, not asserted ETA production tolerances**. They let the model represent the concept of endshake and test whether the current wheel/bridge stack has room for it.
 
-The new **Train stack** view turns the movement sideways and automatically enables **Show staff / clearance guides**. The guide overlays:
+The demo exposes optional endshake motion at **1×**, **10×**, and **25×**. Only 1× corresponds to the reconstruction target; 10× and 25× are explicit diagnostic exaggerations for visual inspection.
 
-- the reconstructed mainplate-side clearance plane;
-- the reconstructed bridge-underside plane;
-- vertical staff lines running between the plate and bridge jewel regions.
+### Wheel-body axial gaps
 
-This is intended as an engineering inspection aid, not a presentation effect.
+The M3f large-wheel stack was intentionally arranged so neighboring projected wheel envelopes can overlap in XY while remaining separated axially. M3g now calculates and reports those body gaps instead of leaving them implicit.
+
+The important distinction is:
+
+- **gear mesh** happens wheel → small coaxial pinion at the pitch tangent plane;
+- **large wheel bodies** may visually overlap in front projection but must remain separated in z.
+
+The new **Show wheel-body gap guides** overlay exposes that separation.
+
+### Inspection controls
+
+The **Train stack** camera preset now enables the stack-related diagnostics together. Additional controls are available for:
+
+- staff / clearance guides;
+- endshake range guides;
+- wheel-body gap guides;
+- exaggerated endshake motion.
+
+The endshake guide links each wheel’s tiny working range to the reconstructed mainplate and bridge jewel regions, making it clear that endshake is axial bearing play rather than gear backlash.
 
 ## Camera-axis inspection lighting
 
-Lighting remains at the balanced M3e default after the previous over-bright correction:
+Lighting remains at the balanced M3e default:
 
 - **Camera aligned / balanced** is the default;
 - the source is directional and therefore independent of zoom distance;
-- **Full bright / diagnostic** remains available when geometry is genuinely hard to read;
+- **Full bright / diagnostic** remains available when geometry is hard to read;
 - camera and manual intensity sliders retain large headroom;
 - manual azimuth/elevation/distance controls remain available for raking light.
 
@@ -160,21 +149,22 @@ The train defaults to **1× real time**. Optional 10×, 60×, and 300× inspecti
 
 ## Next milestones
 
-### M3g — bridge and endshake refinement
+### M4a — causal winding state
 
-- compare the new staff stack against the actual bridge/jewel geometry in more detail;
-- refine pivot lengths, shoulders and wheel-seat positions;
-- model small endshake/clearance rather than merely positive gross clearance;
-- improve wheel/pinion tooth flank shape toward a more defensible horological profile;
-- begin checking bridge contours against the enlarged pitch-derived wheel envelopes.
+- explicit crown/stem state: pushed in / winding / setting transition;
+- user-driven winding input rather than decorative oscillation;
+- crown wheel and ratchet angle derived from that input;
+- one-way click constraint;
+- normalized mainspring stored-energy state;
+- visible power-reserve readout for the simulation state;
+- no claim yet that torque curves or friction losses are production-accurate.
 
-### M4 — winding fidelity
+### M4b — setting works
 
-- stateful crown/stem positions;
-- winding vs hand-setting modes;
-- causal keyless works and ratchet rotation;
-- one-way click behavior;
-- stored mainspring energy.
+- setting position for the stem;
+- sliding/winding pinion state change;
+- motion-works coupling;
+- hand-setting interaction while isolating the barrel winding path.
 
 ### M5 — escapement fidelity
 
