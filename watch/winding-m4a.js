@@ -14,6 +14,13 @@ function clamp01(value) {
 function makeCrownDriver(caseRoot, materials) {
   if (!caseRoot) return null;
 
+  // M4a owns the visible crown from here onward so later stem-state milestones can
+  // translate it without leaving the old presentation crown behind as a duplicate.
+  const oldCrown = caseRoot.children.find(child =>
+    child.isMesh && child.geometry?.type === 'CylinderGeometry' && Math.abs((child.position?.x ?? 0) - 24.2) < .2
+  );
+  if (oldCrown) oldCrown.visible = false;
+
   const group = new THREE.Group();
   group.name = 'M4a interactive crown driver';
   group.position.set(24.2, 0, -.55);
@@ -97,10 +104,12 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
     ratchet: animated.ratchet?.rotation.z ?? 0,
     barrel: animated.barrel?.rotation.z ?? 0,
     clickX: clickVisual?.position.x ?? 0,
-    clickY: clickVisual?.position.y ?? 0
+    clickY: clickVisual?.position.y ?? 0,
+    crownX: crownDriver?.position.x ?? 24.2
   };
 
   const state = {
+    enabled: true,
     input: 0,
     crownAngle: 0,
     crownWheelAngle: 0,
@@ -117,7 +126,7 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
   const toothPitch = TAU / RATCHET_TEETH;
 
   function applyCrownDelta(deltaAngle) {
-    if (!Number.isFinite(deltaAngle) || deltaAngle === 0) return;
+    if (!state.enabled || !Number.isFinite(deltaAngle) || deltaAngle === 0) return;
 
     if (deltaAngle > 0) {
       const requestedTurns = deltaAngle / TAU;
@@ -133,10 +142,6 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
       state.full = state.energy >= .999999;
       state.lastAction = state.full && acceptedTurns === 0 ? 'full stop' : 'winding';
     } else {
-      // Return motion is absorbed upstream by the winding clutch/keyless path in
-      // this simplified model. The crown itself returns, while crown wheel and
-      // ratchet remain stationary so their visible teeth never pass through each
-      // other. The click still represents the one-way ratchet constraint.
       state.crownAngle += deltaAngle;
       state.returnCrownTurns += Math.abs(deltaAngle) / TAU;
       state.lastAction = 'return / clutch free';
@@ -145,12 +150,27 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
     state.clickCount = Math.floor(Math.abs(state.ratchetAngle) / toothPitch);
   }
 
+  function rotateCrownOnly(deltaAngle) {
+    if (!Number.isFinite(deltaAngle) || deltaAngle === 0) return;
+    state.crownAngle += deltaAngle;
+  }
+
+  function setEnabled(enabled) {
+    state.enabled = Boolean(enabled);
+    if (!state.enabled) state.input = 0;
+  }
+
   function setInput(direction) {
+    if (!state.enabled) {
+      state.input = 0;
+      return;
+    }
     state.input = Math.sign(direction);
     if (state.input === 0 && !state.full) state.lastAction = 'idle';
   }
 
   function nudge(direction, turns = .75) {
+    if (!state.enabled) return;
     applyCrownDelta(Math.sign(direction) * Math.max(0, turns) * TAU);
   }
 
@@ -185,7 +205,7 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
   ui.reset?.addEventListener('click', reset);
 
   window.addEventListener('keydown', event => {
-    if (event.repeat) return;
+    if (event.repeat || !state.enabled) return;
     if (event.code === 'KeyW') setInput(1);
     if (event.code === 'KeyR') setInput(-1);
   });
@@ -199,13 +219,14 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
     if (ui.reserve) ui.reserve.value = `${reserve.toFixed(1)} h / ${maxReserveHours} h`;
     if (ui.energy) ui.energy.value = `${Math.round(state.energy * 100)}%`;
     if (ui.clicks) ui.clicks.value = `${state.clickCount}`;
-    if (ui.action) ui.action.value = state.lastAction;
-    if (ui.clickState) ui.clickState.value = state.input < 0 ? 'LOCKED / RETURN' : (state.input > 0 ? 'RATCHETING' : 'SEATED');
-    if (ui.wind) ui.wind.disabled = state.full;
+    if (ui.action) ui.action.value = state.enabled ? state.lastAction : 'disabled by stem position';
+    if (ui.clickState) ui.clickState.value = !state.enabled ? 'OUT OF WINDING MODE' : (state.input < 0 ? 'LOCKED / RETURN' : (state.input > 0 ? 'RATCHETING' : 'SEATED'));
+    if (ui.wind) ui.wind.disabled = state.full || !state.enabled;
+    if (ui.return) ui.return.disabled = !state.enabled;
   }
 
   function update(dt) {
-    if (state.input !== 0) applyCrownDelta(state.input * HOLD_SPEED_TURNS_PER_SECOND * TAU * dt);
+    if (state.enabled && state.input !== 0) applyCrownDelta(state.input * HOLD_SPEED_TURNS_PER_SECOND * TAU * dt);
 
     if (crownDriver) crownDriver.rotation.x = state.crownAngle;
     if (animated.crownWheel) animated.crownWheel.rotation.z = bases.crownWheel + state.crownWheelAngle;
@@ -214,7 +235,7 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
 
     if (clickVisual) {
       const phase = ((state.ratchetAngle / toothPitch) % 1 + 1) % 1;
-      const lift = state.input > 0 ? Math.sin(phase * Math.PI) ** 4 : 0;
+      const lift = state.enabled && state.input > 0 ? Math.sin(phase * Math.PI) ** 4 : 0;
       clickVisual.position.x = bases.clickX + lift * .045;
       clickVisual.position.y = bases.clickY + lift * .10;
     }
@@ -238,6 +259,10 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
     setInput,
     nudge,
     reset,
+    setEnabled,
+    rotateCrownOnly,
+    crownDriver,
+    bases,
     constants: {
       ratchetTeeth: RATCHET_TEETH,
       crownWheelTeeth: CROWN_WHEEL_TEETH,
