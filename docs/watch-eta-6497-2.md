@@ -2,7 +2,7 @@
 
 ## Current state
 
-**Milestone: M5b — pallet-face and safety geometry diagnostics.**
+**Milestone: M5c — reserve-coupled oscillator amplitude.**
 
 This remains an educational reconstruction, not manufacturing CAD. Official movement facts, reference-derived geometry, approximation, and presentation-only simulation assumptions remain separate provenance classes.
 
@@ -63,100 +63,143 @@ The current full-wind mapping uses **45 crown turns** as a presentation assumpti
 
 ## M5a — event-resolved Swiss lever release
 
-M5a changed the escapement from synchronized animation into an explicit event sequence.
-
-A 3 Hz balance gives **six alternations / beats per second**, so one beat is **1/6 s**. Each beat is divided into:
+A 3 Hz balance gives **six alternations / beats per second**. M5a resolves each beat as:
 
 1. **LOCK · ENTRY**;
 2. **UNLOCK**;
 3. **IMPULSE**;
 4. **LOCK · EXIT**.
 
-The 15-tooth escape wheel advances **one half-tooth per beat**, or 12° per release event. Thirty half-tooth releases therefore give one complete escape-wheel revolution in 5 seconds.
+The 15-tooth escape wheel advances **one half-tooth per beat**, or 12° per release event. Released escape-wheel angle is converted back into released train time, so the downstream train waits during lock and advances during release.
 
-Most importantly, released escape-wheel angle is converted back into **released train time**. The fourth/seconds, third and centre wheels and the hands now wait during lock and advance during release.
+## M5b — pallet-face and safety geometry
 
-## M5b — pallet-face and safety geometry diagnostics
+M5b added inspectable reconstruction geometry around the event model:
 
-M5b begins replacing abstract state labels with inspectable escapement geometry.
+- explicit locking-face and impulse-face overlays on both pallet stones;
+- reconstructed banking limits;
+- roller/fork-slot and horn/dart safety envelopes;
+- active contact and drop markers;
+- event-level stepping;
+- explicit diagnostic targets for lock depth, draw, drop and clearance.
 
-### Explicit locking and impulse faces
+Current M5b targets remain presentation/reconstruction values, not ETA tolerances:
 
-Each pallet stone now receives two colored educational overlays:
+- lock depth: **1.8°**;
+- draw: **12.0°**;
+- drop: **2.2°**;
+- banking: approximately **±7.7°**;
+- roller/fork clearance: approximately **0.12 mm**;
+- horn clearance: approximately **0.10 mm**.
 
-- **blue locking face** — the surface region responsible for holding the escape tooth;
-- **gold impulse face** — the surface region associated with escape-to-pallet impulse during release.
+## M5c — reserve-coupled oscillator amplitude
 
-These overlays follow the pallet fork and alternate through the M5a entry/exit sequence. They are not claimed to be measured ETA production faces yet.
+M5c removes the previous assumption that the balance always has the same amplitude whenever the watch has any power.
 
-### Banking geometry
+The balance now carries a **normalized oscillator-amplitude state** from 0 to 1. That state is deliberately dimensionless: it is not being presented as a measured ETA balance amplitude in degrees.
 
-The pallet remains constrained between reconstructed banking limits. M5b exposes the current bank target as approximately **±7.7°** around the pallet neutral orientation and can draw the banking arc directly in the scene.
+### Damping between beats
 
-That bank angle is a reconstruction target derived from the existing educational pallet travel, not an ETA tolerance.
+Between escapement events, normalized balance amplitude decays exponentially. The current educational damping coefficient is:
 
-### Lock depth, draw, and drop targets
+- **0.16 / simulated second**.
 
-The escapement panel now exposes three geometric concepts numerically:
+This is a simulation parameter, not a measured friction or hairspring-loss coefficient.
 
-- **lock depth target: 1.8°**;
-- **draw target: 12.0°**;
-- **drop target: 2.2°**.
+### Discrete impulse packets
 
-These values are deliberately labeled **targets**. They make the concepts first-class in the model without claiming to reproduce ETA factory geometry. The displayed lock depth falls away during release; drop markers appear around unlock/relock transitions.
+At each successful beat, the escapement adds a discrete impulse packet to the oscillator state rather than simply resetting the balance to a fixed animation amplitude.
 
-### Roller / fork safety envelope
+The maximum normalized packet coefficient is currently:
 
-M5b retains the roller table, guard roller, impulse jewel, fork horns and safety dart from M5a, and adds a visible diagnostic envelope for:
+- **0.070**.
 
-- roller-to-fork-slot clearance;
-- horn clearance around the impulse jewel path;
-- guard/dart safety relationship.
+Actual packet strength is multiplied by a reconstruction-level **barrel-drive proxy** derived from remaining normalized reserve. High reserve gives stronger packets; very low reserve gives weaker packets.
 
-Current reconstruction targets include roughly **0.12 mm roller/fork clearance** and **0.10 mm horn clearance**. These are presentation values for geometric reasoning, not production measurements.
+### Barrel-drive proxy
 
-### Active contact and drop markers
+M5c introduces a deliberately non-production drive proxy so the relationship between reserve and amplitude can be inspected.
 
-A highlighted contact marker follows the currently active entry/exit side. A secondary marker indicates the reconstructed drop region during relevant transitions. These make it possible to inspect where the state machine believes the escape tooth is interacting with the pallet geometry.
+The proxy has two parts:
 
-### Event-level stepping
+- a broad decline across the reserve range;
+- a deliberately visible collapse near the bottom of reserve.
 
-M5a already allowed stepping one whole beat. M5b adds **Step next event**, which advances mechanical time only far enough to cross the next event boundary:
+The collapse region begins around **0.15% normalized reserve** and spans roughly another **1.5%**. Those values are simulation choices designed to make end-of-reserve behavior visible. They are not an ETA mainspring torque curve.
 
-- lock → unlock;
-- unlock → impulse;
-- impulse → relock;
-- relock → next beat.
+### Unlock threshold
 
-At `0× paused`, this lets the escapement be examined one transition at a time rather than jumping directly from one beat to the next.
+The pallet is now allowed to continue releasing the train only while normalized balance amplitude remains above a reconstruction threshold:
 
-## What M5b intentionally does not claim
+- **unlock threshold: 0.18 normalized amplitude**.
 
-M5b still does **not** model or assert:
+When amplitude falls below that threshold, the power-release gate changes to **STOPPED · ESCAPEMENT** / **LOW BALANCE AMPLITUDE**.
 
-- measured ETA entry/exit pallet face coordinates;
-- exact draw angle from production geometry;
-- exact lock depth or drop;
-- exact banking-pin positions;
-- exact horn and guard clearances;
-- true roller-jewel path under rigid-body contact;
-- pallet/escape friction and lubrication;
-- impulse energy transfer into balance amplitude;
-- free balance amplitude determined by spring torque and losses;
-- production torque transmission through the train.
+Crucially, remaining mainspring reserve is then **held rather than silently consumed** through a motionless train.
 
-The M5b values are explicit reconstruction targets so that later measurements can replace them cleanly.
+This creates a second causal gate:
+
+> stored reserve is necessary, but usable oscillator amplitude is also necessary.
+
+### Restart behavior
+
+If the oscillator has stalled, winding can restart it. The current restart rule is:
+
+- reserve must be at least **1.2% normalized**;
+- the educational restart seeds normalized balance amplitude to **0.34**.
+
+This is a practical interaction rule because the demo has no wrist-shake / manual balance-start gesture. It is not a claim about the exact self-start behavior of a real 6497-2.
+
+### What now happens near the end of reserve
+
+As reserve falls:
+
+1. the barrel-drive proxy weakens;
+2. each impulse packet becomes smaller;
+3. damping removes more amplitude than weak impulses restore;
+4. balance amplitude trends downward;
+5. unlock margin approaches zero;
+6. the escapement can stall before the normalized spring state reaches mathematical zero;
+7. the remaining residual reserve stays stored until the user winds again.
+
+The UI exposes:
+
+- normalized balance amplitude;
+- oscillator state;
+- normalized barrel-drive proxy;
+- current impulse packet strength;
+- unlock margin;
+- successful impulse count;
+- missed-unlock count.
+
+## What M5c intentionally does not claim
+
+M5c still does **not** model or assert:
+
+- ETA balance inertia;
+- hairspring stiffness or exact torque law;
+- measured balance amplitude in degrees;
+- actual barrel torque curve;
+- pallet efficiency;
+- lubrication losses;
+- aerodynamic losses;
+- position-dependent amplitude;
+- rate error caused by amplitude;
+- exact self-start threshold;
+- exact relationship between reserve percentage and delivered impulse.
+
+The oscillator is now dynamically stateful, but the values are normalized educational dynamics rather than calibrated production physics.
 
 ## Inspection tools
 
-Current useful inspection controls include:
+Useful controls now include:
 
 - **Escapement** camera preset;
 - `0.1×`, `0.25×`, and `0.5×` slow mechanical time;
 - `0× paused`;
 - **Step next event**;
 - **Step one beat**;
-- escape → pallet → balance center-line guides;
+- live balance-amplitude / impulse / unlock-margin readouts;
 - pallet-face / safety diagnostics;
 - train pitch/contact guides;
 - train stack and endshake diagnostics;
@@ -168,31 +211,30 @@ Current useful inspection controls include:
 - **official** — directly supported by technical material;
 - **reference-derived** — reconstructed from service diagrams, teardown photographs, or multiple references;
 - **approximate** — simplified geometry preserving mechanical role and relationship;
-- **presentation** — geometry, controls, or simulation assumptions added for readability and interaction.
+- **presentation** — geometry, controls, thresholds or simulation assumptions added for readability and interaction.
 
 ## Next milestones
 
-### M5c — impulse / oscillator coupling
-
-- create a normalized impulse packet at each release;
-- let impulse magnitude affect balance amplitude;
-- let lower stored reserve reduce delivered impulse;
-- make low amplitude eventually fail to unlock reliably;
-- stop prescribing a perfect balance amplitude independent of power state.
-
 ### M5d — geometry-constrained escapement
 
-- replace more event-window assumptions with actual tooth/pallet intersection tests;
+- replace more event-window assumptions with tooth/pallet intersection tests;
 - derive lock and release from reconstructed face geometry;
 - improve drop and safety validation from geometry;
 - migrate diagnostic targets toward measured/reference dimensions where available.
 
+### M5e — amplitude / rate coupling
+
+- let normalized balance amplitude affect oscillator rate rather than keeping frequency perfectly fixed at nominal 3 Hz;
+- expose rate error as an educational output;
+- distinguish nominal specification from simulated instantaneous rate;
+- preserve clear provenance around any assumed isochronism model.
+
 ### M6 — system simulation
 
-- separate barrel arbor winding from barrel drum release;
+- separate barrel-arbor winding from barrel-drum release;
 - improve power transmission through the train;
-- couple reserve, escapement impulse, amplitude and rate;
-- let the balance state genuinely govern timing rather than only following the official nominal rate.
+- couple reserve, escapement impulse, amplitude and rate into one shared system state;
+- move from nominal-clock gating toward a genuinely state-driven oscillator.
 
 ## Sources
 
