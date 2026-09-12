@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M5f',
-  label: 'state-integrated balance and hairspring oscillator',
-  note: 'M5f retains the M5d geometry-constrained escapement and the M5e educational isochronism curve, but removes the assigned oscillator phase clock. The balance now owns integrated angular position and angular velocity states driven by an explicit restoring acceleration, damping acceleration, and discrete center-crossing impulse kicks whose strength depends on remaining reserve. Unwrapped phase is recovered from that state and becomes the input to the pallet/contact solver, so the downstream train follows an actual oscillator trajectory. Large diagnostic time scales switch to a clearly labelled envelope fast-forward approximation. Damping ratio, impulse gain, restart amplitude and isochronism curve remain educational reconstruction parameters rather than measured ETA balance inertia, hairspring stiffness or escapement efficiency.'
+  id: 'M5g',
+  label: 'geometry-admitted impulse delivery',
+  note: 'M5g retains the M5f integrated balance/hairspring state and M5d geometry-constrained escapement, then removes the remaining automatic center-crossing impulse rule. A center crossing is now only an impulse opportunity. Before any angular-velocity kick is delivered, an alternating entry/exit pallet path is sampled through the calibrated M5d contact geometry: the starting face must clear, geometry-derived half-tooth release must progress through an impulse interval, the tracked tooth must remain inside a reconstruction-level contact envelope, and the penetration guard must remain satisfied. Only an admitted path permits Δω into the balance. The gate uses the existing reconstructed faces and clearances plus an explicit diagnostic contact envelope; it is not measured ETA pallet CAD or production impulse efficiency.'
 };
