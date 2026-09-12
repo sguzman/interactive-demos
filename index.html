@@ -3,9 +3,76 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="A permanent gallery of interactive 3D visualizations, simulations, and browser experiments." />
   <title>Interactive Demos</title>
-  <style>
-    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif;background:#0b0d10;color:#f3f5f7}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 30% 20%,#20252d,#0b0d10 45%);padding:48px}main{max-width:900px;margin:auto}h1{font-size:clamp(2.3rem,7vw,5rem);letter-spacing:-.05em;margin:0 0 12px}p{color:#9aa6b2;max-width:58ch;line-height:1.6}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:36px}.card{display:block;padding:24px;border:1px solid #ffffff14;border-radius:20px;background:#11151bd9;color:inherit;text-decoration:none;transition:.18s transform,.18s border-color}.card:hover{transform:translateY(-3px);border-color:#d8b36a66}.eyebrow{font-size:.72rem;letter-spacing:.16em;color:#d8b36a;font-weight:700}.card h2{margin:.45rem 0 .55rem}.card p{margin:0;font-size:.92rem}</style>
+  <link rel="stylesheet" href="./gallery.css" />
 </head>
-<body><main><div class="eyebrow">PERMANENT PLAYGROUND</div><h1>Interactive Demos</h1><p>A single home for small visual experiments and browser toys. New demos can live here without creating another repository.</p><div class="grid"><a class="card" href="./watch/"><div class="eyebrow">THREE.JS · HOROLOGY</div><h2>Mechanical Watch</h2><p>Explode a semi-realistic mechanical wristwatch into functional layers and inspect the movement.</p></a></div></main></body>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="eyebrow">PERMANENT VISUALIZATION PLAYGROUND</div>
+      <div class="hero-row">
+        <div>
+          <h1>Interactive Demos</h1>
+          <p class="lede">
+            One public home for fast 3D visualizations, exploded mechanisms, simulations,
+            spatial sketches, and browser toys. Small experiments stay cheap to start and
+            only graduate to their own repository if they outgrow the gallery.
+          </p>
+        </div>
+        <div class="hero-stat" aria-label="gallery purpose">
+          <strong id="demoCount">—</strong>
+          <span>live demos</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="toolbar" aria-label="Gallery controls">
+      <label class="search-box">
+        <span>Search</span>
+        <input id="search" type="search" placeholder="watch, mechanical, 3D…" autocomplete="off" />
+      </label>
+      <div id="tagFilters" class="tag-filters" aria-label="Tag filters"></div>
+    </section>
+
+    <section>
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">CATALOG</div>
+          <h2>Experiments</h2>
+        </div>
+        <p id="resultSummary">Loading gallery manifest…</p>
+      </div>
+      <div id="gallery" class="grid" aria-live="polite"></div>
+      <div id="emptyState" class="empty" hidden>No demos match that filter.</div>
+    </section>
+
+    <footer>
+      <span>sguzman/interactive-demos</span>
+      <span>Static HTML · CSS · JavaScript · GitHub Pages</span>
+    </footer>
+  </main>
+
+  <template id="cardTemplate">
+    <article class="card">
+      <div class="card-topline">
+        <span class="status"></span>
+        <span class="maturity"></span>
+      </div>
+      <div class="card-body">
+        <div class="eyebrow kind"></div>
+        <h3></h3>
+        <p class="summary"></p>
+        <dl class="facts"></dl>
+        <div class="tags"></div>
+      </div>
+      <div class="card-actions">
+        <a class="primary launch">Open demo <span aria-hidden="true">↗</span></a>
+        <a class="secondary docs">Documentation</a>
+      </div>
+    </article>
+  </template>
+
+  <script type="module" src="./gallery.js"></script>
+</body>
 </html>
