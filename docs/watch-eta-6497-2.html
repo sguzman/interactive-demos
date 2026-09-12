@@ -11,11 +11,11 @@
 </head>
 <body><main>
   <nav class="top"><a href="../">← Interactive Demos</a><a href="../watch/">Open 3D demo ↗</a></nav>
-  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M5H</div>
+  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M5I</div>
   <h1>ETA / Unitas 6497-2</h1>
-  <p class="lead">M5h replaces the remaining point/line escapement abstraction with finite reconstructed escape-tooth and pallet-jewel polygons. Lock, impulse following, drop, capture, penetration health, escape release, and impulse admission now refer to the same finite-surface model.</p>
+  <p class="lead">M5i turns polygon-admitted escapement contact into variable impulse work. Remaining spring drive supplies an available work budget; M5h finite-surface following and contact quality determine what portion is delivered to the balance, and the M5f angular-velocity kick is continuously scaled from that transferred fraction.</p>
 
-  <div class="callout"><strong>Accuracy contract.</strong><p>The official reference remains 3 Hz / 21,600 A/h. The polygon shapes and contact thresholds in M5h are educational reconstruction geometry, not ETA manufacturing CAD, service tolerances, or measured contact physics.</p></div>
+  <div class="callout"><strong>Accuracy contract.</strong><p>The official reference remains 3 Hz / 21,600 A/h. M5i work values are normalized educational units, not joules. Its path normalization, contact-quality law, transfer efficiency and Δω mapping are reconstruction parameters rather than measured ETA torque, pallet efficiency or balance inertia.</p></div>
 
   <h2>Official movement facts</h2>
   <div class="specs">
@@ -25,79 +25,91 @@
   </div>
 
   <h2>Foundation retained</h2>
-  <p>M3 established the reference-derived train and pitch/stack diagnostics. M4 added causal winding, hand setting, reserve, and a power gate. M5a–M5d made Swiss-lever release event-resolved and geometry-constrained. M5e exposed amplitude-dependent rate. M5f replaced the assigned oscillator clock with integrated balance angle θ and angular velocity ω. M5g made geometry admit or deny each escapement impulse.</p>
+  <p>M3 established the reference-derived train and pitch/stack diagnostics. M4 added stateful winding, setting and reserve. M5a–M5d made Swiss-lever release event-resolved and geometry-constrained. M5e exposed amplitude-dependent rate. M5f integrated balance angle θ and angular velocity ω. M5g made geometry admit or deny impulse. M5h replaced point/line contact with finite escape-tooth and pallet-jewel polygons that govern lock, impulse following, drop, capture, release and admission.</p>
 
-  <h2>M5h — finite tooth and pallet surfaces</h2>
-  <p>The historical M5d/M5g solver tracked a tooth tip against calibrated face segments. M5h gives both sides finite area. The escape tooth uses the same tapered/hooked 2D construction as the visible educational escape-wheel primitive, and each calibrated pallet working edge becomes one edge of a finite jewel polygon.</p>
+  <h2>M5i — from permission to work transfer</h2>
+  <p>Before M5i, once M5h admitted an impulse, the M5f kick was still effectively fixed after reserve and amplitude saturation. M5i removes that last binary energy-transfer assumption.</p>
 
-  <div class="callout"><strong>crown → reserve → drive → integrated balance θ/ω → pallet motion → finite tooth/jewel surfaces → lock / impulse / drop / capture → admitted Δω + escape release → train → hands</strong><p>The same surface model now governs both directions of escapement causality.</p></div>
+  <div class="callout"><strong>crown → reserve → drive proxy → tooth/jewel polygon path → available work → delivered / lost work → scaled Δω → integrated θ/ω → polygon-constrained release → train → hands</strong><p>The finite contact path now affects both whether impulse exists and how much normalized impulse reaches the oscillator.</p></div>
 
-  <h2>Escape-tooth polygon</h2>
+  <h2>Available train work</h2>
+  <p>The current reserve-derived drive proxy supplies a normalized 0–1 work budget for each center-crossing opportunity. The UI labels this quantity in <strong>work units</strong>. One work unit is not one joule; it is simply the full current normalized drive budget.</p>
+
+  <h2>Surface-follow distance</h2>
+  <p>M5i samples the M5h polygon solver across each alternating entry→exit or exit→entry beat. It accumulates only positive escape-wheel travel still classified as <strong>IMPULSE · POLYGON SURFACE</strong>.</p>
+  <p>That angular travel is converted to path length at the reconstructed 2.25 mm tooth-tip radius. The normalization currently treats <strong>40% of the full 12° half-tooth tip arc</strong> as complete reference path coverage. That 40% value is an educational choice, not an ETA impulse-duration measurement.</p>
+
+  <h2>Contact quality</h2>
+  <p>The signed M5h polygon gap becomes a second transfer factor. Close, non-penetrating surfaces score highly. A widening positive gap reduces quality toward zero at the 0.080 mm impulse envelope; overlap also reduces quality as it approaches the M5h maximum accepted penetration.</p>
+  <p>The current gap response uses an exponent of <strong>1.35</strong>. This is not a measured friction or efficiency law.</p>
+
+  <h2>Transfer efficiency and work split</h2>
+  <div class="callout"><strong>transfer efficiency ≈ path coverage × contact quality</strong><p>Both factors are normalized. A polygon path already rejected by M5h has zero transfer efficiency.</p></div>
+  <p>The work budget is then split as:</p>
+  <p><code>delivered work = available work × transfer efficiency</code></p>
+  <p><code>rejected/lost work = available work − delivered work</code></p>
+  <p>“Lost” is broad bookkeeping. The model does not yet distinguish friction, oil-film shear, impact, deformation, train friction, recoil or sound as separate physical loss channels.</p>
+
+  <h2>Delivered work scales Δω</h2>
+  <p>M5f still actuates the balance with an angular-velocity increment. M5i extends the impulse-admission interface so geometry may return a continuous scale as well as an admitted/denied result.</p>
+  <p>The current mapping is:</p>
+  <div class="callout"><strong>Δω scale ≈ √(transfer efficiency)</strong><p>The square root keeps the normalized work bookkeeping energy-like without claiming a calibrated balance inertia.</p></div>
+  <p>The resulting kick still contains M5f's reserve-derived drive term and amplitude saturation, but two admitted contacts with different polygon work paths can now deliver different Δω.</p>
+
+  <h2>Fast-forward behavior</h2>
+  <p>At detailed speeds every center crossing gets its own M5i work estimate. At very large diagnostic time scales M5f retains its explicit fast-forward envelope approximation. That approximation now uses the <strong>mean continuous impulse scale</strong> of representative alternating polygon paths instead of only the fraction of binary admitted paths.</p>
+
+  <h2>Live M5i diagnostics</h2>
+  <p>The <strong>Impulse work transfer · M5i</strong> panel reports:</p>
+  <ul>
+    <li>available train work;</li>
+    <li>delivered work;</li>
+    <li>rejected/lost work;</li>
+    <li>surface-follow distance in mm;</li>
+    <li>contact quality;</li>
+    <li>total transfer efficiency;</li>
+    <li>resulting Δω packet scale;</li>
+    <li>explicit work-transfer verdict.</li>
+  </ul>
+  <p>The M5h polygon solver panel and tooth/jewel overlay remain available at the same time, so the work result can be inspected against the actual finite surfaces that produced it.</p>
+
+  <h2>Current reconstruction parameters</h2>
   <div class="specs">
-    <div class="spec"><span>Tip radius</span><strong>2.25 mm</strong></div>
-    <div class="spec"><span>Tooth depth</span><strong>0.70 mm</strong></div>
-    <div class="spec"><span>Base width</span><strong>0.17 mm</strong></div>
-    <div class="spec"><span>Tip width</span><strong>26% base</strong></div>
-    <div class="spec"><span>Hook / skew</span><strong>0.22 mm</strong></div>
-    <div class="spec"><span>Release</span><strong>12° / beat</strong></div>
-  </div>
-  <p>These values mirror the current reconstructed visual primitive. They are not ETA tooth-production coordinates.</p>
-
-  <h2>Pallet-jewel polygon</h2>
-  <p>M5d already calibrated entry and exit working edges against the reconstructed escape-wheel phase. M5h retains those edges and extends each one back toward the pallet staff to form a finite convex jewel body. Current modeled jewel depth is <strong>0.18 mm</strong>.</p>
-
-  <h2>Separation and overlap</h2>
-  <p>A convex separating-axis test determines whether tooth and jewel polygons overlap. When separated, the solver also measures the nearest finite-surface distance. The UI exposes a signed polygon gap: positive for separation, approximately zero for contact, and negative for overlap.</p>
-  <p>The current maximum tolerated reconstruction overlap is <strong>0.018 mm</strong>. Larger penetration marks the surface solution unhealthy.</p>
-
-  <h2>Lock</h2>
-  <p>The escape wheel remains locked while the active starting tooth lies inside the current <strong>0.028 mm unlock surface gap</strong> relative to its pallet jewel. This replaces the earlier decision based only on a face-center travel distance.</p>
-
-  <h2>Impulse following</h2>
-  <p>Once lock clears, the solver searches the 12° half-tooth interval for the furthest forward angle where the starting tooth can still follow its jewel inside the current <strong>0.080 mm impulse envelope</strong> without excessive polygon penetration. That quasi-static surface-following angle becomes the candidate release.</p>
-
-  <h2>Drop and capture</h2>
-  <p>If the starting surfaces separate before the target pallet captures the incoming tooth, the solver enters <strong>DROP · POLYGON FREE FLIGHT</strong> and reports the finite-body gap. The target capture angle is the first angle where the incoming tooth approaches the opposite jewel inside the current <strong>0.030 mm capture gap</strong>, refined by a bounded binary search.</p>
-
-  <h2>Monotonic half-tooth release</h2>
-  <p>Within one beat the escape wheel is never allowed to numerically reverse. Once a greater release angle has been reached, later quasi-static noise cannot unwind that same half-tooth step. The next beat advances the completed half-tooth count and begins a new within-beat solve.</p>
-
-  <h2>Polygon-admitted impulse</h2>
-  <p>M5h installs its own polygon gate into M5f's impulse-admission hook. A balance center crossing remains only an opportunity. The corresponding entry→exit or exit→entry transition is sampled across the polygon solver; Δω reaches the balance only if a coherent finite-surface impulse interval exists and the penetration constraint remains healthy.</p>
-
-  <h2>Live M5h diagnostics</h2>
-  <p>The new <strong>Polygon contact solver · M5h</strong> panel reports current surface event, active surfaces, signed polygon gap, overlap depth, release angle, free-flight drop gap, polygon impulse-gate state, and solver health.</p>
-  <p>The optional overlay draws the starting jewel polygon, target jewel polygon, active escape-tooth polygon, and nearest contact/separation line directly over the movement.</p>
-
-  <h2>Current reconstruction thresholds</h2>
-  <div class="specs">
+    <div class="spec"><span>Tooth tip radius</span><strong>2.25 mm</strong></div>
+    <div class="spec"><span>Half-tooth release</span><strong>12°</strong></div>
     <div class="spec"><span>Unlock gap</span><strong>0.028 mm</strong></div>
     <div class="spec"><span>Capture gap</span><strong>0.030 mm</strong></div>
     <div class="spec"><span>Impulse envelope</span><strong>0.080 mm</strong></div>
     <div class="spec"><span>Max overlap</span><strong>0.018 mm</strong></div>
-    <div class="spec"><span>Jewel depth</span><strong>0.18 mm</strong></div>
-    <div class="spec"><span>Release samples</span><strong>72 / half-tooth</strong></div>
+    <div class="spec"><span>M5i work samples</span><strong>32 / opportunity</strong></div>
+    <div class="spec"><span>Reference follow</span><strong>40% half-tooth arc</strong></div>
+    <div class="spec"><span>Gap exponent</span><strong>1.35</strong></div>
   </div>
-  <p>All values in this block are simulation/reconstruction parameters.</p>
+  <p>All work/contact values in this block are simulation or reconstruction parameters, not ETA production measurements.</p>
 
-  <h2>What M5h still does not claim</h2>
+  <h2>What M5i improves</h2>
+  <p><strong>Before:</strong> valid contact → fixed admitted impulse packet.</p>
+  <p><strong>After:</strong> valid contact → measure polygon following → estimate transfer efficiency → split available work into delivered/lost work → continuously scale the balance impulse.</p>
+
+  <h2>What M5i still does not claim</h2>
   <ul>
-    <li>ETA production tooth or pallet-jewel CAD;</li>
-    <li>exact jewel bevels, edge radii, lock, draw, drop or banking dimensions;</li>
-    <li>rigid-body impact dynamics or contact stress;</li>
-    <li>oil films, sliding friction, rebound or elastic deformation;</li>
-    <li>measured pallet efficiency or physical impulse work;</li>
-    <li>calibrated train torque, balance inertia or hairspring stiffness;</li>
-    <li>factory timing performance.</li>
+    <li>work in joules;</li>
+    <li>measured ETA barrel or escape-wheel torque;</li>
+    <li>force vectors integrated over the tooth/pallet contact surface;</li>
+    <li>real pallet sliding friction or lubrication losses;</li>
+    <li>measured pallet efficiency;</li>
+    <li>elastic impact, rebound, deformation or contact stress;</li>
+    <li>calibrated balance inertia or hairspring elastic energy;</li>
+    <li>train inertia, tooth friction or production timing performance.</li>
   </ul>
 
   <h2>Inspection workflow</h2>
-  <p>Wind the watch, choose <strong>Escapement</strong>, assemble the movement, enable <strong>Show M5h tooth / jewel polygons</strong>, and run at 0.1× or 0.25×. Compare polygon gap, overlap, release angle, drop gap and impulse admission with the M5f θ/ω phase portrait. The older M5d overlay can remain enabled for a direct point/segment-versus-polygon comparison.</p>
+  <p>Wind the watch, choose <strong>Escapement</strong>, assemble it, enable <strong>Show M5h tooth / jewel polygons</strong>, and run at 0.1× or 0.25×. Compare surface-follow distance, contact quality, transfer efficiency and delivered work with the M5f θ/ω state, phase portrait and Last impulse Δω readout.</p>
 
   <h2>Next work</h2>
-  <h3>M5i — impulse work / force proxy</h3><p>Use finite-surface following distance and available train drive to derive normalized available and delivered impulse work, then make Δω proportional to delivered work instead of a binary admitted/denied gate.</p>
-  <h3>M5j — roller and safety polygons</h3><p>Bring the roller jewel, fork slot, horns and safety dart into the same finite collision framework so fork engagement and overbanking prevention become geometric checks rather than presentation anatomy.</p>
-  <h3>M6 — shared system mechanics</h3><p>Separate barrel-arbor winding from barrel-drum release, represent train load/torque transmission more explicitly, and consolidate barrel torque, escapement work, oscillator state and reserve into one shared system model.</p>
+  <h3>M6a — barrel and train-side torque state</h3><p>Separate barrel-arbor winding from barrel-drum release, give the spring a normalized torque-vs-state curve, represent train-side load/transmission, and feed M5i's available-work budget from that explicit drive state instead of directly from reserve.</p>
+  <h3>Later escapement geometry</h3><p>Add finite roller-jewel / fork-slot polygons and horn / safety-dart collision checks, then improve tooth and pallet shapes as defensible reference geometry becomes available.</p>
+  <h3>M6 shared system mechanics</h3><p>Consolidate barrel torque, train transmission, escapement work, oscillator state and reserve into one shared mechanical state and migrate normalized assumptions toward measured/reference parameters where possible.</p>
 
   <h2>Sources</h2>
   <div class="source"><strong>ETA — current 6497-2 Technical Communication</strong><p><a href="https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/">official dimensions, rate, reserve, lift angle and service data</a></p></div>
