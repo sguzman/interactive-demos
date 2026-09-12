@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M3d',
-  label: 'compound train planes and staff alignment',
-  note: 'M3c solved nominal pitch radii from the current reference-derived centre coordinates. M3d now separates the compound wheel bodies into explicit z-planes and places each driven pinion in the plane of the upstream wheel that meshes with it. Heights remain reconstruction geometry, not ETA manufacturing dimensions.'
+  id: 'M3e',
+  label: 'pitch-envelope meshing and contact phase',
+  note: 'M3e keeps the pitch-derived radii and compound axial planes, then aligns the simplified visual tooth envelopes around those pitch circles and solves static tooth/gap phase offsets through the centre→third→seconds→escape pinion chain. Optional pitch-circle guides expose the hidden wheel-to-pinion contacts. Geometry remains a reference reconstruction, not ETA manufacturing CAD.'
 };
