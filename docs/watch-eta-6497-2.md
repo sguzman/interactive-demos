@@ -2,7 +2,7 @@
 
 ## Current state
 
-**Milestone: M5c — reserve-coupled oscillator amplitude.**
+**Milestone: M5d — geometry-constrained escapement contact.**
 
 This remains an educational reconstruction, not manufacturing CAD. Official movement facts, reference-derived geometry, approximation, and presentation-only simulation assumptions remain separate provenance classes.
 
@@ -94,101 +94,112 @@ Current M5b targets remain presentation/reconstruction values, not ETA tolerance
 
 ## M5c — reserve-coupled oscillator amplitude
 
-M5c removes the previous assumption that the balance always has the same amplitude whenever the watch has any power.
+M5c removed the assumption that the balance always has the same amplitude whenever the watch has any power.
 
-The balance now carries a **normalized oscillator-amplitude state** from 0 to 1. That state is deliberately dimensionless: it is not being presented as a measured ETA balance amplitude in degrees.
+The balance carries a normalized oscillator-amplitude state from 0 to 1. Between escapement events that state loses amplitude through a normalized damping model; successful unlocks add discrete impulse packets whose strength depends on a reconstruction-level barrel-drive proxy.
 
-### Damping between beats
+Current educational dynamics parameters include:
 
-Between escapement events, normalized balance amplitude decays exponentially. The current educational damping coefficient is:
+- damping: **0.16 / simulated second**;
+- maximum normalized impulse coefficient: **0.070**;
+- unlock threshold: **0.18 normalized amplitude**;
+- restart reserve threshold: **1.2%**;
+- restart amplitude seed: **0.34 normalized amplitude**.
 
-- **0.16 / simulated second**.
+Near the bottom of reserve, the drive proxy weakens enough that damping can exceed replenishment. The oscillator can therefore enter **STOPPED · ESCAPEMENT** while residual reserve remains. That reserve is held rather than consumed through a motionless train.
 
-This is a simulation parameter, not a measured friction or hairspring-loss coefficient.
+These are simulation parameters, not ETA torque, inertia, hairspring or measured balance-amplitude data.
 
-### Discrete impulse packets
+## M5d — geometry-constrained escapement contact
 
-At each successful beat, the escapement adds a discrete impulse packet to the oscillator state rather than simply resetting the balance to a fixed animation amplitude.
+M5d moves the escape-wheel release decision away from fixed fractions of a beat and toward spatial contact geometry.
 
-The maximum normalized packet coefficient is currently:
+### Contact-face calibration
 
-- **0.070**.
+The solver starts from the existing reference-derived movement centres for the escape wheel and pallet fork. It then aligns a reconstructed **entry pallet contact face** to the nearest visible escape-wheel tooth around the expected pallet contact sector. The **exit pallet contact face** is calibrated one half-tooth later.
 
-Actual packet strength is multiplied by a reconstruction-level **barrel-drive proxy** derived from remaining normalized reserve. High reserve gives stronger packets; very low reserve gives weaker packets.
+Because the escape wheel has 15 teeth:
 
-### Barrel-drive proxy
+- tooth pitch = **24°**;
+- one Swiss-lever half-tooth release = **12°**.
 
-M5c introduces a deliberately non-production drive proxy so the relationship between reserve and amplitude can be inspected.
+The solver therefore maintains an alternating entry/exit contact sequence tied directly to the visible escape-wheel phase rather than an arbitrary independent animation phase.
 
-The proxy has two parts:
+### Spatial event boundaries
 
-- a broad decline across the reserve range;
-- a deliberately visible collapse near the bottom of reserve.
+The old M5a/M5b event labels were primarily triggered by fractions of one 1/6 s beat. M5d instead measures pallet-face movement in millimetres.
 
-The collapse region begins around **0.15% normalized reserve** and spans roughly another **1.5%**. Those values are simulation choices designed to make end-of-reserve behavior visible. They are not an ETA mainspring torque curve.
+Current reconstruction contact targets are:
 
-### Unlock threshold
+- unlock clearance: **0.030 mm** of start-face travel;
+- target-face capture distance: **0.040 mm**;
+- nominal contact tolerance: **0.035 mm**;
+- tooth/face penetration guard: **0.006 mm**.
 
-The pallet is now allowed to continue releasing the train only while normalized balance amplitude remains above a reconstruction threshold:
+These values are explicitly **reconstruction targets**, not ETA production tolerances.
 
-- **unlock threshold: 0.18 normalized amplitude**.
+The event labels are now derived from those spatial relations:
 
-When amplitude falls below that threshold, the power-release gate changes to **STOPPED · ESCAPEMENT** / **LOW BALANCE AMPLITUDE**.
+- **LOCK** while the active face has not moved beyond the unlock clearance;
+- **UNLOCK** once the starting face has spatially cleared;
+- **IMPULSE** while the opposite face is still approaching and the tooth travels through the allowed half-step;
+- **DROP / APPROACH** near the end of release;
+- **LOCK** again once the target face enters the capture region.
 
-Crucially, remaining mainspring reserve is then **held rather than silently consumed** through a motionless train.
+### Tooth-to-segment contact test
 
-This creates a second causal gate:
+For each beat, M5d tracks the specific escape-wheel tooth expected to interact with the current entry/exit face. It evaluates the distance from that tooth tip to the reconstructed face segment in the movement design plane.
 
-> stored reserve is necessary, but usable oscillator amplitude is also necessary.
+That contact distance is exposed live in the UI. The solver also runs a short one-dimensional search when the candidate release would drive the tooth too close through the target face. The release angle is then clamped back to the last non-penetrating solution.
 
-### Restart behavior
+This is the first pass where a geometric contact test can directly limit escape-wheel motion rather than merely describing it after the fact.
 
-If the oscillator has stalled, winding can restart it. The current restart rule is:
+### Geometry-derived released train time
 
-- reserve must be at least **1.2% normalized**;
-- the educational restart seeds normalized balance amplitude to **0.34**.
+The geometry solver produces a release fraction from 0 to 1 across each half-tooth event. That fraction determines the escape-wheel angle:
 
-This is a practical interaction rule because the demo has no wrist-shake / manual balance-start gesture. It is not a claim about the exact self-start behavior of a real 6497-2.
+> completed half-steps + current geometry-constrained half-step fraction
 
-### What now happens near the end of reserve
+The resulting escape angle is converted back into released train time exactly as in M5a. Therefore the fourth/seconds, third and centre wheels and the hands now inherit **geometry-constrained escape release**, not the old beat-window release fraction.
 
-As reserve falls:
+### Solver diagnostics
 
-1. the barrel-drive proxy weakens;
-2. each impulse packet becomes smaller;
-3. damping removes more amplitude than weak impulses restore;
-4. balance amplitude trends downward;
-5. unlock margin approaches zero;
-6. the escapement can stall before the normalized spring state reaches mathematical zero;
-7. the remaining residual reserve stays stored until the user winds again.
+M5d adds a dedicated live panel showing:
 
-The UI exposes:
+- geometry event;
+- active constraint;
+- start-face travel in millimetres;
+- target-face remaining distance in millimetres;
+- tooth-to-face gap;
+- active escape-wheel tooth number;
+- geometry-derived release percentage;
+- solver health.
 
-- normalized balance amplitude;
-- oscillator state;
-- normalized barrel-drive proxy;
-- current impulse packet strength;
-- unlock margin;
-- successful impulse count;
-- missed-unlock count.
+An optional overlay draws the two reconstructed solver faces, the expected contact tooth, the nearest contact point, and the path between the calibrated entry/exit contact targets.
 
-## What M5c intentionally does not claim
+The solver intentionally works in the **assembled movement design coordinates**. Exploded-view offsets are presentation-only and do not change the mechanical contact solution; assemble the watch for the clearest visual agreement between the overlay and the mechanism.
 
-M5c still does **not** model or assert:
+### Geometry health gate
 
-- ETA balance inertia;
-- hairspring stiffness or exact torque law;
-- measured balance amplitude in degrees;
-- actual barrel torque curve;
-- pallet efficiency;
-- lubrication losses;
-- aerodynamic losses;
-- position-dependent amplitude;
-- rate error caused by amplitude;
-- exact self-start threshold;
-- exact relationship between reserve percentage and delivered impulse.
+M5d also adds a defensive contact-health gate. If the reconstruction produces an invalid contact solution, the power system is allowed to hold rather than silently consume reserve while impossible geometry continues moving.
 
-The oscillator is now dynamically stateful, but the values are normalized educational dynamics rather than calibrated production physics.
+Normal calibrated operation should remain in **CONTACT SOLVER OK**.
+
+## What M5d still does not claim
+
+M5d is a significant step toward contact-based behavior, but it is still not a rigid-body or production escapement simulation. It does **not yet** claim:
+
+- measured ETA pallet-face coordinates;
+- exact escape-tooth tip geometry;
+- exact lock depth, draw, drop, or banking-pin coordinates;
+- continuous collision manifolds between real polygonal tooth and jewel surfaces;
+- friction, lubrication, elastic deformation, rebound, or impact dynamics;
+- actual pallet impulse efficiency;
+- measured balance inertia or hairspring torque;
+- amplitude-dependent rate error;
+- positional timing effects.
+
+The contact solver uses simplified tooth-tip-to-face-segment geometry and explicit reconstruction clearances. Its purpose is to move causality into geometry without pretending we already possess factory CAD or calibrated physics.
 
 ## Inspection tools
 
@@ -200,6 +211,8 @@ Useful controls now include:
 - **Step next event**;
 - **Step one beat**;
 - live balance-amplitude / impulse / unlock-margin readouts;
+- live M5d contact-solver distances and release state;
+- optional M5d solver-face / contact overlay;
 - pallet-face / safety diagnostics;
 - train pitch/contact guides;
 - train stack and endshake diagnostics;
@@ -215,19 +228,19 @@ Useful controls now include:
 
 ## Next milestones
 
-### M5d — geometry-constrained escapement
-
-- replace more event-window assumptions with tooth/pallet intersection tests;
-- derive lock and release from reconstructed face geometry;
-- improve drop and safety validation from geometry;
-- migrate diagnostic targets toward measured/reference dimensions where available.
-
 ### M5e — amplitude / rate coupling
 
 - let normalized balance amplitude affect oscillator rate rather than keeping frequency perfectly fixed at nominal 3 Hz;
 - expose rate error as an educational output;
 - distinguish nominal specification from simulated instantaneous rate;
 - preserve clear provenance around any assumed isochronism model.
+
+### M5f — deeper geometric contact
+
+- replace tooth-tip/face-segment tests with actual reconstructed tooth and pallet-face polygons;
+- derive lock depth and drop from polygon intersections;
+- validate horn / roller-jewel safety geometry from the same contact framework;
+- migrate reconstruction targets toward measured/reference dimensions where available.
 
 ### M6 — system simulation
 
