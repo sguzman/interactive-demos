@@ -11,11 +11,11 @@
 </head>
 <body><main>
   <nav class="top"><a href="../">← Interactive Demos</a><a href="../watch/">Open 3D demo ↗</a></nav>
-  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M5F</div>
+  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M5G</div>
   <h1>ETA / Unitas 6497-2</h1>
-  <p class="lead">M5f turns the balance from an assigned phase clock into an integrated oscillator. Angle and angular velocity now evolve under restoring force, damping, and discrete escapement impulse kicks; recovered oscillator phase then drives the geometry-constrained Swiss lever and the downstream train.</p>
+  <p class="lead">M5g couples the reconstructed escapement contact path directly to the integrated balance. A center crossing is now only an impulse opportunity: the M5d tooth/pallet geometry must admit a coherent impulse interval before M5f is allowed to add Δω to the balance.</p>
 
-  <div class="callout"><strong>Accuracy contract.</strong><p>The official reference remains 3 Hz / 21,600 A/h. M5f improves causal architecture, but its damping, impulse gain, visual amplitude normalization, restart state, and amplitude-rate law are educational reconstruction parameters—not measured ETA balance inertia, hairspring stiffness, Q, pallet efficiency, or factory timing data.</p></div>
+  <div class="callout"><strong>Accuracy contract.</strong><p>The official reference remains 3 Hz / 21,600 A/h. M5g improves causal structure, but the pallet faces, contact clearances, impulse envelope, damping, impulse gain and oscillator constants remain educational reconstruction parameters rather than ETA factory geometry or measured dynamics.</p></div>
 
   <h2>Official movement facts</h2>
   <div class="specs">
@@ -24,98 +24,69 @@
     <div class="spec"><span>Jewels</span><strong>17</strong></div><div class="spec"><span>Power reserve</span><strong>53 h min / 60 h typical</strong></div>
   </div>
 
-  <h2>Foundation retained from M3–M5e</h2>
-  <p>M3 established the reference-derived train topology, axial wheel planes, staffs, jewels, pitch and clearance diagnostics. M4 made winding, hand-setting and reserve stateful. M5a–M5d made Swiss-lever release event-resolved and then geometry-constrained using reconstructed pallet faces and tooth/contact distances. M5e exposed amplitude-dependent rate explicitly instead of assuming perfect timekeeping at every usable amplitude.</p>
+  <h2>Foundation retained</h2>
+  <p>M3 established the reference-derived train and its pitch/stack diagnostics. M4 added causal winding, setting and reserve. M5a–M5d made Swiss-lever release event-resolved and then geometry-constrained. M5e exposed amplitude-dependent rate. M5f replaced the assigned phase clock with an integrated oscillator carrying explicit balance angle θ and angular velocity ω.</p>
 
-  <h2>M5f — explicit oscillator state</h2>
-  <p>The balance now owns two primary states:</p>
-  <div class="specs">
-    <div class="spec"><span>Angular position</span><strong>θ</strong></div>
-    <div class="spec"><span>Angular velocity</span><strong>ω</strong></div>
-    <div class="spec"><span>Nominal natural frequency</span><strong>2π · 3 rad/s</strong></div>
-  </div>
-  <p>Those values are advanced numerically rather than reconstructed from a preassigned phase clock.</p>
+  <h2>M5g — geometry decides whether impulse exists</h2>
+  <p>M5f still had one shortcut: a usable center crossing plus reserve and a healthy solver automatically received an angular-velocity kick.</p>
+  <p>M5g removes that shortcut. The center crossing now asks the calibrated M5d contact path whether an impulse interval actually exists for the corresponding alternating entry/exit pallet transition.</p>
 
-  <h2>Restoring and damping terms</h2>
-  <p>The educational balance/hairspring equation is approximately:</p>
-  <div class="callout"><strong>θ¨ = −ωₙ²θ − 2ζωₙω</strong><p>The first term is the hairspring-like restoring acceleration; the second is velocity-dependent damping. M5f currently uses a normalized damping ratio around 0.006. No claim is made that this equals the physical 6497-2 balance/hairspring damping coefficient.</p></div>
+  <div class="callout"><strong>crown → reserve → drive proxy → center crossing → pallet/tooth impulse-path gate → Δω → integrated θ/ω → contact-constrained escape release → train → hands</strong><p>The same reconstructed escapement topology can now veto both escape-wheel motion and energy transfer into the balance.</p></div>
 
-  <h2>Escapement impulse is now Δω</h2>
-  <p>Successful impulse no longer directly adds “amplitude.” Near a balance center crossing, the escapement can add an angular-velocity increment in the direction of motion. The maximum current reconstruction kick is about <strong>0.42 rad/s</strong> before reserve and saturation scaling.</p>
-  <p>Stored reserve still feeds a normalized barrel-drive proxy, so declining reserve reduces the impulse available to sustain the oscillator.</p>
-
-  <h2>Amplitude emerges from phase space</h2>
-  <p>Normalized balance amplitude is now derived from the current θ/ω state rather than being the oscillator's primary state:</p>
-  <div class="callout"><strong>amplitude ∝ √(θ² + (ω/ω₀)²)</strong><p>The current visual normalization uses about 0.43 rad as the 100% angle scale. That is a presentation normalization, not a sourced physical balance amplitude.</p></div>
-
-  <h2>Phase is measured from the oscillator</h2>
-  <p>M5f recovers phase approximately as <code>atan2(ωₙθ, ω)</code>, unwraps it continuously, and converts that phase into the time coordinate used by the M5d pallet/contact solver.</p>
-  <p>This is the architectural reversal that matters: previously phase was assigned first and the balance followed. Now θ and ω evolve first and phase is measured from that state.</p>
-
-  <h2>Geometry-constrained release remains downstream</h2>
-  <p>M5d still constrains escape-wheel release from reconstructed contact geometry. Current contact targets remain 0.030 mm unlock travel, 0.040 mm capture distance, 0.035 mm nominal contact tolerance, and a 0.006 mm penetration guard.</p>
-  <p>The recovered oscillator phase drives pallet motion; the contact solver determines the allowed half-tooth escape release; that released angle is converted into train time for the fourth/seconds, third and centre wheels and the hands.</p>
-
-  <h2>Current causal chain</h2>
-  <div class="callout"><strong>crown → stored reserve → drive proxy → impulse Δω → integrated balance θ/ω → recovered phase → pallet/contact geometry → escape release → train → hands</strong><p>M5f is the first milestone where balance phase is genuinely downstream of a dynamical state instead of being a prescribed input.</p></div>
-
-  <h2>Live M5f diagnostics</h2>
-  <p>The new panel reports balance angle, angular velocity, normalized amplitude, restoring acceleration, damping acceleration, last impulse Δω, effective frequency, educational seconds/day error, accumulated phase drift, center crossings, successful impulses, and the current integrator mode.</p>
-  <p>A live phase portrait plots <strong>θ</strong> against <strong>ω/ω₀</strong>. Damping tends to spiral the state inward; repeated escapement impulses replenish it.</p>
-
-  <h2>Detailed ODE integration versus fast-forward</h2>
-  <p>At normal and slow speeds the oscillator is stepped with small numerical substeps, targeting roughly <strong>1/240 s</strong> of simulated mechanical time per integration step.</p>
-  <p>At very large diagnostic time scales, explicitly integrating thousands of 3 Hz cycles per rendered browser frame would be wasteful and could make the UI unusable. M5f therefore switches to a clearly labeled <strong>FAST-FORWARD ENVELOPE</strong> approximation that advances amplitude and phase in aggregate, then reconstructs θ and ω. The UI tells you when that mode is active.</p>
-
-  <h2>M5e isochronism retained as a transparent modifier</h2>
-  <p>The earlier amplitude-rate curve remains available as a user-adjustable natural-frequency modifier:</p>
+  <h2>Admission test</h2>
+  <p>For every detailed center crossing, M5g samples the reconstructed pallet/tooth path across the unlock and impulse region. An impulse is admitted only if:</p>
   <ul>
-    <li><strong>0×</strong> — nominal spring / no assumed amplitude-rate coupling;</li>
-    <li><strong>1×</strong> — educational curve;</li>
-    <li><strong>5×</strong> — diagnostic exaggeration;</li>
-    <li><strong>20×</strong> — extreme inspection.</li>
+    <li>the starting face clears the M5d unlock threshold;</li>
+    <li>the geometry-derived half-tooth release spans a real impulse interval;</li>
+    <li>the tracked tooth remains inside the reconstruction-level contact envelope;</li>
+    <li>the M5d penetration guard can keep the path non-penetrating;</li>
+    <li>the contact solution remains finite and coherent.</li>
   </ul>
-  <p>At 1× the current reconstruction curve uses a reference amplitude around 0.74, a low-amplitude endpoint near −120 s/day, and a high-amplitude endpoint near +12 s/day. Those remain explicit assumptions rather than measured ETA data.</p>
+  <p>If the path fails any test, the M5f balance receives no Δω for that crossing.</p>
 
-  <h2>Power-system ownership</h2>
-  <p>M5f now owns the escapement power gate. The M4c reserve system exposes its original reserve-consuming advance path so the M5f oscillator can decide whether motion is physically permitted, hold reserve on an oscillator/contact stall, and then call the original reserve accounting only when the mechanism is allowed to run.</p>
-
-  <h2>Current reconstruction dynamics</h2>
+  <h2>Reused M5d contact targets</h2>
   <div class="specs">
-    <div class="spec"><span>Damping ratio</span><strong>0.006</strong></div>
-    <div class="spec"><span>Max impulse Δω</span><strong>≈0.42 rad/s</strong></div>
-    <div class="spec"><span>Unlock amplitude</span><strong>0.18 normalized</strong></div>
-    <div class="spec"><span>Restart reserve</span><strong>1.2%</strong></div>
-    <div class="spec"><span>Restart amplitude</span><strong>0.34 normalized</strong></div>
-    <div class="spec"><span>Detailed step target</span><strong>1/240 s</strong></div>
+    <div class="spec"><span>Escape wheel</span><strong>15 teeth</strong></div>
+    <div class="spec"><span>Tooth pitch</span><strong>24°</strong></div>
+    <div class="spec"><span>Half-tooth release</span><strong>12° / beat</strong></div>
+    <div class="spec"><span>Unlock travel</span><strong>0.030 mm</strong></div>
+    <div class="spec"><span>Capture distance</span><strong>0.040 mm</strong></div>
+    <div class="spec"><span>Penetration guard</span><strong>0.006 mm</strong></div>
   </div>
-  <p>Every value in this block is a simulation/reconstruction parameter except the nominal 3 Hz reference.</p>
+  <p>The nominal tooth/face contact tolerance remains 0.035 mm. M5g derives a wider diagnostic admission envelope from that reconstruction tolerance so the gate tests the coherence of a path rather than pretending a single idealized point is a manufacturing contact patch.</p>
 
-  <h2>What M5f still does not claim</h2>
+  <h2>Live M5g diagnostics</h2>
+  <p>The new <strong>Impulse contact gate · M5g</strong> panel reports gate decision, pallet transition, nearest sampled tooth/face gap, release span, impulse-path sample count, explicit reason for admission or denial, and accepted/denied geometry probes.</p>
+  <p>An optional marker shows the tracked tooth and nearest reconstructed face point. Green indicates an admitted path; red indicates a denied path.</p>
+
+  <h2>M5f oscillator remains physical-state driven</h2>
+  <p>The balance still evolves as explicit θ/ω state under a normalized restoring term and damping term. Impulse remains an angular-velocity increment rather than a direct amplitude assignment. The phase portrait, effective frequency, rate error and phase-drift diagnostics remain active.</p>
+  <p>The current reconstruction uses approximately 0.006 damping ratio, 0.42 rad/s maximum normalized impulse kick before drive/saturation scaling, 0.18 normalized unlock amplitude, 1.2% restart reserve and a 0.34 restart-amplitude seed. These are simulation parameters, not ETA measurements.</p>
+
+  <h2>Fast-forward behavior</h2>
+  <p>At ordinary speeds every center crossing runs the detailed M5g geometry admission test. At very large diagnostic time scales, M5f still uses its explicit fast-forward envelope approximation. M5g probes both alternating pallet parities and uses the admitted fraction to scale average impulse replenishment, avoiding thousands of contact solves per browser frame.</p>
+
+  <h2>Why M5g matters</h2>
+  <p>Before this pass, geometry controlled how far the escape wheel could move, but energy transfer into the oscillator was still admitted one abstraction earlier. M5g closes that mismatch: bad contact geometry can now deny the impulse itself.</p>
+  <p>This still is not rigid-body physics, but the mechanism is less like separately choreographed animation and more like a single causal loop.</p>
+
+  <h2>What M5g still does not claim</h2>
   <ul>
-    <li>measured ETA balance inertia or hairspring stiffness;</li>
-    <li>actual damping/Q or escapement efficiency;</li>
-    <li>real impulse torque, contact duration or oil friction;</li>
-    <li>physical balance amplitude in degrees;</li>
-    <li>regulator-pin geometry, poise error, beat error or positional timing;</li>
-    <li>temperature effects or shock response;</li>
-    <li>calibrated barrel torque-to-oscillator dynamics;</li>
+    <li>exact ETA escape-tooth or pallet-jewel polygons;</li>
+    <li>measured lock, draw, drop or impulse-face geometry;</li>
+    <li>rigid-body collision manifolds;</li>
+    <li>friction, lubrication, elastic impact or rebound;</li>
+    <li>actual pallet efficiency or calibrated impulse work;</li>
+    <li>measured balance inertia, hairspring stiffness or physical amplitude;</li>
     <li>factory timing performance.</li>
   </ul>
 
   <h2>Inspection workflow</h2>
-  <p>Wind the watch, choose the <strong>Escapement</strong> view, and use 0.1×, 0.25×, 0.5× or 1× to inspect the actual θ/ω integration. Watch restoring acceleration, damping and Δω while the phase portrait loops. Enable the M5d solver overlay to compare oscillator-driven pallet phase with contact geometry. Use 300× or 3600× for reserve/run-down demonstrations; the integrator readout will explicitly switch to fast-forward envelope mode.</p>
-
-  <h2>Provenance classes</h2>
-  <p><span class="badge official">official</span> Directly supported by technical material.</p>
-  <p><span class="badge reference">reference-derived</span> Reconstructed from service diagrams, teardown photographs or multiple references.</p>
-  <p><span class="badge approx">approximate</span> Simplified geometry preserving mechanical role and relationship.</p>
-  <p><span class="badge presentation">presentation</span> Geometry, thresholds, controls or normalized simulation assumptions added for readability and interaction.</p>
+  <p>Wind the watch, choose <strong>Escapement</strong>, assemble the movement, enable both the M5d solver overlay and the M5g impulse marker, then run at 0.1× or 0.25×. Watch the gate decision together with θ, ω, Δω, the contact gap and geometry-derived escape release.</p>
 
   <h2>Next work</h2>
-  <h3>M5g — geometry-admitted impulse</h3><p>Make the M5d impulse-contact state itself admit or reject each M5f Δω packet, so an eligible center crossing is no longer sufficient by itself. Expose delivered impulse work and missed-contact diagnostics.</p>
-  <h3>M5h — deeper polygonal contact</h3><p>Replace tooth-tip/segment distance with reconstructed tooth and pallet-face polygon intersection, derive lock/drop from those surfaces, and bring roller-jewel/fork-slot safety checks into the same contact framework.</p>
-  <h3>M6 — shared system simulation</h3><p>Separate barrel-arbor winding from barrel-drum release, improve train force transmission, and consolidate barrel torque, escapement impulse, oscillator state and reserve into one system model.</p>
+  <h3>M5h — polygonal tooth/jewel contact</h3><p>Replace tooth-tip / line-segment contact with reconstructed escape-tooth and pallet-jewel polygons, derive lock/drop/impulse intervals from surface intersections, and bring roller-jewel/fork-slot safety into the same geometry framework.</p>
+  <h3>M6 — shared system mechanics</h3><p>Separate barrel-arbor winding from barrel-drum release, represent train load/torque transmission more explicitly, and consolidate barrel torque, train load, escapement contact, oscillator state and reserve into one system model.</p>
 
   <h2>Sources</h2>
   <div class="source"><strong>ETA — current 6497-2 Technical Communication</strong><p><a href="https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/">official dimensions, rate, reserve, lift angle and service data</a></p></div>
