@@ -66,11 +66,13 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
 
   const windingSystem = powerSystem.windingSystem;
   const inheritedAdvance = powerSystem.advance.bind(powerSystem);
+  let loadModelProvider = null;
 
   const state = {
     targetLoad: FEEDBACK.baseLoad,
     trainLoad: FEEDBACK.baseLoad,
     transmissionEfficiency: FEEDBACK.nominalTransmission,
+    transmissionCeiling: FEEDBACK.nominalTransmission,
     driveMargin: 0,
     escapementDrive: 0,
     impulseDemand: 0,
@@ -78,6 +80,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     amplitudePenalty: 0,
     geometryPenalty: 0,
     stalledPenalty: 0,
+    modelSource: 'M6b aggregate feedback',
     verdict: 'unwound',
     initialized: false
   };
@@ -98,6 +101,17 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     return base.springTorqueForTwist?.(twist) ?? clamp01(base.barrelState?.springTorque ?? twist);
   }
 
+  function providerResult(context) {
+    if (!loadModelProvider) return null;
+    try {
+      const result = loadModelProvider(context);
+      return result && typeof result === 'object' ? result : null;
+    } catch (error) {
+      console.warn('M6b load-model provider failed', error);
+      return null;
+    }
+  }
+
   function deriveDemand() {
     const work = base.impulseWorkState?.lastWork;
     const oscillator = base.state;
@@ -111,7 +125,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     state.geometryPenalty = geometryHealthy ? 0 : FEEDBACK.geometryPenalty;
     state.stalledPenalty = powerSystem.state.status === 'stalled' ? FEEDBACK.stalledPenalty : 0;
 
-    const target =
+    const aggregateTarget =
       FEEDBACK.baseLoad +
       (running ? FEEDBACK.runningLoad : 0) +
       FEEDBACK.impulseDemandGain * state.impulseDemand +
@@ -120,7 +134,29 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
       state.geometryPenalty +
       state.stalledPenalty;
 
+    const external = providerResult({
+      aggregateTarget,
+      running,
+      work,
+      amplitude,
+      geometryHealthy,
+      powerStatus: powerSystem.state.status,
+      blockReason: powerSystem.state.blockReason || '',
+      springTorque: springTorque(),
+      feedback: { ...state }
+    });
+
+    const target = Number.isFinite(Number(external?.targetLoad))
+      ? Number(external.targetLoad)
+      : aggregateTarget;
+    const ceiling = Number.isFinite(Number(external?.transmissionCeiling))
+      ? Number(external.transmissionCeiling)
+      : FEEDBACK.nominalTransmission;
+
     state.targetLoad = THREE.MathUtils.clamp(target, FEEDBACK.loadMin, FEEDBACK.loadMax);
+    state.transmissionCeiling = THREE.MathUtils.clamp(ceiling, 0.55, 1);
+    state.modelSource = external?.source || 'M6b aggregate feedback';
+
     if (!state.initialized) {
       state.trainLoad = state.targetLoad;
       state.initialized = true;
@@ -134,9 +170,9 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     state.driveMargin = torque - state.trainLoad;
     const loadRatio = clamp01(state.trainLoad / Math.max(1e-6, torque));
     state.transmissionEfficiency = THREE.MathUtils.clamp(
-      FEEDBACK.nominalTransmission - FEEDBACK.loadTransmissionLoss * loadRatio,
+      state.transmissionCeiling - FEEDBACK.loadTransmissionLoss * loadRatio,
       0.55,
-      FEEDBACK.nominalTransmission
+      state.transmissionCeiling
     );
     const usable = Math.max(0, state.driveMargin);
     state.escapementDrive = clamp01(usable / Math.max(1e-6, 1 - FEEDBACK.baseLoad) * state.transmissionEfficiency);
@@ -160,11 +196,9 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     deriveDrive();
   }
 
-  // Replace M6a's static work budget with the closed-loop drive after dynamic
-  // reaction load and load-dependent transmission have been applied.
   base.setImpulseWorkBudgetProvider?.(() => ({
     availableWork: state.escapementDrive,
-    source: 'M6b barrel torque → dynamic reaction load → transmission'
+    source: `${state.modelSource} → M6b reaction-load transmission`
   }));
 
   powerSystem.advance = (realSeconds, mechanicalScale = 1) => {
@@ -217,7 +251,11 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     loadFeedbackState: state,
     update,
     feedbackConstants: { ...FEEDBACK },
-    refreshLoadFeedback: refreshFeedback
+    refreshLoadFeedback: refreshFeedback,
+    setLoadModelProvider(callback) {
+      loadModelProvider = typeof callback === 'function' ? callback : null;
+      refreshFeedback();
+    }
   };
 }
 
