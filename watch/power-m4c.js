@@ -1,7 +1,8 @@
 const STATUS = {
   running: 'RUNNING',
   paused: 'PAUSED',
-  unwound: 'STOPPED · UNWOUND'
+  unwound: 'STOPPED · UNWOUND',
+  stalled: 'STOPPED · ESCAPEMENT'
 };
 
 function formatElapsed(seconds) {
@@ -18,7 +19,8 @@ export function createPowerReleaseSystem({ windingSystem, root = document }) {
     totalConsumedSeconds: 0,
     running: false,
     status: 'unwound',
-    lastConsumedSeconds: 0
+    lastConsumedSeconds: 0,
+    blockReason: ''
   };
 
   const ui = {
@@ -29,19 +31,39 @@ export function createPowerReleaseSystem({ windingSystem, root = document }) {
   };
 
   function syncUI(scale = 1) {
-    if (ui.status) ui.status.value = STATUS[state.status];
+    if (ui.status) ui.status.value = STATUS[state.status] ?? STATUS.unwound;
     if (ui.elapsed) ui.elapsed.value = formatElapsed(state.mechanicalElapsedSeconds);
-    if (ui.flow) ui.flow.value = state.status === 'running' ? 'BARREL → TRAIN' : 'NO RELEASE';
+    if (ui.flow) {
+      if (state.status === 'running') ui.flow.value = 'BARREL → TRAIN';
+      else if (state.status === 'stalled') ui.flow.value = 'HELD AT ESCAPEMENT';
+      else ui.flow.value = 'NO RELEASE';
+    }
     if (ui.gate) {
       if (state.status === 'unwound') ui.gate.value = 'BLOCKED · NO ENERGY';
+      else if (state.status === 'stalled') ui.gate.value = `BLOCKED · ${state.blockReason || 'ESCAPEMENT'}`;
       else if (state.status === 'paused') ui.gate.value = `PAUSED · ${scale}×`;
       else ui.gate.value = `OPEN · ${scale}×`;
     }
   }
 
+  function hold(mechanicalScale = 1, reason = 'ESCAPEMENT') {
+    const scale = Math.max(0, Number(mechanicalScale) || 0);
+    state.running = false;
+    state.lastConsumedSeconds = 0;
+    state.blockReason = reason;
+
+    if (windingSystem.state.energy <= 0) state.status = 'unwound';
+    else if (scale <= 0) state.status = 'paused';
+    else state.status = 'stalled';
+
+    syncUI(scale);
+    return 0;
+  }
+
   function advance(realSeconds, mechanicalScale = 1) {
     const scale = Math.max(0, Number(mechanicalScale) || 0);
     const dt = Math.max(0, Number(realSeconds) || 0);
+    state.blockReason = '';
 
     if (windingSystem.state.energy <= 0) {
       state.running = false;
@@ -80,6 +102,7 @@ export function createPowerReleaseSystem({ windingSystem, root = document }) {
     state.mechanicalElapsedSeconds = 0;
     state.totalConsumedSeconds = 0;
     state.lastConsumedSeconds = 0;
+    state.blockReason = '';
     syncUI(0);
   }
 
@@ -88,7 +111,9 @@ export function createPowerReleaseSystem({ windingSystem, root = document }) {
   return {
     state,
     advance,
+    hold,
     resetElapsed,
-    syncUI
+    syncUI,
+    windingSystem
   };
 }
