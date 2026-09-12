@@ -55,7 +55,9 @@ M4a is the first subsystem that is no longer merely animated for presentation. U
 
 ### Crown input
 
-The demo adds an interactive crown driver. The **Wind crown** control advances the crown in the winding direction; **Return crown** rotates the crown side back without allowing the ratchet to unwind. Both controls can be clicked for a visible step or held continuously. Keyboard shortcuts are `W` for wind and `R` for return.
+The demo adds an interactive crown driver. The **Wind crown** control advances the crown in the winding direction; **Return crown** rotates the crown itself back. Both controls can be clicked for a visible step or held continuously. Keyboard shortcuts are `W` for wind and `R` for return.
+
+The return path is intentionally simplified as an upstream winding-clutch/free-return behavior: on return, the crown moves but the visible crown wheel and ratchet remain stationary. This avoids the physically impossible visual of meshed crown-wheel and ratchet teeth passing through one another.
 
 The visible crown receives an indexed overlay so axial rotation can be read even though the crown body is round.
 
@@ -72,13 +74,14 @@ The current interaction model therefore advances the ratchet by the crown-wheel/
 
 The crucial asymmetry is now explicit:
 
-- winding input can advance the ratchet;
-- return input can reverse the crown/crown-wheel side;
-- the ratchet angle is not allowed to reverse;
-- the UI reports the click as **RATCHETING**, **LOCKED**, or **SEATED**;
+- positive winding advances crown wheel and ratchet;
+- return input reverses only the crown input in the current simplified free-return path;
+- crown wheel and ratchet remain stationary on return;
+- the click prevents reverse ratchet motion;
+- the UI reports the click as **RATCHETING**, **LOCKED / RETURN**, or **SEATED**;
 - the reconstructed click receives a tiny tooth-lift motion during forward winding and remains seated on return.
 
-This replaces the old decorative sinusoidal ratchet motion with a persistent one-way state constraint.
+This replaces the old decorative sinusoidal ratchet motion with a persistent one-way state constraint while keeping the visible gear mesh coherent.
 
 ### Stored mainspring energy
 
@@ -100,7 +103,7 @@ Once the normalized energy reaches 1.0, further positive winding is blocked and 
 M4a does **not yet** model:
 
 - production torque curves;
-- bridle/slipping behavior;
+- exact clutch/Breguet-tooth geometry in the return path;
 - friction losses;
 - exact crown-turn count to full wind;
 - exact keyless-work tooth counts beyond the visible reconstruction;
