@@ -16,7 +16,7 @@
   </script>
 
   <style>
-    .power-state{display:grid;gap:9px;margin-top:9px}.power-meter{width:100%;height:12px;accent-color:#d8b36a}.power-stats,.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.power-stat,.mode-stat{border:1px solid #ffffff12;border-radius:8px;padding:7px 8px;background:#ffffff05}.power-stat span,.mode-stat span{display:block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#727c86}.power-stat output,.mode-stat output{display:block;margin-top:3px;font-size:11px;color:#dce2e7}.winding-note{font-size:10px;line-height:1.45;color:#7f8993;margin-top:7px}.winding-buttons button,.setting-buttons button{touch-action:none;user-select:none}.winding-buttons button:disabled,.setting-buttons button:disabled{opacity:.42;cursor:not-allowed}.mode-grid{margin-top:8px}.mode-accent{color:#e4c87c!important}.power-running{color:#8fd2a1!important}.escapement-phase{color:#82c7ff!important}.escapement-actions{display:grid;grid-template-columns:1fr;gap:7px;margin-top:8px}
+    .power-state{display:grid;gap:9px;margin-top:9px}.power-meter{width:100%;height:12px;accent-color:#d8b36a}.power-stats,.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.power-stat,.mode-stat{border:1px solid #ffffff12;border-radius:8px;padding:7px 8px;background:#ffffff05}.power-stat span,.mode-stat span{display:block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#727c86}.power-stat output,.mode-stat output{display:block;margin-top:3px;font-size:11px;color:#dce2e7}.winding-note{font-size:10px;line-height:1.45;color:#7f8993;margin-top:7px}.winding-buttons button,.setting-buttons button{touch-action:none;user-select:none}.winding-buttons button:disabled,.setting-buttons button:disabled{opacity:.42;cursor:not-allowed}.mode-grid{margin-top:8px}.mode-accent{color:#e4c87c!important}.power-running{color:#8fd2a1!important}.escapement-phase{color:#82c7ff!important}.escapement-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.diagnostic-stat output{font-variant-numeric:tabular-nums}
   </style>
 </head>
 <body>
@@ -26,9 +26,9 @@
     <header class="topbar panel">
       <a class="gallery-link" href="../">← Gallery</a>
       <div class="identity">
-        <div class="eyebrow">REFERENCE RECONSTRUCTION · M5A</div>
+        <div class="eyebrow">REFERENCE RECONSTRUCTION · M5B</div>
         <h1>ETA / Unitas 6497-2</h1>
-        <p>event-resolved Swiss lever release: lock → unlock → impulse → relock</p>
+        <p>Swiss lever pallet faces, banking, draw / drop diagnostics, and event stepping</p>
       </div>
       <a class="docs-link" href="../docs/watch-eta-6497-2.html">Documentation ↗</a>
     </header>
@@ -93,20 +93,28 @@
       </section>
 
       <section>
-        <div class="section-title">Swiss lever escapement · M5a</div>
+        <div class="section-title">Swiss lever escapement · M5b</div>
         <div class="mode-grid">
           <div class="mode-stat"><span>Phase</span><output id="escapementPhaseValue" class="escapement-phase">LOCK · ENTRY</output></div>
           <div class="mode-stat"><span>Active pallet</span><output id="activePalletValue">ENTRY PALLET</output></div>
           <div class="mode-stat"><span>Beat index</span><output id="escapementBeatValue">0</output></div>
           <div class="mode-stat"><span>Escape release</span><output id="escapeReleaseValue">HELD</output></div>
         </div>
+        <div class="mode-grid diagnostic-stat">
+          <div class="mode-stat"><span>Lock depth</span><output id="lockDepthValue">1.80° target</output></div>
+          <div class="mode-stat"><span>Drop</span><output id="dropValue">0.00° target</output></div>
+          <div class="mode-stat"><span>Draw</span><output id="drawValue">12.0° target</output></div>
+          <div class="mode-stat"><span>Banking</span><output id="bankingValue">±7.7°</output></div>
+        </div>
         <div class="escapement-actions">
-          <button id="stepBeatBtn" class="secondary">Step exactly one beat</button>
+          <button id="stepEscapementEventBtn">Step next event</button>
+          <button id="stepBeatBtn" class="secondary">Step one beat</button>
         </div>
         <div class="inline-toggles">
           <label><input id="escapementGuides" type="checkbox" /> Show escape → pallet → balance guides</label>
+          <label><input id="escapementGeometryGuides" type="checkbox" /> Show pallet-face / safety diagnostics</label>
         </div>
-        <div class="winding-note">At 3 Hz the balance crosses center 6 times per second. M5a resolves each beat into lock, unlock, impulse and relock windows. The escape wheel advances only during release, one half-tooth per beat; the rest of the wheel train now follows that released motion instead of a continuously running presentation clock. Pause at 0× and use Step exactly one beat for inspection.</div>
+        <div class="winding-note">M5b adds explicit colored lock and impulse faces on both pallet stones, a roller/fork-slot clearance envelope, banking arc, active contact marker, and drop marker. The displayed lock depth, draw, drop and tiny clearances are reconstruction targets for explaining the geometry — not ETA production tolerances. Pause at 0× and use Step next event to walk lock → unlock → impulse → relock without skipping straight to the next beat.</div>
       </section>
 
       <section>
@@ -221,7 +229,7 @@
         </div>
       </section>
 
-      <div class="hint">M5a replaces the old pallet/escape-wheel choreography with an event-resolved educational Swiss-lever state machine. The balance crossing selects alternating pallets; lock, unlock and impulse windows govern the escape wheel; released escape motion is converted back into train time so the fourth, third, centre wheels and hands visibly wait on escapement release. Exact pallet-face angles, draw, drop and impulse geometry are still reconstruction-level and remain future M5 work.</div>
+      <div class="hint">M5b starts replacing abstract escapement timing with inspectable geometry. Colored overlays distinguish the pallet locking and impulse faces; banking and roller/fork clearances are explicit; lock depth, drop and draw are visible diagnostic targets; and event stepping lets you stop at each transition. The targets are intentionally labeled reconstruction values until measured production geometry is available.</div>
     </aside>
 
     <aside class="inspector panel" id="infoPanel">
@@ -230,7 +238,7 @@
         <span class="provenance approximate" id="infoProvenance">approximate</span>
       </div>
       <h2 id="infoName">Mechanical component inspector</h2>
-      <p id="infoText">M5a adds an event-resolved Swiss-lever layer: roller table and impulse jewel, fork horns and safety dart, banking pins, alternating pallet state, and discrete half-tooth escape release. The rest of the train now follows released escapement motion rather than continuous wall-clock motion.</p>
+      <p id="infoText">M5b adds explicit pallet locking/impulse faces, banking limits, roller/fork safety envelopes, active contact/drop markers and event-level stepping. These diagnostics make the Swiss lever geometry inspectable without pretending the reconstruction values are manufacturing tolerances.</p>
       <dl class="part-facts" id="partFacts"></dl>
     </aside>
 
@@ -242,7 +250,7 @@
       <span><i class="dot structure-dot"></i>structure</span>
     </div>
 
-    <div id="loading">Constructing 6497-2 M5a escapement state…</div>
+    <div id="loading">Constructing 6497-2 M5b pallet geometry…</div>
   </div>
 
   <script type="module" src="./main-m5a.js"></script>
