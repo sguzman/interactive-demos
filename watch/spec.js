@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M5a',
-  label: 'event-resolved Swiss lever release',
-  note: 'M5a replaces the old shared-clock pallet/escape choreography with an educational event state machine. Each of the documented 6 beats per second is resolved into lock, unlock, impulse and relock windows; the 15-tooth escape wheel advances one half-tooth per beat only during release. A roller table/impulse jewel, fork horns/safety dart and banking pins are now visible. Released escape motion becomes the time source for the fourth, third and centre wheels and the hands, so the train visibly waits on escapement release. Exact pallet-face angles, draw, drop, roller geometry and dynamic impulse energy remain reconstruction-level rather than production physics.'
+  id: 'M5b',
+  label: 'pallet-face and safety geometry diagnostics',
+  note: 'M5b retains the M5a event-resolved six-beat-per-second Swiss-lever release and adds explicit educational geometry for pallet locking and impulse faces, banking limits, roller/fork-slot clearance, horn/dart safety, active contact and drop markers, plus event-level stepping. Lock depth, drop, draw, banking and clearance values are deliberately exposed as reconstruction targets rather than ETA production tolerances. The escape wheel still releases one half-tooth per beat and released escape angle remains the time source for downstream train motion.'
 };
