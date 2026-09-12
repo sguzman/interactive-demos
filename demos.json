@@ -5,9 +5,9 @@
     "summary": "A movement-first 3D explainer of a large hand-wound mechanical watch, with exploded assemblies, inspectable components, and an adjustable inspection light.",
     "kind": "Three.js · Horology",
     "status": "active",
-    "maturity": "reconstruction in progress",
+    "maturity": "M1 architecture",
     "path": "./watch/",
-    "docs": "./docs/watch-eta-6497-2.md",
+    "docs": "./docs/watch-eta-6497-2.html",
     "tags": ["3D", "mechanical", "horology", "exploded-view", "simulation"],
     "facts": {
       "Target": "ETA/Unitas 6497-2 / OP XI family",
