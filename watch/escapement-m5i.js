@@ -10,7 +10,8 @@ const HALF_TOOTH = Math.PI * 2 / ESCAPE_TEETH / 2;
 
 // M5i work values are dimensionless educational bookkeeping. They are not
 // joules, measured torque, measured pallet efficiency, or ETA factory data.
-// Geometry provides a work-path fraction; reserve provides the available drive.
+// Geometry provides a work-path fraction; a work-budget provider supplies the
+// available drive. Without a provider M5i retains its historical reserve proxy.
 const WORK = {
   escapeTipRadiusMm: 2.25,
   sampleStartBeatFraction: 0.06,
@@ -18,7 +19,8 @@ const WORK = {
   sampleCount: 32,
   referenceFollowFraction: 0.40,
   minimumUsefulScale: 0.02,
-  gapExponent: 1.35
+  gapExponent: 1.35,
+  maximumExternalDriveRatio: 1.35
 };
 
 const clamp01 = value => Math.max(0, Math.min(1, value));
@@ -44,7 +46,7 @@ function injectUI(root) {
       <div class="mode-stat"><span>Δω packet scale</span><output id="impulseWorkScaleValue">0.000×</output></div>
       <div class="mode-stat"><span>Work verdict</span><output id="impulseWorkVerdictValue">WAITING FOR CROSSING</output></div>
     </div>
-    <div class="winding-note">M5i replaces the fixed-size admitted impulse with normalized work bookkeeping. Remaining spring drive defines the available work budget. The M5h polygon solver supplies how far the tooth can follow the pallet impulse surface and how closely those surfaces track. Their product estimates a transfer efficiency. Delivered work is the available budget multiplied by that efficiency; the balance Δω packet is scaled by the square root of the transferred fraction, reflecting the energy-like rather than velocity-like nature of the bookkeeping. “Work units” are normalized educational units, not joules.</div>`;
+    <div class="winding-note">M5i replaces the fixed-size admitted impulse with normalized work bookkeeping. A work budget supplies the available drive, while the M5h polygon solver supplies how far the tooth follows the pallet impulse surface and how closely those surfaces track. Their product estimates transfer efficiency. Delivered work is the available budget multiplied by that efficiency; the balance Δω packet scales from the delivered work. “Work units” remain normalized educational units, not joules.</div>`;
 
   if (polygon?.nextSibling) controls.insertBefore(section, polygon.nextSibling);
   else controls.insertBefore(section, physical ?? null);
@@ -57,8 +59,8 @@ function injectUI(root) {
   if (eyebrow) eyebrow.textContent = 'REFERENCE RECONSTRUCTION · M5I';
   if (subtitle) subtitle.textContent = 'polygon-following escapement work scaled into balance impulse';
   if (loading) loading.textContent = 'Constructing 6497-2 M5i impulse-work state…';
-  if (hint) hint.textContent = 'M5i turns an admitted escapement contact into a variable-sized impulse rather than a fixed kick. Reserve supplies a normalized available-work budget; M5h polygon following and contact quality determine what fraction is delivered to the balance, and the remainder is explicitly reported as rejected/lost work.';
-  if (infoText) infoText.textContent = 'M5i adds normalized escapement work transfer on top of the M5h polygon solver. Available train drive, surface-follow distance and contact quality produce delivered versus rejected work, and delivered work scales the angular-velocity impulse applied to the integrated balance.';
+  if (hint) hint.textContent = 'M5i turns an admitted escapement contact into a variable-sized impulse rather than a fixed kick. A normalized available-work budget is filtered by M5h polygon following and contact quality; delivered versus rejected work then controls the angular-velocity packet.';
+  if (infoText) infoText.textContent = 'M5i adds normalized escapement work transfer on top of the M5h polygon solver. Available drive, surface-follow distance and contact quality produce delivered versus rejected work, and delivered work scales the angular-velocity impulse applied to the integrated balance.';
 }
 
 function contactQualityFor(result, polygonTargets) {
@@ -78,6 +80,7 @@ function contactQualityFor(result, polygonTargets) {
 export function createEscapementSystem({ watch, animated, materials, powerSystem, root = document }) {
   const base = createM5hEscapementSystem({ watch, animated, materials, powerSystem, root });
   injectUI(root);
+  let workBudgetProvider = null;
 
   const state = {
     lastWork: null,
@@ -99,6 +102,26 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     scale: root.querySelector('#impulseWorkScaleValue'),
     verdict: root.querySelector('#impulseWorkVerdictValue')
   };
+
+  function availableWorkFor(context) {
+    const legacyDrive = clamp01(Number(context.drive) || 0);
+    if (!workBudgetProvider) return { availableWork: legacyDrive, legacyDrive, source: 'reserve proxy' };
+
+    try {
+      const supplied = workBudgetProvider(context);
+      const raw = typeof supplied === 'object' && supplied !== null
+        ? supplied.availableWork
+        : supplied;
+      return {
+        availableWork: clamp01(Number(raw) || 0),
+        legacyDrive,
+        source: typeof supplied === 'object' && supplied?.source ? supplied.source : 'external work budget'
+      };
+    } catch (error) {
+      console.warn('Impulse work-budget provider failed', error);
+      return { availableWork: 0, legacyDrive, source: 'work-budget provider error' };
+    }
+  }
 
   function estimateImpulseWork(context) {
     const beatIndex = Math.max(0, context.crossingIndex);
@@ -153,15 +176,20 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
       ? clamp01(pathCoverage * contactQuality)
       : 0;
 
-    // Drive already comes from the M5c/M5f reserve proxy. We treat that as the
-    // normalized work budget available to this one impulse opportunity.
-    const availableWork = clamp01(Number(context.drive) || 0);
+    const budget = availableWorkFor(context);
+    const availableWork = budget.availableWork;
     const deliveredWork = availableWork * transferEfficiency;
     const lostWork = Math.max(0, availableWork - deliveredWork);
 
-    // M5f applies Δω rather than energy directly. A square-root map keeps the
-    // work bookkeeping energy-like without claiming a calibrated balance inertia.
-    const impulseScale = transferEfficiency > 0 ? Math.sqrt(transferEfficiency) : 0;
+    // M5f's historical kick is proportional to its legacy drive proxy. Convert
+    // the new available-work budget back into a bounded velocity scale, then
+    // multiply by sqrt(efficiency) because this bookkeeping is energy-like.
+    const driveRatio = budget.legacyDrive > 1e-8
+      ? THREE.MathUtils.clamp(availableWork / budget.legacyDrive, 0, WORK.maximumExternalDriveRatio)
+      : 0;
+    const impulseScale = transferEfficiency > 0
+      ? Math.sqrt(transferEfficiency) * driveRatio
+      : 0;
     const admitted =
       polygonGate.admitted &&
       healthy &&
@@ -184,6 +212,9 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
       availableWork,
       deliveredWork,
       lostWork,
+      workBudgetSource: budget.source,
+      legacyDrive: budget.legacyDrive,
+      driveRatio,
       transferEfficiency,
       impulseScale: admitted ? impulseScale : 0,
       followDistanceMm,
@@ -223,8 +254,6 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
       else state.rejectedOpportunities += 1;
     }
 
-    // Keep M5h's historical gate readout coherent even though M5i now owns the
-    // active admission callback.
     if (base.polygonState) {
       base.polygonState.lastAdmission = work;
       if (work.admitted) base.polygonState.admittedImpulses += 1;
@@ -255,7 +284,10 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     impulseWorkState: state,
     update,
     workTargets: { ...WORK },
-    estimateImpulseWork
+    estimateImpulseWork,
+    setImpulseWorkBudgetProvider(callback) {
+      workBudgetProvider = typeof callback === 'function' ? callback : null;
+    }
   };
 }
 
