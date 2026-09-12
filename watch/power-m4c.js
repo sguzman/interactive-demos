@@ -111,6 +111,10 @@ export function createPowerReleaseSystem({ windingSystem, root = document }) {
   return {
     state,
     advance,
+    // Deeper milestones can layer their own escapement/oscillator gate while
+    // still calling the original M4c reserve-consuming clock. This reference is
+    // intentionally immutable-by-convention even when `advance` is wrapped.
+    rawAdvance: advance,
     hold,
     resetElapsed,
     syncUI,
