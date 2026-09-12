@@ -2,10 +2,10 @@
   {
     "slug": "watch",
     "title": "ETA / Unitas 6497-2 — Exploded Watch Anatomy",
-    "summary": "A movement-first 3D explainer of a large hand-wound mechanical watch with causal winding and setting, stored mainspring reserve, energy-gated runtime, and a Swiss lever escapement with event-resolved release plus pallet-face and safety diagnostics.",
+    "summary": "A movement-first 3D explainer of a large hand-wound mechanical watch with causal winding and setting, stored reserve, event-resolved Swiss lever geometry, and a reserve-coupled balance whose amplitude can decay into a low-energy stall.",
     "kind": "Three.js · Horology",
     "status": "active",
-    "maturity": "M5b pallet-face and safety diagnostics",
+    "maturity": "M5c reserve-coupled oscillator amplitude",
     "path": "./watch/",
     "docs": "./docs/watch-eta-6497-2.html",
     "tags": ["3D", "mechanical", "horology", "exploded-view", "simulation"],
@@ -13,7 +13,7 @@
       "Target": "ETA/Unitas 6497-2 / OP XI lineage",
       "Reference shell": "44 mm exhibition wristwatch",
       "Geometry": "constructive / procedural · mm",
-      "Current pass": "M5b explicit lock / impulse faces, banking, draw-drop diagnostics, event stepping",
+      "Current pass": "M5c damping + discrete impulse packets + low-amplitude unlock failure / restart",
       "Hosting": "GitHub Pages"
     }
   }
