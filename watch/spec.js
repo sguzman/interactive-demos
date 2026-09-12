@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M4b',
-  label: 'stem selection and causal hand setting',
-  note: 'M4b retains M4a winding energy and adds a second crown/stem state. Position 0 enables winding. Position 1 pulls the crown/stem outward, moves the reconstructed sliding pinion/yoke/setting-lever geometry toward the setting wheel, disables barrel winding, and routes crown input into the visible setting/minute wheels and hour/minute hands. The 1.35 mm pull distance and setting ratios are reconstruction assumptions for legibility rather than ETA production dimensions.'
+  id: 'M4c',
+  label: 'energy-gated power release',
+  note: 'M4c closes the first causal power loop: M4a crown winding creates normalized reserve, M4b keeps winding and setting as distinct stem modes, and M4c lets stored reserve gate a shared mechanical clock for balance, escapement, train and hands. Running linearly depletes reserve against the official 60 h typical endpoint; zero reserve stops the mechanical clock. Torque magnitude, friction and escapement losses remain normalized rather than presented as production physics.'
 };
