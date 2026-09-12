@@ -13,9 +13,9 @@
 <main>
   <nav class="top"><a href="../">← Interactive Demos</a><a href="../watch/">Open 3D demo ↗</a></nav>
 
-  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M3E</div>
+  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M3F</div>
   <h1>ETA / Unitas 6497-2</h1>
-  <p class="lead">A movement-first interactive reconstruction of a large hand-wound mechanical watch. M3e makes the compound train read more like an actual wheel-to-pinion system: pitch-derived geometry, explicit axial planes, solved contact phase and optional mesh diagnostics.</p>
+  <p class="lead">M3f turns the train from a mathematically constrained illustration into a more explicit mechanical stack: pitch-radius-native tooth geometry, visible wheel→pinion contact points, stepped staffs, and reconstructed mainplate/bridge clearances.</p>
 
   <div class="callout"><strong>Accuracy contract.</strong><p>The demo is not manufacturing CAD. Important facts and geometry remain classified as official, reference-derived, approximate, or presentational.</p></div>
 
@@ -29,14 +29,11 @@
     <div class="spec"><span>Power reserve</span><strong>53 h min / 60 h typical</strong></div>
   </div>
 
-  <h2>M3a — reference timing</h2>
-  <p>The train uses a published 6497 training-tool ratio set: centre 80 teeth, third 60 teeth / 10-leaf pinion, seconds/fourth 120 teeth / 8-leaf pinion, and escape 15 teeth / 10-leaf pinion. At 21,600 A/h this closes to 5 s/rev for the escape wheel, 60 s/rev for the seconds/fourth wheel, 7.5 min/rev for the third wheel, and 1 h/rev for the centre wheel.</p>
+  <h2>Reference train</h2>
+  <p>The current timing graph uses a published 6497 training-tool set: centre 80 teeth, third 60 / 10-leaf pinion, seconds/fourth 120 / 8-leaf pinion, escape 15 / 10-leaf pinion. At 21,600 A/h this closes to 5 s/rev for the escape wheel, 60 s/rev for the seconds/fourth wheel, 7.5 min/rev for the third wheel and 1 h/rev for the centre wheel.</p>
 
-  <h2>M3b — visible tooth and leaf counts</h2>
-  <p>The rendered train uses those same reference counts rather than placeholder counts.</p>
-
-  <h2>M3c — pitch-derived geometry</h2>
-  <p>For each external mesh the reconstruction derives a nominal module from the current centre distance and tooth/leaf counts using <code>module = 2 × centre_distance / (wheel_teeth + pinion_leaves)</code>.</p>
+  <h2>Pitch solve retained from M3c</h2>
+  <p>The current reference-derived XY centres imply the following nominal mesh geometry:</p>
   <div class="specs">
     <div class="spec"><span>Centre → third pinion</span><strong>6.466 mm · m 0.1437</strong></div>
     <div class="spec"><span>Pitch radii</span><strong>5.748 + 0.718 mm</strong></div>
@@ -46,34 +43,40 @@
     <div class="spec"><span>Pitch radii</span><strong>8.563 + 0.714 mm</strong></div>
   </div>
 
-  <h2>M3d — compound train planes</h2>
-  <p>Large pitch-derived wheel bodies cannot all occupy the same z-plane. M3d assigns explicit bridge-side wheel planes:</p>
+  <h2>M3f — pitch-radius-native train teeth</h2>
+  <p>The older constructive gear primitive did not interpret its radius as a strict pitch radius. M3f adds a train-only spur construction where the supplied radius <em>is</em> the pitch radius. Addendum and dedendum now bracket that pitch line, and tooth width is tied to circular pitch.</p>
+  <div class="callout"><strong>Still educational, not involute CAD.</strong><p>The new tooth flanks are simplified tapered/polygonal approximations. The important improvement is semantic: solved pitch circles now correspond directly to rendered tooth engagement instead of being translated through an ambiguous decorative radius.</p></div>
+
+  <h3>Pitch/contact guides</h3>
+  <p><strong>Show pitch mesh guides</strong> displays both pitch circles, their line of centres, and a bright tangent/contact marker for each wheel→pinion mesh. The <strong>Train mesh</strong> camera preset enables this automatically.</p>
+
+  <h2>M3f — clearance-aware axial stack</h2>
+  <p>The compound train now uses a tighter reconstructed stack:</p>
   <div class="specs">
-    <div class="spec"><span>Centre wheel</span><strong>z = -0.65 mm</strong></div>
-    <div class="spec"><span>Third wheel</span><strong>z = -1.10 mm</strong></div>
+    <div class="spec"><span>Centre wheel</span><strong>z = -0.90 mm</strong></div>
+    <div class="spec"><span>Third wheel</span><strong>z = -1.23 mm</strong></div>
     <div class="spec"><span>Seconds/fourth</span><strong>z = -1.55 mm</strong></div>
-    <div class="spec"><span>Escape wheel</span><strong>z = -0.65 mm</strong></div>
+    <div class="spec"><span>Escape wheel</span><strong>z = -0.92 mm</strong></div>
   </div>
-  <p>The third pinion lands in the centre-wheel plane, the seconds/fourth pinion in the third-wheel plane, and the escape pinion in the seconds/fourth-wheel plane.</p>
+  <p>The driven pinions still occupy the plane of the wheel that drives them: third pinion in the centre-wheel plane, seconds/fourth pinion in the third-wheel plane, and escape pinion in the seconds/fourth-wheel plane.</p>
 
-  <h2>M3e — pitch-envelope meshing</h2>
-  <p>The constructive gear primitive is intentionally simplified and its authored radius is not itself a strict pitch radius. M3e compensates that visual radius so each simplified tooth envelope actually straddles the solved pitch circle. This removes a visible gap introduced by using pitch math with a presentation-oriented gear primitive.</p>
-  <p>M3e also solves a static tooth/gap phase through the whole compound chain. The centre wheel is the phase anchor; the third pinion, seconds/fourth pinion and escape pinion are each rotated so their contact phase complements the already-constrained upstream wheel at the line of centres.</p>
+  <h3>Reconstructed bearing/clearance references</h3>
+  <div class="specs">
+    <div class="spec"><span>Mainplate surface</span><strong>≈ z -0.57 mm</strong></div>
+    <div class="spec"><span>Mainplate jewels</span><strong>≈ z -0.68 mm</strong></div>
+    <div class="spec"><span>Barrel bridge underside</span><strong>≈ z -1.91 mm</strong></div>
+    <div class="spec"><span>Train bridge underside</span><strong>≈ z -1.93 mm</strong></div>
+    <div class="spec"><span>Centre upper jewel</span><strong>≈ z -2.70 mm</strong></div>
+    <div class="spec"><span>Train upper jewels</span><strong>≈ z -2.72 mm</strong></div>
+  </div>
+  <p>These values are extracted from the reconstruction already on screen, not asserted ETA manufacturing stack dimensions.</p>
 
-  <div class="callout"><strong>Why the big wheels still look separated in projection.</strong><p>The train is wheel → small coaxial pinion → wheel, not big wheel → big wheel. The new <strong>Show pitch mesh guides</strong> control displays both pitch circles in each actual mesh plane plus the line of centres. Use the new <strong>Train mesh</strong> camera preset to inspect that relationship directly.</p></div>
+  <h2>M3f — stepped staffs and pivots</h2>
+  <p>The old uniform rods are hidden. The centre, third, seconds/fourth and escape assemblies now sit on schematic stepped staffs with a mainplate pivot, central arbor, wheel-seat collar, bridge neck and small polished upper pivot reaching the visible bridge jewel region.</p>
+  <p><strong>Train stack</strong> rotates to a side-on inspection view and automatically enables <strong>Show staff / clearance guides</strong>. Those guides expose the reconstructed mainplate plane, bridge underside and vertical staff lines so the axial architecture can be inspected instead of inferred.</p>
 
-  <h2>Balanced camera-axis lighting</h2>
-  <p>The prior pass solved the darkness problem but overshot. M3e keeps the useful brightness range while moving the default back toward the middle.</p>
-  <ul>
-    <li><strong>Camera aligned / balanced</strong> is now the default.</li>
-    <li>Camera intensity, ambient/fill, environment reflection and exposure are all reduced from M3d.</li>
-    <li><strong>Full bright / diagnostic</strong> remains intentionally excessive for difficult geometry.</li>
-    <li>Camera and manual intensities still reach <strong>700</strong>, with exposure up to <strong>3.20×</strong>.</li>
-    <li>Manual azimuth, elevation and distance controls remain available for raking light.</li>
-  </ul>
-
-  <h2>Simulation presentation</h2>
-  <p>The train can run at 1× real time or 10×, 60× and 300× inspection scales. The balance remains at the documented 3 Hz.</p>
+  <h2>Lighting</h2>
+  <p>The balanced camera-axis setup remains unchanged from the previous correction: a moderate default, movable manual key, and intentionally excessive Full bright / diagnostic headroom when required.</p>
 
   <h2>Provenance classes</h2>
   <p><span class="badge official">official</span> Directly supported by technical material.</p>
@@ -82,8 +85,8 @@
   <p><span class="badge presentation">presentation</span> Geometry or controls added for readability and explanation.</p>
 
   <h2>Next work</h2>
-  <h3>M3f — interference, staffs and bridge clearance</h3>
-  <p>Inspect the pitch-derived envelopes against bridges and neighboring parts, replace uniform arbors with stepped staffs and shoulders, refine pivot/jewel seating, and make wheel endshake and bridge clearance visually defensible.</p>
+  <h3>M3g — bridge/endshake refinement</h3>
+  <p>Refine pivot lengths and shoulders, introduce small explicit endshake, compare the enlarged pitch-derived envelopes against the bridge contours, and move the train tooth form toward a more defensible horological profile.</p>
   <h3>M4 — winding fidelity</h3>
   <p>Stateful crown/stem positions, winding versus hand-setting, causal keyless works, one-way click behavior and stored mainspring energy.</p>
   <h3>M5 — escapement fidelity</h3>
