@@ -12,9 +12,6 @@ const NOMINAL_OMEGA = TAU * NOMINAL_HZ;
 const NOMINAL_AH = 21600;
 const SECONDS_PER_DAY = 86400;
 
-// M5f is still an educational dynamics model. The state variables are now real
-// integrated oscillator state (angle + angular velocity), but these normalized
-// coefficients are not measured ETA 6497-2 balance/hairspring constants.
 const PHYSICS = {
   maxVisualAngleRad: 0.43,
   dampingRatio: 0.0060,
@@ -88,7 +85,7 @@ function injectUI(root) {
       <option value="20">20× extreme inspection</option>
     </select></label>
     <canvas id="oscillatorPortrait" width="280" height="132" style="width:100%;height:132px;border:1px solid #ffffff12;border-radius:8px;background:#080b0f;margin-top:8px"></canvas>
-    <div class="winding-note">M5f no longer advances the balance by assigning it a smart phase clock. It integrates θ and ω under a restoring term and damping term, then applies discrete angular-velocity kicks at center crossings when reserve and escapement geometry permit an impulse. The phase portrait above plots θ against ω/ω₀. At very large time scales the demo switches to an explicitly labelled fast-forward envelope approximation so the browser does not integrate thousands of 3 Hz cycles per rendered frame.</div>`;
+    <div class="winding-note">M5f no longer advances the balance by assigning it a smart phase clock. It integrates θ and ω under a restoring term and damping term, then applies discrete angular-velocity kicks at center crossings when reserve and escapement geometry permit an impulse. Later milestones can supply an explicit impulse-admission callback so a crossing alone is not sufficient. The phase portrait plots θ against ω/ω₀.</div>`;
 
   controls.insertBefore(section, geometry ?? oscillator);
 
@@ -100,8 +97,8 @@ function injectUI(root) {
   if (eyebrow) eyebrow.textContent = 'REFERENCE RECONSTRUCTION · M5F';
   if (subtitle) subtitle.textContent = 'integrated balance angle + angular velocity + impulse dynamics';
   if (loading) loading.textContent = 'Constructing 6497-2 M5f oscillator state…';
-  if (hint) hint.textContent = 'M5f turns the balance from a prescribed phase source into an integrated state. Hairspring restoring acceleration and damping evolve angle/velocity continuously; center-crossing impulses add angular velocity; the resulting unwrapped oscillator phase drives M5d pallet/contact geometry and therefore the train. Coefficients remain normalized educational parameters rather than measured ETA inertia or spring constants.';
-  if (infoText) infoText.textContent = 'M5f integrates a normalized balance/hairspring oscillator with explicit angle, angular velocity, restoring acceleration, damping and discrete impulse kicks. Its phase drives the geometry-constrained escapement, so the train now follows an actual oscillator state rather than an assigned phase clock.';
+  if (hint) hint.textContent = 'M5f turns the balance from a prescribed phase source into an integrated state. Hairspring restoring acceleration and damping evolve angle/velocity continuously; center-crossing impulses add angular velocity; the resulting unwrapped oscillator phase drives M5d pallet/contact geometry and therefore the train.';
+  if (infoText) infoText.textContent = 'M5f integrates a normalized balance/hairspring oscillator with explicit angle, angular velocity, restoring acceleration, damping and discrete impulse kicks. Its phase drives the geometry-constrained escapement, so the train follows an actual oscillator state rather than an assigned phase clock.';
 }
 
 function drawPortrait(canvas, history, theta, omega) {
@@ -150,14 +147,13 @@ function drawPortrait(canvas, history, theta, omega) {
 }
 
 export function createEscapementSystem({ watch, animated, materials, powerSystem, root = document }) {
-  // Tell the historical M5c layer to remain a geometry/event dependency only;
-  // M5f now owns the oscillator gate and physical state.
   powerSystem.externalOscillator = true;
   const base = createM5dEscapementSystem({ watch, animated, materials, powerSystem, root });
   injectUI(root);
 
   const windingSystem = powerSystem.windingSystem;
   const rawAdvance = (powerSystem.rawAdvance ?? powerSystem.advance).bind(powerSystem);
+  let impulseAdmission = null;
 
   const state = {
     theta: 0,
@@ -172,6 +168,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     effectiveHz: 0,
     torqueProxy: 0,
     lastImpulseDeltaOmega: 0,
+    lastImpulseAdmission: null,
     centerCrossings: 0,
     successfulImpulses: 0,
     missedImpulses: 0,
@@ -221,7 +218,6 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     return true;
   }
 
-  // Replace the older M5c/M5d gate with a gate based on the actual M5f state.
   powerSystem.advance = (realSeconds, mechanicalScale = 1) => {
     const scale = Math.max(0, Number(mechanicalScale) || 0);
     const energy = windingSystem?.state.energy ?? 0;
@@ -257,12 +253,35 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     return phase;
   }
 
-  function applyCenterImpulse(drive, geometryHealthy) {
+  function admissionForCrossing(context) {
+    if (!impulseAdmission) return { admitted: true, reason: 'M5f center-crossing default' };
+    try {
+      const result = impulseAdmission(context);
+      if (typeof result === 'boolean') return { admitted: result, reason: result ? 'admitted' : 'denied' };
+      return result ?? { admitted: false, reason: 'no admission result' };
+    } catch (error) {
+      console.warn('Impulse admission callback failed', error);
+      return { admitted: false, reason: 'admission callback error' };
+    }
+  }
+
+  function applyCenterImpulse(drive, geometryHealthy, extra = {}) {
     state.centerCrossings += 1;
     state.amplitude = oscillatorAmplitude();
     state.canUnlock = state.amplitude >= PHYSICS.unlockAmplitude;
+    const admission = admissionForCrossing({
+      crossingIndex: state.centerCrossings,
+      oscillatorSeconds: state.phaseUnwrapped / NOMINAL_OMEGA,
+      theta: state.theta,
+      omega: state.omega,
+      amplitude: state.amplitude,
+      drive,
+      geometryHealthy,
+      ...extra
+    });
+    state.lastImpulseAdmission = admission;
 
-    if (state.canUnlock && drive > 0 && geometryHealthy) {
+    if (state.canUnlock && drive > 0 && geometryHealthy && admission.admitted !== false) {
       const direction = Math.sign(state.omega) || 1;
       const saturation = Math.max(0.25, 1 - state.amplitude * 0.28);
       const kick = PHYSICS.impulseVelocityGain * drive * saturation;
@@ -276,10 +295,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
   }
 
   function integrateDetailed(deltaSeconds, drive, geometryHealthy) {
-    const steps = Math.min(
-      PHYSICS.maxDetailedSteps,
-      Math.max(1, Math.ceil(deltaSeconds / PHYSICS.detailedStepSeconds))
-    );
+    const steps = Math.min(PHYSICS.maxDetailedSteps, Math.max(1, Math.ceil(deltaSeconds / PHYSICS.detailedStepSeconds)));
     const dt = deltaSeconds / steps;
     let naturalOmega = currentNaturalOmega(oscillatorAmplitude());
     let previousPhase = phaseFromState(state.theta, state.omega, naturalOmega);
@@ -297,8 +313,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
       state.theta += state.omega * dt;
 
       const crossedCenter = previousTheta !== 0 && previousTheta * state.theta <= 0;
-      if (crossedCenter) applyCenterImpulse(drive, geometryHealthy);
-
+      if (crossedCenter) applyCenterImpulse(drive, geometryHealthy, { fastForward: false });
       previousPhase = recordPhase(previousPhase, naturalOmega);
     }
 
@@ -306,13 +321,29 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     state.integratorMode = `ODE · ${steps} substeps`;
   }
 
+  function fastForwardAdmissionFraction(drive, geometryHealthy) {
+    if (!impulseAdmission) return { fraction: geometryHealthy ? 1 : 0, last: null };
+    const results = [1, 2].map(offset => admissionForCrossing({
+      crossingIndex: state.centerCrossings + offset,
+      oscillatorSeconds: (state.phaseUnwrapped + offset * Math.PI) / NOMINAL_OMEGA,
+      theta: state.theta,
+      omega: state.omega,
+      amplitude: oscillatorAmplitude(),
+      drive,
+      geometryHealthy,
+      fastForward: true
+    }));
+    const admitted = results.filter(result => result.admitted !== false).length;
+    return { fraction: admitted / results.length, last: results.at(-1), results };
+  }
+
   function integrateFastForward(deltaSeconds, drive, geometryHealthy) {
     const startAmplitude = oscillatorAmplitude();
-    const rateStart = rateMultiplierForAmplitude(startAmplitude, state.rateStrength);
     const decayRate = PHYSICS.dampingRatio * NOMINAL_OMEGA;
     const normalizedKick = PHYSICS.impulseVelocityGain / (NOMINAL_OMEGA * PHYSICS.maxVisualAngleRad);
+    const admission = fastForwardAdmissionFraction(drive, geometryHealthy);
     const impulseRate = startAmplitude >= PHYSICS.unlockAmplitude && geometryHealthy
-      ? NOMINAL_HZ * 2 * normalizedKick * drive
+      ? NOMINAL_HZ * 2 * normalizedKick * drive * admission.fraction
       : 0;
     const totalRate = decayRate + impulseRate;
     const equilibrium = totalRate > 0 ? impulseRate / totalRate : 0;
@@ -323,14 +354,17 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     const rate = rateMultiplierForAmplitude(averageAmplitude, state.rateStrength);
     const phaseAdvance = NOMINAL_OMEGA * rate.multiplier * deltaSeconds;
     const crossings = Math.max(0, Math.floor(phaseAdvance / Math.PI));
+    const admittedCrossings = Math.round(crossings * admission.fraction);
 
     if (impulseRate > 0) {
-      state.successfulImpulses += crossings;
+      state.successfulImpulses += admittedCrossings;
+      state.missedImpulses += Math.max(0, crossings - admittedCrossings);
       state.lastImpulseDeltaOmega = PHYSICS.impulseVelocityGain * drive * Math.max(0.25, 1 - averageAmplitude * 0.28);
     } else {
       state.missedImpulses += crossings;
       state.lastImpulseDeltaOmega = 0;
     }
+    state.lastImpulseAdmission = admission.last;
     state.centerCrossings += crossings;
     state.phaseUnwrapped += phaseAdvance;
     state.amplitude = clamp01(endAmplitude);
@@ -404,11 +438,8 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
       state.integratorMode = 'idle · unwound';
     } else if (deltaRuntime > 0 && running) {
       const geometryHealthy = base.state?.geometryHealthy !== false;
-      if (deltaRuntime <= PHYSICS.detailedMaxSecondsPerFrame) {
-        integrateDetailed(deltaRuntime, drive, geometryHealthy);
-      } else {
-        integrateFastForward(deltaRuntime, drive, geometryHealthy);
-      }
+      if (deltaRuntime <= PHYSICS.detailedMaxSecondsPerFrame) integrateDetailed(deltaRuntime, drive, geometryHealthy);
+      else integrateFastForward(deltaRuntime, drive, geometryHealthy);
       state.canUnlock = state.amplitude >= PHYSICS.unlockAmplitude;
       state.status = state.canUnlock ? 'running' : 'stalled';
     } else if (!running) {
@@ -422,11 +453,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
 
     syncHistoricalOscillatorUI();
     const sample = base.update(state.oscillatorSeconds, escapeBase, running && state.canUnlock);
-
-    // The geometry/event stack still owns pallet and escape-wheel behavior; M5f
-    // owns the balance body itself.
     if (animated.balance) animated.balance.rotation.z = state.theta;
-
     syncUI(running && state.canUnlock);
 
     return {
@@ -443,6 +470,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
       effectiveAlternationsPerHour: state.effectiveHz * 7200,
       torqueProxy: state.torqueProxy,
       impulseDeltaOmega: state.lastImpulseDeltaOmega,
+      impulseAdmission: state.lastImpulseAdmission,
       canUnlock: state.canUnlock,
       oscillatorStatus: state.status,
       integratorMode: state.integratorMode
@@ -457,6 +485,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     oscillatorEnvelopeState: base.oscillatorState,
     state,
     update,
+    setImpulseAdmission(callback) { impulseAdmission = typeof callback === 'function' ? callback : null; },
     physics: { ...PHYSICS },
     nominal: { hz: NOMINAL_HZ, alternationsPerHour: NOMINAL_AH, omega: NOMINAL_OMEGA }
   };
