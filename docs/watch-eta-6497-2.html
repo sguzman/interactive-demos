@@ -13,11 +13,11 @@
 <main>
   <nav class="top"><a href="../">← Interactive Demos</a><a href="../watch/">Open 3D demo ↗</a></nav>
 
-  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M3F</div>
+  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M3G</div>
   <h1>ETA / Unitas 6497-2</h1>
-  <p class="lead">M3f turns the train from a mathematically constrained illustration into a more explicit mechanical stack: pitch-radius-native tooth geometry, visible wheel→pinion contact points, stepped staffs, and reconstructed mainplate/bridge clearances.</p>
+  <p class="lead">M3g makes the train’s axial architecture inspectable: true-pitch wheel/pinion geometry, stepped staffs, explicit wheel-body gaps, reconstructed jewel spans, pivot shoulders and small endshake targets.</p>
 
-  <div class="callout"><strong>Accuracy contract.</strong><p>The demo is not manufacturing CAD. Important facts and geometry remain classified as official, reference-derived, approximate, or presentational.</p></div>
+  <div class="callout"><strong>Accuracy contract.</strong><p>The demo is not manufacturing CAD. Official movement facts remain separate from reference-derived reconstruction geometry and presentation diagnostics. M3g endshake values are internal reconstruction targets, not claimed ETA production tolerances.</p></div>
 
   <h2>Official movement facts</h2>
   <div class="specs">
@@ -30,10 +30,9 @@
   </div>
 
   <h2>Reference train</h2>
-  <p>The current timing graph uses a published 6497 training-tool set: centre 80 teeth, third 60 / 10-leaf pinion, seconds/fourth 120 / 8-leaf pinion, escape 15 / 10-leaf pinion. At 21,600 A/h this closes to 5 s/rev for the escape wheel, 60 s/rev for the seconds/fourth wheel, 7.5 min/rev for the third wheel and 1 h/rev for the centre wheel.</p>
+  <p>The timing graph uses a published 6497 training-tool set: centre 80 teeth, third 60 / 10-leaf pinion, seconds/fourth 120 / 8-leaf pinion, and escape 15 / 10-leaf pinion. At 21,600 A/h this closes to 5 s/rev for the escape wheel, 60 s/rev for the seconds/fourth wheel, 7.5 min/rev for the third wheel and 1 h/rev for the centre wheel.</p>
 
   <h2>Pitch solve retained from M3c</h2>
-  <p>The current reference-derived XY centres imply the following nominal mesh geometry:</p>
   <div class="specs">
     <div class="spec"><span>Centre → third pinion</span><strong>6.466 mm · m 0.1437</strong></div>
     <div class="spec"><span>Pitch radii</span><strong>5.748 + 0.718 mm</strong></div>
@@ -43,40 +42,34 @@
     <div class="spec"><span>Pitch radii</span><strong>8.563 + 0.714 mm</strong></div>
   </div>
 
-  <h2>M3f — pitch-radius-native train teeth</h2>
-  <p>The older constructive gear primitive did not interpret its radius as a strict pitch radius. M3f adds a train-only spur construction where the supplied radius <em>is</em> the pitch radius. Addendum and dedendum now bracket that pitch line, and tooth width is tied to circular pitch.</p>
-  <div class="callout"><strong>Still educational, not involute CAD.</strong><p>The new tooth flanks are simplified tapered/polygonal approximations. The important improvement is semantic: solved pitch circles now correspond directly to rendered tooth engagement instead of being translated through an ambiguous decorative radius.</p></div>
+  <h2>M3f foundation — true-pitch train and stepped staffs</h2>
+  <p>M3f replaced the older decorative gear-radius convention with a train-specific construction whose supplied radius has exact pitch-circle semantics. The tooth profile remains educational rather than manufacturing involute/cycloidal CAD, but the rendered wheel/pinion engagement and the solved pitch circles now belong to the same geometric model.</p>
+  <p>The large wheel bodies sit on separate bridge-side planes and each driven pinion occupies the plane of the wheel that drives it. Uniform presentation rods were replaced with stepped staffs running between the mainplate and bridge jewel regions.</p>
 
-  <h3>Pitch/contact guides</h3>
-  <p><strong>Show pitch mesh guides</strong> displays both pitch circles, their line of centres, and a bright tangent/contact marker for each wheel→pinion mesh. The <strong>Train mesh</strong> camera preset enables this automatically.</p>
+  <h2>M3g — bearing stack and endshake</h2>
+  <p>M3g adds explicit bearing-shape cues to the centre, third, seconds/fourth and escape staffs: conical pivot noses, wheel-seat shoulders, narrowed bridge-side pivot regions, and a visible jewel-to-jewel relationship.</p>
 
-  <h2>M3f — clearance-aware axial stack</h2>
-  <p>The compound train now uses a tighter reconstructed stack:</p>
+  <h3>Reconstruction endshake targets</h3>
   <div class="specs">
-    <div class="spec"><span>Centre wheel</span><strong>z = -0.90 mm</strong></div>
-    <div class="spec"><span>Third wheel</span><strong>z = -1.23 mm</strong></div>
-    <div class="spec"><span>Seconds/fourth</span><strong>z = -1.55 mm</strong></div>
-    <div class="spec"><span>Escape wheel</span><strong>z = -0.92 mm</strong></div>
+    <div class="spec"><span>Centre wheel</span><strong>0.040 mm</strong></div>
+    <div class="spec"><span>Third wheel</span><strong>0.040 mm</strong></div>
+    <div class="spec"><span>Seconds/fourth</span><strong>0.040 mm</strong></div>
+    <div class="spec"><span>Escape wheel</span><strong>0.035 mm</strong></div>
   </div>
-  <p>The driven pinions still occupy the plane of the wheel that drives them: third pinion in the centre-wheel plane, seconds/fourth pinion in the third-wheel plane, and escape pinion in the seconds/fourth-wheel plane.</p>
+  <div class="callout"><strong>These are reconstruction targets.</strong><p>They are deliberately not labeled as ETA production tolerances. Their purpose is to model the concept of controlled axial play and force the current bridge/mainplate stack to leave a believable amount of room for it.</p></div>
 
-  <h3>Reconstructed bearing/clearance references</h3>
-  <div class="specs">
-    <div class="spec"><span>Mainplate surface</span><strong>≈ z -0.57 mm</strong></div>
-    <div class="spec"><span>Mainplate jewels</span><strong>≈ z -0.68 mm</strong></div>
-    <div class="spec"><span>Barrel bridge underside</span><strong>≈ z -1.91 mm</strong></div>
-    <div class="spec"><span>Train bridge underside</span><strong>≈ z -1.93 mm</strong></div>
-    <div class="spec"><span>Centre upper jewel</span><strong>≈ z -2.70 mm</strong></div>
-    <div class="spec"><span>Train upper jewels</span><strong>≈ z -2.72 mm</strong></div>
-  </div>
-  <p>These values are extracted from the reconstruction already on screen, not asserted ETA manufacturing stack dimensions.</p>
+  <h3>Endshake inspection</h3>
+  <p><strong>Show endshake guides</strong> marks each wheel’s tiny nominal axial travel and links that working range to the reconstructed jewel regions. The optional motion control provides 1×, 10× and 25× amplitudes; the latter two are explicitly exaggerated diagnostic views so the movement can be inspected on a screen.</p>
 
-  <h2>M3f — stepped staffs and pivots</h2>
-  <p>The old uniform rods are hidden. The centre, third, seconds/fourth and escape assemblies now sit on schematic stepped staffs with a mainplate pivot, central arbor, wheel-seat collar, bridge neck and small polished upper pivot reaching the visible bridge jewel region.</p>
-  <p><strong>Train stack</strong> rotates to a side-on inspection view and automatically enables <strong>Show staff / clearance guides</strong>. Those guides expose the reconstructed mainplate plane, bridge underside and vertical staff lines so the axial architecture can be inspected instead of inferred.</p>
+  <h2>M3g — wheel-body separation</h2>
+  <p>The large wheels can overlap heavily in front projection because the actual train is wheel → small coaxial pinion → wheel. M3g now treats the axial separation of the large wheel bodies as a first-class diagnostic instead of relying on visual intuition.</p>
+  <p><strong>Show wheel-body gap guides</strong> exposes the thin z-separation between adjacent wheel bodies. This is separate from the pitch/contact guide, which shows where the actual wheel and driven pinion mesh.</p>
+
+  <h2>Train-stack inspection</h2>
+  <p>The <strong>Train stack</strong> camera preset turns the movement nearly side-on and enables staff/clearance, endshake and wheel-body-gap diagnostics together. This is the most useful view for judging whether the current procedural reconstruction is physically coherent rather than merely attractive from the bridge side.</p>
 
   <h2>Lighting</h2>
-  <p>The balanced camera-axis setup remains unchanged from the previous correction: a moderate default, movable manual key, and intentionally excessive Full bright / diagnostic headroom when required.</p>
+  <p>The balanced camera-axis setup remains the default: moderate camera-aligned illumination, manual raking controls, and a deliberately excessive Full bright / diagnostic preset when geometry becomes difficult to read.</p>
 
   <h2>Provenance classes</h2>
   <p><span class="badge official">official</span> Directly supported by technical material.</p>
@@ -85,10 +78,10 @@
   <p><span class="badge presentation">presentation</span> Geometry or controls added for readability and explanation.</p>
 
   <h2>Next work</h2>
-  <h3>M3g — bridge/endshake refinement</h3>
-  <p>Refine pivot lengths and shoulders, introduce small explicit endshake, compare the enlarged pitch-derived envelopes against the bridge contours, and move the train tooth form toward a more defensible horological profile.</p>
-  <h3>M4 — winding fidelity</h3>
-  <p>Stateful crown/stem positions, winding versus hand-setting, causal keyless works, one-way click behavior and stored mainspring energy.</p>
+  <h3>M4a — causal winding state</h3>
+  <p>The next step leaves purely presentational winding behind: explicit crown/stem state, user-driven winding input, crown-wheel and ratchet angles derived from that input, one-way click behavior, and a normalized stored mainspring-energy state.</p>
+  <h3>M4b — setting works</h3>
+  <p>Stem setting position, sliding/winding-pinion state change, motion-works coupling and hand-setting without winding the barrel.</p>
   <h3>M5 — escapement fidelity</h3>
   <p>Locking and impulse faces, banking and roller-jewel interaction, with causal escape release.</p>
 
