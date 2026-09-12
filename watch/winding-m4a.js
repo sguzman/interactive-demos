@@ -26,7 +26,6 @@ function makeCrownDriver(caseRoot, materials) {
   shell.castShadow = shell.receiveShadow = true;
   group.add(shell);
 
-  // A tiny index mark makes axial rotation legible even though the crown is round.
   const marker = new THREE.Mesh(
     new THREE.BoxGeometry(.16, .48, .18),
     materials.blueSteel ?? materials.caseSteel
@@ -83,7 +82,6 @@ function bindHoldButton(button, direction, controller) {
   button.addEventListener('pointerup', release);
   button.addEventListener('pointercancel', release);
   button.addEventListener('lostpointercapture', release);
-  // A quick click should still make an obvious discrete motion.
   button.addEventListener('click', () => controller.nudge(direction, .75));
 }
 
@@ -135,12 +133,13 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
       state.full = state.energy >= .999999;
       state.lastAction = state.full && acceptedTurns === 0 ? 'full stop' : 'winding';
     } else {
-      // The crown/crown-wheel train can be returned, but the ratchet is not
-      // permitted to back-drive. That one-way asymmetry is the M4a causal core.
+      // Return motion is absorbed upstream by the winding clutch/keyless path in
+      // this simplified model. The crown itself returns, while crown wheel and
+      // ratchet remain stationary so their visible teeth never pass through each
+      // other. The click still represents the one-way ratchet constraint.
       state.crownAngle += deltaAngle;
-      state.crownWheelAngle -= deltaAngle;
       state.returnCrownTurns += Math.abs(deltaAngle) / TAU;
-      state.lastAction = 'return / click locked';
+      state.lastAction = 'return / clutch free';
     }
 
     state.clickCount = Math.floor(Math.abs(state.ratchetAngle) / toothPitch);
@@ -201,7 +200,7 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
     if (ui.energy) ui.energy.value = `${Math.round(state.energy * 100)}%`;
     if (ui.clicks) ui.clicks.value = `${state.clickCount}`;
     if (ui.action) ui.action.value = state.lastAction;
-    if (ui.clickState) ui.clickState.value = state.input < 0 ? 'LOCKED' : (state.input > 0 ? 'RATCHETING' : 'SEATED');
+    if (ui.clickState) ui.clickState.value = state.input < 0 ? 'LOCKED / RETURN' : (state.input > 0 ? 'RATCHETING' : 'SEATED');
     if (ui.wind) ui.wind.disabled = state.full;
   }
 
@@ -213,8 +212,6 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
     if (animated.ratchet) animated.ratchet.rotation.z = bases.ratchet + state.ratchetAngle;
     if (animated.barrel) animated.barrel.rotation.z = bases.barrel;
 
-    // The physical click model is approximate, so only a tiny translation is
-    // used to communicate tooth lift; reverse motion leaves it fully seated.
     if (clickVisual) {
       const phase = ((state.ratchetAngle / toothPitch) % 1 + 1) % 1;
       const lift = state.input > 0 ? Math.sin(phase * Math.PI) ** 4 : 0;
