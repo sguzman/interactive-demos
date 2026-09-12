@@ -22,9 +22,9 @@
     <header class="topbar panel">
       <a class="gallery-link" href="../">← Gallery</a>
       <div class="identity">
-        <div class="eyebrow">REFERENCE RECONSTRUCTION · M3B</div>
+        <div class="eyebrow">REFERENCE RECONSTRUCTION · M3C</div>
         <h1>ETA / Unitas 6497-2</h1>
-        <p>reference-count train geometry + rebuilt inspection lighting</p>
+        <p>mesh-derived train geometry + camera-axis inspection lighting</p>
       </div>
       <a class="docs-link" href="../docs/watch-eta-6497-2.html">Documentation ↗</a>
     </header>
@@ -86,14 +86,15 @@
       <section class="lighting-controls">
         <div class="section-heading-row">
           <div class="section-title">Inspection light</div>
-          <span class="hard-light-badge">READABILITY RIG</span>
+          <span class="hard-light-badge">BRIGHTNESS FIRST</span>
         </div>
 
         <label class="select-row">
           <span>Preset</span>
           <select id="lightPreset">
-            <option value="hard" selected>Hard inspection</option>
+            <option value="camera" selected>Camera aligned / bright</option>
             <option value="fullbright">Full bright / diagnostic</option>
+            <option value="hard">Hard inspection</option>
             <option value="raking">Raking side</option>
             <option value="top">Top inspection</option>
             <option value="backlit">Backlit skeleton</option>
@@ -102,32 +103,43 @@
           </select>
         </label>
 
-        <label class="range-row"><span>Azimuth</span><output id="lightAzimuthValue">35°</output></label>
+        <label class="select-row">
+          <span>Light mode</span>
+          <select id="lightMode">
+            <option value="camera" selected>Camera aligned</option>
+            <option value="manual">Manual key only</option>
+            <option value="both">Camera + manual key</option>
+          </select>
+        </label>
+
+        <label class="range-row"><span>Camera intensity</span><output id="cameraIntensityValue">430</output></label>
+        <input id="cameraIntensity" type="range" min="0" max="700" value="430" />
+
+        <label class="range-row"><span>Manual azimuth</span><output id="lightAzimuthValue">35°</output></label>
         <input id="lightAzimuth" type="range" min="-180" max="180" value="35" />
 
-        <label class="range-row"><span>Elevation</span><output id="lightElevationValue">46°</output></label>
+        <label class="range-row"><span>Manual elevation</span><output id="lightElevationValue">46°</output></label>
         <input id="lightElevation" type="range" min="5" max="85" value="46" />
 
-        <label class="range-row"><span>Distance</span><output id="lightDistanceValue">60 mm</output></label>
+        <label class="range-row"><span>Manual distance</span><output id="lightDistanceValue">60 mm</output></label>
         <input id="lightDistance" type="range" min="28" max="110" value="60" />
 
-        <label class="range-row"><span>Key intensity</span><output id="lightIntensityValue">190</output></label>
-        <input id="lightIntensity" type="range" min="0" max="260" value="190" />
+        <label class="range-row"><span>Manual intensity</span><output id="lightIntensityValue">260</output></label>
+        <input id="lightIntensity" type="range" min="0" max="700" value="260" />
 
-        <label class="range-row"><span>Ambient / fill</span><output id="ambientValue">0.48</output></label>
-        <input id="ambient" type="range" min="0" max="100" value="48" />
+        <label class="range-row"><span>Ambient / fill</span><output id="ambientValue">0.82</output></label>
+        <input id="ambient" type="range" min="0" max="120" value="82" />
 
-        <label class="range-row"><span>Exposure</span><output id="exposureValue">1.58×</output></label>
-        <input id="exposure" type="range" min="70" max="220" value="158" />
+        <label class="range-row"><span>Exposure</span><output id="exposureValue">1.95×</output></label>
+        <input id="exposure" type="range" min="70" max="320" value="195" />
 
         <div class="inline-toggles">
           <label><input id="shadows" type="checkbox" checked /> Shadows</label>
-          <label><input id="lightGizmo" type="checkbox" checked /> Show key</label>
-          <label><input id="headlamp" type="checkbox" checked /> Camera light</label>
+          <label><input id="lightGizmo" type="checkbox" checked /> Show manual key</label>
         </div>
       </section>
 
-      <div class="hint">If anything is still too dark, choose “Full bright / diagnostic.” Drag to orbit · wheel to zoom · click a component to inspect.</div>
+      <div class="hint">Camera-aligned mode puts the inspection source conceptually behind your camera and shines straight down the viewing axis. Manual sliders stay available for raking light. If anything is still dark, use Full bright / diagnostic and raise Camera intensity.</div>
     </aside>
 
     <aside class="inspector panel" id="infoPanel">
@@ -136,7 +148,7 @@
         <span class="provenance approximate" id="infoProvenance">approximate</span>
       </div>
       <h2 id="infoName">Mechanical component inspector</h2>
-      <p id="infoText">M3b makes the visible centre, third, seconds/fourth and escape wheels use the same reference tooth/leaf counts as the train timing model. Centre distances and radii remain reconstruction geometry, not manufacturing CAD.</p>
+      <p id="infoText">M3c derives wheel pitch radii from the current train centre distances and the reference tooth/leaf counts, so the visible meshes now have a geometric reason to meet instead of using arbitrary wheel radii.</p>
       <dl class="part-facts" id="partFacts"></dl>
     </aside>
 
@@ -148,7 +160,7 @@
       <span><i class="dot structure-dot"></i>structure</span>
     </div>
 
-    <div id="loading">Constructing 6497-2 M3b reference…</div>
+    <div id="loading">Constructing 6497-2 M3c reference…</div>
   </div>
 
   <script type="module" src="./main.js"></script>
