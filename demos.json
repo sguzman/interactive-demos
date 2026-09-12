@@ -2,10 +2,10 @@
   {
     "slug": "watch",
     "title": "ETA / Unitas 6497-2 — Exploded Watch Anatomy",
-    "summary": "A movement-first 3D explainer of a large hand-wound mechanical watch with causal winding and setting, stored reserve, geometry-constrained Swiss lever release, and a state-integrated balance/hairspring oscillator with explicit angle, angular velocity, restoring force, damping, impulse kicks, and amplitude-dependent rate.",
+    "summary": "A movement-first 3D explainer of a large hand-wound mechanical watch with causal winding and setting, stored reserve, geometry-constrained Swiss lever release, and a state-integrated balance whose escapement impulse is now admitted by reconstructed tooth/pallet contact geometry rather than by center crossing alone.",
     "kind": "Three.js · Horology",
     "status": "active",
-    "maturity": "M5f state-integrated balance oscillator",
+    "maturity": "M5g geometry-admitted escapement impulse",
     "path": "./watch/",
     "docs": "./docs/watch-eta-6497-2.html",
     "tags": ["3D", "mechanical", "horology", "exploded-view", "simulation"],
@@ -13,7 +13,7 @@
       "Target": "ETA/Unitas 6497-2 / OP XI lineage",
       "Reference shell": "44 mm exhibition wristwatch",
       "Geometry": "constructive / procedural · mm",
-      "Current pass": "M5f reserve → impulse Δω + hairspring restoring/damping → integrated θ/ω → geometry-constrained escapement → train",
+      "Current pass": "M5g center crossing → reconstructed pallet/tooth impulse-path gate → Δω → integrated balance → geometry-constrained train release",
       "Hosting": "GitHub Pages"
     }
   }
