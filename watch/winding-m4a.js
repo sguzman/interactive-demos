@@ -14,8 +14,6 @@ function clamp01(value) {
 function makeCrownDriver(caseRoot, materials) {
   if (!caseRoot) return null;
 
-  // M4a owns the visible crown from here onward so later stem-state milestones can
-  // translate it without leaving the old presentation crown behind as a duplicate.
   const oldCrown = caseRoot.children.find(child =>
     child.isMesh && child.geometry?.type === 'CylinderGeometry' && Math.abs((child.position?.x ?? 0) - 24.2) < .2
   );
@@ -123,6 +121,7 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
   };
 
   const maxReserveHours = model.powerReserveTypicalHours ?? 60;
+  const maxReserveSeconds = maxReserveHours * 3600;
   const toothPitch = TAU / RATCHET_TEETH;
 
   function applyCrownDelta(deltaAngle) {
@@ -150,6 +149,26 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
     state.clickCount = Math.floor(Math.abs(state.ratchetAngle) / toothPitch);
   }
 
+  function consumeRunSeconds(requestedSeconds) {
+    const requested = Math.max(0, Number(requestedSeconds) || 0);
+    if (requested === 0 || state.energy <= 0) return 0;
+
+    const availableSeconds = state.energy * maxReserveSeconds;
+    const consumedSeconds = Math.min(requested, availableSeconds);
+    state.energy = clamp01(state.energy - consumedSeconds / maxReserveSeconds);
+    state.acceptedCrownTurns = state.energy * FULL_WIND_CROWN_TURNS;
+    state.full = state.energy >= .999999;
+
+    if (state.energy <= 1e-10) {
+      state.energy = 0;
+      state.acceptedCrownTurns = 0;
+      state.full = false;
+      if (state.input === 0) state.lastAction = 'power exhausted';
+    }
+
+    return consumedSeconds;
+  }
+
   function rotateCrownOnly(deltaAngle) {
     if (!Number.isFinite(deltaAngle) || deltaAngle === 0) return;
     state.crownAngle += deltaAngle;
@@ -166,7 +185,7 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
       return;
     }
     state.input = Math.sign(direction);
-    if (state.input === 0 && !state.full) state.lastAction = 'idle';
+    if (state.input === 0 && !state.full && state.energy > 0) state.lastAction = 'idle';
   }
 
   function nudge(direction, turns = .75) {
@@ -184,7 +203,7 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
     state.energy = 0;
     state.clickCount = 0;
     state.full = false;
-    state.lastAction = 'reset';
+    state.lastAction = 'reset / unwound';
   }
 
   const ui = {
@@ -216,8 +235,8 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
   function syncUI() {
     const reserve = state.energy * maxReserveHours;
     if (ui.meter) ui.meter.value = state.energy;
-    if (ui.reserve) ui.reserve.value = `${reserve.toFixed(1)} h / ${maxReserveHours} h`;
-    if (ui.energy) ui.energy.value = `${Math.round(state.energy * 100)}%`;
+    if (ui.reserve) ui.reserve.value = `${reserve.toFixed(2)} h / ${maxReserveHours} h`;
+    if (ui.energy) ui.energy.value = `${(state.energy * 100).toFixed(state.energy > 0 && state.energy < .01 ? 2 : 0)}%`;
     if (ui.clicks) ui.clicks.value = `${state.clickCount}`;
     if (ui.action) ui.action.value = state.enabled ? state.lastAction : 'disabled by stem position';
     if (ui.clickState) ui.clickState.value = !state.enabled ? 'OUT OF WINDING MODE' : (state.input < 0 ? 'LOCKED / RETURN' : (state.input > 0 ? 'RATCHETING' : 'SEATED'));
@@ -244,7 +263,7 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
       const radial = 1 - state.energy * .16;
       energySpring.scale.set(radial, radial, 1);
       energySpring.rotation.z = -state.energy * .48;
-      energySpring.material.opacity = .24 + state.energy * .68;
+      energySpring.material.opacity = .18 + state.energy * .74;
       energySpring.material.color.setHSL(.55 - state.energy * .08, .78, .62);
     }
 
@@ -261,13 +280,15 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
     reset,
     setEnabled,
     rotateCrownOnly,
+    consumeRunSeconds,
     crownDriver,
     bases,
     constants: {
       ratchetTeeth: RATCHET_TEETH,
       crownWheelTeeth: CROWN_WHEEL_TEETH,
       fullWindCrownTurns: FULL_WIND_CROWN_TURNS,
-      maxReserveHours
+      maxReserveHours,
+      maxReserveSeconds
     }
   };
 }
