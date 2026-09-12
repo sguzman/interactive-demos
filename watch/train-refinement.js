@@ -1,22 +1,122 @@
 import { escapeWheel, gear, pinion, setShadows } from './geometry.js';
+import { LAYOUT } from './spec.js';
 
-// M3b visual-train pass.
+// M3c train-geometry pass.
 //
-// The 6497 training-tool reference used by kinematics.js reports:
-//   centre 80 teeth
-//   third 60 teeth / 10-leaf pinion
-//   seconds/fourth 120 teeth / 8-leaf pinion
-//   escape 15 teeth / 10-leaf pinion
-//
-// We now make the visible train declare those same counts. Radii and centre
-// distances remain reference-derived presentation geometry rather than solved
-// manufacturing coordinates, so this module must not be read as CAD.
+// M3b made the visible tooth/leaf counts agree with the reference timing graph.
+// M3c removes another arbitrary degree of freedom: wheel/pinion pitch radii are
+// derived from the current reference-derived centre coordinates and tooth counts.
+// This is still reconstruction geometry, not ETA manufacturing coordinates.
+
+function distance(a, b) {
+  return Math.hypot(a[0] - b[0], a[1] - b[1]);
+}
+
+function solveExternalMesh(driverCenter, drivenCenter, driverTeeth, drivenLeaves) {
+  const centerDistance = distance(driverCenter, drivenCenter);
+  const moduleMm = (2 * centerDistance) / (driverTeeth + drivenLeaves);
+  return {
+    centerDistance,
+    moduleMm,
+    driverPitchRadius: moduleMm * driverTeeth / 2,
+    drivenPitchRadius: moduleMm * drivenLeaves / 2,
+    closureError: 0
+  };
+}
+
+export const TRAIN_MESHES = {
+  centerToThird: {
+    driver: 'centre wheel',
+    driven: 'third pinion',
+    driverTeeth: 80,
+    drivenLeaves: 10,
+    ...solveExternalMesh(LAYOUT.centerWheel, LAYOUT.thirdWheel, 80, 10)
+  },
+  thirdToSeconds: {
+    driver: 'third wheel',
+    driven: 'seconds/fourth pinion',
+    driverTeeth: 60,
+    drivenLeaves: 8,
+    ...solveExternalMesh(LAYOUT.thirdWheel, LAYOUT.secondWheel, 60, 8)
+  },
+  secondsToEscape: {
+    driver: 'seconds/fourth wheel',
+    driven: 'escape pinion',
+    driverTeeth: 120,
+    drivenLeaves: 10,
+    ...solveExternalMesh(LAYOUT.secondWheel, LAYOUT.escapeWheel, 120, 10)
+  }
+};
+
+function wheelDepth(moduleMm) {
+  return Math.max(.12, moduleMm * .95);
+}
+
+function wheelWidth(moduleMm) {
+  return Math.max(.07, moduleMm * .55);
+}
+
+const m1 = TRAIN_MESHES.centerToThird;
+const m2 = TRAIN_MESHES.thirdToSeconds;
+const m3 = TRAIN_MESHES.secondsToEscape;
 
 const REFERENCE_VISUALS = {
-  center:  { teeth: 80,  radius: 4.25, thickness: .46, toothDepth: .20, toothWidth: .115, pinion: null },
-  third:   { teeth: 60,  radius: 3.55, thickness: .42, toothDepth: .21, toothWidth: .13,  pinion: { teeth: 10, radius: .70, thickness: .72, z: -.48 } },
-  seconds: { teeth: 120, radius: 3.15, thickness: .40, toothDepth: .13, toothWidth: .072, pinion: { teeth: 8,  radius: .56, thickness: .68, z: -.46 } },
-  escape:  { teeth: 15,  radius: 2.25, thickness: .34, toothDepth: .70, toothWidth: .17,  pinion: { teeth: 10, radius: .62, thickness: .66, z: -.43 } }
+  center: {
+    teeth: 80,
+    radius: m1.driverPitchRadius,
+    thickness: .46,
+    toothDepth: wheelDepth(m1.moduleMm),
+    toothWidth: wheelWidth(m1.moduleMm),
+    pinion: null,
+    mesh: 'centerToThird'
+  },
+  third: {
+    teeth: 60,
+    radius: m2.driverPitchRadius,
+    thickness: .42,
+    toothDepth: wheelDepth(m2.moduleMm),
+    toothWidth: wheelWidth(m2.moduleMm),
+    pinion: {
+      teeth: 10,
+      radius: m1.drivenPitchRadius,
+      thickness: .72,
+      z: -.48,
+      moduleMm: m1.moduleMm
+    },
+    mesh: 'thirdToSeconds'
+  },
+  seconds: {
+    teeth: 120,
+    radius: m3.driverPitchRadius,
+    thickness: .40,
+    toothDepth: wheelDepth(m3.moduleMm),
+    toothWidth: wheelWidth(m3.moduleMm),
+    pinion: {
+      teeth: 8,
+      radius: m2.drivenPitchRadius,
+      thickness: .68,
+      z: -.46,
+      moduleMm: m2.moduleMm
+    },
+    mesh: 'secondsToEscape'
+  },
+  escape: {
+    teeth: 15,
+    // Escape-wheel tooth geometry belongs to the escapement, not to the train
+    // mesh that drives its pinion, so its wheel radius remains reference-derived.
+    radius: 2.25,
+    thickness: .34,
+    toothDepth: .70,
+    toothWidth: .17,
+    pinion: {
+      teeth: 10,
+      radius: m3.drivenPitchRadius,
+      thickness: .66,
+      z: -.43,
+      moduleMm: m3.moduleMm
+    },
+    mesh: null
+  }
 };
 
 function rootPart(object) {
@@ -56,7 +156,7 @@ function hideLegacyCoaxialPinions(target, pickables) {
     if (sibling.position.distanceTo(target.position) > .08) continue;
     removePickablesFor(sibling, pickables);
     sibling.visible = false;
-    sibling.userData.m3bLegacyHidden = true;
+    sibling.userData.m3cLegacyHidden = true;
   }
 }
 
@@ -81,7 +181,7 @@ function conventionalWheel(spec, material, pinionMaterial, spokeCount = 5) {
     thickness: spec.thickness,
     material,
     hubMaterial: pinionMaterial,
-    hubRadius: Math.max(.48, spec.radius * .16),
+    hubRadius: Math.max(.48, spec.radius * .13),
     spokeCount,
     spokeWidth: spec.teeth > 100 ? .24 : .32,
     rimTube: spec.teeth > 100 ? .12 : .17,
@@ -99,11 +199,26 @@ function conventionalWheel(spec, material, pinionMaterial, spokeCount = 5) {
     });
     p.position.z = spec.pinion.z;
     p.userData.referenceLeafCount = spec.pinion.teeth;
+    p.userData.pitchModuleMm = spec.pinion.moduleMm;
     assembly.add(p);
   }
 
   assembly.userData.referenceToothCount = spec.teeth;
+  assembly.userData.nominalPitchRadiusMm = spec.radius;
+  assembly.userData.mesh = spec.mesh;
   return assembly;
+}
+
+export function trainGeometryDiagnostics() {
+  return Object.fromEntries(Object.entries(TRAIN_MESHES).map(([name, mesh]) => [name, {
+    driver: mesh.driver,
+    driven: mesh.driven,
+    centerDistanceMm: Number(mesh.centerDistance.toFixed(3)),
+    moduleMm: Number(mesh.moduleMm.toFixed(4)),
+    driverPitchRadiusMm: Number(mesh.driverPitchRadius.toFixed(3)),
+    drivenPitchRadiusMm: Number(mesh.drivenPitchRadius.toFixed(3)),
+    closureMm: Number((mesh.driverPitchRadius + mesh.drivenPitchRadius - mesh.centerDistance).toFixed(6))
+  }]));
 }
 
 export function refineTrainGeometry(animated, materials, pickables) {
@@ -144,9 +259,13 @@ export function refineTrainGeometry(animated, materials, pickables) {
   });
   escapePinion.position.z = escSpec.pinion.z;
   escapePinion.userData.referenceLeafCount = escSpec.pinion.teeth;
+  escapePinion.userData.pitchModuleMm = escSpec.pinion.moduleMm;
   escAssembly.add(escapePinion);
   escAssembly.userData.referenceToothCount = escSpec.teeth;
   replaceWheel(animated.escapeWheel, escAssembly, pickables);
 
-  return REFERENCE_VISUALS;
+  return {
+    visuals: REFERENCE_VISUALS,
+    meshes: trainGeometryDiagnostics()
+  };
 }
