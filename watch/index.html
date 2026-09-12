@@ -7,252 +7,178 @@
   <title>ETA / Unitas 6497-2 — Exploded Watch Anatomy</title>
   <link rel="stylesheet" href="./style.css" />
   <script type="importmap">
-  {
-    "imports": {
-      "three": "https://unpkg.com/three@0.180.0/build/three.module.js",
-      "three/addons/": "https://unpkg.com/three@0.180.0/examples/jsm/"
-    }
-  }
+  {"imports":{"three":"https://unpkg.com/three@0.180.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.180.0/examples/jsm/"}}
   </script>
-
   <style>
-    .power-state{display:grid;gap:9px;margin-top:9px}.power-meter{width:100%;height:12px;accent-color:#d8b36a}.power-stats,.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.power-stat,.mode-stat{border:1px solid #ffffff12;border-radius:8px;padding:7px 8px;background:#ffffff05}.power-stat span,.mode-stat span{display:block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#727c86}.power-stat output,.mode-stat output{display:block;margin-top:3px;font-size:11px;color:#dce2e7}.winding-note{font-size:10px;line-height:1.45;color:#7f8993;margin-top:7px}.winding-buttons button,.setting-buttons button{touch-action:none;user-select:none}.winding-buttons button:disabled,.setting-buttons button:disabled{opacity:.42;cursor:not-allowed}.mode-grid{margin-top:8px}.mode-accent{color:#e4c87c!important}.power-running{color:#8fd2a1!important}.escapement-phase{color:#82c7ff!important}.escapement-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.diagnostic-stat output{font-variant-numeric:tabular-nums}
+    .power-state{display:grid;gap:9px;margin-top:9px}.power-meter{width:100%;height:12px;accent-color:#d8b36a}.power-stats,.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.power-stat,.mode-stat{border:1px solid #ffffff12;border-radius:8px;padding:7px 8px;background:#ffffff05}.power-stat span,.mode-stat span{display:block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#727c86}.power-stat output,.mode-stat output{display:block;margin-top:3px;font-size:11px;color:#dce2e7}.winding-note{font-size:10px;line-height:1.45;color:#7f8993;margin-top:7px}.winding-buttons button,.setting-buttons button{touch-action:none;user-select:none}.winding-buttons button:disabled,.setting-buttons button:disabled{opacity:.42;cursor:not-allowed}.mode-grid{margin-top:8px}.mode-accent{color:#e4c87c!important}.power-running{color:#8fd2a1!important}.escapement-phase{color:#82c7ff!important}.escapement-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.diagnostic-stat output{font-variant-numeric:tabular-nums}.amplitude-live{color:#9fe3ae!important}.amplitude-fail{color:#f2a19b!important}
   </style>
 </head>
 <body>
-  <div id="app">
-    <canvas id="scene"></canvas>
+<div id="app">
+  <canvas id="scene"></canvas>
 
-    <header class="topbar panel">
-      <a class="gallery-link" href="../">← Gallery</a>
-      <div class="identity">
-        <div class="eyebrow">REFERENCE RECONSTRUCTION · M5B</div>
-        <h1>ETA / Unitas 6497-2</h1>
-        <p>Swiss lever pallet faces, banking, draw / drop diagnostics, and event stepping</p>
-      </div>
-      <a class="docs-link" href="../docs/watch-eta-6497-2.html">Documentation ↗</a>
-    </header>
-
-    <aside class="controls panel" aria-label="Watch controls">
-      <section>
-        <div class="section-title">Assembly</div>
-        <label class="range-row" for="explode"><span>Exploded view</span><output id="explodeValue">22%</output></label>
-        <input id="explode" type="range" min="0" max="100" value="22" />
-        <div class="button-row">
-          <button id="assembleBtn" class="secondary">Assemble</button>
-          <button id="explodeBtn">Explode</button>
-        </div>
-        <button id="resetBtn" class="secondary wide">Reset camera</button>
-      </section>
-
-      <section>
-        <div class="section-title">Inspection view</div>
-        <div class="view-grid">
-          <button class="secondary" data-view="overview">Overview</button>
-          <button class="secondary" data-view="bridge">Bridge side</button>
-          <button class="secondary" data-view="dial">Dial side</button>
-          <button class="secondary" data-view="keyless">Keyless works</button>
-          <button class="secondary" data-view="train">Train mesh</button>
-          <button class="secondary" data-view="stack">Train stack</button>
-          <button class="secondary" data-view="escapement">Escapement</button>
-          <button class="secondary" data-view="winding">Winding</button>
-        </div>
-      </section>
-
-      <section>
-        <div class="section-title">Simulation</div>
-        <label class="select-row">
-          <span>Mechanical time scale</span>
-          <select id="trainScale">
-            <option value="0">0× paused</option>
-            <option value="0.1">0.1× escapement slow</option>
-            <option value="0.25">0.25× escapement inspect</option>
-            <option value="0.5">0.5× slow</option>
-            <option value="1" selected>1× real time</option>
-            <option value="10">10× inspect</option>
-            <option value="60">60× inspect</option>
-            <option value="300">300× inspect</option>
-            <option value="3600">3600× reserve demo</option>
-          </select>
-        </label>
-        <label class="select-row">
-          <span>Endshake motion</span>
-          <select id="endshakeScale">
-            <option value="0" selected>Off</option>
-            <option value="1">1× nominal</option>
-            <option value="10">10× inspect</option>
-            <option value="25">25× diagnostic</option>
-          </select>
-        </label>
-        <div class="inline-toggles">
-          <label><input id="meshGuides" type="checkbox" /> Show pitch mesh guides</label>
-          <label><input id="stackGuides" type="checkbox" /> Show staff / clearance guides</label>
-          <label><input id="endshakeGuides" type="checkbox" /> Show endshake guides</label>
-          <label><input id="bodyGapGuides" type="checkbox" /> Show wheel-body gap guides</label>
-        </div>
-      </section>
-
-      <section>
-        <div class="section-title">Swiss lever escapement · M5b</div>
-        <div class="mode-grid">
-          <div class="mode-stat"><span>Phase</span><output id="escapementPhaseValue" class="escapement-phase">LOCK · ENTRY</output></div>
-          <div class="mode-stat"><span>Active pallet</span><output id="activePalletValue">ENTRY PALLET</output></div>
-          <div class="mode-stat"><span>Beat index</span><output id="escapementBeatValue">0</output></div>
-          <div class="mode-stat"><span>Escape release</span><output id="escapeReleaseValue">HELD</output></div>
-        </div>
-        <div class="mode-grid diagnostic-stat">
-          <div class="mode-stat"><span>Lock depth</span><output id="lockDepthValue">1.80° target</output></div>
-          <div class="mode-stat"><span>Drop</span><output id="dropValue">0.00° target</output></div>
-          <div class="mode-stat"><span>Draw</span><output id="drawValue">12.0° target</output></div>
-          <div class="mode-stat"><span>Banking</span><output id="bankingValue">±7.7°</output></div>
-        </div>
-        <div class="escapement-actions">
-          <button id="stepEscapementEventBtn">Step next event</button>
-          <button id="stepBeatBtn" class="secondary">Step one beat</button>
-        </div>
-        <div class="inline-toggles">
-          <label><input id="escapementGuides" type="checkbox" /> Show escape → pallet → balance guides</label>
-          <label><input id="escapementGeometryGuides" type="checkbox" /> Show pallet-face / safety diagnostics</label>
-        </div>
-        <div class="winding-note">M5b adds explicit colored lock and impulse faces on both pallet stones, a roller/fork-slot clearance envelope, banking arc, active contact marker, and drop marker. The displayed lock depth, draw, drop and tiny clearances are reconstruction targets for explaining the geometry — not ETA production tolerances. Pause at 0× and use Step next event to walk lock → unlock → impulse → relock without skipping straight to the next beat.</div>
-      </section>
-
-      <section>
-        <div class="section-title">Power release · M4c retained</div>
-        <div class="mode-grid">
-          <div class="mode-stat"><span>Movement state</span><output id="movementStateValue" class="power-running">STOPPED · UNWOUND</output></div>
-          <div class="mode-stat"><span>Power flow</span><output id="powerFlowValue">NO RELEASE</output></div>
-          <div class="mode-stat"><span>Mechanical elapsed</span><output id="runElapsedValue">00:00:00</output></div>
-          <div class="mode-stat"><span>Energy gate</span><output id="energyGateValue">BLOCKED · NO ENERGY</output></div>
-        </div>
-        <div class="winding-note">The watch starts genuinely unwound. Give it energy with the crown and the oscillator/escapement can release the train. When reserve reaches zero, mechanical time freezes.</div>
-      </section>
-
-      <section>
-        <div class="section-title">Stem & setting · M4b</div>
-        <label class="select-row">
-          <span>Stem position</span>
-          <select id="stemPosition">
-            <option value="wind" selected>Position 0 · winding</option>
-            <option value="set">Position 1 · hand setting</option>
-          </select>
-        </label>
-        <div class="button-row setting-buttons">
-          <button id="setHandsBackwardBtn" class="secondary" disabled>Set hands −</button>
-          <button id="setHandsForwardBtn" disabled>Set hands +</button>
-        </div>
-        <div class="mode-grid">
-          <div class="mode-stat"><span>Stem mode</span><output id="stemModeValue" class="mode-accent">WINDING</output></div>
-          <div class="mode-stat"><span>Crown pull</span><output id="stemPullValue">0.00 mm</output></div>
-          <div class="mode-stat"><span>Hand offset</span><output id="handOffsetValue">+0.0 min</output></div>
-          <div class="mode-stat"><span>Active mesh</span><output id="settingMeshValue">WINDING PATH</output></div>
-        </div>
-        <div class="winding-note">Pull the stem to Position 1 and the reconstructed sliding pinion/yoke/setting lever shift toward the setting wheel. Then hold Set hands ± to rotate the setting and minute wheels and move the hour/minute hands. [ and ] also set backward/forward.</div>
-      </section>
-
-      <section>
-        <div class="section-title">Manual winding · M4a retained</div>
-        <div class="button-row winding-buttons">
-          <button id="windCrownBtn">Wind crown ↻</button>
-          <button id="returnCrownBtn" class="secondary">Return crown ↺</button>
-        </div>
-        <button id="resetWindBtn" class="secondary wide">Reset / fully unwind</button>
-        <div class="power-state">
-          <label class="range-row"><span>Mainspring reserve</span><output id="reserveValue">0.00 h / 60 h</output></label>
-          <progress id="powerMeter" class="power-meter" max="1" value="0"></progress>
-          <div class="power-stats">
-            <div class="power-stat"><span>Stored energy</span><output id="energyValue">0%</output></div>
-            <div class="power-stat"><span>Ratchet clicks</span><output id="clickCountValue">0</output></div>
-            <div class="power-stat"><span>Click state</span><output id="clickStateValue">SEATED</output></div>
-            <div class="power-stat"><span>Action</span><output id="windingActionValue">idle</output></div>
-          </div>
-        </div>
-        <div class="winding-note">Winding controls are disabled while the stem is in hand-setting position. The 45-turn full-wind mapping remains a reconstruction assumption; the 60 h typical reserve is the sourced ETA endpoint.</div>
-      </section>
-
-      <section>
-        <div class="section-title">Functional layers</div>
-        <div class="toggles" id="layerToggles">
-          <label><input type="checkbox" data-layer="case" checked /> Case</label>
-          <label><input type="checkbox" data-layer="display" checked /> Display</label>
-          <label><input type="checkbox" data-layer="motion" checked /> Motion works</label>
-          <label><input type="checkbox" data-layer="winding" checked /> Winding</label>
-          <label><input type="checkbox" data-layer="power" checked /> Power</label>
-          <label><input type="checkbox" data-layer="train" checked /> Wheel train</label>
-          <label><input type="checkbox" data-layer="escapement" checked /> Escapement</label>
-          <label><input type="checkbox" data-layer="regulation" checked /> Regulation</label>
-          <label><input type="checkbox" data-layer="structure" checked /> Structure</label>
-        </div>
-      </section>
-
-      <section class="lighting-controls">
-        <div class="section-heading-row">
-          <div class="section-title">Inspection light</div>
-          <span class="hard-light-badge">BALANCED DEFAULT</span>
-        </div>
-
-        <label class="select-row"><span>Preset</span><select id="lightPreset">
-          <option value="camera" selected>Camera aligned / balanced</option>
-          <option value="fullbright">Full bright / diagnostic</option>
-          <option value="hard">Hard inspection</option>
-          <option value="raking">Raking side</option>
-          <option value="top">Top inspection</option>
-          <option value="backlit">Backlit skeleton</option>
-          <option value="studio">Studio</option>
-          <option value="dark">Dark presentation</option>
-        </select></label>
-
-        <label class="select-row"><span>Light mode</span><select id="lightMode">
-          <option value="camera" selected>Camera aligned</option>
-          <option value="manual">Manual key only</option>
-          <option value="both">Camera + manual key</option>
-        </select></label>
-
-        <label class="range-row"><span>Camera intensity</span><output id="cameraIntensityValue">235</output></label>
-        <input id="cameraIntensity" type="range" min="0" max="700" value="235" />
-        <label class="range-row"><span>Manual azimuth</span><output id="lightAzimuthValue">35°</output></label>
-        <input id="lightAzimuth" type="range" min="-180" max="180" value="35" />
-        <label class="range-row"><span>Manual elevation</span><output id="lightElevationValue">46°</output></label>
-        <input id="lightElevation" type="range" min="5" max="85" value="46" />
-        <label class="range-row"><span>Manual distance</span><output id="lightDistanceValue">60 mm</output></label>
-        <input id="lightDistance" type="range" min="28" max="110" value="60" />
-        <label class="range-row"><span>Manual intensity</span><output id="lightIntensityValue">230</output></label>
-        <input id="lightIntensity" type="range" min="0" max="700" value="230" />
-        <label class="range-row"><span>Ambient / fill</span><output id="ambientValue">0.52</output></label>
-        <input id="ambient" type="range" min="0" max="120" value="52" />
-        <label class="range-row"><span>Exposure</span><output id="exposureValue">1.55×</output></label>
-        <input id="exposure" type="range" min="70" max="320" value="155" />
-
-        <div class="inline-toggles">
-          <label><input id="shadows" type="checkbox" checked /> Shadows</label>
-          <label><input id="lightGizmo" type="checkbox" checked /> Show manual key</label>
-        </div>
-      </section>
-
-      <div class="hint">M5b starts replacing abstract escapement timing with inspectable geometry. Colored overlays distinguish the pallet locking and impulse faces; banking and roller/fork clearances are explicit; lock depth, drop and draw are visible diagnostic targets; and event stepping lets you stop at each transition. The targets are intentionally labeled reconstruction values until measured production geometry is available.</div>
-    </aside>
-
-    <aside class="inspector panel" id="infoPanel">
-      <div class="inspector-topline">
-        <div class="eyebrow" id="infoCategory">SELECT A COMPONENT</div>
-        <span class="provenance approximate" id="infoProvenance">approximate</span>
-      </div>
-      <h2 id="infoName">Mechanical component inspector</h2>
-      <p id="infoText">M5b adds explicit pallet locking/impulse faces, banking limits, roller/fork safety envelopes, active contact/drop markers and event-level stepping. These diagnostics make the Swiss lever geometry inspectable without pretending the reconstruction values are manufacturing tolerances.</p>
-      <dl class="part-facts" id="partFacts"></dl>
-    </aside>
-
-    <div class="legend panel" aria-label="Functional color legend">
-      <span><i class="dot display-dot"></i>display</span>
-      <span><i class="dot power-dot"></i>power</span>
-      <span><i class="dot train-dot"></i>train</span>
-      <span><i class="dot regulation-dot"></i>regulation</span>
-      <span><i class="dot structure-dot"></i>structure</span>
+  <header class="topbar panel">
+    <a class="gallery-link" href="../">← Gallery</a>
+    <div class="identity">
+      <div class="eyebrow">REFERENCE RECONSTRUCTION · M5C</div>
+      <h1>ETA / Unitas 6497-2</h1>
+      <p>reserve-coupled impulse packets, falling balance amplitude, and low-amplitude stall</p>
     </div>
+    <a class="docs-link" href="../docs/watch-eta-6497-2.html">Documentation ↗</a>
+  </header>
 
-    <div id="loading">Constructing 6497-2 M5b pallet geometry…</div>
-  </div>
+  <aside class="controls panel" aria-label="Watch controls">
+    <section>
+      <div class="section-title">Assembly</div>
+      <label class="range-row" for="explode"><span>Exploded view</span><output id="explodeValue">22%</output></label>
+      <input id="explode" type="range" min="0" max="100" value="22" />
+      <div class="button-row"><button id="assembleBtn" class="secondary">Assemble</button><button id="explodeBtn">Explode</button></div>
+      <button id="resetBtn" class="secondary wide">Reset camera</button>
+    </section>
 
-  <script type="module" src="./main-m5a.js"></script>
+    <section>
+      <div class="section-title">Inspection view</div>
+      <div class="view-grid">
+        <button class="secondary" data-view="overview">Overview</button><button class="secondary" data-view="bridge">Bridge side</button>
+        <button class="secondary" data-view="dial">Dial side</button><button class="secondary" data-view="keyless">Keyless works</button>
+        <button class="secondary" data-view="train">Train mesh</button><button class="secondary" data-view="stack">Train stack</button>
+        <button class="secondary" data-view="escapement">Escapement</button><button class="secondary" data-view="winding">Winding</button>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">Simulation</div>
+      <label class="select-row"><span>Mechanical time scale</span><select id="trainScale">
+        <option value="0">0× paused</option><option value="0.1">0.1× escapement slow</option><option value="0.25">0.25× escapement inspect</option>
+        <option value="0.5">0.5× slow</option><option value="1" selected>1× real time</option><option value="10">10× inspect</option>
+        <option value="60">60× inspect</option><option value="300">300× inspect</option><option value="3600">3600× reserve demo</option>
+      </select></label>
+      <label class="select-row"><span>Endshake motion</span><select id="endshakeScale">
+        <option value="0" selected>Off</option><option value="1">1× nominal</option><option value="10">10× inspect</option><option value="25">25× diagnostic</option>
+      </select></label>
+      <div class="inline-toggles">
+        <label><input id="meshGuides" type="checkbox" /> Show pitch mesh guides</label>
+        <label><input id="stackGuides" type="checkbox" /> Show staff / clearance guides</label>
+        <label><input id="endshakeGuides" type="checkbox" /> Show endshake guides</label>
+        <label><input id="bodyGapGuides" type="checkbox" /> Show wheel-body gap guides</label>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">Oscillator dynamics · M5c</div>
+      <div class="mode-grid diagnostic-stat">
+        <div class="mode-stat"><span>Balance amplitude</span><output id="balanceAmplitudeValue" class="amplitude-live">0.0%</output></div>
+        <div class="mode-stat"><span>Oscillator state</span><output id="oscillatorStateValue">STOPPED</output></div>
+        <div class="mode-stat"><span>Barrel drive proxy</span><output id="torqueProxyValue">0.0%</output></div>
+        <div class="mode-stat"><span>Impulse packet</span><output id="impulsePacketValue">0.0%</output></div>
+        <div class="mode-stat"><span>Unlock margin</span><output id="unlockMarginValue">-18.0% · FAIL</output></div>
+        <div class="mode-stat"><span>Good impulses</span><output id="successfulImpulseValue">0</output></div>
+        <div class="mode-stat"><span>Missed unlocks</span><output id="missedUnlockValue">0</output></div>
+        <div class="mode-stat"><span>Restart threshold</span><output>1.2% reserve</output></div>
+      </div>
+      <div class="winding-note">M5c removes the perfect fixed-amplitude balance. Between beats the normalized oscillator loses amplitude; each successful escapement event adds an impulse packet whose strength depends on a reconstruction-level barrel-drive proxy. Near the end of reserve, impulse weakens, amplitude falls, and the pallet can eventually fail to unlock. Remaining reserve is then held instead of being silently consumed through a stalled train. Wind above the restart threshold to kick the oscillator back into motion. These dynamics are intentionally normalized — not an ETA torque, inertia, or hairspring model.</div>
+    </section>
+
+    <section>
+      <div class="section-title">Swiss lever geometry · M5b retained</div>
+      <div class="mode-grid">
+        <div class="mode-stat"><span>Phase</span><output id="escapementPhaseValue" class="escapement-phase">LOCK · ENTRY</output></div>
+        <div class="mode-stat"><span>Active pallet</span><output id="activePalletValue">ENTRY PALLET</output></div>
+        <div class="mode-stat"><span>Beat index</span><output id="escapementBeatValue">0</output></div>
+        <div class="mode-stat"><span>Escape release</span><output id="escapeReleaseValue">HELD</output></div>
+      </div>
+      <div class="mode-grid diagnostic-stat">
+        <div class="mode-stat"><span>Lock depth</span><output id="lockDepthValue">1.80° target</output></div>
+        <div class="mode-stat"><span>Drop</span><output id="dropValue">0.00° target</output></div>
+        <div class="mode-stat"><span>Draw</span><output id="drawValue">12.0° target</output></div>
+        <div class="mode-stat"><span>Banking</span><output id="bankingValue">±7.7°</output></div>
+      </div>
+      <div class="escapement-actions"><button id="stepEscapementEventBtn">Step next event</button><button id="stepBeatBtn" class="secondary">Step one beat</button></div>
+      <div class="inline-toggles">
+        <label><input id="escapementGuides" type="checkbox" /> Show escape → pallet → balance guides</label>
+        <label><input id="escapementGeometryGuides" type="checkbox" /> Show pallet-face / safety diagnostics</label>
+      </div>
+      <div class="winding-note">M5b geometry remains available: explicit lock/impulse faces, roller/fork-slot envelope, banking arc, contact marker and drop marker. Pause at 0× and step through individual events for inspection.</div>
+    </section>
+
+    <section>
+      <div class="section-title">Power release · M4c retained</div>
+      <div class="mode-grid">
+        <div class="mode-stat"><span>Movement state</span><output id="movementStateValue" class="power-running">STOPPED · UNWOUND</output></div>
+        <div class="mode-stat"><span>Power flow</span><output id="powerFlowValue">NO RELEASE</output></div>
+        <div class="mode-stat"><span>Mechanical elapsed</span><output id="runElapsedValue">00:00:00</output></div>
+        <div class="mode-stat"><span>Energy gate</span><output id="energyGateValue">BLOCKED · NO ENERGY</output></div>
+      </div>
+      <div class="winding-note">M5c adds a second gate after stored energy: enough balance amplitude must exist to unlock the escapement. A low-amplitude stall retains the remaining reserve until winding restores a usable oscillator state.</div>
+    </section>
+
+    <section>
+      <div class="section-title">Stem & setting · M4b</div>
+      <label class="select-row"><span>Stem position</span><select id="stemPosition"><option value="wind" selected>Position 0 · winding</option><option value="set">Position 1 · hand setting</option></select></label>
+      <div class="button-row setting-buttons"><button id="setHandsBackwardBtn" class="secondary" disabled>Set hands −</button><button id="setHandsForwardBtn" disabled>Set hands +</button></div>
+      <div class="mode-grid">
+        <div class="mode-stat"><span>Stem mode</span><output id="stemModeValue" class="mode-accent">WINDING</output></div>
+        <div class="mode-stat"><span>Crown pull</span><output id="stemPullValue">0.00 mm</output></div>
+        <div class="mode-stat"><span>Hand offset</span><output id="handOffsetValue">+0.0 min</output></div>
+        <div class="mode-stat"><span>Active mesh</span><output id="settingMeshValue">WINDING PATH</output></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">Manual winding · M4a retained</div>
+      <div class="button-row winding-buttons"><button id="windCrownBtn">Wind crown ↻</button><button id="returnCrownBtn" class="secondary">Return crown ↺</button></div>
+      <button id="resetWindBtn" class="secondary wide">Reset / fully unwind</button>
+      <div class="power-state">
+        <label class="range-row"><span>Mainspring reserve</span><output id="reserveValue">0.00 h / 60 h</output></label>
+        <progress id="powerMeter" class="power-meter" max="1" value="0"></progress>
+        <div class="power-stats">
+          <div class="power-stat"><span>Stored energy</span><output id="energyValue">0%</output></div>
+          <div class="power-stat"><span>Ratchet clicks</span><output id="clickCountValue">0</output></div>
+          <div class="power-stat"><span>Click state</span><output id="clickStateValue">SEATED</output></div>
+          <div class="power-stat"><span>Action</span><output id="windingActionValue">idle</output></div>
+        </div>
+      </div>
+      <div class="winding-note">The 45-turn full-wind mapping remains a reconstruction assumption; the 60 h typical reserve endpoint is sourced from ETA.</div>
+    </section>
+
+    <section>
+      <div class="section-title">Functional layers</div>
+      <div class="toggles" id="layerToggles">
+        <label><input type="checkbox" data-layer="case" checked /> Case</label><label><input type="checkbox" data-layer="display" checked /> Display</label>
+        <label><input type="checkbox" data-layer="motion" checked /> Motion works</label><label><input type="checkbox" data-layer="winding" checked /> Winding</label>
+        <label><input type="checkbox" data-layer="power" checked /> Power</label><label><input type="checkbox" data-layer="train" checked /> Wheel train</label>
+        <label><input type="checkbox" data-layer="escapement" checked /> Escapement</label><label><input type="checkbox" data-layer="regulation" checked /> Regulation</label>
+        <label><input type="checkbox" data-layer="structure" checked /> Structure</label>
+      </div>
+    </section>
+
+    <section class="lighting-controls">
+      <div class="section-heading-row"><div class="section-title">Inspection light</div><span class="hard-light-badge">BALANCED DEFAULT</span></div>
+      <label class="select-row"><span>Preset</span><select id="lightPreset"><option value="camera" selected>Camera aligned / balanced</option><option value="fullbright">Full bright / diagnostic</option><option value="hard">Hard inspection</option><option value="raking">Raking side</option><option value="top">Top inspection</option><option value="backlit">Backlit skeleton</option><option value="studio">Studio</option><option value="dark">Dark presentation</option></select></label>
+      <label class="select-row"><span>Light mode</span><select id="lightMode"><option value="camera" selected>Camera aligned</option><option value="manual">Manual key only</option><option value="both">Camera + manual key</option></select></label>
+      <label class="range-row"><span>Camera intensity</span><output id="cameraIntensityValue">235</output></label><input id="cameraIntensity" type="range" min="0" max="700" value="235" />
+      <label class="range-row"><span>Manual azimuth</span><output id="lightAzimuthValue">35°</output></label><input id="lightAzimuth" type="range" min="-180" max="180" value="35" />
+      <label class="range-row"><span>Manual elevation</span><output id="lightElevationValue">46°</output></label><input id="lightElevation" type="range" min="5" max="85" value="46" />
+      <label class="range-row"><span>Manual distance</span><output id="lightDistanceValue">60 mm</output></label><input id="lightDistance" type="range" min="28" max="110" value="60" />
+      <label class="range-row"><span>Manual intensity</span><output id="lightIntensityValue">230</output></label><input id="lightIntensity" type="range" min="0" max="700" value="230" />
+      <label class="range-row"><span>Ambient / fill</span><output id="ambientValue">0.52</output></label><input id="ambient" type="range" min="0" max="120" value="52" />
+      <label class="range-row"><span>Exposure</span><output id="exposureValue">1.55×</output></label><input id="exposure" type="range" min="70" max="320" value="155" />
+      <div class="inline-toggles"><label><input id="shadows" type="checkbox" checked /> Shadows</label><label><input id="lightGizmo" type="checkbox" checked /> Show manual key</label></div>
+    </section>
+
+    <div class="hint">M5c introduces a normalized oscillator-energy loop on top of the M5b geometry. Stored reserve no longer merely grants permission to run: it also influences impulse strength. The balance loses amplitude between beats, receives discrete impulse packets, and can fall below the unlock threshold near the end of usable reserve. Exact inertia, torque, hairspring stiffness, friction and amplitude calibration remain future system-identification work.</div>
+  </aside>
+
+  <aside class="inspector panel" id="infoPanel">
+    <div class="inspector-topline"><div class="eyebrow" id="infoCategory">SELECT A COMPONENT</div><span class="provenance approximate" id="infoProvenance">approximate</span></div>
+    <h2 id="infoName">Mechanical component inspector</h2>
+    <p id="infoText">M5c retains the event-resolved Swiss-lever geometry and adds a normalized balance-energy state. Discrete impulses replenish amplitude, damping removes it, low reserve weakens impulse, and insufficient amplitude can now hold the escapement even while residual spring energy remains.</p>
+    <dl class="part-facts" id="partFacts"></dl>
+  </aside>
+
+  <div class="legend panel" aria-label="Functional color legend"><span><i class="dot display-dot"></i>display</span><span><i class="dot power-dot"></i>power</span><span><i class="dot train-dot"></i>train</span><span><i class="dot regulation-dot"></i>regulation</span><span><i class="dot structure-dot"></i>structure</span></div>
+  <div id="loading">Constructing 6497-2 M5c oscillator dynamics…</div>
+</div>
+<script type="module" src="./main-m5a.js"></script>
 </body>
 </html>
