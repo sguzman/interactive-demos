@@ -13,11 +13,11 @@
 <main>
   <nav class="top"><a href="../">← Interactive Demos</a><a href="../watch/">Open 3D demo ↗</a></nav>
 
-  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M4C</div>
+  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M5A</div>
   <h1>ETA / Unitas 6497-2</h1>
-  <p class="lead">M4c closes the first causal power loop. Winding creates reserve; reserve permits one shared mechanical clock to advance; running consumes reserve; zero reserve stops the balance, escapement presentation, wheel train and hands.</p>
+  <p class="lead">M5a makes the Swiss lever escapement an explicit event sequence. The balance cadence now drives lock, unlock, impulse and relock; escape-wheel release in turn meters the visible progress of the rest of the train.</p>
 
-  <div class="callout"><strong>Accuracy contract.</strong><p>This remains an educational reconstruction, not manufacturing CAD or a production torque simulation. Official movement facts, reference-derived geometry and presentation assumptions stay explicitly separated.</p></div>
+  <div class="callout"><strong>Accuracy contract.</strong><p>This remains an educational reconstruction, not manufacturing CAD or a rigid-body contact simulation. Official movement facts, reference-derived geometry and presentation assumptions stay explicitly separated.</p></div>
 
   <h2>Official movement facts</h2>
   <div class="specs">
@@ -29,53 +29,58 @@
     <div class="spec"><span>Power reserve</span><strong>53 h min / 60 h typical</strong></div>
   </div>
 
-  <h2>Geometry foundation</h2>
-  <p>The M3 train reconstruction remains intact: centre 80 teeth, third 60 / 10-leaf pinion, seconds/fourth 120 / 8-leaf pinion, escape 15 / 10-leaf pinion, with pitch/contact diagnostics, separate wheel planes, stepped staffs, jewel spans, endshake guides and wheel-body gap diagnostics. Centre positions and tiny clearances remain reference-derived reconstruction geometry rather than ETA manufacturing coordinates.</p>
+  <h2>Foundation retained</h2>
+  <p>The M3 train reconstruction and M4 winding/setting/power systems remain intact: reference-derived tooth-count topology, pitch/contact diagnostics, separate wheel planes, staffs and jewel spans, endshake diagnostics, causal crown winding, two stem positions, persistent mainspring reserve, and an energy gate that stops an unwound movement.</p>
 
-  <h2>M4a — causal winding</h2>
-  <p>Positive crown input advances the crown wheel and ratchet, the click enforces one-way behavior, and accepted winding increases a persistent normalized mainspring-energy state. The blue barrel overlay visualizes that state. The interaction maps full wind to <strong>45 crown turns</strong>; that number is a presentation assumption, while the <strong>60 h typical reserve</strong> is sourced from ETA.</p>
+  <h2>M5a — six beat events per second</h2>
+  <p>A 3 Hz balance completes three full oscillations per second, producing <strong>six alternations / beats per second</strong>. M5a treats one beat as 1/6 s of mechanical time. Balance center crossings define the cadence for the escapement state machine.</p>
 
-  <h2>M4b — two stem positions</h2>
-  <p><strong>Position 0</strong> retains winding. <strong>Position 1</strong> pulls the reconstructed crown/stem outward, shifts the sliding-pinion/yoke/setting-lever presentation, disables winding and routes input into the visible setting path. The current educational chain uses 14 teeth for the sliding pinion, 22 for the setting wheel and 28 for the minute wheel, with a 1.35 mm presentation pull distance.</p>
-
-  <h2>M4c — energy-gated movement</h2>
-  <p>The watch now starts <strong>stopped and unwound</strong>. It no longer advances simply because browser time is passing. Instead:</p>
+  <h2>Lock → unlock → impulse → relock</h2>
+  <p>Each beat now passes through four visible states:</p>
   <ol>
-    <li>winding creates stored reserve;</li>
-    <li>positive reserve opens the power gate;</li>
-    <li>one shared mechanical elapsed-time state advances;</li>
-    <li>balance, pallet presentation, escape wheel, fourth/seconds wheel, third wheel, centre wheel and all three hands derive from that mechanical clock;</li>
-    <li>running consumes reserve;</li>
-    <li>zero reserve freezes the mechanical clock and stops the movement.</li>
+    <li><strong>LOCK · ENTRY</strong> — the escape wheel is held;</li>
+    <li><strong>UNLOCK</strong> — the pallet leaves the locked tooth;</li>
+    <li><strong>IMPULSE</strong> — the escape wheel advances while the fork crosses toward the opposite bank;</li>
+    <li><strong>LOCK · EXIT</strong> — the opposite pallet holds the next tooth until the next beat.</li>
   </ol>
+  <p>The exact fractional timing of these windows is reconstruction timing chosen to make the mechanism inspectable. It is not presented as ETA production lock/lift geometry.</p>
 
-  <div class="callout"><strong>The old contradiction is gone.</strong><p>An unwound watch no longer keeps running. Give it a little wind and it starts; let reserve reach zero and it stops at the exact mechanical state it had reached.</p></div>
-
-  <h2>Reserve depletion model</h2>
-  <p>M4c uses a deliberately simple normalized model. Stored energy maps linearly to the official 60 h typical reserve endpoint. At 1×, one simulated second consumes one second of that nominal reserve. Winding while running can replenish reserve. This is not a torque curve: declining mainspring torque, friction, amplitude decay and escapement efficiency are not yet calculated.</p>
-
-  <h2>Mechanical time scale</h2>
-  <p>The former train-only speed control now scales the <em>shared mechanical clock</em>, so visible motion and reserve depletion remain causally consistent.</p>
+  <h2>Half-tooth escape release</h2>
   <div class="specs">
-    <div class="spec"><span>0×</span><strong>paused</strong></div>
-    <div class="spec"><span>1×</span><strong>real time</strong></div>
-    <div class="spec"><span>10–300×</span><strong>inspection</strong></div>
-    <div class="spec"><span>3600×</span><strong>1 sim h / real s</strong></div>
+    <div class="spec"><span>Escape wheel</span><strong>15 teeth</strong></div>
+    <div class="spec"><span>Release per beat</span><strong>½ tooth</strong></div>
+    <div class="spec"><span>Angular release</span><strong>12° / beat</strong></div>
   </div>
-  <p>At 3600×, a full nominal 60 h reserve can be observed running down in about one real minute. That is explicitly simulation-time acceleration, not watch behavior.</p>
+  <p>Thirty half-tooth releases make one full escape-wheel revolution. At six beats per second, that reproduces the existing 5 s/rev reference period. The wheel is now visibly stationary in the lock windows and advances only through the reconstructed release window.</p>
 
-  <h2>What is still deliberately simplified</h2>
+  <div class="callout"><strong>Architectural change.</strong><p>The train no longer merely shares a clock with the escapement. M5a converts released escape-wheel angle back into released train time. While the escape wheel is locked, the fourth/seconds, third and centre wheels and the hands wait. During release, they advance. The escapement is therefore now the timing gate for visible train progress.</p></div>
+
+  <h2>Added escapement geometry</h2>
+  <p>The M5a overlay adds a roller table, guard roller, ruby impulse jewel, fork horns, safety dart, banking pins, optional escape → pallet → balance center-line guides, and a brief impulse-contact marker. These parts are reference-derived / presentation geometry: their functional roles are real, while exact dimensions and face clearances remain future work.</p>
+
+  <h2>Inspection controls</h2>
+  <p>The mechanical time selector now includes 0.1×, 0.25× and 0.5× slow-motion modes. At <code>0× paused</code>, the <strong>Step exactly one beat</strong> control advances the energy-gated mechanism by one 1/6 s beat, making the release sequence easy to inspect. The Escapement camera preset automatically enables the center-line guide overlay.</p>
+
+  <h2>What M5a still simplifies</h2>
   <ul>
-    <li>mainspring torque curve and barrel-arbor/drum force transfer;</li>
-    <li>friction through the train;</li>
-    <li>escapement efficiency and discrete impulse physics;</li>
-    <li>balance amplitude decay and positional rate error;</li>
-    <li>exact clutch/Breguet-tooth geometry;</li>
-    <li>exact crown-turn count to full wind.</li>
+    <li>exact entry/exit locking-face and impulse-face angles;</li>
+    <li>draw, drop and lock depth;</li>
+    <li>exact banking-pin placement;</li>
+    <li>exact roller-jewel / fork-slot geometry and horn safety clearances;</li>
+    <li>contact friction and lubrication;</li>
+    <li>impulse energy transfer into balance amplitude;</li>
+    <li>free balance amplitude determined by spring torque and losses;</li>
+    <li>production torque transfer through the train.</li>
   </ul>
+  <p>The oscillator frequency is still prescribed from the official 3 Hz rate. M5a makes the release sequence event-driven and causal at the topology/timing level; it does not yet solve contact mechanics.</p>
 
-  <h2>Inspection tools retained</h2>
-  <p>Train mesh, Train stack, Keyless works, pitch/contact guides, staff/clearance guides, endshake diagnostics, wheel-body gap guides, camera-aligned inspection lighting and the movable manual key all remain available.</p>
+  <h2>Earlier causal milestones retained</h2>
+  <h3>M4a — winding</h3>
+  <p>Crown input advances the crown wheel and ratchet, the click enforces one-way behavior, and accepted winding accumulates stored reserve. The current full-wind mapping uses 45 crown turns as a presentation assumption; the 60 h typical reserve endpoint is sourced from ETA.</p>
+  <h3>M4b — setting</h3>
+  <p>Position 0 winds. Position 1 pulls the reconstructed stem outward, shifts the keyless selector geometry, disables winding and routes input into hand setting.</p>
+  <h3>M4c — power gate</h3>
+  <p>The watch starts stopped and unwound. Positive reserve permits mechanical time to advance; running consumes reserve; zero reserve freezes it.</p>
 
   <h2>Provenance classes</h2>
   <p><span class="badge official">official</span> Directly supported by technical material.</p>
@@ -84,10 +89,12 @@
   <p><span class="badge presentation">presentation</span> Geometry, controls or simulation assumptions added for readability and interaction.</p>
 
   <h2>Next work</h2>
-  <h3>M5 — escapement fidelity</h3>
-  <p>Locking and impulse faces, banking limits, roller jewel / fork interaction and discrete causal escape release rather than merely sharing a timing clock.</p>
+  <h3>M5b — pallet-face and safety geometry</h3>
+  <p>Explicit entry/exit locking and impulse faces, improved roller-jewel/fork-slot geometry, more defensible banking limits, and diagnostic lock-depth/drop visualization.</p>
+  <h3>M5c — impulse / oscillator coupling</h3>
+  <p>Deliver normalized impulse packets at each beat, allow delivered impulse to change balance amplitude, and let low reserve eventually make unlocking unreliable instead of prescribing perfect amplitude forever.</p>
   <h3>M6 — system simulation</h3>
-  <p>Separate barrel arbor winding from barrel drum release, transmit power through the train, let the escapement meter release, couple balance amplitude to delivered impulse, and make reserve, amplitude and rate influence one another.</p>
+  <p>Separate barrel-arbor winding from barrel-drum release, improve power transmission through the train, and couple reserve, amplitude and rate into one system state.</p>
 
   <h2>Sources</h2>
   <div class="source"><strong>ETA — current 6497-2 Technical Communication</strong><p><a href="https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/">official dimensions, rate, reserve, lift angle and service data</a></p></div>
