@@ -83,6 +83,12 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
   };
 
   function refreshSystemState() {
+    // Winding can change spring torque before the escapement update for this
+    // frame. Refresh M6b first so the hysteresis decision uses current torque /
+    // load rather than a one-frame-old margin and can unlatch immediately after
+    // sufficient winding.
+    base.refreshLoadFeedback?.();
+
     const reserve = clamp01(windingSystem?.state?.energy ?? 0);
     const feedback = base.loadFeedbackState;
     const ledger = base.workLedgerState;
