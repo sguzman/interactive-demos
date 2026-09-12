@@ -4,9 +4,9 @@ Interactive exploded reconstruction of the ETA/Unitas 6497-2 inside a 44 mm exhi
 
 ## Current milestone
 
-**M5i — normalized escapement impulse work transfer.**
+**M6a — barrel arbor / drum power separation.**
 
-The watch is now substantially beyond a decorative exploded view. Crown winding creates persistent reserve; the keyless works separate winding and hand-setting modes; stored reserve gates runtime; M5f integrates the balance as explicit angular position/velocity state; M5h constrains escapement release and impulse admission from finite reconstructed tooth and pallet-jewel surfaces; and M5i now makes the size of each admitted balance impulse depend on how much normalized work that polygonal contact path can actually transfer.
+The watch is now substantially beyond a decorative exploded view. Crown winding creates persistent reserve; the keyless works separate winding and hand-setting modes; M5f integrates the balance as explicit angular position/velocity state; M5h constrains escapement release from finite tooth/pallet-jewel surfaces; M5i converts polygon-following contact into normalized delivered/lost impulse work; and M6a now inserts an explicit barrel and train power state upstream of that work model.
 
 ## Files
 
@@ -17,117 +17,113 @@ The watch is now substantially beyond a decorative exploded view. Crown winding 
 - `winding-m4a.js` — crown/ratchet/click and stored-reserve state.
 - `keyless-m4b.js` — stem modes and hand-setting path.
 - `power-m4c.js` — reserve-consuming runtime gate.
-- `escapement-m5b.js` — pallet/safety geometry and event diagnostics.
-- `escapement-m5c.js` — normalized reserve/drive proxy.
-- `escapement-m5d.js` — earlier calibrated point/segment contact solver.
-- `escapement-m5e.js` — explicit educational amplitude→rate modifier.
-- `escapement-m5f.js` — integrated θ/ω balance/hairspring state; its impulse-admission hook now accepts a continuous impulse scale as well as yes/no admission.
-- `escapement-m5g.js` — historical point/segment geometry-admitted impulse gate.
-- `escapement-m5h.js` — finite tooth/pallet-jewel polygon contact, lock/impulse/drop/capture and polygon-admitted release.
-- `escapement-m5i.js` — current normalized impulse-work layer: reserve drive + polygon-following distance + contact quality → delivered/lost work → variable Δω.
-- `escapement-m5a.js` — compatibility re-export pointing at the current escapement implementation.
+- `escapement-m5f.js` — integrated θ/ω balance/hairspring state and continuous impulse scaling.
+- `escapement-m5h.js` — finite tooth/pallet-jewel polygon contact.
+- `escapement-m5i.js` — normalized available/delivered/lost impulse-work layer, now able to accept an external work budget.
+- `escapement-m6a.js` — current barrel/train power layer: spring twist → torque → train load/transmission → escapement work budget, plus separate arbor and drum motion roles.
+- `escapement-m5a.js` — compatibility re-export pointing at the current implementation.
 
 ## Current causal chain
 
-`crown → stored reserve → drive proxy → finite tooth/jewel contact path → available work → transferred / rejected work → scaled Δω → integrated balance θ/ω → polygon-constrained escape release → train → hands`
+`crown → barrel arbor winding → mainspring twist → barrel torque → train load / transmission → M5i available work → polygon contact transfer → scaled Δω → integrated balance θ/ω → polygon-constrained escape release → train → hands`
 
-The key M5i change is that **admitted contact no longer means a fixed-size kick**.
+The important M6a change is that **remaining reserve itself is no longer the work budget presented directly to the escapement**.
 
-For every balance center-crossing opportunity, M5i samples the M5h polygonal impulse path. The model measures how far the escape tooth follows the active pallet impulse surface and how good that contact is while following. Remaining spring drive supplies a normalized work budget. The work layer then derives:
+## Arbor versus drum
 
-- available train-side work;
-- polygon surface-follow distance;
-- contact-quality factor;
-- normalized transfer efficiency;
-- delivered oscillator-side work;
-- rejected/lost work;
-- a continuous scale for the M5f angular-velocity impulse.
+The current reconstruction now distinguishes the two causal roles of a going barrel:
 
-## Normalized work model
+- while winding, the crown/ratchet side represents rotation of the **barrel arbor**;
+- during running, the click holds that arbor side while the **barrel drum** becomes the release side;
+- reserve consumption accumulates a separate barrel-drum release angle;
+- the visible barrel drum now rotates from that release state rather than remaining permanently static.
 
-The work bookkeeping is intentionally dimensionless. `1.0 work unit` means the full current normalized drive budget for one impulse opportunity, **not one joule**.
+The current full-reserve-to-drum-motion mapping is **8 drum turns over one nominal full release**. That is an educational reconstruction value, not an ETA service dimension.
 
-The current educational calculation is conceptually:
+## Normalized mainspring torque
 
-`available work = reserve-derived drive proxy`
+Stored reserve is interpreted as normalized spring twist. M6a converts that twist through a deliberately simple reconstructed torque curve:
 
-`transfer efficiency = polygon-follow coverage × contact quality`
+- torque falls sharply close to the fully unwound state;
+- most of the reserve sits on a flatter torque plateau;
+- full wind reaches a normalized torque of approximately 1.0.
 
-`delivered work = available work × transfer efficiency`
+The current curve uses a low-twist knee around **12% normalized twist** and a polynomial plateau. This is shape-only educational behavior, not measured 6497-2 mainspring torque.
 
-`lost work = available work − delivered work`
+## Train load and transmission
 
-The balance is still driven by Δω, not by an explicit calibrated inertia/energy equation. M5i therefore maps transferred work fraction to the M5f velocity-kick scale with a square root:
+M6a then reduces barrel torque by an explicit train-side model before the escapement sees it.
 
-`Δω scale ≈ √(transfer efficiency)`
+Current reconstruction values:
 
-This keeps the bookkeeping energy-like without pretending that the model knows the real 6497-2 balance inertia or pallet efficiency.
+- static normalized train load: **0.12**;
+- train transmission efficiency: **92%**.
 
-## Surface-follow distance
+Conceptually:
 
-The ideal geometric reference is the arc swept at the reconstructed 2.25 mm escape-tooth tip radius through one 12° half-tooth release. M5i does not assume that the tooth remains on the impulse surface for that entire arc. It samples the M5h state across the beat and accumulates only positive release travel that is still classified as polygonal impulse following.
+`usable torque = max(0, spring torque − train load)`
 
-A reference follow fraction of **40% of the half-tooth arc** currently maps to full path coverage. This is an educational normalization chosen for an inspectable response, not an ETA contact-duration measurement.
+`escapement drive = normalized usable torque × transmission efficiency`
 
-## Contact quality
+That resulting **escapement drive** is now supplied to M5i as its available-work budget.
 
-While the tooth follows the impulse surface, contact quality is derived from the signed M5h polygon gap:
+## M5i work transfer downstream
 
-- close non-penetrating surfaces score highly;
-- a growing positive gap lowers the score;
-- excessive overlap also lowers the score;
-- a polygon path already rejected by M5h has zero transfer efficiency.
+M5i still measures finite polygon surface-follow distance and contact quality. The difference is upstream provenance:
 
-The current gap response exponent is **1.35**. Again, this is a simulation parameter, not a measured friction or efficiency law.
+Before M6a:
 
-## Live M5i diagnostics
+`reserve proxy → available impulse work`
 
-The **Impulse work transfer · M5i** panel reports:
+After M6a:
 
-- available train work;
-- delivered work;
-- rejected/lost work;
-- surface-follow distance in mm;
-- contact quality;
-- transfer efficiency;
-- resulting Δω packet scale;
-- explicit work-transfer verdict.
+`reserve → spring twist → spring torque → train load/loss → available impulse work`
 
-The M5h polygon-contact panel and overlays remain active underneath this layer, so the work quantities can be inspected alongside the actual finite tooth/jewel geometry that generated them.
+M5i then derives delivered versus rejected work and continuously scales the M5f Δω packet from that delivered fraction.
 
-## Fast-forward behavior
+## Live M6a diagnostics
 
-At detailed speeds, every center crossing receives its own polygon-work estimate. At very high diagnostic time scales, M5f still uses its explicit envelope approximation. The representative alternating impulse probes now contribute their **mean continuous impulse scale**, not merely the fraction of binary admitted contacts, so degraded work transfer also weakens fast-forward oscillator replenishment.
+The **Barrel → train power path · M6a** panel reports:
+
+- normalized mainspring twist;
+- normalized spring torque;
+- arbor winding/held state and cumulative ratchet/arbor turns;
+- cumulative barrel-drum release turns;
+- normalized train load;
+- train transmission efficiency;
+- normalized escapement work budget;
+- current power topology such as `ARBOR HELD · DRUM RELEASING`.
+
+This panel is intended to make the asymmetry of a going barrel legible: the arbor is the user-input side, while the drum is the slow release side.
 
 ## Reconstruction targets, not ETA measurements
 
-M5i reuses the M5h reconstructed surface parameters:
+M6a's current values are explicitly educational parameters:
 
-- escape-tooth tip radius: **2.25 mm**;
-- half-tooth release: **12°**;
-- pallet-jewel modeled depth: **0.18 mm**;
-- unlock surface gap: **0.028 mm**;
-- capture surface gap: **0.030 mm**;
-- impulse following envelope: **0.080 mm**;
-- maximum tolerated polygon overlap: **0.018 mm**.
+- full-release barrel-drum rotation: **8.0 turns**;
+- low-twist torque knee: **0.12 normalized twist**;
+- torque-plateau coefficients: reconstructed, dimensionless;
+- static train load: **0.12 normalized**;
+- train transmission efficiency: **0.92**.
 
-M5i adds its own explicit normalization choices:
+The model still does not know actual ETA barrel torque in N·mm, mainspring turns, gear tooth forces, train friction, bearing losses, pallet efficiency, balance inertia, or physical work in joules.
 
-- work sample count: **32**;
-- reference impulse-follow fraction: **0.40** of the half-tooth arc;
-- contact-gap exponent: **1.35**;
-- minimum useful Δω scale: **0.02**.
+## What M6a changes architecturally
 
-None of these are ETA torque, energy, contact-efficiency or pallet-loss measurements.
+M6a is the first pass where the power source is represented as more than a scalar reserve bucket. There are now distinct states for:
 
-## What M5i still does not mean
+- user winding input at the arbor;
+- stored spring twist;
+- spring torque;
+- slow barrel-drum release;
+- train load/loss;
+- escapement-side work budget;
+- geometric work transfer into the oscillator.
 
-The architectural improvement is real: **contact geometry now controls not only whether impulse exists, but how much normalized impulse reaches the balance**. But this still is not calibrated power-flow physics. The model does not yet contain measured barrel torque, train tooth forces, pallet friction, contact normals integrated into force, balance inertia, elastic impact, oil-film losses, or real work in joules.
-
-The sourced nominal specification remains **3 Hz / 21,600 A/h**.
+That is still normalized mechanics, but it gives later work somewhere coherent to attach measured torque curves, train losses and barrel geometry instead of burying them inside one reserve percentage.
 
 ## Next
 
-The next sensible jump is **M6a: barrel arbor versus barrel drum and train-side torque state**. Winding should increase spring twist at the arbor; running should release the barrel drum against a normalized load; that load should propagate through the train to become the drive budget consumed by the escapement work model. That will let “available impulse work” stop being a direct reserve proxy and become downstream of an explicit power-transmission state.
+The next useful step is **M6b: shared torque/load feedback**. Instead of a fixed train load, the model can derive instantaneous load from escapement release, wheel acceleration and oscillator demand, then let unsuccessful release feed back into the barrel/drum state. After that, a deeper barrel pass can model arbor/drum relative angle and mainspring twist from geometry rather than using reserve as the twist state.
 
 Full provenance and research notes: `../docs/watch-eta-6497-2.html`.
