@@ -2,7 +2,7 @@
 
 ## Current state
 
-**Milestone: M3b — reference train geometry + inspection-light rebuild.**
+**Milestone: M3c — mesh-derived train geometry + camera-axis inspection lighting.**
 
 The project remains an educational reconstruction, not manufacturing CAD. Official movement facts, reference-derived geometry, approximation, and presentation-only geometry remain separate provenance classes.
 
@@ -52,35 +52,49 @@ Reference: https://horology-student.org/movements/modern-eta-and-clones/unitas-e
 
 ## M3b visible train
 
-`watch/train-refinement.js` now makes the visible train use those same reference counts. It replaces the placeholder wheel meshes after scene construction while preserving the existing movement assembly and inspector.
-
-Current M3b visual declarations:
+M3b made the visible train use the same reference tooth/leaf counts as the timing graph:
 
 - centre wheel: **80 teeth**;
 - third wheel: **60 teeth + 10-leaf pinion**;
 - seconds/fourth wheel: **120 teeth + 8-leaf pinion**;
 - escape wheel: **15 teeth + 10-leaf pinion**.
 
-Important boundary: **the wheel radii and centre distances are still reconstruction geometry.** M3b aligns topology and count. M3c will work toward a more defensible pitch/module/centre-distance model and staff heights.
+## M3c mesh-derived train geometry
 
-## Lighting repair
+M3c removes another arbitrary layer. The current reference-derived centre coordinates are now used to solve a nominal module and pitch radius for each external wheel/pinion mesh using:
 
-The earlier lighting really was too dark. Two technical problems were responsible:
+`module = 2 × centre_distance / (wheel_teeth + pinion_leaves)`
 
-1. the movement is mostly metallic PBR material but the scene had no environment map, leaving many metal faces with little useful reflection;
-2. the SpotLight UI intensity was fed straight into a physically attenuated light, making values around 145 very weak at roughly 60 mm working distance.
+Current reconstruction solve:
 
-The rebuilt rig adds:
+- centre wheel → third pinion: centre distance **6.466 mm**, module **0.1437 mm**, nominal pitch radii **5.748 mm + 0.718 mm**;
+- third wheel → seconds/fourth pinion: centre distance **5.972 mm**, module **0.1756 mm**, nominal pitch radii **5.269 mm + 0.703 mm**;
+- seconds/fourth wheel → escape pinion: centre distance **9.277 mm**, module **0.1427 mm**, nominal pitch radii **8.563 mm + 0.714 mm**.
 
-- a neutral `RoomEnvironment` reflection field for metal readability;
-- a scaled movable spot key;
-- broad directional fill;
-- a camera-following inspection light;
-- exposure control;
-- a **Full bright / diagnostic** preset;
-- existing hard/raking/top/backlit/studio/dark modes.
+Those sums close to the current centre distances by construction. This is a meaningful improvement over hand-picked wheel radii, but the centre coordinates themselves are still **reference-derived reconstruction coordinates**, not ETA manufacturing drawings. M3c therefore improves internal geometric consistency without upgrading provenance to official CAD.
 
-The lighting is now explicitly an inspection system, not just a beauty-render setup.
+The escape-wheel tooth radius remains separately reference-derived because its wheel geometry belongs to the escapement; only its pinion participates in the seconds-to-escape train mesh solve.
+
+## Lighting repair and camera-axis mode
+
+The earlier lighting really was too dark. The movement is dominated by metallic PBR materials, so useful inspection requires both reflections and direct illumination.
+
+The current rig includes:
+
+- neutral `RoomEnvironment` reflections for metal readability;
+- a much stronger movable spot key;
+- broad fill and rim sources;
+- higher scene-environment intensity;
+- exposure range up to **3.20×**;
+- manual-key intensity range up to **700**;
+- explicit **Camera aligned** mode;
+- a separate camera-light intensity range up to **700**;
+- **Camera + manual key** mode for combined frontal and raking inspection;
+- **Full bright / diagnostic** preset for maximum readability.
+
+Camera-aligned mode conceptually places a directional inspection source just behind the camera and aims it through the orbit target. Because it is directional, its apparent brightness does not collapse as the camera moves farther from the watch. A slightly offset camera fill preserves relief on nearly frontal metal faces.
+
+The manual azimuth/elevation/distance controls remain available for deliberate raking light.
 
 ## Simulation presentation
 
@@ -105,12 +119,12 @@ Authored geometry is expressed in millimetres. Current primitives include:
 
 ## Next milestones
 
-### M3c — train layout fidelity
+### M3d — wheel planes and staffs
 
-- derive more defensible pitch radii / module assumptions;
-- solve better centre distances;
-- improve wheel heights, staffs and meshing planes;
-- keep the training-tool-ratio caveat explicit.
+- refine z-heights for wheels and pinions so each mesh occupies a defensible plane;
+- improve staffs/arbors and bridge clearances;
+- inspect interference introduced by the larger pitch-derived wheel radii;
+- continue replacing decorative geometry with dimensionally constrained relationships.
 
 ### M4 — winding fidelity
 
