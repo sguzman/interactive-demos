@@ -125,17 +125,17 @@ function faceSegment(face, palletAngle) {
   };
 }
 
-function toothTip(contactBaseAngle, toothIndex, dynamicAngle) {
+function toothTip(toothZeroAngle, toothIndex, dynamicAngle) {
   return designPoint(
     LAYOUT.escapeWheel,
     ESCAPE_TIP_RADIUS_MM,
-    contactBaseAngle + toothIndex * TOOTH_PITCH + dynamicAngle
+    toothZeroAngle + toothIndex * TOOTH_PITCH + dynamicAngle
   );
 }
 
-function contactDistance(face, palletAngle, contactBaseAngle, toothIndex, dynamicAngle) {
+function contactDistance(face, palletAngle, toothZeroAngle, toothIndex, dynamicAngle) {
   const segment = faceSegment(face, palletAngle);
-  const tip = toothTip(contactBaseAngle, toothIndex, dynamicAngle);
+  const tip = toothTip(toothZeroAngle, toothIndex, dynamicAngle);
   const result = pointSegmentDistance(tip, segment.a, segment.b);
   return { ...result, tip, segment };
 }
@@ -163,7 +163,7 @@ function makeGuideMaterial(color, opacity = .8) {
   return new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthTest: false });
 }
 
-function buildSolverGuides(watch, animated, faces) {
+function buildSolverGuides(watch, faces) {
   const layer = watch.getObjectByName('layer:escapement') ?? watch;
   const group = new THREE.Group();
   group.name = 'M5d geometry contact solver guides';
@@ -259,7 +259,8 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
 
   const state = {
     calibrated: false,
-    contactBaseAngle: 0,
+    toothZeroAngle: 0,
+    entryContactAngle: 0,
     entryBaseIndex: 0,
     faces: null,
     guides: null,
@@ -294,13 +295,14 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
 
   function calibrate(escapeBase) {
     const chosen = chooseEntryContactAngle(escapeBase);
-    state.contactBaseAngle = chosen.angle;
+    state.toothZeroAngle = chosen.angle - chosen.toothIndex * TOOTH_PITCH;
+    state.entryContactAngle = chosen.angle;
     state.entryBaseIndex = chosen.toothIndex;
     state.faces = {
       entry: makeFaceDefinition('entry', chosen.angle, PALLET_CENTER - PALLET_BANK),
       exit: makeFaceDefinition('exit', chosen.angle + HALF_TOOTH, PALLET_CENTER + PALLET_BANK)
     };
-    state.guides = buildSolverGuides(watch, animated, state.faces);
+    state.guides = buildSolverGuides(watch, state.faces);
     if (ui.guides) {
       ui.guides.addEventListener('change', () => {
         if (state.guides) state.guides.group.visible = ui.guides.checked;
@@ -354,7 +356,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     const targetCheck = contactDistance(
       targetFace,
       palletAngle,
-      state.contactBaseAngle,
+      state.toothZeroAngle,
       transition.targetTooth,
       dynamicAngle
     );
@@ -370,7 +372,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
         const gap = contactDistance(
           targetFace,
           palletAngle,
-          state.contactBaseAngle,
+          state.toothZeroAngle,
           transition.targetTooth,
           mid
         ).distance;
@@ -384,14 +386,14 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     const startContact = contactDistance(
       startFace,
       palletAngle,
-      state.contactBaseAngle,
+      state.toothZeroAngle,
       transition.startTooth,
       0
     );
     const targetContact = contactDistance(
       targetFace,
       palletAngle,
-      state.contactBaseAngle,
+      state.toothZeroAngle,
       transition.targetTooth,
       dynamicAngle
     );
