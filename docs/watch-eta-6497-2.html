@@ -13,9 +13,9 @@
 <main>
   <nav class="top"><a href="../">← Interactive Demos</a><a href="../watch/">Open 3D demo ↗</a></nav>
 
-  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M3D</div>
+  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M3E</div>
   <h1>ETA / Unitas 6497-2</h1>
-  <p class="lead">A movement-first interactive reconstruction of a large hand-wound mechanical watch. M3d gives the compound train explicit axial planes while the new camera-axis lighting makes the model usable as an inspection object.</p>
+  <p class="lead">A movement-first interactive reconstruction of a large hand-wound mechanical watch. M3e makes the compound train read more like an actual wheel-to-pinion system: pitch-derived geometry, explicit axial planes, solved contact phase and optional mesh diagnostics.</p>
 
   <div class="callout"><strong>Accuracy contract.</strong><p>The demo is not manufacturing CAD. Important facts and geometry remain classified as official, reference-derived, approximate, or presentational.</p></div>
 
@@ -47,23 +47,29 @@
   </div>
 
   <h2>M3d — compound train planes</h2>
-  <p>Large pitch-derived wheel bodies cannot all occupy the same z-plane. M3d now assigns explicit bridge-side wheel planes:</p>
+  <p>Large pitch-derived wheel bodies cannot all occupy the same z-plane. M3d assigns explicit bridge-side wheel planes:</p>
   <div class="specs">
     <div class="spec"><span>Centre wheel</span><strong>z = -0.65 mm</strong></div>
     <div class="spec"><span>Third wheel</span><strong>z = -1.10 mm</strong></div>
     <div class="spec"><span>Seconds/fourth</span><strong>z = -1.55 mm</strong></div>
     <div class="spec"><span>Escape wheel</span><strong>z = -0.65 mm</strong></div>
   </div>
-  <p>The third pinion lands in the centre-wheel plane, the seconds/fourth pinion in the third-wheel plane, and the escape pinion in the seconds/fourth-wheel plane. Those heights are still reconstruction values, but the axial relationships are now mechanically purposeful rather than decorative.</p>
+  <p>The third pinion lands in the centre-wheel plane, the seconds/fourth pinion in the third-wheel plane, and the escape pinion in the seconds/fourth-wheel plane.</p>
 
-  <h2>Camera-axis inspection lighting</h2>
-  <p><strong>Camera aligned</strong> mode conceptually places a directional light just behind the camera and aims it through the orbit target. That gives predictable frontal illumination without inverse-square brightness loss as the camera moves.</p>
+  <h2>M3e — pitch-envelope meshing</h2>
+  <p>The constructive gear primitive is intentionally simplified and its authored radius is not itself a strict pitch radius. M3e compensates that visual radius so each simplified tooth envelope actually straddles the solved pitch circle. This removes a visible gap introduced by using pitch math with a presentation-oriented gear primitive.</p>
+  <p>M3e also solves a static tooth/gap phase through the whole compound chain. The centre wheel is the phase anchor; the third pinion, seconds/fourth pinion and escape pinion are each rotated so their contact phase complements the already-constrained upstream wheel at the line of centres.</p>
+
+  <div class="callout"><strong>Why the big wheels still look separated in projection.</strong><p>The train is wheel → small coaxial pinion → wheel, not big wheel → big wheel. The new <strong>Show pitch mesh guides</strong> control displays both pitch circles in each actual mesh plane plus the line of centres. Use the new <strong>Train mesh</strong> camera preset to inspect that relationship directly.</p></div>
+
+  <h2>Balanced camera-axis lighting</h2>
+  <p>The prior pass solved the darkness problem but overshot. M3e keeps the useful brightness range while moving the default back toward the middle.</p>
   <ul>
-    <li>Camera aligned, Manual key only, and Camera + manual key modes.</li>
-    <li>Camera and manual intensities each adjustable up to <strong>700</strong>.</li>
-    <li>Ambient/fill up to <strong>1.20</strong> and exposure up to <strong>3.20×</strong>.</li>
-    <li><strong>Full bright / diagnostic</strong> preset for geometry-first inspection.</li>
-    <li>Neutral reflection environment, stronger broad fill, rim light and lighter backboard.</li>
+    <li><strong>Camera aligned / balanced</strong> is now the default.</li>
+    <li>Camera intensity, ambient/fill, environment reflection and exposure are all reduced from M3d.</li>
+    <li><strong>Full bright / diagnostic</strong> remains intentionally excessive for difficult geometry.</li>
+    <li>Camera and manual intensities still reach <strong>700</strong>, with exposure up to <strong>3.20×</strong>.</li>
+    <li>Manual azimuth, elevation and distance controls remain available for raking light.</li>
   </ul>
 
   <h2>Simulation presentation</h2>
@@ -76,8 +82,8 @@
   <p><span class="badge presentation">presentation</span> Geometry or controls added for readability and explanation.</p>
 
   <h2>Next work</h2>
-  <h3>M3e — interference and staff refinement</h3>
-  <p>Inspect the new wheel envelopes against bridges and neighboring parts, refine staff shoulders, pivot lengths and clearances, and add optional pitch/mesh diagnostics.</p>
+  <h3>M3f — interference, staffs and bridge clearance</h3>
+  <p>Inspect the pitch-derived envelopes against bridges and neighboring parts, replace uniform arbors with stepped staffs and shoulders, refine pivot/jewel seating, and make wheel endshake and bridge clearance visually defensible.</p>
   <h3>M4 — winding fidelity</h3>
   <p>Stateful crown/stem positions, winding versus hand-setting, causal keyless works, one-way click behavior and stored mainspring energy.</p>
   <h3>M5 — escapement fidelity</h3>
