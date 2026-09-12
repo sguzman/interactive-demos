@@ -20,15 +20,17 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.95;
+renderer.toneMappingExposure = 1.55;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 
 // Metal-heavy PBR materials need a reflection field as well as direct lights.
+// M3e deliberately backs this down from the overly bright M3d pass; the direct
+// inspection lights retain large user-controlled headroom.
 const pmrem = new THREE.PMREMGenerator(renderer);
 const environmentTarget = pmrem.fromScene(new RoomEnvironment(), 0.04);
 scene.environment = environmentTarget.texture;
-scene.environmentIntensity = 1.65;
+scene.environmentIntensity = 1.28;
 pmrem.dispose();
 
 const camera = new THREE.PerspectiveCamera(33, innerWidth / innerHeight, .1, 420);
@@ -49,7 +51,7 @@ const lighting = createLightingRig(scene, materials);
 
 const backboard = new THREE.Mesh(
   new THREE.CircleGeometry(67, 128),
-  new THREE.MeshStandardMaterial({ color: 0x20252c, metalness: .02, roughness: .86 })
+  new THREE.MeshStandardMaterial({ color: 0x171b21, metalness: .02, roughness: .88 })
 );
 backboard.position.z = -27;
 backboard.receiveShadow = true;
@@ -98,6 +100,7 @@ const VIEW_PRESETS = {
   overview: { position: initialCamera.clone(), target: initialTarget.clone() },
   bridge: { position: new THREE.Vector3(34, 18, -66), target: new THREE.Vector3(-2, -2, -2) },
   dial: { position: new THREE.Vector3(35, 18, 68), target: new THREE.Vector3(0, 0, 1) },
+  train: { position: new THREE.Vector3(-5, -2, -58), target: new THREE.Vector3(-5, -2, -1.1) },
   escapement: { position: new THREE.Vector3(-28, -29, -37), target: new THREE.Vector3(-7.7, -9.0, -1.4) },
   winding: { position: new THREE.Vector3(35, 21, -38), target: new THREE.Vector3(7.7, 4.9, -1.3) }
 };
@@ -122,9 +125,13 @@ controls.addEventListener('start', () => {
 // -----------------------------------------------------------------------------
 
 const trainScale = document.querySelector('#trainScale');
+const meshGuides = document.querySelector('#meshGuides');
 let trainTimeScale = Number(trainScale?.value ?? 1);
 trainScale?.addEventListener('change', () => {
   trainTimeScale = Number(trainScale.value);
+});
+meshGuides?.addEventListener('change', () => {
+  if (trainGeometry.guides) trainGeometry.guides.visible = meshGuides.checked;
 });
 
 // -----------------------------------------------------------------------------
@@ -261,13 +268,14 @@ renderer.domElement.addEventListener('pointerdown', event => {
 });
 
 // -----------------------------------------------------------------------------
-// Kinematics. M3c keeps the reference ratio graph and M3b tooth/leaf counts,
-// while train-refinement now derives nominal pitch radii from centre distances.
-// The optional time scale accelerates inspection only; balance remains real 3 Hz.
+// Kinematics. M3e keeps the reference ratio graph, pitch-derived geometry and
+// compound planes, then adds a solved static mesh phase so driven pinion gaps
+// align with upstream wheel teeth at each line of centres.
 // -----------------------------------------------------------------------------
 
 const clock = new THREE.Clock();
 let elapsed = 0;
+const phases = trainGeometry.phases ?? { center: 0, third: 0, seconds: 0, escape: 0 };
 const handPhase = {
   seconds: animated.secondsHand.rotation.z,
   minute: animated.minuteHand.rotation.z,
@@ -303,10 +311,10 @@ function animate() {
   animated.pallet.rotation.z = -.22 - balanceAngle * .13;
 
   const k = movementAngles(elapsed * trainTimeScale);
-  animated.escapeWheel.rotation.z = k.escape;
-  animated.fourthWheel.rotation.z = k.seconds;
-  animated.thirdWheel.rotation.z = k.third;
-  animated.centerWheel.rotation.z = k.center;
+  animated.escapeWheel.rotation.z = phases.escape + k.escape;
+  animated.fourthWheel.rotation.z = phases.seconds + k.seconds;
+  animated.thirdWheel.rotation.z = phases.third + k.third;
+  animated.centerWheel.rotation.z = phases.center + k.center;
 
   // Winding remains a presentation animation until M4 connects crown state to
   // barrel energy and makes the click a one-way mechanical constraint.
