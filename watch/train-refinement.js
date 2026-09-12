@@ -1,12 +1,13 @@
 import { escapeWheel, gear, pinion, setShadows } from './geometry.js';
 import { LAYOUT } from './spec.js';
 
-// M3c train-geometry pass.
+// M3d train-geometry pass.
 //
-// M3b made the visible tooth/leaf counts agree with the reference timing graph.
-// M3c removes another arbitrary degree of freedom: wheel/pinion pitch radii are
-// derived from the current reference-derived centre coordinates and tooth counts.
-// This is still reconstruction geometry, not ETA manufacturing coordinates.
+// M3b aligned visible tooth/leaf counts with the reference timing graph.
+// M3c derived pitch radii from current centre coordinates and those counts.
+// M3d now gives the compound train explicit wheel planes so large wheel bodies
+// can pass one another while each driven pinion is placed in the plane of the
+// upstream wheel that actually meshes with it.
 
 function distance(a, b) {
   return Math.hypot(a[0] - b[0], a[1] - b[1]);
@@ -19,8 +20,7 @@ function solveExternalMesh(driverCenter, drivenCenter, driverTeeth, drivenLeaves
     centerDistance,
     moduleMm,
     driverPitchRadius: moduleMm * driverTeeth / 2,
-    drivenPitchRadius: moduleMm * drivenLeaves / 2,
-    closureError: 0
+    drivenPitchRadius: moduleMm * drivenLeaves / 2
   };
 }
 
@@ -46,6 +46,16 @@ export const TRAIN_MESHES = {
     drivenLeaves: 10,
     ...solveExternalMesh(LAYOUT.secondWheel, LAYOUT.escapeWheel, 120, 10)
   }
+};
+
+// Bridge-side z coordinates in millimetres. These are reconstruction planes,
+// not ETA manufacturing heights. The important M3d constraint is relational:
+// each pinion lands exactly in the plane of the wheel that drives it.
+export const TRAIN_PLANES = {
+  center: -0.65,
+  third: -1.10,
+  seconds: -1.55,
+  escape: -0.65
 };
 
 function wheelDepth(moduleMm) {
@@ -80,8 +90,10 @@ const REFERENCE_VISUALS = {
       teeth: 10,
       radius: m1.drivenPitchRadius,
       thickness: .72,
-      z: -.48,
-      moduleMm: m1.moduleMm
+      // local z required to land in the centre-wheel plane
+      z: TRAIN_PLANES.center - TRAIN_PLANES.third,
+      moduleMm: m1.moduleMm,
+      meshPlane: TRAIN_PLANES.center
     },
     mesh: 'thirdToSeconds'
   },
@@ -95,8 +107,10 @@ const REFERENCE_VISUALS = {
       teeth: 8,
       radius: m2.drivenPitchRadius,
       thickness: .68,
-      z: -.46,
-      moduleMm: m2.moduleMm
+      // local z required to land in the third-wheel plane
+      z: TRAIN_PLANES.third - TRAIN_PLANES.seconds,
+      moduleMm: m2.moduleMm,
+      meshPlane: TRAIN_PLANES.third
     },
     mesh: 'secondsToEscape'
   },
@@ -112,8 +126,10 @@ const REFERENCE_VISUALS = {
       teeth: 10,
       radius: m3.drivenPitchRadius,
       thickness: .66,
-      z: -.43,
-      moduleMm: m3.moduleMm
+      // local z required to land in the seconds/fourth-wheel plane
+      z: TRAIN_PLANES.seconds - TRAIN_PLANES.escape,
+      moduleMm: m3.moduleMm,
+      meshPlane: TRAIN_PLANES.seconds
     },
     mesh: null
   }
@@ -153,10 +169,10 @@ function hideLegacyCoaxialPinions(target, pickables) {
   const siblings = [...parent.children];
   for (const sibling of siblings) {
     if (sibling === target || sibling.userData?.geometryType !== 'gear') continue;
-    if (sibling.position.distanceTo(target.position) > .08) continue;
+    if (Math.hypot(sibling.position.x - target.position.x, sibling.position.y - target.position.y) > .08) continue;
     removePickablesFor(sibling, pickables);
     sibling.visible = false;
-    sibling.userData.m3cLegacyHidden = true;
+    sibling.userData.m3dLegacyHidden = true;
   }
 }
 
@@ -200,6 +216,7 @@ function conventionalWheel(spec, material, pinionMaterial, spokeCount = 5) {
     p.position.z = spec.pinion.z;
     p.userData.referenceLeafCount = spec.pinion.teeth;
     p.userData.pitchModuleMm = spec.pinion.moduleMm;
+    p.userData.meshPlaneMm = spec.pinion.meshPlane;
     assembly.add(p);
   }
 
@@ -210,18 +227,38 @@ function conventionalWheel(spec, material, pinionMaterial, spokeCount = 5) {
 }
 
 export function trainGeometryDiagnostics() {
-  return Object.fromEntries(Object.entries(TRAIN_MESHES).map(([name, mesh]) => [name, {
+  const meshDiagnostics = Object.fromEntries(Object.entries(TRAIN_MESHES).map(([name, mesh]) => [name, {
     driver: mesh.driver,
     driven: mesh.driven,
     centerDistanceMm: Number(mesh.centerDistance.toFixed(3)),
     moduleMm: Number(mesh.moduleMm.toFixed(4)),
     driverPitchRadiusMm: Number(mesh.driverPitchRadius.toFixed(3)),
     drivenPitchRadiusMm: Number(mesh.drivenPitchRadius.toFixed(3)),
-    closureMm: Number((mesh.driverPitchRadius + mesh.drivenPitchRadius - mesh.centerDistance).toFixed(6))
+    radialClosureMm: Number((mesh.driverPitchRadius + mesh.drivenPitchRadius - mesh.centerDistance).toFixed(6))
   }]));
+
+  return {
+    ...meshDiagnostics,
+    planes: {
+      centerWheelMm: TRAIN_PLANES.center,
+      thirdWheelMm: TRAIN_PLANES.third,
+      secondsWheelMm: TRAIN_PLANES.seconds,
+      escapeWheelMm: TRAIN_PLANES.escape,
+      thirdPinionMeshPlaneMm: TRAIN_PLANES.center,
+      secondsPinionMeshPlaneMm: TRAIN_PLANES.third,
+      escapePinionMeshPlaneMm: TRAIN_PLANES.seconds
+    }
+  };
 }
 
 export function refineTrainGeometry(animated, materials, pickables) {
+  // Move the wheel bodies into explicit compound-train planes before replacing
+  // their placeholder meshes. XY positions remain the reference-derived layout.
+  animated.centerWheel.position.z = TRAIN_PLANES.center;
+  animated.thirdWheel.position.z = TRAIN_PLANES.third;
+  animated.fourthWheel.position.z = TRAIN_PLANES.seconds;
+  animated.escapeWheel.position.z = TRAIN_PLANES.escape;
+
   replaceWheel(
     animated.centerWheel,
     conventionalWheel(REFERENCE_VISUALS.center, materials.brass, materials.brushedSteel, 5),
@@ -260,6 +297,7 @@ export function refineTrainGeometry(animated, materials, pickables) {
   escapePinion.position.z = escSpec.pinion.z;
   escapePinion.userData.referenceLeafCount = escSpec.pinion.teeth;
   escapePinion.userData.pitchModuleMm = escSpec.pinion.moduleMm;
+  escapePinion.userData.meshPlaneMm = escSpec.pinion.meshPlane;
   escAssembly.add(escapePinion);
   escAssembly.userData.referenceToothCount = escSpec.teeth;
   replaceWheel(animated.escapeWheel, escAssembly, pickables);
