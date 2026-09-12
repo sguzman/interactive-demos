@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Documentation and provenance for the ETA/Unitas 6497-2 interactive watch reconstruction." />
+  <title>ETA 6497-2 Reconstruction — Documentation</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0a0c10;--panel:#11161c;--line:#ffffff16;--text:#eef2f5;--muted:#9aa6b2;--accent:#d8b36a;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;color:var(--text);background:radial-gradient(circle at 15% 0,#202833 0,transparent 34rem),var(--bg)}main{width:min(900px,calc(100% - 36px));margin:auto;padding:48px 0 80px}.top{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:62px}.top a{color:var(--muted);text-decoration:none;font-size:13px}.top a:hover{color:var(--text)}.eyebrow{color:var(--accent);font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}h1{font-size:clamp(2.8rem,8vw,6rem);line-height:.92;letter-spacing:-.055em;margin:12px 0 22px;max-width:10ch}h2{font-size:25px;letter-spacing:-.03em;margin:50px 0 12px}h3{font-size:17px;margin:28px 0 8px}p,li{color:var(--muted);line-height:1.7}a{color:#e3c887}code{background:#ffffff0c;border:1px solid var(--line);border-radius:5px;padding:2px 5px}.lead{font-size:1.12rem;max-width:68ch}.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:#11161cbb;border-radius:12px;padding:18px 20px;margin:28px 0}.specs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:22px 0}.spec{border:1px solid var(--line);background:#10151b;border-radius:12px;padding:14px}.spec span{display:block;color:#68737e;font-size:9px;text-transform:uppercase;letter-spacing:.12em;font-weight:800}.spec strong{display:block;margin-top:5px;font-size:16px}.source{border-top:1px solid var(--line);padding:12px 0}.source strong{display:block;font-size:13px}.source p{margin:4px 0 0;font-size:12px}.badge{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 8px;margin-right:5px;color:#c4ccd4;font-size:10px}.official{color:#8cc39a}.reference{color:#dfc486}.approx{color:#b4b9c0}.presentation{color:#79a9d3}footer{border-top:1px solid var(--line);margin-top:64px;padding-top:18px;color:#68737e;font-size:11px}@media(max-width:650px){.specs{grid-template-columns:1fr 1fr}.top{align-items:flex-start;flex-direction:column;margin-bottom:42px}}
+  </style>
+</head>
+<body>
+<main>
+  <nav class="top"><a href="../">← Interactive Demos</a><a href="../watch/">Open 3D demo ↗</a></nav>
+
+  <div class="eyebrow">DOCUMENTATION · PROVENANCE · ROADMAP</div>
+  <h1>ETA / Unitas 6497-2</h1>
+  <p class="lead">A movement-first interactive reconstruction of a large hand-wound mechanical wristwatch, using the ETA/Unitas 6497-2 as the mechanical target and the Panerai OP XI / PAM111 lineage as a well-documented wristwatch reference frame.</p>
+
+  <div class="callout">
+    <strong>Accuracy contract.</strong>
+    <p>The demo is not manufacturing CAD. Every important component is meant to declare whether it is sourced from official data, reconstructed from reference material, approximate, or purely presentational. Increased realism must not erase that distinction.</p>
+  </div>
+
+  <h2>Why this target</h2>
+  <p>The 6497 family is unusually good for an interactive explainer: it is large, manually wound, mechanically legible, widely serviced, and extensively photographed. The OP XI lineage also places that architecture inside a large exhibition-back wristwatch, which gives the demo a concrete product context without requiring us to invent the entire watch from scratch.</p>
+
+  <h2>Official movement facts</h2>
+  <div class="specs">
+    <div class="spec"><span>Diameter</span><strong>36.60 mm</strong></div>
+    <div class="spec"><span>Movement height</span><strong>4.50 mm</strong></div>
+    <div class="spec"><span>Frequency</span><strong>3 Hz</strong></div>
+    <div class="spec"><span>Alternations</span><strong>21,600 A/h</strong></div>
+    <div class="spec"><span>Jewels</span><strong>17</strong></div>
+    <div class="spec"><span>Power reserve</span><strong>53 h min / 60 h typical</strong></div>
+  </div>
+  <p>ETA's 2025 technical communication additionally gives a typical balance lift angle of 44°. The product portal identifies the movement as manual-wind, Lépine architecture, with hours, minutes and small seconds.</p>
+
+  <h2>Reference watch</h2>
+  <p>The shell currently targets a <strong>44 mm exhibition-style Luminor Marina / PAM111 reference lineage</strong>. The PAM111's OP XI movement is documented as a decorated and modified Unitas 6497-2 derivative. The first reconstruction prioritizes movement architecture over exact case revision, dial printing, engravings, or proprietary crown-guard CAD.</p>
+
+  <h2>Functional assemblies</h2>
+  <ol>
+    <li><strong>Case / protection</strong> — cushion case, bezel, crystal, crown guard and exhibition back.</li>
+    <li><strong>Display</strong> — dial, central hour/minute hands and small seconds at 9 o'clock.</li>
+    <li><strong>Motion works</strong> — cannon pinion and hour-wheel reduction.</li>
+    <li><strong>Winding</strong> — stem, crown wheel, ratchet wheel and click.</li>
+    <li><strong>Power</strong> — barrel, arbor and mainspring.</li>
+    <li><strong>Wheel train</strong> — centre, third, fourth/seconds and escape wheels.</li>
+    <li><strong>Escapement</strong> — escape wheel, pallet fork and stones.</li>
+    <li><strong>Oscillator / regulation</strong> — balance, hairspring and regulator.</li>
+    <li><strong>Structure</strong> — mainplate, bridges, cock, jewels and screws.</li>
+  </ol>
+
+  <h2>Constructive geometry policy</h2>
+  <p>Authored dimensions are expressed in millimetres and generated through reusable primitives rather than hidden baked meshes wherever practical. The current vocabulary includes <code>disc</code>, <code>ring</code>, <code>roundedPlate</code>, <code>caseRing</code>, <code>polygonPlate</code>, <code>gear</code>, <code>pinion</code>, <code>screw</code>, <code>jewel</code>, <code>coil</code>, <code>pathTube</code>, and parameterized hands.</p>
+  <p>This makes the model inspectable and editable. Boolean CSG can be added later if it substantially improves bridge, plate, or case fidelity.</p>
+
+  <h2>Provenance classes</h2>
+  <p><span class="badge official">official</span> Dimension or fact directly supported by ETA/Panerai technical material.</p>
+  <p><span class="badge reference">reference-derived</span> Reconstructed from service diagrams, teardown photographs, or multiple references.</p>
+  <p><span class="badge approx">approximate</span> Simplified geometry intended to preserve function and relative placement.</p>
+  <p><span class="badge presentation">presentation</span> Geometry added for readability, lighting, or visual communication.</p>
+
+  <h2>Current milestone: M1 architecture</h2>
+  <p>M1 establishes the real movement dimensions, functional system boundaries, a recognizable 6497-style layout, hard movable inspection lighting, explicit provenance, and an exploded-view grammar. The gear train still uses visualization-speed animation rather than a solved mechanical state model, and bridge contours remain reference-derived approximations.</p>
+
+  <h2>Next realism milestones</h2>
+  <h3>M2 — bridge and plate fidelity</h3>
+  <p>Replace generic bridge silhouettes with closer reference-derived contours, improve screw/jewel placement, and model more of the visible machining relief.</p>
+  <h3>M3 — train fidelity</h3>
+  <p>Refine wheel diameters, pinions, arbor relationships, gear pairing, and the small-seconds output using technical drawings and teardown references.</p>
+  <h3>M4 — winding fidelity</h3>
+  <p>Make crown rotation causal: crown/stem drives winding works, ratchet turns the barrel arbor, click blocks reversal, and a normalized mainspring-energy state increases.</p>
+  <h3>M5 — escapement fidelity</h3>
+  <p>Improve escape tooth geometry, pallet locking and impulse faces, banking, balance staff, hairspring presentation, and visualized impulse transfer.</p>
+  <h3>M6 — system simulation</h3>
+  <p>Derive the wheel train and hands from a shared mechanical state instead of independent decorative animation.</p>
+
+  <h2>Lighting</h2>
+  <p>The demo is designed as an inspection tool rather than only a beauty render. The default key is intentionally hard. Its azimuth, elevation, distance and intensity can be changed, while presets provide raking side light, top inspection, backlight, studio and dark presentation modes.</p>
+
+  <h2>Sources</h2>
+  <div class="source"><strong>ETA — 6497-2 product portal</strong><p><a href="https://portal.eta.ch/fr/6497-2-6497-2-3.html">portal.eta.ch/fr/6497-2-6497-2-3.html</a></p></div>
+  <div class="source"><strong>ETA — 2025 Technical Communication, CT 6497-2 ESI 482463 14</strong><p><a href="https://shopb2b.eta.ch/technicaldocuments/index/pdf/id/1632/">technical communication PDF</a></p></div>
+  <div class="source"><strong>ETA — 2025 service communication, CT 6497-2 FDE 482448 14</strong><p><a href="https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/">service / assembly document</a></p></div>
+  <div class="source"><strong>Case &amp; Caliber — ETA 6497 disassembly</strong><p><a href="https://caseandcaliber.com/eta-6497-disassembly/">photographed part identification and disassembly order</a></p></div>
+  <div class="source"><strong>Caliber Corner — ETA/Unitas 6497 assembly/disassembly resources</strong><p><a href="https://calibercorner.com/eta-unitas-caliber-6497-6498-assembly-disassembly/">assembly/disassembly resource index</a></p></div>
+  <div class="source"><strong>Fratello — PAM111 / OP XI discussion</strong><p><a href="https://www.fratellowatches.com/buying-guide-the-best-panerai-watches-from-the-2000s/">reference-watch and OP XI context</a></p></div>
+  <div class="source"><strong>Panerai archive — 44 mm Luminor Marina examples</strong><p><a href="https://www.panerai.com/us/en/collections/special-editions-archive/2013/pam00464-luminor-marina-acciaio---44mm.html">official 44 mm case/dial architecture reference</a></p></div>
+
+  <footer>interactive-demos / watch · documentation is part of the model, not an afterthought.</footer>
+</main>
+</body>
+</html>
