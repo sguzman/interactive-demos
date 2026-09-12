@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M5d',
-  label: 'geometry-constrained escapement contact',
-  note: 'M5d retains the reserve-coupled M5c oscillator and the M5b pallet/safety diagnostics, then moves escape-wheel release away from fixed beat-fraction choreography. Two reconstructed pallet contact faces are calibrated against the visible 15-tooth escape-wheel phase. Spatial face travel, tooth-to-segment clearance, target-face capture, and a small penetration guard now derive the half-tooth release angle; released escape angle remains the downstream train time source. Contact clearances and face coordinates are reconstruction targets in millimetres, not ETA production tolerances or a rigid-body contact solution.'
+  id: 'M5e',
+  label: 'amplitude-dependent simulated rate',
+  note: 'M5e retains M5d geometry-constrained tooth/pallet release and the M5c reserve-coupled oscillator, then separates reserve-consuming runtime from oscillator phase time. Normalized balance amplitude now feeds an explicit educational isochronism curve, producing a simulated instantaneous frequency, alternations-per-hour value, seconds/day rate error, and accumulated phase drift relative to the official nominal 3 Hz / 21,600 A/h specification. The current amplitude→rate curve and its 74% normalized reference amplitude are reconstruction parameters, not measured ETA 6497-2 timing data.'
 };
