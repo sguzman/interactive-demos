@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M5e',
-  label: 'amplitude-dependent simulated rate',
-  note: 'M5e retains M5d geometry-constrained tooth/pallet release and the M5c reserve-coupled oscillator, then separates reserve-consuming runtime from oscillator phase time. Normalized balance amplitude now feeds an explicit educational isochronism curve, producing a simulated instantaneous frequency, alternations-per-hour value, seconds/day rate error, and accumulated phase drift relative to the official nominal 3 Hz / 21,600 A/h specification. The current amplitude→rate curve and its 74% normalized reference amplitude are reconstruction parameters, not measured ETA 6497-2 timing data.'
+  id: 'M5f',
+  label: 'state-integrated balance and hairspring oscillator',
+  note: 'M5f retains the M5d geometry-constrained escapement and the M5e educational isochronism curve, but removes the assigned oscillator phase clock. The balance now owns integrated angular position and angular velocity states driven by an explicit restoring acceleration, damping acceleration, and discrete center-crossing impulse kicks whose strength depends on remaining reserve. Unwrapped phase is recovered from that state and becomes the input to the pallet/contact solver, so the downstream train follows an actual oscillator trajectory. Large diagnostic time scales switch to a clearly labelled envelope fast-forward approximation. Damping ratio, impulse gain, restart amplitude and isochronism curve remain educational reconstruction parameters rather than measured ETA balance inertia, hairspring stiffness or escapement efficiency.'
 };
