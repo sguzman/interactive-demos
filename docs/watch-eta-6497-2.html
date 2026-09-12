@@ -6,18 +6,18 @@
   <meta name="description" content="Documentation and provenance for the ETA/Unitas 6497-2 interactive watch reconstruction." />
   <title>ETA 6497-2 Reconstruction — Documentation</title>
   <style>
-    :root{color-scheme:dark;--bg:#0a0c10;--panel:#11161c;--line:#ffffff16;--text:#eef2f5;--muted:#9aa6b2;--accent:#d8b36a;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;color:var(--text);background:radial-gradient(circle at 15% 0,#202833 0,transparent 34rem),var(--bg)}main{width:min(920px,calc(100% - 36px));margin:auto;padding:48px 0 80px}.top{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:62px}.top a{color:var(--muted);text-decoration:none;font-size:13px}.top a:hover{color:var(--text)}.eyebrow{color:var(--accent);font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}h1{font-size:clamp(2.8rem,8vw,6rem);line-height:.92;letter-spacing:-.055em;margin:12px 0 22px;max-width:10ch}h2{font-size:25px;letter-spacing:-.03em;margin:50px 0 12px}h3{font-size:17px;margin:28px 0 8px}p,li{color:var(--muted);line-height:1.7}a{color:#e3c887}code{background:#ffffff0c;border:1px solid var(--line);border-radius:5px;padding:2px 5px}.lead{font-size:1.12rem;max-width:70ch}.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:#11161cbb;border-radius:12px;padding:18px 20px;margin:28px 0}.specs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:22px 0}.spec{border:1px solid var(--line);background:#10151b;border-radius:12px;padding:14px}.spec span{display:block;color:#68737e;font-size:9px;text-transform:uppercase;letter-spacing:.12em;font-weight:800}.spec strong{display:block;margin-top:5px;font-size:16px}.source{border-top:1px solid var(--line);padding:12px 0}.source strong{display:block;font-size:13px}.source p{margin:4px 0 0;font-size:12px}.badge{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 8px;margin-right:5px;color:#c4ccd4;font-size:10px}.official{color:#8cc39a}.reference{color:#dfc486}.approx{color:#b4b9c0}.presentation{color:#79a9d3}.done{color:#8cc39a}footer{border-top:1px solid var(--line);margin-top:64px;padding-top:18px;color:#68737e;font-size:11px}@media(max-width:650px){.specs{grid-template-columns:1fr 1fr}.top{align-items:flex-start;flex-direction:column;margin-bottom:42px}}
+    :root{color-scheme:dark;--bg:#0a0c10;--panel:#11161c;--line:#ffffff16;--text:#eef2f5;--muted:#9aa6b2;--accent:#d8b36a;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;color:var(--text);background:radial-gradient(circle at 15% 0,#202833 0,transparent 34rem),var(--bg)}main{width:min(920px,calc(100% - 36px));margin:auto;padding:48px 0 80px}.top{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:62px}.top a{color:var(--muted);text-decoration:none;font-size:13px}.top a:hover{color:var(--text)}.eyebrow{color:var(--accent);font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}h1{font-size:clamp(2.8rem,8vw,6rem);line-height:.92;letter-spacing:-.055em;margin:12px 0 22px;max-width:10ch}h2{font-size:25px;letter-spacing:-.03em;margin:50px 0 12px}h3{font-size:17px;margin:28px 0 8px}p,li{color:var(--muted);line-height:1.7}a{color:#e3c887}code{background:#ffffff0c;border:1px solid var(--line);border-radius:5px;padding:2px 5px}.lead{font-size:1.12rem;max-width:70ch}.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:#11161cbb;border-radius:12px;padding:18px 20px;margin:28px 0}.specs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:22px 0}.spec{border:1px solid var(--line);background:#10151b;border-radius:12px;padding:14px}.spec span{display:block;color:#68737e;font-size:9px;text-transform:uppercase;letter-spacing:.12em;font-weight:800}.spec strong{display:block;margin-top:5px;font-size:16px}.source{border-top:1px solid var(--line);padding:12px 0}.source strong{display:block;font-size:13px}.source p{margin:4px 0 0;font-size:12px}.badge{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 8px;margin-right:5px;color:#c4ccd4;font-size:10px}.official{color:#8cc39a}.reference{color:#dfc486}.approx{color:#b4b9c0}.presentation{color:#79a9d3}footer{border-top:1px solid var(--line);margin-top:64px;padding-top:18px;color:#68737e;font-size:11px}@media(max-width:650px){.specs{grid-template-columns:1fr 1fr}.top{align-items:flex-start;flex-direction:column;margin-bottom:42px}}
   </style>
 </head>
 <body>
 <main>
   <nav class="top"><a href="../">← Interactive Demos</a><a href="../watch/">Open 3D demo ↗</a></nav>
 
-  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M3C</div>
+  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M3D</div>
   <h1>ETA / Unitas 6497-2</h1>
-  <p class="lead">A movement-first interactive reconstruction of a large hand-wound mechanical watch. M3c gives the train internally constrained pitch geometry and turns the lighting into a genuinely usable camera-axis inspection system.</p>
+  <p class="lead">A movement-first interactive reconstruction of a large hand-wound mechanical watch. M3d gives the compound train explicit axial planes while the new camera-axis lighting makes the model usable as an inspection object.</p>
 
-  <div class="callout"><strong>Accuracy contract.</strong><p>The demo is not manufacturing CAD. Every important fact or geometry claim remains distinguishable as official, reference-derived, approximate, or presentational.</p></div>
+  <div class="callout"><strong>Accuracy contract.</strong><p>The demo is not manufacturing CAD. Important facts and geometry remain classified as official, reference-derived, approximate, or presentational.</p></div>
 
   <h2>Official movement facts</h2>
   <div class="specs">
@@ -29,25 +29,14 @@
     <div class="spec"><span>Power reserve</span><strong>53 h min / 60 h typical</strong></div>
   </div>
 
-  <h2>M2 — structural fidelity</h2>
-  <p>Separate barrel, train, pallet and balance bridges; documented bridge screw counts; bridge-side jewel positions; dial-side keyless works; crown-wheel ring/click spring; explicit arbors; visible shock setting/regulator indication; constructive bridge holes; tapered gear teeth; and a dedicated escape-wheel primitive.</p>
+  <h2>M3a — reference timing</h2>
+  <p>The train uses a published 6497 training-tool ratio set: centre 80 teeth, third 60 teeth / 10-leaf pinion, seconds/fourth 120 teeth / 8-leaf pinion, and escape 15 teeth / 10-leaf pinion. At 21,600 A/h this closes to 5 s/rev for the escape wheel, 60 s/rev for the seconds/fourth wheel, 7.5 min/rev for the third wheel, and 1 h/rev for the centre wheel.</p>
 
-  <h2>M3a — reference train kinematics</h2>
-  <div class="specs">
-    <div class="spec"><span>Escape</span><strong>15 teeth · 5 s/rev</strong></div>
-    <div class="spec"><span>Seconds / fourth</span><strong>120 teeth · 60 s/rev</strong></div>
-    <div class="spec"><span>Third</span><strong>60 teeth · 7.5 min/rev</strong></div>
-    <div class="spec"><span>Centre</span><strong>80 teeth · 1 h/rev</strong></div>
-    <div class="spec"><span>Fourth pinion</span><strong>8 leaves</strong></div>
-    <div class="spec"><span>Third / escape pinions</span><strong>10 leaves</strong></div>
-  </div>
-  <p>The Swiss-lever timing model advances the escape wheel by <strong>half a tooth per beat</strong>.</p>
+  <h2>M3b — visible tooth and leaf counts</h2>
+  <p>The rendered train uses those same reference counts rather than placeholder counts.</p>
 
-  <h2>M3b — visible train counts</h2>
-  <p>The visible centre, third, seconds/fourth and escape assemblies use the same reference tooth/leaf counts as the timing graph.</p>
-
-  <h2>M3c — mesh-derived train geometry</h2>
-  <p>M3c derives a nominal module and pitch radius for each external train mesh from the current centre coordinates and reference tooth/leaf counts using <code>module = 2 × centre_distance / (wheel_teeth + pinion_leaves)</code>.</p>
+  <h2>M3c — pitch-derived geometry</h2>
+  <p>For each external mesh the reconstruction derives a nominal module from the current centre distance and tooth/leaf counts using <code>module = 2 × centre_distance / (wheel_teeth + pinion_leaves)</code>.</p>
   <div class="specs">
     <div class="spec"><span>Centre → third pinion</span><strong>6.466 mm · m 0.1437</strong></div>
     <div class="spec"><span>Pitch radii</span><strong>5.748 + 0.718 mm</strong></div>
@@ -56,22 +45,29 @@
     <div class="spec"><span>Fourth → escape pinion</span><strong>9.277 mm · m 0.1427</strong></div>
     <div class="spec"><span>Pitch radii</span><strong>8.563 + 0.714 mm</strong></div>
   </div>
-  <div class="callout"><strong>What this means.</strong><p>The wheels no longer merely have the right counts; their nominal pitch radii now close against the current centre distances. The centre coordinates are still reference-derived reconstruction coordinates, so this improves internal consistency without claiming ETA manufacturing CAD.</p></div>
+
+  <h2>M3d — compound train planes</h2>
+  <p>Large pitch-derived wheel bodies cannot all occupy the same z-plane. M3d now assigns explicit bridge-side wheel planes:</p>
+  <div class="specs">
+    <div class="spec"><span>Centre wheel</span><strong>z = -0.65 mm</strong></div>
+    <div class="spec"><span>Third wheel</span><strong>z = -1.10 mm</strong></div>
+    <div class="spec"><span>Seconds/fourth</span><strong>z = -1.55 mm</strong></div>
+    <div class="spec"><span>Escape wheel</span><strong>z = -0.65 mm</strong></div>
+  </div>
+  <p>The third pinion lands in the centre-wheel plane, the seconds/fourth pinion in the third-wheel plane, and the escape pinion in the seconds/fourth-wheel plane. Those heights are still reconstruction values, but the axial relationships are now mechanically purposeful rather than decorative.</p>
 
   <h2>Camera-axis inspection lighting</h2>
-  <p>The default light is now explicitly aligned with the camera: a directional source is placed conceptually behind the camera and aimed through the orbit target. That makes front-facing inspection predictable and avoids inverse-square brightness collapse as the camera moves.</p>
+  <p><strong>Camera aligned</strong> mode conceptually places a directional light just behind the camera and aims it through the orbit target. That gives predictable frontal illumination without inverse-square brightness loss as the camera moves.</p>
   <ul>
-    <li><strong>Camera aligned</strong> — easiest inspection mode; follows the view axis.</li>
-    <li><strong>Manual key only</strong> — preserves azimuth/elevation/distance sliders for deliberate raking light.</li>
-    <li><strong>Camera + manual key</strong> — combines frontal readability with surface-relief lighting.</li>
-    <li>Camera intensity and manual-key intensity both extend to <strong>700</strong>.</li>
-    <li>Exposure extends to <strong>3.20×</strong>.</li>
-    <li><strong>Full bright / diagnostic</strong> deliberately prioritizes visibility over atmosphere.</li>
+    <li>Camera aligned, Manual key only, and Camera + manual key modes.</li>
+    <li>Camera and manual intensities each adjustable up to <strong>700</strong>.</li>
+    <li>Ambient/fill up to <strong>1.20</strong> and exposure up to <strong>3.20×</strong>.</li>
+    <li><strong>Full bright / diagnostic</strong> preset for geometry-first inspection.</li>
+    <li>Neutral reflection environment, stronger broad fill, rim light and lighter backboard.</li>
   </ul>
-  <p>The scene also uses a neutral reflection environment, stronger ambient/fill, rim light and a lighter inspection backboard so metallic surfaces do not disappear into black.</p>
 
   <h2>Simulation presentation</h2>
-  <p>The train can run at 1× real time or 10×, 60× and 300× inspection scales. The balance remains at the documented 3 Hz; accelerated modes are presentational.</p>
+  <p>The train can run at 1× real time or 10×, 60× and 300× inspection scales. The balance remains at the documented 3 Hz.</p>
 
   <h2>Provenance classes</h2>
   <p><span class="badge official">official</span> Directly supported by technical material.</p>
@@ -80,18 +76,18 @@
   <p><span class="badge presentation">presentation</span> Geometry or controls added for readability and explanation.</p>
 
   <h2>Next work</h2>
-  <h3>M3d — wheel planes and staffs</h3>
-  <p>Refine z-heights for wheels and pinions, improve staffs/arbors and bridge clearances, and inspect interference introduced by the larger pitch-derived train geometry.</p>
+  <h3>M3e — interference and staff refinement</h3>
+  <p>Inspect the new wheel envelopes against bridges and neighboring parts, refine staff shoulders, pivot lengths and clearances, and add optional pitch/mesh diagnostics.</p>
   <h3>M4 — winding fidelity</h3>
-  <p>Make crown/stem position stateful, distinguish winding from hand-setting, transmit crown rotation through the keyless works and ratchet, animate the click as a one-way constraint, and store mainspring energy.</p>
+  <p>Stateful crown/stem positions, winding versus hand-setting, causal keyless works, one-way click behavior and stored mainspring energy.</p>
   <h3>M5 — escapement fidelity</h3>
-  <p>Model locking and impulse faces, banking and roller-jewel interaction so escape-wheel motion becomes causal rather than beat-indexed.</p>
+  <p>Locking and impulse faces, banking and roller-jewel interaction, with causal escape release.</p>
 
   <h2>Sources</h2>
   <div class="source"><strong>ETA — current 6497-2 Technical Communication</strong><p><a href="https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/">official dimensions, rate, reserve, lift angle and service data</a></p></div>
   <div class="source"><strong>ETA — 6497-2 spare-parts communication</strong><p><a href="https://shopb2b.eta.ch/technicaldocuments/index/pdf/id/1632/">official part identities and positions</a></p></div>
   <div class="source"><strong>Case &amp; Caliber — ETA 6497 disassembly</strong><p><a href="https://caseandcaliber.com/eta-6497-disassembly/">photographed bridge, jewel and part relationships</a></p></div>
-  <div class="source"><strong>Horology Student — Unitas/ETA 6497/6498</strong><p><a href="https://horology-student.org/movements/modern-eta-and-clones/unitas-eta-6497-6498/">reference training-tool tooth counts and revolution periods used by M3a–M3c</a></p></div>
+  <div class="source"><strong>Horology Student — Unitas/ETA 6497/6498</strong><p><a href="https://horology-student.org/movements/modern-eta-and-clones/unitas-eta-6497-6498/">reference train tooth counts and revolution periods</a></p></div>
 
   <footer>interactive-demos / watch · documentation is part of the model.</footer>
 </main>
