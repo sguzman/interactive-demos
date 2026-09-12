@@ -2,7 +2,7 @@
 
 ## Current state
 
-**Milestone: M3c — mesh-derived train geometry + camera-axis inspection lighting.**
+**Milestone: M3d — compound train planes + camera-axis inspection lighting.**
 
 The project remains an educational reconstruction, not manufacturing CAD. Official movement facts, reference-derived geometry, approximation, and presentation-only geometry remain separate provenance classes.
 
@@ -50,7 +50,7 @@ The Swiss-lever timing model advances the escape wheel **half a tooth per beat**
 
 Reference: https://horology-student.org/movements/modern-eta-and-clones/unitas-eta-6497-6498/
 
-## M3b visible train
+## M3b visible train counts
 
 M3b made the visible train use the same reference tooth/leaf counts as the timing graph:
 
@@ -59,9 +59,9 @@ M3b made the visible train use the same reference tooth/leaf counts as the timin
 - seconds/fourth wheel: **120 teeth + 8-leaf pinion**;
 - escape wheel: **15 teeth + 10-leaf pinion**.
 
-## M3c mesh-derived train geometry
+## M3c pitch-derived train geometry
 
-M3c removes another arbitrary layer. The current reference-derived centre coordinates are now used to solve a nominal module and pitch radius for each external wheel/pinion mesh using:
+M3c removed another arbitrary layer. The current reference-derived centre coordinates are used to solve a nominal module and pitch radius for each external wheel/pinion mesh using:
 
 `module = 2 × centre_distance / (wheel_teeth + pinion_leaves)`
 
@@ -71,34 +71,48 @@ Current reconstruction solve:
 - third wheel → seconds/fourth pinion: centre distance **5.972 mm**, module **0.1756 mm**, nominal pitch radii **5.269 mm + 0.703 mm**;
 - seconds/fourth wheel → escape pinion: centre distance **9.277 mm**, module **0.1427 mm**, nominal pitch radii **8.563 mm + 0.714 mm**.
 
-Those sums close to the current centre distances by construction. This is a meaningful improvement over hand-picked wheel radii, but the centre coordinates themselves are still **reference-derived reconstruction coordinates**, not ETA manufacturing drawings. M3c therefore improves internal geometric consistency without upgrading provenance to official CAD.
+Those radii close against the current centre distances by construction. The centre coordinates remain **reference-derived reconstruction coordinates**, not ETA manufacturing coordinates.
 
-The escape-wheel tooth radius remains separately reference-derived because its wheel geometry belongs to the escapement; only its pinion participates in the seconds-to-escape train mesh solve.
+## M3d compound wheel planes
 
-## Lighting repair and camera-axis mode
+Pitch-derived wheels are much larger than the old decorative placeholders, so a real compound train cannot keep every wheel body in one flat plane. M3d therefore introduces explicit bridge-side wheel planes:
 
-The earlier lighting really was too dark. The movement is dominated by metallic PBR materials, so useful inspection requires both reflections and direct illumination.
+- centre wheel: **z = -0.65 mm**;
+- third wheel: **z = -1.10 mm**;
+- seconds/fourth wheel: **z = -1.55 mm**;
+- escape wheel: **z = -0.65 mm**.
 
-The current rig includes:
+The z values are still reconstruction dimensions. The mechanically important constraint is relational:
 
-- neutral `RoomEnvironment` reflections for metal readability;
-- a much stronger movable spot key;
-- broad fill and rim sources;
-- higher scene-environment intensity;
-- exposure range up to **3.20×**;
-- manual-key intensity range up to **700**;
-- explicit **Camera aligned** mode;
-- a separate camera-light intensity range up to **700**;
-- **Camera + manual key** mode for combined frontal and raking inspection;
-- **Full bright / diagnostic** preset for maximum readability.
+- the **third pinion** is placed in the centre-wheel plane;
+- the **seconds/fourth pinion** is placed in the third-wheel plane;
+- the **escape pinion** is placed in the seconds/fourth-wheel plane.
 
-Camera-aligned mode conceptually places a directional inspection source just behind the camera and aims it through the orbit target. Because it is directional, its apparent brightness does not collapse as the camera moves farther from the watch. A slightly offset camera fill preserves relief on nearly frontal metal faces.
+That means each compound wheel/pinion assembly now has a reason for its axial arrangement. Large wheel bodies can pass over or under one another while the pinions meet the wheels that actually drive them.
 
-The manual azimuth/elevation/distance controls remain available for deliberate raking light.
+The existing long visible arbors span these planes; later work will refine shoulder heights, pivot lengths, bridge clearances and jewel seating.
+
+## Camera-axis inspection lighting
+
+The default lighting is intentionally an **inspection instrument** rather than a dark beauty render.
+
+Current controls include:
+
+- **Camera aligned** mode: a directional source conceptually behind the camera shines straight through the orbit target;
+- **Manual key only**: movable azimuth/elevation/distance key for raking light;
+- **Camera + manual key**: frontal readability plus surface relief;
+- camera intensity up to **700**;
+- manual key intensity up to **700**;
+- ambient/fill up to **1.20**;
+- exposure up to **3.20×**;
+- **Full bright / diagnostic** preset;
+- neutral `RoomEnvironment` reflections, broad fill, rim light and a lighter backboard.
+
+The camera source is directional so its readability does not collapse with camera distance.
 
 ## Simulation presentation
 
-The train defaults to **1× real time**. Optional 10×, 60×, and 300× inspection scales accelerate the train and hands for visual study. The balance remains at the documented real 3 Hz, so accelerated modes are presentation tools rather than claims of synchronized physical simulation.
+The train defaults to **1× real time**. Optional 10×, 60×, and 300× inspection scales accelerate the train and hands for visual study. The balance remains at the documented real 3 Hz.
 
 ## Constructive geometry policy
 
@@ -119,12 +133,12 @@ Authored geometry is expressed in millimetres. Current primitives include:
 
 ## Next milestones
 
-### M3d — wheel planes and staffs
+### M3e — interference and staff refinement
 
-- refine z-heights for wheels and pinions so each mesh occupies a defensible plane;
-- improve staffs/arbors and bridge clearances;
-- inspect interference introduced by the larger pitch-derived wheel radii;
-- continue replacing decorative geometry with dimensionally constrained relationships.
+- inspect pitch-derived wheel envelopes against bridges and neighboring parts;
+- refine arbor/staff shoulder geometry;
+- improve bridge-side pivot heights and clearances;
+- add optional train mesh/pitch diagnostics in the scene.
 
 ### M4 — winding fidelity
 
