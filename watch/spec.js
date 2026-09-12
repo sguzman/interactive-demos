@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M3b',
-  label: 'reference train geometry',
-  note: 'The visible train now uses the same reference-derived tooth and pinion counts as the M3a timing graph. Wheel radii and centre distances remain reconstruction geometry pending a later solved layout pass.'
+  id: 'M3c',
+  label: 'mesh-derived train geometry',
+  note: 'The visible train keeps the M3b reference tooth/leaf counts and now derives nominal pitch radii and per-mesh module values from the current reference-derived centre coordinates. The coordinates themselves remain reconstruction geometry rather than manufacturing CAD.'
 };
