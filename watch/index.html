@@ -22,9 +22,9 @@
     <header class="topbar panel">
       <a class="gallery-link" href="../">← Gallery</a>
       <div class="identity">
-        <div class="eyebrow">REFERENCE RECONSTRUCTION · M3E</div>
+        <div class="eyebrow">REFERENCE RECONSTRUCTION · M3F</div>
         <h1>ETA / Unitas 6497-2</h1>
-        <p>pitch-envelope meshing + balanced camera-axis inspection light</p>
+        <p>true-pitch train teeth + stepped staffs + clearance-aware stack</p>
       </div>
       <a class="docs-link" href="../docs/watch-eta-6497-2.html">Documentation ↗</a>
     </header>
@@ -51,6 +51,7 @@
           <button class="secondary" data-view="bridge">Bridge side</button>
           <button class="secondary" data-view="dial">Dial side</button>
           <button class="secondary" data-view="train">Train mesh</button>
+          <button class="secondary" data-view="stack">Train stack</button>
           <button class="secondary" data-view="escapement">Escapement</button>
           <button class="secondary" data-view="winding">Winding</button>
         </div>
@@ -69,6 +70,7 @@
         </label>
         <div class="inline-toggles">
           <label><input id="meshGuides" type="checkbox" /> Show pitch mesh guides</label>
+          <label><input id="stackGuides" type="checkbox" /> Show staff / clearance guides</label>
         </div>
       </section>
 
@@ -143,7 +145,7 @@
         </div>
       </section>
 
-      <div class="hint">Camera aligned now defaults to a middle brightness instead of maximum readability. Full bright remains available when needed. For the train, enable pitch mesh guides: each blue pair shows the wheel and hidden driven pinion that actually mesh in the same axial plane.</div>
+      <div class="hint">Train mesh now uses a pitch-radius-native tooth primitive instead of the older decorative gear radius. “Train mesh” shows the actual wheel→pinion tangent points; “Train stack” turns the watch sideways and exposes staffs plus the reconstructed mainplate/bridge clearance envelope.</div>
     </aside>
 
     <aside class="inspector panel" id="infoPanel">
@@ -152,7 +154,7 @@
         <span class="provenance approximate" id="infoProvenance">approximate</span>
       </div>
       <h2 id="infoName">Mechanical component inspector</h2>
-      <p id="infoText">M3e keeps the compound train planes, aligns simplified tooth envelopes around solved pitch circles, and adds static tooth/gap phases so each wheel-to-pinion mesh begins in a mechanically legible engagement.</p>
+      <p id="infoText">M3f replaces the train’s simplified tooth envelope with pitch-radius-native spur geometry, tightens the axial stack to clear the reconstructed plate/bridge envelope, and replaces generic rods with stepped staffs that run between the jewel planes.</p>
       <dl class="part-facts" id="partFacts"></dl>
     </aside>
 
@@ -164,9 +166,9 @@
       <span><i class="dot structure-dot"></i>structure</span>
     </div>
 
-    <div id="loading">Constructing 6497-2 M3e reference…</div>
+    <div id="loading">Constructing 6497-2 M3f reference…</div>
   </div>
 
-  <script type="module" src="./main.js"></script>
+  <script type="module" src="./main-m3f.js"></script>
 </body>
 </html>
