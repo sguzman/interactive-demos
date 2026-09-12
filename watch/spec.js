@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M4a',
-  label: 'causal manual winding state',
-  note: 'M4a preserves the M3g pitch/clearance reconstruction and adds the first user-operated causal subsystem: crown input drives the crown wheel and ratchet, the click blocks reverse ratchet motion, and accepted winding accumulates a normalized mainspring-energy state mapped to the official 60 h typical reserve. The current 45-crown-turn full-wind interaction mapping is explicitly a reconstruction assumption, not an ETA service specification; stored energy does not yet govern train release.'
+  id: 'M4b',
+  label: 'stem selection and causal hand setting',
+  note: 'M4b retains M4a winding energy and adds a second crown/stem state. Position 0 enables winding. Position 1 pulls the crown/stem outward, moves the reconstructed sliding pinion/yoke/setting-lever geometry toward the setting wheel, disables barrel winding, and routes crown input into the visible setting/minute wheels and hour/minute hands. The 1.35 mm pull distance and setting ratios are reconstruction assumptions for legibility rather than ETA production dimensions.'
 };
