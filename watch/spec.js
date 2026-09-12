@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M6a',
-  label: 'barrel arbor / drum power separation',
-  note: 'M6a begins the shared-system mechanics phase. The M5i polygonal impulse-work model remains active, but its available-work budget no longer comes directly from remaining reserve. Stored reserve is interpreted as normalized mainspring twist; a reconstructed mainspring torque curve converts twist into barrel torque, then an explicit static train load and transmission efficiency reduce that torque to the normalized work budget arriving at the escapement. Winding belongs to the barrel-arbor/ratchet side, while reserve consumption advances a separately modeled barrel-drum release angle with the click holding the arbor during running. The 8-drum-turn full-release mapping, torque curve, train load, transmission efficiency, and all work units remain educational reconstruction parameters rather than ETA production torque, mainspring-turn, or efficiency data.'
+  id: 'M6d',
+  label: 'closed-loop normalized movement mechanics',
+  note: 'M6a–M6d close the current normalized system architecture. M6a separates barrel-arbor winding from barrel-drum release and inserts a spring-twist → torque → train-side work path upstream of M5i. M6b replaces fixed train load with smoothed reaction load derived from escapement work demand, rejected contact work, oscillator amplitude, geometry faults and stall state; insufficient torque margin can now hold the movement with reserve remaining. M6c reconciles spring-side budget, train/load loss, contact loss and balance-delivered work in one explicit normalized ledger and exposes its arithmetic residual. M6d coordinates those states into one operating mode and adds hysteretic torque-stall behavior to prevent load chatter. The architecture is now closed-loop at the normalized educational level, but torque, load, spring turns, efficiency, balance inertia, friction and work units remain reconstruction parameters rather than calibrated ETA production measurements.'
 };
