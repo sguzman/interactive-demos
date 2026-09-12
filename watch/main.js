@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { buildWatch, MODEL } from './movement.js';
 import { createLightingRig } from './lighting.js';
+import { movementAngles, validateTrainReference } from './kinematics.js';
 
 const canvas = document.querySelector('#scene');
 const scene = new THREE.Scene();
@@ -44,6 +45,10 @@ backboard.position.z = -27;
 backboard.receiveShadow = true;
 scene.add(backboard);
 
+if (!validateTrainReference()) {
+  console.warn('6497 reference train periods failed internal ratio validation.');
+}
+
 // -----------------------------------------------------------------------------
 // Assembly / exploded view
 // -----------------------------------------------------------------------------
@@ -65,7 +70,6 @@ document.querySelector('#explodeBtn').addEventListener('click', () => setExplosi
 
 const initialCamera = camera.position.clone();
 const initialTarget = controls.target.clone();
-
 document.querySelector('#resetBtn').addEventListener('click', () => setViewPreset('overview'));
 
 for (const checkbox of document.querySelectorAll('[data-layer]')) {
@@ -76,31 +80,15 @@ for (const checkbox of document.querySelectorAll('[data-layer]')) {
 }
 
 // -----------------------------------------------------------------------------
-// Camera inspection presets. These are intentionally camera-only: they do not
-// hide layers or mutate the model, so the user can combine them with any state.
+// Camera inspection presets
 // -----------------------------------------------------------------------------
 
 const VIEW_PRESETS = {
-  overview: {
-    position: initialCamera.clone(),
-    target: initialTarget.clone()
-  },
-  bridge: {
-    position: new THREE.Vector3(34, 18, -66),
-    target: new THREE.Vector3(-2, -2, -2)
-  },
-  dial: {
-    position: new THREE.Vector3(35, 18, 68),
-    target: new THREE.Vector3(0, 0, 1)
-  },
-  escapement: {
-    position: new THREE.Vector3(-28, -29, -37),
-    target: new THREE.Vector3(-7.7, -9.0, -1.4)
-  },
-  winding: {
-    position: new THREE.Vector3(35, 21, -38),
-    target: new THREE.Vector3(7.7, 4.9, -1.3)
-  }
+  overview: { position: initialCamera.clone(), target: initialTarget.clone() },
+  bridge: { position: new THREE.Vector3(34, 18, -66), target: new THREE.Vector3(-2, -2, -2) },
+  dial: { position: new THREE.Vector3(35, 18, 68), target: new THREE.Vector3(0, 0, 1) },
+  escapement: { position: new THREE.Vector3(-28, -29, -37), target: new THREE.Vector3(-7.7, -9.0, -1.4) },
+  winding: { position: new THREE.Vector3(35, 21, -38), target: new THREE.Vector3(7.7, 4.9, -1.3) }
 };
 
 let cameraFlight = null;
@@ -108,11 +96,7 @@ const viewButtons = [...document.querySelectorAll('[data-view]')];
 
 function setViewPreset(name) {
   const preset = VIEW_PRESETS[name] ?? VIEW_PRESETS.overview;
-  cameraFlight = {
-    position: preset.position.clone(),
-    target: preset.target.clone(),
-    name
-  };
+  cameraFlight = { position: preset.position.clone(), target: preset.target.clone(), name };
   for (const button of viewButtons) button.classList.toggle('active', button.dataset.view === name);
 }
 
@@ -176,9 +160,7 @@ function patchLight() {
   syncLightUI(state);
 }
 
-for (const input of [lightAzimuth, lightElevation, lightDistance, lightIntensity, ambient]) {
-  input.addEventListener('input', patchLight);
-}
+for (const input of [lightAzimuth, lightElevation, lightDistance, lightIntensity, ambient]) input.addEventListener('input', patchLight);
 shadows.addEventListener('change', patchLight);
 lightGizmo.addEventListener('change', patchLight);
 syncLightUI(lighting.state);
@@ -213,14 +195,12 @@ function showFacts(facts = {}) {
 function inspect(root) {
   const meta = root.userData.meta;
   if (!meta) return;
-
   infoCategory.textContent = meta.category.toUpperCase();
   infoName.textContent = meta.name;
   infoText.textContent = meta.text;
   infoProvenance.textContent = meta.provenance;
   infoProvenance.className = `provenance ${meta.provenance}`;
   showFacts(meta.facts);
-
   selectedRoot = root;
   if (selectionHelper) scene.remove(selectionHelper);
   selectionHelper = new THREE.Box3Helper(new THREE.Box3().setFromObject(root), 0xd8b36a);
@@ -232,7 +212,6 @@ renderer.domElement.addEventListener('pointerdown', event => {
   pointer.x = (event.clientX / innerWidth) * 2 - 1;
   pointer.y = -(event.clientY / innerHeight) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
-
   const candidates = pickables.filter(mesh => mesh.userData.pickRoot?.parent?.visible !== false);
   const hits = raycaster.intersectObjects(candidates, false);
   if (!hits.length) return;
@@ -240,12 +219,17 @@ renderer.domElement.addEventListener('pointerdown', event => {
 });
 
 // -----------------------------------------------------------------------------
-// Animation. M2 still distinguishes sourced oscillator frequency from a future
-// solved gear-state model, but the visual mechanism is now more structurally exact.
+// Kinematics. M3a replaces arbitrary train speeds with a reference-derived gear
+// graph while leaving power transmission and locking/impulse physics for later.
 // -----------------------------------------------------------------------------
 
 const clock = new THREE.Clock();
 let elapsed = 0;
+const handPhase = {
+  seconds: animated.secondsHand.rotation.z,
+  minute: animated.minuteHand.rotation.z,
+  hour: animated.hourHand.rotation.z
+};
 
 function animate() {
   requestAnimationFrame(animate);
@@ -275,23 +259,21 @@ function animate() {
   animated.balance.rotation.z = balanceAngle;
   animated.pallet.rotation.z = -.22 - balanceAngle * .13;
 
-  // Escape wheel advances by beat-sized steps for legibility. Locking/impulse
-  // geometry remains a later escapement milestone.
-  const beat = Math.floor(elapsed * MODEL.frequencyHz * 2);
-  animated.escapeWheel.rotation.z = beat * (Math.PI * 2 / 15);
+  const k = movementAngles(elapsed);
+  animated.escapeWheel.rotation.z = k.escape;
+  animated.fourthWheel.rotation.z = k.seconds;
+  animated.thirdWheel.rotation.z = k.third;
+  animated.centerWheel.rotation.z = k.center;
 
-  // Train speeds are still illustrative in M2. M3/M6 will derive these from a
-  // solved wheel/pinion graph rather than independently chosen rates.
-  animated.centerWheel.rotation.z = -elapsed * .11;
-  animated.thirdWheel.rotation.z = elapsed * .19;
-  animated.fourthWheel.rotation.z = -elapsed * .34;
+  // Winding remains a presentation animation until M4 connects crown state to
+  // barrel energy and makes the click a one-way mechanical constraint.
   animated.ratchet.rotation.z = Math.sin(elapsed * .22) * .035;
   animated.crownWheel.rotation.z = -animated.ratchet.rotation.z * 1.35;
   animated.barrel.rotation.z = -elapsed * .006;
 
-  animated.secondsHand.rotation.z = -elapsed * Math.PI * 2 / 60;
-  animated.minuteHand.rotation.z = 1.10 - elapsed * Math.PI * 2 / 3600;
-  animated.hourHand.rotation.z = -.75 - elapsed * Math.PI * 2 / 43200;
+  animated.secondsHand.rotation.z = handPhase.seconds + k.smallSecondsHand;
+  animated.minuteHand.rotation.z = handPhase.minute + k.minuteHand;
+  animated.hourHand.rotation.z = handPhase.hour + k.hourHand;
 
   if (selectionHelper && selectedRoot) selectionHelper.box.setFromObject(selectedRoot);
 
