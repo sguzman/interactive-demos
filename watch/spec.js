@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M5b',
-  label: 'pallet-face and safety geometry diagnostics',
-  note: 'M5b retains the M5a event-resolved six-beat-per-second Swiss-lever release and adds explicit educational geometry for pallet locking and impulse faces, banking limits, roller/fork-slot clearance, horn/dart safety, active contact and drop markers, plus event-level stepping. Lock depth, drop, draw, banking and clearance values are deliberately exposed as reconstruction targets rather than ETA production tolerances. The escape wheel still releases one half-tooth per beat and released escape angle remains the time source for downstream train motion.'
+  id: 'M5c',
+  label: 'reserve-coupled oscillator amplitude',
+  note: 'M5c retains M5b pallet-face, banking and safety diagnostics but removes the perfectly prescribed balance amplitude. The educational oscillator now loses normalized amplitude between beats and receives discrete impulse packets on successful unlocks. A reconstruction-level barrel-drive proxy makes those packets weaker near the bottom of reserve; once amplitude falls below the unlock threshold the escapement stalls and the remaining reserve is held instead of being consumed through a motionless train. Winding above a restart threshold seeds the oscillator again. These values are normalized simulation parameters, not ETA production torque, inertia, hairspring or amplitude data.'
 };
