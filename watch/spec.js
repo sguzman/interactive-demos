@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M5c',
-  label: 'reserve-coupled oscillator amplitude',
-  note: 'M5c retains M5b pallet-face, banking and safety diagnostics but removes the perfectly prescribed balance amplitude. The educational oscillator now loses normalized amplitude between beats and receives discrete impulse packets on successful unlocks. A reconstruction-level barrel-drive proxy makes those packets weaker near the bottom of reserve; once amplitude falls below the unlock threshold the escapement stalls and the remaining reserve is held instead of being consumed through a motionless train. Winding above a restart threshold seeds the oscillator again. These values are normalized simulation parameters, not ETA production torque, inertia, hairspring or amplitude data.'
+  id: 'M5d',
+  label: 'geometry-constrained escapement contact',
+  note: 'M5d retains the reserve-coupled M5c oscillator and the M5b pallet/safety diagnostics, then moves escape-wheel release away from fixed beat-fraction choreography. Two reconstructed pallet contact faces are calibrated against the visible 15-tooth escape-wheel phase. Spatial face travel, tooth-to-segment clearance, target-face capture, and a small penetration guard now derive the half-tooth release angle; released escape angle remains the downstream train time source. Contact clearances and face coordinates are reconstruction targets in millimetres, not ETA production tolerances or a rigid-body contact solution.'
 };
