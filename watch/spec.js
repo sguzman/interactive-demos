@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M5g',
-  label: 'geometry-admitted impulse delivery',
-  note: 'M5g retains the M5f integrated balance/hairspring state and M5d geometry-constrained escapement, then removes the remaining automatic center-crossing impulse rule. A center crossing is now only an impulse opportunity. Before any angular-velocity kick is delivered, an alternating entry/exit pallet path is sampled through the calibrated M5d contact geometry: the starting face must clear, geometry-derived half-tooth release must progress through an impulse interval, the tracked tooth must remain inside a reconstruction-level contact envelope, and the penetration guard must remain satisfied. Only an admitted path permits Δω into the balance. The gate uses the existing reconstructed faces and clearances plus an explicit diagnostic contact envelope; it is not measured ETA pallet CAD or production impulse efficiency.'
+  id: 'M5h',
+  label: 'finite polygon tooth / pallet contact',
+  note: 'M5h replaces the remaining point-to-line contact abstraction with finite convex surfaces. The tracked escape tooth is reconstructed from the same tapered, hooked 2D primitive dimensions used by the visible escape wheel, while each calibrated M5d pallet face becomes the working edge of a finite jewel polygon. Polygon separation and overlap now determine start-face lock clearance, impulse following, free-flight drop, target capture, penetration health, geometry-constrained half-tooth release, and whether the M5f angular-velocity impulse is admitted. The new polygon dimensions and tolerances remain explicit educational reconstruction parameters, not ETA manufacturing CAD or factory contact tolerances.'
 };
