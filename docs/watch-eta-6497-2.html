@@ -13,9 +13,9 @@
 <main>
   <nav class="top"><a href="../">← Interactive Demos</a><a href="../watch/">Open 3D demo ↗</a></nav>
 
-  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M2</div>
+  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M3A</div>
   <h1>ETA / Unitas 6497-2</h1>
-  <p class="lead">A movement-first interactive reconstruction of a large hand-wound mechanical watch. M2 focuses on bridge/plate fidelity, explicit bridge screw patterns, keyless works, bridge jewels, and more believable wheel geometry.</p>
+  <p class="lead">A movement-first interactive reconstruction of a large hand-wound mechanical watch. M2 established the bridge/plate and keyless-work pass; M3a begins replacing decorative train animation with reference-derived mechanical timing.</p>
 
   <div class="callout">
     <strong>Accuracy contract.</strong>
@@ -31,38 +31,36 @@
     <div class="spec"><span>Jewels</span><strong>17</strong></div>
     <div class="spec"><span>Power reserve</span><strong>53 h min / 60 h typical</strong></div>
   </div>
-  <p>ETA's current communication also gives a typical balance lift angle of 44° and identifies the ETACHRON regulator system.</p>
+  <p>ETA's current technical communication also gives a typical 44° balance lift angle and identifies the ETACHRON regulator system.</p>
 
-  <h2>M2: what changed</h2>
+  <h2>M2: structural fidelity pass</h2>
   <ul>
-    <li><span class="done">Done:</span> barrel, train, pallet and balance bridges are separate inspectable objects.</li>
-    <li><span class="done">Done:</span> official bridge screw counts are represented: barrel 3, train 2, pallet 2, balance 1.</li>
-    <li><span class="done">Done:</span> train-bridge jewels align with the third, seconds and escape-wheel pivots.</li>
-    <li><span class="done">Done:</span> a balance shock setting and regulator indication are visible on the balance bridge.</li>
-    <li><span class="done">Done:</span> dial-side winding pinion, sliding pinion, setting wheel, minute wheel, yoke and setting lever are now represented.</li>
-    <li><span class="done">Done:</span> crown-wheel ring and click spring are explicit parts.</li>
-    <li><span class="done">Done:</span> general gear teeth are tapered and the escape wheel has visibly asymmetric hooked teeth.</li>
-    <li><span class="done">Done:</span> wheel arbors are visible.</li>
-    <li><span class="done">Done:</span> camera presets jump to bridge side, dial side, escapement and winding close-ups.</li>
-    <li><span class="todo">Still approximate:</span> exact bridge contours, jewel-seat diameters, wheel tooth counts, centre distances and keyless-part outlines.</li>
+    <li><span class="done">Done:</span> separate barrel, train, pallet and balance bridges.</li>
+    <li><span class="done">Done:</span> bridge screw counts represented as barrel 3, train 2, pallet 2, balance 1.</li>
+    <li><span class="done">Done:</span> train-bridge jewels aligned with third, seconds and escape-wheel pivots.</li>
+    <li><span class="done">Done:</span> balance shock setting and regulator indication.</li>
+    <li><span class="done">Done:</span> dial-side winding pinion, sliding pinion, setting wheel, minute wheel, yoke and setting lever.</li>
+    <li><span class="done">Done:</span> crown-wheel ring, click spring, explicit wheel arbors, tapered general gear teeth and asymmetric escape-wheel teeth.</li>
   </ul>
 
-  <h2>Official parts backbone</h2>
-  <p>M2 uses ETA's spare-parts list as the canonical naming spine. Important positions include main plate (1), escape wheel (12), third wheel (13), seconds wheel (14), centre wheel (15), train bridge (16), barrel (17), barrel bridge (18), crown-wheel ring (19), crown wheel (20), click spring (21), click (22), ratchet wheel (23), driver cannon pinion (24), pallet fork (25), pallet bridge (26), regulated balance (27), balance bridge (28), and hour wheel (29).</p>
+  <h2>M3a: reference train kinematics</h2>
+  <p>The train is no longer animated with arbitrary independent speeds. A new <code>kinematics.js</code> module derives wheel periods from a published 6497 training-tool ratio set and validates the ratios at startup.</p>
+  <div class="specs">
+    <div class="spec"><span>Escape</span><strong>1 rev / 5 s</strong></div>
+    <div class="spec"><span>Seconds / fourth</span><strong>1 rev / 60 s</strong></div>
+    <div class="spec"><span>Third</span><strong>1 rev / 7.5 min</strong></div>
+    <div class="spec"><span>Centre</span><strong>1 rev / 1 h</strong></div>
+    <div class="spec"><span>Balance</span><strong>3 Hz</strong></div>
+    <div class="spec"><span>Beat rate</span><strong>6 beats / s</strong></div>
+  </div>
+  <p>The reference train data reports a 15-tooth escape wheel with a 10-leaf pinion, a 120-tooth seconds/fourth wheel with an 8-leaf pinion, a 60-tooth third wheel with a 10-leaf pinion, and an 80-tooth centre wheel. The source explicitly discusses a training-tool version, so these values are treated as <strong>reference-derived</strong>, not official production tooth counts for every 6497-2 variant.</p>
+  <p>M3a also fixes a conceptual error in the early animation: the Swiss lever releases the escape wheel by <strong>half a tooth per beat</strong>, not one full tooth. At six beats per second and 15 escape teeth, that yields 30 beat steps per revolution, or five seconds per escape-wheel revolution.</p>
 
-  <h2>Bridge constraints</h2>
-  <p>Teardown and parts documentation give a concrete visual skeleton that M2 now respects:</p>
-  <ul>
-    <li>barrel bridge — 3 screws;</li>
-    <li>train wheel bridge — 2 screws;</li>
-    <li>pallet bridge — 2 screws;</li>
-    <li>balance bridge — 1 screw;</li>
-    <li>train bridge — three visible jewels for the third, seconds/fourth and escape-wheel pivots.</li>
-  </ul>
+  <h2>Current model boundary</h2>
+  <p>The timing graph is now mechanically constrained, but the visible wheel radii, centre distances and some displayed tooth counts are still M2 geometry. M3b will bring the visible train closer to the kinematic reference instead of quietly implying that the current meshes are exact.</p>
 
   <h2>Constructive geometry</h2>
-  <p>Authored geometry is expressed in millimetres and generated from reusable primitives. The current vocabulary includes <code>disc</code>, <code>ring</code>, <code>roundedPlate</code>, <code>caseRing</code>, <code>polygonPlate</code>, <code>plateWithHoles</code>, <code>gear</code>, <code>escapeWheel</code>, <code>pinion</code>, <code>screw</code>, <code>jewel</code>, <code>shockSetting</code>, <code>coil</code>, <code>pathTube</code>, and parameterized hands.</p>
-  <p>Bridge holes are now constructive geometry rather than merely dark circles drawn on top. Boolean CSG remains deferred until it materially helps with plate recesses, screw seats, bridge undercuts, or case geometry.</p>
+  <p>Authored geometry is expressed in millimetres and generated from reusable primitives: <code>disc</code>, <code>ring</code>, <code>roundedPlate</code>, <code>caseRing</code>, <code>polygonPlate</code>, <code>plateWithHoles</code>, <code>gear</code>, <code>escapeWheel</code>, <code>pinion</code>, <code>screw</code>, <code>jewel</code>, <code>shockSetting</code>, <code>coil</code>, <code>pathTube</code>, and parameterized hands.</p>
 
   <h2>Provenance classes</h2>
   <p><span class="badge official">official</span> Dimension or fact directly supported by technical material.</p>
@@ -70,34 +68,22 @@
   <p><span class="badge approx">approximate</span> Simplified geometry preserving function and relative placement.</p>
   <p><span class="badge presentation">presentation</span> Geometry added for readability or visual communication.</p>
 
-  <h2>Functional assemblies</h2>
-  <ol>
-    <li><strong>Case / protection</strong> — case, crystal, exhibition back and crown guard.</li>
-    <li><strong>Display</strong> — dial and hands.</li>
-    <li><strong>Motion works</strong> — driver cannon pinion and hour wheel.</li>
-    <li><strong>Winding / keyless works</strong> — dial-side crown-position mechanism plus bridge-side crown wheel, ratchet, click and spring.</li>
-    <li><strong>Power</strong> — barrel and mainspring.</li>
-    <li><strong>Wheel train</strong> — centre, third, seconds/fourth and escape wheels with visible arbors.</li>
-    <li><strong>Escapement</strong> — escape wheel, pallet fork and pallet stones.</li>
-    <li><strong>Oscillator / regulation</strong> — balance, hairspring, balance bridge, shock setting and regulator indication.</li>
-    <li><strong>Structure</strong> — mainplate, individual bridges, jewels and screws.</li>
-  </ol>
-
-  <h2>Next milestones</h2>
-  <h3>M3 — train fidelity</h3>
-  <p>Derive better wheel and pinion dimensions, centre distances and tooth-count relationships from references; make the small-seconds output more exact; and replace independent decorative train speeds with a gear-ratio graph.</p>
+  <h2>Next work</h2>
+  <h3>M3b — train geometry fidelity</h3>
+  <p>Align visible wheel/pinion tooth counts with the reference set where defensible, add the missing escape pinion explicitly, improve wheel heights/staffs, and solve better centre distances rather than hand-placing gears.</p>
   <h3>M4 — winding fidelity</h3>
-  <p>Make the stem position stateful, distinguish winding from hand-setting, transmit crown rotation through the keyless works and ratchet, animate the click as a one-way constraint, and store normalized mainspring energy.</p>
+  <p>Make crown/stem position stateful, distinguish winding from hand-setting, transmit crown rotation through the keyless works and ratchet, animate the click as a one-way constraint, and store mainspring energy.</p>
   <h3>M5 — escapement fidelity</h3>
-  <p>Improve escape-wheel tooth geometry, locking/impulse faces, banking, roller-jewel interaction, balance staff and hairspring geometry.</p>
+  <p>Model locking and impulse faces, banking and roller-jewel interaction so escape-wheel motion becomes causal rather than beat-indexed.</p>
   <h3>M6 — system simulation</h3>
-  <p>Unify barrel energy, gear ratios, escapement release, balance state and hand positions into one causal model.</p>
+  <p>Unify barrel energy, train ratios, escapement release, balance state and hand positions into one causal model.</p>
 
   <h2>Sources</h2>
-  <div class="source"><strong>ETA — current 6497-2 Technical Communication</strong><p><a href="https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/">CT 6497-2 FDE 482448 14</a></p></div>
-  <div class="source"><strong>ETA — 6497-2 spare-parts communication</strong><p><a href="https://shopb2b.eta.ch/technicaldocuments/index/pdf/id/1632/">parts identities and positions</a></p></div>
+  <div class="source"><strong>ETA — current 6497-2 Technical Communication</strong><p><a href="https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/">official dimensions, rate, reserve, lift angle and service data</a></p></div>
+  <div class="source"><strong>ETA — 6497-2 spare-parts communication</strong><p><a href="https://shopb2b.eta.ch/technicaldocuments/index/pdf/id/1632/">official part identities and positions</a></p></div>
   <div class="source"><strong>Case &amp; Caliber — ETA 6497 disassembly</strong><p><a href="https://caseandcaliber.com/eta-6497-disassembly/">photographed bridge, jewel and part relationships</a></p></div>
-  <div class="source"><strong>Case &amp; Caliber — 6497 modification guide</strong><p><a href="https://caseandcaliber.com/eta-6497-mod-homage/">train-bridge jewel/support relationship and two-screw retention</a></p></div>
+  <div class="source"><strong>Case &amp; Caliber — 6497 modification guide</strong><p><a href="https://caseandcaliber.com/eta-6497-mod-homage/">train-bridge jewel/support relationship and retention</a></p></div>
+  <div class="source"><strong>Horology Student — Unitas/ETA 6497/6498</strong><p><a href="https://horology-student.org/movements/modern-eta-and-clones/unitas-eta-6497-6498/">reference training-tool train tooth counts and revolution periods used by M3a</a></p></div>
 
   <footer>interactive-demos / watch · documentation is part of the model.</footer>
 </main>

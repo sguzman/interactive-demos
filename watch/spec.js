@@ -13,7 +13,7 @@ export const ETA6497_2 = {
   regulator: 'ETACHRON'
 };
 
-// Part numbers below follow ETA's current 6497-2 spare-parts list where available.
+// Part numbers follow ETA's current 6497-2 spare-parts list where available.
 // Geometry positions are reference-derived presentation coordinates in millimetres,
 // not manufacturing coordinates.
 export const PARTS = {
@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M2',
-  label: 'bridge / plate fidelity',
-  note: 'Reference-derived bridge contours, explicit bridge screw counts, bridge jewels, keyless works, and improved wheel teeth.'
+  id: 'M3a',
+  label: 'reference train kinematics',
+  note: 'M2 bridge/plate fidelity is in place; M3a replaces arbitrary train animation with a reference-derived ratio graph while geometry ratios remain under refinement.'
 };
