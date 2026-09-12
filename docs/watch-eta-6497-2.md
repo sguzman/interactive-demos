@@ -2,9 +2,9 @@
 
 ## Current state
 
-**Milestone: M3g — endshake, pivot shoulders, and bearing-stack clearance.**
+**Milestone: M4a — causal manual winding state.**
 
-The project remains an educational reconstruction, not manufacturing CAD. Official movement facts, reference-derived geometry, approximation, and presentation-only geometry remain separate provenance classes.
+The project remains an educational reconstruction, not manufacturing CAD. Official movement facts, reference-derived geometry, approximation, and presentation-only simulation assumptions remain separate provenance classes.
 
 ## Target
 
@@ -26,149 +26,139 @@ ETA technical material supports:
 
 Primary source: https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/
 
-## M3a — reference train timing
+## Geometry lineage: M3a–M3g
 
-`watch/kinematics.js` uses a reference-derived 6497 training-tool ratio set:
+The train reconstruction progressed from timing topology toward a mechanically legible 3D stack:
 
-- escape wheel: **15 teeth**, associated **10-leaf pinion**;
-- seconds/fourth wheel: **120 teeth**, **8-leaf pinion**;
-- third wheel: **60 teeth**, **10-leaf pinion**;
-- centre wheel: **80 teeth**.
+- M3a encoded a reference-derived 6497 train ratio set and verified the 3 Hz / 21,600 A/h timing closure;
+- M3b made the visible train use the same published tooth/leaf counts;
+- M3c derived nominal module and pitch radii from the current reconstruction centres;
+- M3d separated compound wheel bodies into distinct axial planes;
+- M3e solved initial tooth/gap phase and added pitch-circle/contact diagnostics;
+- M3f replaced the decorative train radius with a pitch-radius-native educational spur construction and added stepped staffs;
+- M3g added explicit wheel-body gaps, jewel-to-jewel bearing spans, pivot shoulders, and small endshake reconstruction targets.
 
-At 21,600 A/h / 6 beats per second this closes to:
+Current reference train counts remain:
 
-- escape: **5 s/rev**;
-- seconds/fourth: **60 s/rev**;
-- third: **450 s / 7.5 min per rev**;
-- centre: **3600 s / 1 h per rev**.
+- centre wheel: **80 teeth**;
+- third wheel: **60 teeth + 10-leaf pinion**;
+- seconds/fourth wheel: **120 teeth + 8-leaf pinion**;
+- escape wheel: **15 teeth + 10-leaf pinion**.
 
-The Swiss-lever timing model advances the escape wheel **half a tooth per beat**.
+At 21,600 A/h this closes to approximately 5 s/rev for the escape wheel, 60 s/rev for the seconds/fourth wheel, 7.5 min/rev for the third wheel, and 1 h/rev for the centre wheel.
 
-Reference: https://horology-student.org/movements/modern-eta-and-clones/unitas-eta-6497-6498/
+The current pitch solve is still based on **reference-derived reconstruction centres**, not ETA manufacturing coordinates.
 
-## M3b–M3e — counts, pitch solve, axial planes and mesh phase
+## M4a — causal manual winding
 
-The reconstruction progressively removed decorative assumptions:
+M4a is the first subsystem that is no longer merely animated for presentation. User input now changes persistent mechanical state.
 
-- M3b made the visible train use the reference tooth/leaf counts;
-- M3c solved nominal module and pitch radius from the current reference-derived centre coordinates;
-- M3d separated compound wheel bodies into different axial planes so wheel bodies could pass over/under one another while pinions remained in the plane of the wheel that drives them;
-- M3e solved initial tooth/gap phase and added pitch-circle diagnostics.
+### Crown input
 
-The current nominal mesh solve remains:
+The demo adds an interactive crown driver. The **Wind crown** control advances the crown in the winding direction; **Return crown** rotates the crown side back without allowing the ratchet to unwind. Both controls can be clicked for a visible step or held continuously. Keyboard shortcuts are `W` for wind and `R` for return.
 
-- centre wheel → third pinion: centre distance **6.466 mm**, module **0.1437 mm**, pitch radii **5.748 mm + 0.718 mm**;
-- third wheel → seconds/fourth pinion: centre distance **5.972 mm**, module **0.1756 mm**, pitch radii **5.269 mm + 0.703 mm**;
-- seconds/fourth wheel → escape pinion: centre distance **9.277 mm**, module **0.1427 mm**, pitch radii **8.563 mm + 0.714 mm**.
+The visible crown receives an indexed overlay so axial rotation can be read even though the crown body is round.
 
-Those pitch radii close against the current centre distances by construction. The XY centres themselves are still **reference-derived reconstruction coordinates**, not ETA manufacturing coordinates.
+### Crown wheel → ratchet coupling
 
-## M3f — true-pitch train and stepped staffs
+The M4a state graph uses the visible reconstruction tooth counts:
 
-M3f replaced the earlier decorative train tooth radius with a dedicated train-only spur construction whose input has exact pitch-radius semantics. The tooth flank shape is still educational rather than a generated manufacturing profile, but the pitch circles, contact points, and visible tooth envelopes now belong to the same geometric model.
+- crown wheel: **34 teeth**;
+- ratchet wheel: **44 teeth**.
 
-M3f also tightened the bridge-side stack and replaced uniform rods with stepped staffs. Current large-wheel planes are:
+The current interaction model therefore advances the ratchet by the crown-wheel/ratchet ratio while winding. This is a causal visual relationship inside the reconstruction; it is not presented as a complete production model of the entire keyless train between fingertip and barrel arbor.
 
-- centre: **z = -0.90 mm**;
-- third: **z = -1.23 mm**;
-- seconds/fourth: **z = -1.55 mm**;
-- escape: **z = -0.92 mm**.
+### One-way click constraint
 
-Driven pinions remain in the plane of the wheel that drives them. The reconstruction uses the visible mainplate and bridge geometry as an internal clearance envelope rather than pretending those z dimensions came from ETA production drawings.
+The crucial asymmetry is now explicit:
 
-## M3g — bearing stack and endshake
+- winding input can advance the ratchet;
+- return input can reverse the crown/crown-wheel side;
+- the ratchet angle is not allowed to reverse;
+- the UI reports the click as **RATCHETING**, **LOCKED**, or **SEATED**;
+- the reconstructed click receives a tiny tooth-lift motion during forward winding and remains seated on return.
 
-M3g turns the axial stack from a static placement decision into an explicit inspection model.
+This replaces the old decorative sinusoidal ratchet motion with a persistent one-way state constraint.
 
-### Pivot finishing
+### Stored mainspring energy
 
-The centre, third, seconds/fourth, and escape staffs now receive additional bearing-shape cues:
+Accepted winding increments a normalized energy state from 0 to 1. That state is displayed as:
 
-- narrow conical pivot noses;
-- explicit wheel-seat shoulders;
-- narrower bridge-side pivot regions;
-- visible relation between the staff and the mainplate/bridge jewel centres.
+- percentage stored energy;
+- an equivalent reserve readout scaled to the official **60 h typical** reserve;
+- accumulated ratchet-click count;
+- a blue procedural mainspring overlay that contracts and becomes more visually intense as stored energy rises.
 
-These diameters are **reconstruction geometry**. Their purpose is to make the mechanical role legible and give later refinement a concrete target.
+The **60 h** endpoint is official. The current mapping of a full wind to **45 crown turns** is explicitly a **reconstruction/presentation assumption** chosen to make the interaction practical. It is not an ETA service specification.
 
-### Endshake targets
+### Full-wind stop
 
-M3g introduces small nominal axial-play targets:
+Once the normalized energy reaches 1.0, further positive winding is blocked and the UI reports a full-wind stop. Return motion remains available. The demo therefore now has a meaningful winding state rather than an indefinitely spinning decoration.
 
-- centre wheel: **0.040 mm**;
-- third wheel: **0.040 mm**;
-- seconds/fourth wheel: **0.040 mm**;
-- escape wheel: **0.035 mm**.
+### What M4a intentionally does not claim
 
-These values are deliberately classified as **reconstruction targets, not asserted ETA production tolerances**. They let the model represent the concept of endshake and test whether the current wheel/bridge stack has room for it.
+M4a does **not yet** model:
 
-The demo exposes optional endshake motion at **1×**, **10×**, and **25×**. Only 1× corresponds to the reconstruction target; 10× and 25× are explicit diagnostic exaggerations for visual inspection.
+- production torque curves;
+- bridle/slipping behavior;
+- friction losses;
+- exact crown-turn count to full wind;
+- exact keyless-work tooth counts beyond the visible reconstruction;
+- barrel torque release into the train;
+- depletion of reserve through the escapement.
 
-### Wheel-body axial gaps
+The wheel train and hands still run from the existing presentation timing graph even at zero stored energy. Coupling stored barrel energy to train release is a later system-simulation milestone rather than being silently faked here.
 
-The M3f large-wheel stack was intentionally arranged so neighboring projected wheel envelopes can overlap in XY while remaining separated axially. M3g now calculates and reports those body gaps instead of leaving them implicit.
+## M3g bearing/endshake diagnostics retained
 
-The important distinction is:
+M4a preserves the M3g train inspection tools:
 
-- **gear mesh** happens wheel → small coaxial pinion at the pitch tangent plane;
-- **large wheel bodies** may visually overlap in front projection but must remain separated in z.
+- **Train mesh** view;
+- pitch-circle/contact guides;
+- **Train stack** side view;
+- staff / bridge-clearance guides;
+- endshake guides and optional exaggerated endshake motion;
+- wheel-body axial-gap guides.
 
-The new **Show wheel-body gap guides** overlay exposes that separation.
+The nominal endshake targets remain reconstruction values, not asserted ETA production tolerances.
 
-### Inspection controls
+## Lighting
 
-The **Train stack** camera preset now enables the stack-related diagnostics together. Additional controls are available for:
+The balanced camera-axis lighting system remains in place:
 
-- staff / clearance guides;
-- endshake range guides;
-- wheel-body gap guides;
-- exaggerated endshake motion.
-
-The endshake guide links each wheel’s tiny working range to the reconstructed mainplate and bridge jewel regions, making it clear that endshake is axial bearing play rather than gear backlash.
-
-## Camera-axis inspection lighting
-
-Lighting remains at the balanced M3e default:
-
-- **Camera aligned / balanced** is the default;
-- the source is directional and therefore independent of zoom distance;
-- **Full bright / diagnostic** remains available when geometry is hard to read;
-- camera and manual intensity sliders retain large headroom;
-- manual azimuth/elevation/distance controls remain available for raking light.
-
-## Simulation presentation
-
-The train defaults to **1× real time**. Optional 10×, 60×, and 300× inspection scales accelerate the train and hands for visual study. The balance remains at the documented real 3 Hz.
+- **Camera aligned / balanced** default;
+- movable manual key light;
+- combined camera + manual mode;
+- high-headroom intensity and exposure controls;
+- intentionally excessive **Full bright / diagnostic** preset for geometry inspection.
 
 ## Provenance classes
 
 - **official** — directly supported by technical material;
-- **reference-derived** — reconstructed from service diagrams, teardown photographs, or multiple sources;
-- **approximate** — simplified geometry preserving role and relative placement;
-- **presentation** — geometry or controls added for readability/explanation.
+- **reference-derived** — reconstructed from service diagrams, teardown photographs, or multiple references;
+- **approximate** — simplified geometry preserving mechanical role and relationship;
+- **presentation** — geometry, controls, or simulation assumptions added for readability and interaction.
 
 ## Next milestones
 
-### M4a — causal winding state
+### M4b — keyless / setting state
 
-- explicit crown/stem state: pushed in / winding / setting transition;
-- user-driven winding input rather than decorative oscillation;
-- crown wheel and ratchet angle derived from that input;
-- one-way click constraint;
-- normalized mainspring stored-energy state;
-- visible power-reserve readout for the simulation state;
-- no claim yet that torque curves or friction losses are production-accurate.
+- explicit stem positions;
+- winding vs hand-setting mode;
+- sliding-pinion / yoke state transition;
+- motion-works coupling for hand setting;
+- isolate the barrel winding path while setting the hands.
 
-### M4b — setting works
+### M4c — power release
 
-- setting position for the stem;
-- sliding/winding pinion state change;
-- motion-works coupling;
-- hand-setting interaction while isolating the barrel winding path.
+- let stored mainspring energy gate whether the train can run;
+- decrement reserve from simulated running time;
+- begin separating barrel-arbor winding from barrel-drum release;
+- keep torque magnitude normalized until escapement/friction modeling is credible.
 
 ### M5 — escapement fidelity
 
-- locking/impulse faces;
+- locking and impulse faces;
 - banking limits;
 - roller jewel / fork interaction;
 - causal escape release.
@@ -178,4 +168,11 @@ The train defaults to **1× real time**. Optional 10×, 60×, and 300× inspecti
 - barrel energy drives train;
 - escapement meters release;
 - balance state governs timing;
-- hands derive from the shared mechanical state.
+- hands derive from the same shared mechanical state.
+
+## Sources
+
+- ETA 6497-2 Technical Communication: https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/
+- ETA 6497-2 spare-parts communication: https://shopb2b.eta.ch/technicaldocuments/index/pdf/id/1632/
+- Case & Caliber ETA 6497 disassembly: https://caseandcaliber.com/eta-6497-disassembly/
+- Horology Student Unitas/ETA 6497/6498 reference: https://horology-student.org/movements/modern-eta-and-clones/unitas-eta-6497-6498/
