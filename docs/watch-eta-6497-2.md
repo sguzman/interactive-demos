@@ -2,7 +2,7 @@
 
 ## Current state
 
-**Milestone: M5d — geometry-constrained escapement contact.**
+**Milestone: M5e — amplitude-dependent simulated rate.**
 
 This remains an educational reconstruction, not manufacturing CAD. Official movement facts, reference-derived geometry, approximation, and presentation-only simulation assumptions remain separate provenance classes.
 
@@ -26,198 +26,181 @@ ETA technical material supports:
 
 Primary source: https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/
 
-## Geometry lineage: M3a–M3g
+## Earlier reconstruction milestones retained
 
-The train reconstruction progressed from timing topology toward a mechanically legible 3D stack:
+### M3 — train geometry and bearings
 
-- M3a encoded a reference-derived 6497 train ratio set and verified the 3 Hz / 21,600 A/h timing closure;
-- M3b made the visible train use the same published tooth/leaf counts;
-- M3c derived nominal module and pitch radii from the current reconstruction centres;
-- M3d separated compound wheel bodies into distinct axial planes;
-- M3e solved initial tooth/gap phase and added pitch-circle/contact diagnostics;
-- M3f added pitch-radius-native educational spur construction and stepped staffs;
-- M3g added wheel-body gaps, jewel-to-jewel bearing spans, pivot shoulders, and endshake reconstruction targets.
-
-Current reference train counts remain:
+The train remains modeled around the reference-derived 6497 topology:
 
 - centre wheel: **80 teeth**;
 - third wheel: **60 teeth + 10-leaf pinion**;
 - seconds/fourth wheel: **120 teeth + 8-leaf pinion**;
 - escape wheel: **15 teeth + 10-leaf pinion**.
 
-At 21,600 A/h this closes to approximately 5 s/rev for the escape wheel, 60 s/rev for the seconds/fourth wheel, 7.5 min/rev for the third wheel, and 1 h/rev for the centre wheel.
+At the official nominal rate this closes to approximately 5 s/rev for the escape wheel, 60 s/rev for the seconds/fourth wheel, 7.5 min/rev for the third wheel, and 1 h/rev for the centre wheel. Pitch-radius reconstruction, separate axial wheel planes, staffs, jewel spans, endshake diagnostics and wheel-body clearance guides remain active.
 
-## M4 — causal winding, setting, and reserve
+### M4 — winding, setting and reserve
 
-M4 established the first stateful user-operated mechanism:
+Crown winding creates persistent reserve, the click enforces one-way ratchet behavior, the stem separates winding from hand-setting mode, positive reserve opens the movement gate, and running consumes reserve. The current full-wind interaction maps **45 crown turns** to the sourced **60 h typical reserve** endpoint; the 45-turn count is a presentation assumption, not an ETA service specification.
 
-- crown winding advances the crown wheel and ratchet;
-- the click enforces one-way ratchet behavior;
-- accepted winding accumulates normalized mainspring energy;
-- the stem has separate winding and hand-setting states;
-- positive reserve opens the movement gate;
-- running consumes reserve;
-- zero reserve stops mechanical elapsed time.
+### M5a–M5c — event release and oscillator amplitude
 
-The current full-wind mapping uses **45 crown turns** as a presentation assumption. The **60 h typical reserve** endpoint is sourced from ETA.
+The Swiss lever path is event-resolved at six nominal beats per second. The 15-tooth escape wheel releases one half-tooth per beat. M5c then gives the balance a normalized amplitude state that loses energy through damping and receives reserve-dependent impulse packets. At low reserve the oscillator can fall below the unlock threshold and stall while residual spring reserve remains held.
 
-## M5a — event-resolved Swiss lever release
-
-A 3 Hz balance gives **six alternations / beats per second**. M5a resolves each beat as:
-
-1. **LOCK · ENTRY**;
-2. **UNLOCK**;
-3. **IMPULSE**;
-4. **LOCK · EXIT**.
-
-The 15-tooth escape wheel advances **one half-tooth per beat**, or 12° per release event. Released escape-wheel angle is converted back into released train time, so the downstream train waits during lock and advances during release.
-
-## M5b — pallet-face and safety geometry
-
-M5b added inspectable reconstruction geometry around the event model:
-
-- explicit locking-face and impulse-face overlays on both pallet stones;
-- reconstructed banking limits;
-- roller/fork-slot and horn/dart safety envelopes;
-- active contact and drop markers;
-- event-level stepping;
-- explicit diagnostic targets for lock depth, draw, drop and clearance.
-
-Current M5b targets remain presentation/reconstruction values, not ETA tolerances:
-
-- lock depth: **1.8°**;
-- draw: **12.0°**;
-- drop: **2.2°**;
-- banking: approximately **±7.7°**;
-- roller/fork clearance: approximately **0.12 mm**;
-- horn clearance: approximately **0.10 mm**.
-
-## M5c — reserve-coupled oscillator amplitude
-
-M5c removed the assumption that the balance always has the same amplitude whenever the watch has any power.
-
-The balance carries a normalized oscillator-amplitude state from 0 to 1. Between escapement events that state loses amplitude through a normalized damping model; successful unlocks add discrete impulse packets whose strength depends on a reconstruction-level barrel-drive proxy.
-
-Current educational dynamics parameters include:
+Current normalized M5c dynamics remain educational parameters rather than ETA measurements:
 
 - damping: **0.16 / simulated second**;
-- maximum normalized impulse coefficient: **0.070**;
+- maximum impulse coefficient: **0.070**;
 - unlock threshold: **0.18 normalized amplitude**;
 - restart reserve threshold: **1.2%**;
 - restart amplitude seed: **0.34 normalized amplitude**.
 
-Near the bottom of reserve, the drive proxy weakens enough that damping can exceed replenishment. The oscillator can therefore enter **STOPPED · ESCAPEMENT** while residual reserve remains. That reserve is held rather than consumed through a motionless train.
+### M5d — geometry-constrained pallet contact
 
-These are simulation parameters, not ETA torque, inertia, hairspring or measured balance-amplitude data.
+M5d moves escape release toward reconstructed spatial contact rather than fixed fractions of a beat. Entry/exit solver faces are calibrated against the visible 15-tooth escape wheel. Start-face travel, target-face approach, tooth-to-segment gap and a penetration guard constrain each 12° half-tooth release.
 
-## M5d — geometry-constrained escapement contact
+Current contact-space reconstruction targets remain:
 
-M5d moves the escape-wheel release decision away from fixed fractions of a beat and toward spatial contact geometry.
-
-### Contact-face calibration
-
-The solver starts from the existing reference-derived movement centres for the escape wheel and pallet fork. It then aligns a reconstructed **entry pallet contact face** to the nearest visible escape-wheel tooth around the expected pallet contact sector. The **exit pallet contact face** is calibrated one half-tooth later.
-
-Because the escape wheel has 15 teeth:
-
-- tooth pitch = **24°**;
-- one Swiss-lever half-tooth release = **12°**.
-
-The solver therefore maintains an alternating entry/exit contact sequence tied directly to the visible escape-wheel phase rather than an arbitrary independent animation phase.
-
-### Spatial event boundaries
-
-The old M5a/M5b event labels were primarily triggered by fractions of one 1/6 s beat. M5d instead measures pallet-face movement in millimetres.
-
-Current reconstruction contact targets are:
-
-- unlock clearance: **0.030 mm** of start-face travel;
+- unlock face travel: **0.030 mm**;
 - target-face capture distance: **0.040 mm**;
 - nominal contact tolerance: **0.035 mm**;
-- tooth/face penetration guard: **0.006 mm**.
+- penetration guard: **0.006 mm**.
 
-These values are explicitly **reconstruction targets**, not ETA production tolerances.
+The downstream fourth, third and centre wheels and the hands inherit released time derived from that geometry-constrained escape angle.
 
-The event labels are now derived from those spatial relations:
+## M5e — amplitude-dependent simulated rate
 
-- **LOCK** while the active face has not moved beyond the unlock clearance;
-- **UNLOCK** once the starting face has spatially cleared;
-- **IMPULSE** while the opposite face is still approaching and the tooth travels through the allowed half-step;
-- **DROP / APPROACH** near the end of release;
-- **LOCK** again once the target face enters the capture region.
+M5e removes another idealization: usable balance amplitude no longer implies perfectly nominal timekeeping.
 
-### Tooth-to-segment contact test
+### Two clocks instead of one
 
-For each beat, M5d tracks the specific escape-wheel tooth expected to interact with the current entry/exit face. It evaluates the distance from that tooth tip to the reconstructed face segment in the movement design plane.
+The model now explicitly separates:
 
-That contact distance is exposed live in the UI. The solver also runs a short one-dimensional search when the candidate release would drive the tooth too close through the target face. The release angle is then clamped back to the last non-penetrating solution.
+1. **reserve-consuming runtime** — how many simulated seconds the spring has paid for;
+2. **oscillator phase time** — how rapidly the balance/pallet/escape sequence advances.
 
-This is the first pass where a geometric contact test can directly limit escape-wheel motion rather than merely describing it after the fact.
+Before M5e these clocks were effectively identical. M5e lets oscillator phase gain or lose time relative to reserve-consuming runtime.
 
-### Geometry-derived released train time
+This is the central architectural change because the watch can now consume one hour of modeled reserve while the oscillator/trains indicate slightly more or slightly less than one hour.
 
-The geometry solver produces a release fraction from 0 to 1 across each half-tooth event. That fraction determines the escape-wheel angle:
+### Nominal ETA specification remains separate
 
-> completed half-steps + current geometry-constrained half-step fraction
+The sourced nominal reference remains:
 
-The resulting escape angle is converted back into released train time exactly as in M5a. Therefore the fourth/seconds, third and centre wheels and the hands now inherit **geometry-constrained escape release**, not the old beat-window release fraction.
+- **3.000 Hz**;
+- **21,600 A/h**.
 
-### Solver diagnostics
+M5e reports that nominal value separately from the model's instantaneous effective frequency. The simulation therefore does not silently replace an ETA specification with an assumed rate curve.
 
-M5d adds a dedicated live panel showing:
+### Educational isochronism curve
 
-- geometry event;
-- active constraint;
-- start-face travel in millimetres;
-- target-face remaining distance in millimetres;
-- tooth-to-face gap;
-- active escape-wheel tooth number;
-- geometry-derived release percentage;
-- solver health.
+The current amplitude-to-rate relationship is deliberately transparent and replaceable. It uses normalized oscillator amplitude rather than physical degrees.
 
-An optional overlay draws the two reconstructed solver faces, the expected contact tooth, the nearest contact point, and the path between the calibrated entry/exit contact targets.
+Current reconstruction parameters:
 
-The solver intentionally works in the **assembled movement design coordinates**. Exploded-view offsets are presentation-only and do not change the mechanical contact solution; assemble the watch for the clearest visual agreement between the overlay and the mechanism.
+- normalized reference amplitude: **0.74**;
+- nominal deadband around that point: **±0.025 normalized amplitude**;
+- low-amplitude endpoint near the unlock threshold: approximately **−120 s/day** at 1× model strength;
+- high-amplitude endpoint near normalized amplitude 1.0: approximately **+12 s/day** at 1× model strength.
 
-### Geometry health gate
+Below the nominal zone, lower amplitude is modeled as increasingly slow. Above it, unusually high amplitude can run slightly fast. The shape is smooth rather than a hard linear corner.
 
-M5d also adds a defensive contact-health gate. If the reconstruction produces an invalid contact solution, the power system is allowed to hold rather than silently consume reserve while impossible geometry continues moving.
+These values are **not measured ETA 6497-2 isochronism data**. They are educational assumptions whose purpose is to make the previously hidden amplitude→rate dependency explicit.
 
-Normal calibrated operation should remain in **CONTACT SOLVER OK**.
+### Rate multiplier
 
-## What M5d still does not claim
+The model converts seconds/day error into a phase multiplier:
 
-M5d is a significant step toward contact-based behavior, but it is still not a rigid-body or production escapement simulation. It does **not yet** claim:
+> rate multiplier = 1 + (seconds/day error ÷ 86,400)
 
-- measured ETA pallet-face coordinates;
-- exact escape-tooth tip geometry;
-- exact lock depth, draw, drop, or banking-pin coordinates;
-- continuous collision manifolds between real polygonal tooth and jewel surfaces;
-- friction, lubrication, elastic deformation, rebound, or impact dynamics;
-- actual pallet impulse efficiency;
-- measured balance inertia or hairspring torque;
-- amplitude-dependent rate error;
-- positional timing effects.
+The oscillator phase clock advances by reserve-consuming runtime multiplied by this factor. The geometry-constrained escapement then uses that oscillator phase, so rate error propagates naturally into:
 
-The contact solver uses simplified tooth-tip-to-face-segment geometry and explicit reconstruction clearances. Its purpose is to move causality into geometry without pretending we already possess factory CAD or calibrated physics.
+- balance center crossings;
+- pallet motion;
+- geometry-constrained escape release;
+- fourth/seconds wheel progress;
+- third and centre wheel progress;
+- small seconds, minute and hour hands.
 
-## Inspection tools
+### Accumulated phase drift
 
-Useful controls now include:
+The UI now shows **oscillator phase drift** directly:
 
-- **Escapement** camera preset;
-- `0.1×`, `0.25×`, and `0.5×` slow mechanical time;
-- `0× paused`;
-- **Step next event**;
-- **Step one beat**;
-- live balance-amplitude / impulse / unlock-margin readouts;
-- live M5d contact-solver distances and release state;
-- optional M5d solver-face / contact overlay;
-- pallet-face / safety diagnostics;
-- train pitch/contact guides;
-- train stack and endshake diagnostics;
-- keyless-works inspection;
-- camera-aligned and movable inspection lighting.
+> oscillator phase time − reserve-consuming runtime
+
+A negative value means the modeled watch has fallen behind nominal runtime; a positive value means it has gained.
+
+This is important because instantaneous `s/day` is only a rate. Phase drift is the accumulated timing consequence.
+
+### Effective frequency and alternations
+
+M5e reports live:
+
+- effective frequency in Hz;
+- effective alternations per hour;
+- current seconds/day error;
+- rate multiplier;
+- accumulated phase drift;
+- current isochronism zone.
+
+When the movement is stopped, the effective frequency is reported as zero rather than pretending the oscillator is still running nominally.
+
+### Isochronism curve plot
+
+The controls include a small live curve showing normalized amplitude on the horizontal axis and modeled seconds/day error on the vertical axis. The current oscillator state is plotted as a moving point so weakening amplitude can be seen moving down the assumed rate curve before eventual unlock failure.
+
+### Diagnostic exaggeration
+
+The UI offers four rate-model strengths:
+
+- **0×** — disable amplitude-rate coupling and retain nominal phase speed;
+- **1×** — educational model;
+- **5×** — diagnostic exaggeration;
+- **20×** — extreme inspection.
+
+Only the assumed rate error is magnified. Reserve, amplitude damping, pallet geometry and contact constraints are not multiplied by this control.
+
+This makes phase drift observable on short browser timescales without falsely claiming the exaggerated settings represent a real 6497-2.
+
+## Current causal chain
+
+The educational model is now approximately:
+
+> crown → winding train → stored reserve → drive proxy → escapement impulse → balance amplitude → amplitude-dependent phase speed → pallet motion/contact geometry → escape-wheel release → train → hands
+
+The remaining weak link is that oscillator phase speed is still assigned from the isochronism curve rather than emerging from an integrated balance/hairspring equation of motion.
+
+## What M5e does not claim
+
+M5e does **not** claim or model as production truth:
+
+- measured ETA rate-vs-amplitude curves;
+- physical balance amplitude in degrees;
+- ETA balance inertia;
+- hairspring stiffness or nonlinear spring law;
+- real regulator pin geometry and effective hairspring length changes;
+- beat error;
+- poise error;
+- positional timing error;
+- temperature effects;
+- shock response;
+- real mainspring torque-to-rate calibration;
+- escapement friction/lubrication influence on rate;
+- factory timing tolerances or adjustment grades.
+
+The 3 Hz / 21,600 A/h figure is official; the amplitude-dependent deviations are explicitly reconstruction-level simulation parameters.
+
+## Inspection workflow
+
+For ordinary viewing, leave rate-model strength at **1×**. To make the rate coupling obvious quickly:
+
+1. wind the watch;
+2. choose the **Escapement** view;
+3. use `300×` or `3600×` mechanical time for accelerated reserve behavior;
+4. switch rate-model strength to `5×` or `20×` if you want phase drift to become visually obvious;
+5. watch balance amplitude, seconds/day error and accumulated phase drift together.
+
+For contact inspection, return to `0.1×` / `0.25×` or `0× paused` and use the event-step controls and M5d contact overlay.
 
 ## Provenance classes
 
@@ -228,26 +211,26 @@ Useful controls now include:
 
 ## Next milestones
 
-### M5e — amplitude / rate coupling
+### M5f — state-integrated oscillator
 
-- let normalized balance amplitude affect oscillator rate rather than keeping frequency perfectly fixed at nominal 3 Hz;
-- expose rate error as an educational output;
-- distinguish nominal specification from simulated instantaneous rate;
-- preserve clear provenance around any assumed isochronism model.
+- represent oscillator phase and angular velocity as explicit state rather than deriving phase from a rate multiplier;
+- add a normalized restoring term for the hairspring;
+- deliver escapement impulse into angular velocity/energy at the correct event;
+- let frequency emerge from oscillator state instead of directly assigning it from an isochronism curve;
+- keep all uncalibrated constants explicitly normalized.
 
-### M5f — deeper geometric contact
+### M5g — deeper polygonal escapement contact
 
-- replace tooth-tip/face-segment tests with actual reconstructed tooth and pallet-face polygons;
-- derive lock depth and drop from polygon intersections;
-- validate horn / roller-jewel safety geometry from the same contact framework;
-- migrate reconstruction targets toward measured/reference dimensions where available.
+- replace tooth-tip / face-segment distance with reconstructed tooth and pallet-face polygon intersection;
+- derive lock depth and drop from those surfaces;
+- include roller-jewel / fork-slot and horn safety checks in the same contact framework.
 
-### M6 — system simulation
+### M6 — shared system simulation
 
 - separate barrel-arbor winding from barrel-drum release;
-- improve power transmission through the train;
-- couple reserve, escapement impulse, amplitude and rate into one shared system state;
-- move from nominal-clock gating toward a genuinely state-driven oscillator.
+- improve force transmission through the train;
+- couple reserve, escapement impulse, oscillator state and rate in one integrated system;
+- migrate normalized assumptions toward measured/reference parameters as defensible data becomes available.
 
 ## Sources
 
