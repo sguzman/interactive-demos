@@ -16,7 +16,7 @@
   </script>
 
   <style>
-    .power-state{display:grid;gap:9px;margin-top:9px}.power-meter{width:100%;height:12px;accent-color:#d8b36a}.power-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px}.power-stat{border:1px solid #ffffff12;border-radius:8px;padding:7px 8px;background:#ffffff05}.power-stat span{display:block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#727c86}.power-stat output{display:block;margin-top:3px;font-size:12px;color:#dce2e7}.winding-note{font-size:10px;line-height:1.45;color:#7f8993;margin-top:7px}.winding-buttons button{touch-action:none;user-select:none}.winding-buttons button:disabled{opacity:.42;cursor:not-allowed}
+    .power-state{display:grid;gap:9px;margin-top:9px}.power-meter{width:100%;height:12px;accent-color:#d8b36a}.power-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px}.power-stat{border:1px solid #ffffff12;border-radius:8px;padding:7px 8px;background:#ffffff05}.power-stat span{display:block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#727c86}.power-stat output{display:block;margin-top:3px;font-size:12px;color:#dce2e7}.winding-note{font-size:10px;line-height:1.45;color:#7f8993;margin-top:7px}.winding-buttons button,.setting-buttons button{touch-action:none;user-select:none}.winding-buttons button:disabled,.setting-buttons button:disabled{opacity:.42;cursor:not-allowed}.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.mode-stat{border:1px solid #ffffff12;border-radius:8px;padding:7px 8px;background:#ffffff05}.mode-stat span{display:block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#727c86}.mode-stat output{display:block;margin-top:3px;font-size:11px;color:#dce2e7}.mode-accent{color:#e4c87c!important}
   </style>
 </head>
 <body>
@@ -26,9 +26,9 @@
     <header class="topbar panel">
       <a class="gallery-link" href="../">← Gallery</a>
       <div class="identity">
-        <div class="eyebrow">REFERENCE RECONSTRUCTION · M4A</div>
+        <div class="eyebrow">REFERENCE RECONSTRUCTION · M4B</div>
         <h1>ETA / Unitas 6497-2</h1>
-        <p>causal manual winding + one-way click + stored mainspring energy</p>
+        <p>stem positions + keyless transition + causal hand setting</p>
       </div>
       <a class="docs-link" href="../docs/watch-eta-6497-2.html">Documentation ↗</a>
     </header>
@@ -54,6 +54,7 @@
           <button class="secondary" data-view="overview">Overview</button>
           <button class="secondary" data-view="bridge">Bridge side</button>
           <button class="secondary" data-view="dial">Dial side</button>
+          <button class="secondary" data-view="keyless">Keyless works</button>
           <button class="secondary" data-view="train">Train mesh</button>
           <button class="secondary" data-view="stack">Train stack</button>
           <button class="secondary" data-view="escapement">Escapement</button>
@@ -90,7 +91,29 @@
       </section>
 
       <section>
-        <div class="section-title">Manual winding · M4a</div>
+        <div class="section-title">Stem & setting · M4b</div>
+        <label class="select-row">
+          <span>Stem position</span>
+          <select id="stemPosition">
+            <option value="wind" selected>Position 0 · winding</option>
+            <option value="set">Position 1 · hand setting</option>
+          </select>
+        </label>
+        <div class="button-row setting-buttons">
+          <button id="setHandsBackwardBtn" class="secondary" disabled>Set hands −</button>
+          <button id="setHandsForwardBtn" disabled>Set hands +</button>
+        </div>
+        <div class="mode-grid">
+          <div class="mode-stat"><span>Stem mode</span><output id="stemModeValue" class="mode-accent">WINDING</output></div>
+          <div class="mode-stat"><span>Crown pull</span><output id="stemPullValue">0.00 mm</output></div>
+          <div class="mode-stat"><span>Hand offset</span><output id="handOffsetValue">+0.0 min</output></div>
+          <div class="mode-stat"><span>Active mesh</span><output id="settingMeshValue">WINDING PATH</output></div>
+        </div>
+        <div class="winding-note">Pull the stem to Position 1 and the reconstructed sliding pinion/yoke/setting lever shift toward the setting wheel. Then hold Set hands ± to rotate the setting and minute wheels and move the hour/minute hands. [ and ] also set backward/forward.</div>
+      </section>
+
+      <section>
+        <div class="section-title">Manual winding · M4a retained</div>
         <div class="button-row winding-buttons">
           <button id="windCrownBtn">Wind crown ↻</button>
           <button id="returnCrownBtn" class="secondary">Return crown ↺</button>
@@ -106,7 +129,7 @@
             <div class="power-stat"><span>Action</span><output id="windingActionValue">idle</output></div>
           </div>
         </div>
-        <div class="winding-note">Click for a visible step or hold to wind continuously. W / R also wind and return. The 45-turn full-wind mapping is a reconstruction assumption for interaction, not an ETA service specification.</div>
+        <div class="winding-note">Winding controls are automatically disabled while the stem is in hand-setting position. The 45-turn full-wind mapping remains a reconstruction assumption for interaction, not an ETA service specification.</div>
       </section>
 
       <section>
@@ -180,7 +203,7 @@
         </div>
       </section>
 
-      <div class="hint">M4a adds the first causal user-operated subsystem. Hold or click Wind crown to drive the crown wheel and ratchet; Return crown reverses the crown side while the click holds the ratchet. The blue mainspring overlay and reserve meter visualize stored energy. Train release is still intentionally independent until the next power-release milestone.</div>
+      <div class="hint">M4b makes the crown a mode selector rather than only a winding input. Position 0 preserves the M4a winding path. Position 1 pulls the crown/stem outward, shifts the reconstructed sliding pinion and selector parts, disables barrel winding, and routes crown input into the setting/minute wheels and visible hour/minute hands. Exact clutch geometry and setting ratios remain reconstruction-level.</div>
     </aside>
 
     <aside class="inspector panel" id="infoPanel">
@@ -189,7 +212,7 @@
         <span class="provenance approximate" id="infoProvenance">approximate</span>
       </div>
       <h2 id="infoName">Mechanical component inspector</h2>
-      <p id="infoText">M4a keeps the M3g train geometry and adds a stateful manual-winding model: interactive crown rotation, crown-wheel/ratchet coupling, a one-way click constraint, and a visible normalized mainspring-energy state.</p>
+      <p id="infoText">M4b retains causal winding and adds a second stem state: the crown can be pulled into hand-setting position, where the reconstructed keyless parts shift and setting input moves the visible hour/minute display without adding mainspring energy.</p>
       <dl class="part-facts" id="partFacts"></dl>
     </aside>
 
@@ -201,9 +224,9 @@
       <span><i class="dot structure-dot"></i>structure</span>
     </div>
 
-    <div id="loading">Constructing 6497-2 M4a winding state…</div>
+    <div id="loading">Constructing 6497-2 M4b keyless state…</div>
   </div>
 
-  <script type="module" src="./main-m4a.js"></script>
+  <script type="module" src="./main-m4b.js"></script>
 </body>
 </html>
