@@ -33,7 +33,8 @@
   <p>The current reconstruction keeps the reference-derived 6497 train topology: centre 80 teeth, third 60 / 10-leaf pinion, seconds/fourth 120 / 8-leaf pinion, escape 15 / 10-leaf pinion. Pitch-radius-native train geometry, separate compound-wheel planes, stepped staffs, jewel spans, pitch/contact guides, endshake diagnostics and wheel-body gap diagnostics all remain available.</p>
 
   <h2>M4a — interactive crown</h2>
-  <p><strong>Wind crown</strong> advances the crown in the winding direction; <strong>Return crown</strong> rotates the crown side back. Both controls can be clicked for a visible step or held continuously. Keyboard shortcuts are <code>W</code> and <code>R</code>.</p>
+  <p><strong>Wind crown</strong> advances the crown in the winding direction; <strong>Return crown</strong> rotates the crown itself back. Both controls can be clicked for a visible step or held continuously. Keyboard shortcuts are <code>W</code> and <code>R</code>.</p>
+  <p>The current return path is deliberately simplified as an upstream winding-clutch/free-return behavior: the crown moves back while the visible crown wheel and ratchet remain stationary. That keeps the visible gear mesh coherent rather than allowing meshed teeth to pass through one another.</p>
   <p>An indexed crown overlay makes axial rotation legible even though the crown itself is round.</p>
 
   <h2>Crown wheel → ratchet</h2>
@@ -45,7 +46,7 @@
   <p>The interaction model uses that visible 34:44 relationship to advance the ratchet during positive winding. It is a causal reconstruction relation, not a complete manufacturing model of every intermediate keyless-work detail.</p>
 
   <h2>One-way click constraint</h2>
-  <p>The old decorative ratchet oscillation is gone. Ratchet angle now persists. Forward input can advance it; return input can reverse the crown/crown-wheel side but cannot back-drive the ratchet. The UI reports the click as <strong>RATCHETING</strong>, <strong>LOCKED</strong>, or <strong>SEATED</strong>.</p>
+  <p>The old decorative ratchet oscillation is gone. Ratchet angle now persists. Forward input advances crown wheel and ratchet; return input moves only the crown in the simplified free-return path. The click prevents reverse ratchet motion. The UI reports <strong>RATCHETING</strong>, <strong>LOCKED / RETURN</strong>, or <strong>SEATED</strong>.</p>
   <p>The reconstructed click receives a deliberately tiny tooth-lift motion during forward winding and remains seated on return.</p>
 
   <h2>Stored mainspring energy</h2>
@@ -57,7 +58,7 @@
   <p>When the normalized energy state reaches 1.0, further positive winding is blocked. Return motion remains available. This gives the winding subsystem a meaningful terminal state instead of permitting infinite decorative rotation.</p>
 
   <h2>What is still deliberately uncoupled</h2>
-  <p>M4a does not yet claim a production torque curve, friction model, exact crown-turn count, barrel bridle behavior, or escapement losses. Most importantly, stored energy does not yet gate train release: the existing train and hand timing graph can continue to run at zero stored energy. That coupling is reserved for the next power-release stage rather than being silently faked.</p>
+  <p>M4a does not yet claim a production torque curve, exact clutch/Breguet-tooth geometry, friction model, exact crown-turn count, barrel bridle behavior, or escapement losses. Most importantly, stored energy does not yet gate train release: the existing train and hand timing graph can continue to run at zero stored energy. That coupling is reserved for the next power-release stage rather than being silently faked.</p>
 
   <h2>Inspection tools retained</h2>
   <ul>
