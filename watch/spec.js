@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M3f',
-  label: 'true-pitch train and stepped staffs',
-  note: 'M3f keeps the reference-derived XY layout and ratio graph, replaces the decorative train tooth radius with a pitch-radius-native spur construction, tightens the compound z-stack against reconstructed mainplate/bridge clearance planes, and adds stepped staffs/pivots between the visible jewel planes. Tooth flanks are still educational approximations rather than manufacturing involutes.'
+  id: 'M3g',
+  label: 'endshake and bearing-stack clearance',
+  note: 'M3g keeps the M3f true-pitch train and stepped staffs, then makes axial body gaps, staff shoulders, jewel-to-jewel bearing spans, and small endshake targets explicit. Endshake values are reconstruction targets for educational inspection rather than asserted ETA production tolerances; 10×/25× motion modes are deliberately exaggerated diagnostics.'
 };
