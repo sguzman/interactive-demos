@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M5h',
-  label: 'finite polygon tooth / pallet contact',
-  note: 'M5h replaces the remaining point-to-line contact abstraction with finite convex surfaces. The tracked escape tooth is reconstructed from the same tapered, hooked 2D primitive dimensions used by the visible escape wheel, while each calibrated M5d pallet face becomes the working edge of a finite jewel polygon. Polygon separation and overlap now determine start-face lock clearance, impulse following, free-flight drop, target capture, penetration health, geometry-constrained half-tooth release, and whether the M5f angular-velocity impulse is admitted. The new polygon dimensions and tolerances remain explicit educational reconstruction parameters, not ETA manufacturing CAD or factory contact tolerances.'
+  id: 'M5i',
+  label: 'normalized escapement impulse work transfer',
+  note: 'M5i retains the M5h finite polygon contact solver and M5f integrated balance, then replaces the remaining fixed-size admitted Δω packet with normalized work transfer. Remaining spring drive defines an available work budget for each center-crossing opportunity. The polygon solver measures how far the escape tooth can follow the active pallet impulse surface and the quality of that finite-surface contact; those quantities produce an educational transfer efficiency, delivered-work value, and rejected/lost-work value. M5f now accepts a continuous impulse scale from the geometry layer, and the balance kick is scaled by the square root of transferred work fraction rather than being identical for every admitted contact. Work units, path normalization, contact efficiency, impulse gain and all dynamic coefficients remain educational reconstruction parameters, not joules, measured pallet efficiency, or ETA torque data.'
 };
