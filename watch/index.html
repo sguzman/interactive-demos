@@ -14,6 +14,10 @@
     }
   }
   </script>
+
+  <style>
+    .power-state{display:grid;gap:9px;margin-top:9px}.power-meter{width:100%;height:12px;accent-color:#d8b36a}.power-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px}.power-stat{border:1px solid #ffffff12;border-radius:8px;padding:7px 8px;background:#ffffff05}.power-stat span{display:block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#727c86}.power-stat output{display:block;margin-top:3px;font-size:12px;color:#dce2e7}.winding-note{font-size:10px;line-height:1.45;color:#7f8993;margin-top:7px}.winding-buttons button{touch-action:none;user-select:none}.winding-buttons button:disabled{opacity:.42;cursor:not-allowed}
+  </style>
 </head>
 <body>
   <div id="app">
@@ -22,9 +26,9 @@
     <header class="topbar panel">
       <a class="gallery-link" href="../">← Gallery</a>
       <div class="identity">
-        <div class="eyebrow">REFERENCE RECONSTRUCTION · M3G</div>
+        <div class="eyebrow">REFERENCE RECONSTRUCTION · M4A</div>
         <h1>ETA / Unitas 6497-2</h1>
-        <p>endshake + bearing-stack clearance + axial body-gap diagnostics</p>
+        <p>causal manual winding + one-way click + stored mainspring energy</p>
       </div>
       <a class="docs-link" href="../docs/watch-eta-6497-2.html">Documentation ↗</a>
     </header>
@@ -83,6 +87,26 @@
           <label><input id="endshakeGuides" type="checkbox" /> Show endshake guides</label>
           <label><input id="bodyGapGuides" type="checkbox" /> Show wheel-body gap guides</label>
         </div>
+      </section>
+
+      <section>
+        <div class="section-title">Manual winding · M4a</div>
+        <div class="button-row winding-buttons">
+          <button id="windCrownBtn">Wind crown ↻</button>
+          <button id="returnCrownBtn" class="secondary">Return crown ↺</button>
+        </div>
+        <button id="resetWindBtn" class="secondary wide">Reset stored energy</button>
+        <div class="power-state">
+          <label class="range-row"><span>Mainspring reserve</span><output id="reserveValue">0.0 h / 60 h</output></label>
+          <progress id="powerMeter" class="power-meter" max="1" value="0"></progress>
+          <div class="power-stats">
+            <div class="power-stat"><span>Stored energy</span><output id="energyValue">0%</output></div>
+            <div class="power-stat"><span>Ratchet clicks</span><output id="clickCountValue">0</output></div>
+            <div class="power-stat"><span>Click state</span><output id="clickStateValue">SEATED</output></div>
+            <div class="power-stat"><span>Action</span><output id="windingActionValue">idle</output></div>
+          </div>
+        </div>
+        <div class="winding-note">Click for a visible step or hold to wind continuously. W / R also wind and return. The 45-turn full-wind mapping is a reconstruction assumption for interaction, not an ETA service specification.</div>
       </section>
 
       <section>
@@ -156,7 +180,7 @@
         </div>
       </section>
 
-      <div class="hint">M3g makes axial play explicit. “Train stack” now exposes stepped pivots, reconstructed jewel planes, wheel-body separation, and tiny endshake ranges. The endshake animation is off by default; 10×/25× are diagnostic exaggerations, not claimed real motion amplitudes.</div>
+      <div class="hint">M4a adds the first causal user-operated subsystem. Hold or click Wind crown to drive the crown wheel and ratchet; Return crown reverses the crown side while the click holds the ratchet. The blue mainspring overlay and reserve meter visualize stored energy. Train release is still intentionally independent until the next power-release milestone.</div>
     </aside>
 
     <aside class="inspector panel" id="infoPanel">
@@ -165,7 +189,7 @@
         <span class="provenance approximate" id="infoProvenance">approximate</span>
       </div>
       <h2 id="infoName">Mechanical component inspector</h2>
-      <p id="infoText">M3g keeps the true-pitch train and now treats wheel-body clearance, stepped staff shoulders, jewel-to-jewel bearing spans, and axial endshake as explicit reconstruction constraints.</p>
+      <p id="infoText">M4a keeps the M3g train geometry and adds a stateful manual-winding model: interactive crown rotation, crown-wheel/ratchet coupling, a one-way click constraint, and a visible normalized mainspring-energy state.</p>
       <dl class="part-facts" id="partFacts"></dl>
     </aside>
 
@@ -177,9 +201,9 @@
       <span><i class="dot structure-dot"></i>structure</span>
     </div>
 
-    <div id="loading">Constructing 6497-2 M3g reference…</div>
+    <div id="loading">Constructing 6497-2 M4a winding state…</div>
   </div>
 
-  <script type="module" src="./main-m3g.js"></script>
+  <script type="module" src="./main-m4a.js"></script>
 </body>
 </html>
