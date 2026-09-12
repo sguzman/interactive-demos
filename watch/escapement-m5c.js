@@ -50,6 +50,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
   const base = createM5bEscapementSystem({ watch, animated, materials, powerSystem, root });
   const windingSystem = powerSystem.windingSystem;
   const originalAdvance = powerSystem.advance.bind(powerSystem);
+  const externalOscillator = powerSystem.externalOscillator === true;
 
   const state = {
     amplitude: 0,
@@ -62,7 +63,8 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     lastMechanicalSeconds: powerSystem.state.mechanicalElapsedSeconds,
     lastEnergyBeforeAdvance: windingSystem?.state.energy ?? 0,
     lastEnergyAfterAdvance: windingSystem?.state.energy ?? 0,
-    balanceAngle: 0
+    balanceAngle: 0,
+    externalOscillator
   };
 
   const ui = {
@@ -86,30 +88,32 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     return true;
   }
 
-  // Interpose on the M4c power gate without changing older milestone callers.
-  // When the balance no longer has enough normalized amplitude to unlock the
-  // pallet, the barrel retains its remaining reserve and the train is held.
-  powerSystem.advance = (realSeconds, mechanicalScale = 1) => {
-    const scale = Math.max(0, Number(mechanicalScale) || 0);
-    const energy = windingSystem?.state.energy ?? 0;
-    state.lastEnergyBeforeAdvance = energy;
+  // M5f and later can mark the power system as externally oscillator-owned.
+  // In that mode this historical normalized-envelope layer remains available to
+  // M5d for geometry/event diagnostics but no longer owns the reserve gate.
+  if (!externalOscillator) {
+    powerSystem.advance = (realSeconds, mechanicalScale = 1) => {
+      const scale = Math.max(0, Number(mechanicalScale) || 0);
+      const energy = windingSystem?.state.energy ?? 0;
+      state.lastEnergyBeforeAdvance = energy;
 
-    if (energy <= 0 || scale <= 0) {
+      if (energy <= 0 || scale <= 0) {
+        const consumed = originalAdvance(realSeconds, scale);
+        state.lastEnergyAfterAdvance = windingSystem?.state.energy ?? 0;
+        return consumed;
+      }
+
+      if (!state.canUnlock && !maybeRestart(energy)) {
+        state.oscillatorStatus = 'stalled';
+        state.lastEnergyAfterAdvance = energy;
+        return powerSystem.hold(scale, 'LOW BALANCE AMPLITUDE');
+      }
+
       const consumed = originalAdvance(realSeconds, scale);
       state.lastEnergyAfterAdvance = windingSystem?.state.energy ?? 0;
       return consumed;
-    }
-
-    if (!state.canUnlock && !maybeRestart(energy)) {
-      state.oscillatorStatus = 'stalled';
-      state.lastEnergyAfterAdvance = energy;
-      return powerSystem.hold(scale, 'LOW BALANCE AMPLITUDE');
-    }
-
-    const consumed = originalAdvance(realSeconds, scale);
-    state.lastEnergyAfterAdvance = windingSystem?.state.energy ?? 0;
-    return consumed;
-  };
+    };
+  }
 
   function evolveAmplitude(fromSeconds, toSeconds) {
     const start = Math.max(0, Number(fromSeconds) || 0);
@@ -174,7 +178,8 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
         starting: 'STARTING',
         running: 'RUNNING',
         stalled: 'STALLED · LOW AMPLITUDE',
-        unwound: 'STOPPED · UNWOUND'
+        unwound: 'STOPPED · UNWOUND',
+        external: 'EXTERNAL OSCILLATOR'
       };
       ui.status.value = labels[state.oscillatorStatus] ?? state.oscillatorStatus.toUpperCase();
     }
@@ -184,16 +189,19 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
 
   function update(mechanicalSeconds, escapeBase = 0, running = false) {
     const seconds = Math.max(0, Number(mechanicalSeconds) || 0);
-    evolveAmplitude(state.lastMechanicalSeconds, seconds);
-    state.lastMechanicalSeconds = seconds;
 
-    const sample = base.update(seconds, escapeBase, running && state.canUnlock);
-    const phase = seconds * TAU * 3;
-    state.balanceAngle = Math.sin(phase) * DYNAMICS.visualMaxAmplitudeRad * state.amplitude;
+    if (!externalOscillator) {
+      evolveAmplitude(state.lastMechanicalSeconds, seconds);
+      state.lastMechanicalSeconds = seconds;
+    }
 
-    // M5b still owns the geometry and event diagnostics; M5c owns oscillator
-    // amplitude, so override its fixed-amplitude balance presentation here.
-    if (animated.balance) animated.balance.rotation.z = state.balanceAngle;
+    const sample = base.update(seconds, escapeBase, running && (externalOscillator || state.canUnlock));
+
+    if (!externalOscillator) {
+      const phase = seconds * TAU * 3;
+      state.balanceAngle = Math.sin(phase) * DYNAMICS.visualMaxAmplitudeRad * state.amplitude;
+      if (animated.balance) animated.balance.rotation.z = state.balanceAngle;
+    }
 
     syncDynamicsUI();
     return {
@@ -202,9 +210,22 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
       amplitude: state.amplitude,
       torqueProxy: state.torqueProxy,
       impulsePacket: state.lastImpulse,
-      canUnlock: state.canUnlock,
+      canUnlock: externalOscillator ? running : state.canUnlock,
       oscillatorStatus: state.oscillatorStatus
     };
+  }
+
+  function setExternalState(next = {}) {
+    if (!externalOscillator) return;
+    if (Number.isFinite(next.amplitude)) state.amplitude = clamp01(next.amplitude);
+    if (Number.isFinite(next.torqueProxy)) state.torqueProxy = clamp01(next.torqueProxy);
+    if (Number.isFinite(next.lastImpulse)) state.lastImpulse = Math.max(0, next.lastImpulse);
+    if (Number.isFinite(next.balanceAngle)) state.balanceAngle = next.balanceAngle;
+    if (typeof next.canUnlock === 'boolean') state.canUnlock = next.canUnlock;
+    if (typeof next.oscillatorStatus === 'string') state.oscillatorStatus = next.oscillatorStatus;
+    if (Number.isFinite(next.successfulImpulses)) state.successfulImpulses = next.successfulImpulses;
+    if (Number.isFinite(next.missedUnlocks)) state.missedUnlocks = next.missedUnlocks;
+    syncDynamicsUI();
   }
 
   syncDynamicsUI();
@@ -213,9 +234,10 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     ...base,
     state,
     update,
+    setExternalState,
     dynamics: { ...DYNAMICS },
     torqueProxy
   };
 }
 
-export { sampleSwissLever };
+export { sampleSwissLever, torqueProxy };
