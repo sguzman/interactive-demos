@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mechanical Watch — Exploded Functional Anatomy</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.180.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.180.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <canvas id="scene"></canvas>
+
+    <aside class="panel left-panel">
+      <div class="eyebrow">INTERACTIVE HOROLOGY</div>
+      <h1>Mechanical Wristwatch</h1>
+      <p class="lede">
+        A procedural, semi-realistic exploded-view model showing the functional layers
+        of a hand-wound mechanical watch.
+      </p>
+
+      <div class="control-block">
+        <label for="explode">
+          <span>Exploded view</span>
+          <output id="explodeValue">0%</output>
+        </label>
+        <input id="explode" type="range" min="0" max="100" value="0" />
+      </div>
+
+      <div class="button-row">
+        <button id="explodeBtn">Explode</button>
+        <button id="assembleBtn">Assemble</button>
+        <button id="resetBtn" class="secondary">Reset camera</button>
+      </div>
+
+      <div class="toggles">
+        <label><input type="checkbox" data-layer="display" checked /> Display</label>
+        <label><input type="checkbox" data-layer="case" checked /> Case</label>
+        <label><input type="checkbox" data-layer="movement" checked /> Movement</label>
+        <label><input type="checkbox" data-layer="power" checked /> Power</label>
+        <label><input type="checkbox" data-layer="regulation" checked /> Regulation</label>
+      </div>
+
+      <div class="hint">
+        Drag to orbit · Wheel to zoom · Click a component for details
+      </div>
+    </aside>
+
+    <aside class="panel info-panel" id="infoPanel">
+      <div class="eyebrow" id="infoCategory">SELECT A PART</div>
+      <h2 id="infoName">Component inspector</h2>
+      <p id="infoText">
+        Click the crystal, dial, gear train, balance wheel, mainspring barrel, rotor,
+        bridges, caseback, or another highlighted component.
+      </p>
+    </aside>
+
+    <div class="legend panel">
+      <span><i class="dot display-dot"></i>time display</span>
+      <span><i class="dot movement-dot"></i>transmission</span>
+      <span><i class="dot power-dot"></i>stored energy</span>
+      <span><i class="dot regulation-dot"></i>regulation</span>
+    </div>
+
+    <div id="loading">Building movement…</div>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
