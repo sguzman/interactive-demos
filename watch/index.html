@@ -22,9 +22,9 @@
     <header class="topbar panel">
       <a class="gallery-link" href="../">← Gallery</a>
       <div class="identity">
-        <div class="eyebrow">REFERENCE RECONSTRUCTION · M1</div>
+        <div class="eyebrow">REFERENCE RECONSTRUCTION · M2</div>
         <h1>ETA / Unitas 6497-2</h1>
-        <p>OP XI / PAM111 lineage · 44 mm exhibition wristwatch shell</p>
+        <p>Bridge/plate fidelity pass · 44 mm exhibition reference shell</p>
       </div>
       <a class="docs-link" href="../docs/watch-eta-6497-2.html">Documentation ↗</a>
     </header>
@@ -42,6 +42,17 @@
           <button id="explodeBtn">Explode</button>
         </div>
         <button id="resetBtn" class="secondary wide">Reset camera</button>
+      </section>
+
+      <section>
+        <div class="section-title">Inspection view</div>
+        <div class="view-grid">
+          <button class="secondary" data-view="overview">Overview</button>
+          <button class="secondary" data-view="bridge">Bridge side</button>
+          <button class="secondary" data-view="dial">Dial side</button>
+          <button class="secondary" data-view="escapement">Escapement</button>
+          <button class="secondary" data-view="winding">Winding</button>
+        </div>
       </section>
 
       <section>
@@ -107,7 +118,7 @@
         <span class="provenance approximate" id="infoProvenance">approximate</span>
       </div>
       <h2 id="infoName">Mechanical component inspector</h2>
-      <p id="infoText">Click the barrel, crown wheel, train, balance, pallet fork, bridges, dial, case, or another component. Provenance labels distinguish documented facts from reconstructed geometry.</p>
+      <p id="infoText">M2 separates the individual bridges, bridge jewels and screw patterns, adds dial-side keyless works, and improves wheel/escape-tooth geometry. Click a component to inspect its provenance and ETA position where known.</p>
       <dl class="part-facts" id="partFacts"></dl>
     </aside>
 
@@ -119,7 +130,7 @@
       <span><i class="dot structure-dot"></i>structure</span>
     </div>
 
-    <div id="loading">Constructing 6497-2 reference…</div>
+    <div id="loading">Constructing 6497-2 M2 reference…</div>
   </div>
 
   <script type="module" src="./main.js"></script>

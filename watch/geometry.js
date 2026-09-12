@@ -52,6 +52,26 @@ export function roundedRectShape(width, height, radius) {
   return s;
 }
 
+export function polygonShape(points) {
+  const shape = new THREE.Shape();
+  shape.moveTo(points[0][0], points[0][1]);
+  for (let i = 1; i < points.length; i++) shape.lineTo(points[i][0], points[i][1]);
+  shape.closePath();
+  return shape;
+}
+
+export function addCircularHoles(shape, holes = []) {
+  for (const hole of holes) {
+    const [x, y, r] = Array.isArray(hole)
+      ? hole
+      : [hole.x ?? 0, hole.y ?? 0, hole.radius ?? hole.r ?? .5];
+    const path = new THREE.Path();
+    path.absarc(x, y, r, 0, Math.PI * 2, true);
+    shape.holes.push(path);
+  }
+  return shape;
+}
+
 export function extrudeShape(shape, depth, material, {
   bevel = true,
   bevelSize = 0.16,
@@ -89,11 +109,23 @@ export function caseRing({ width, height, cornerRadius, innerRadius, depth, mate
 }
 
 export function polygonPlate(points, depth, material, options = {}) {
-  const shape = new THREE.Shape();
-  shape.moveTo(points[0][0], points[0][1]);
-  for (let i = 1; i < points.length; i++) shape.lineTo(points[i][0], points[i][1]);
-  shape.closePath();
+  return extrudeShape(polygonShape(points), depth, material, options);
+}
+
+export function plateWithHoles(points, depth, material, holes = [], options = {}) {
+  const shape = polygonShape(points);
+  addCircularHoles(shape, holes);
   return extrudeShape(shape, depth, material, options);
+}
+
+function taperedTooth({ baseWidth, tipWidth, depth, thickness, material, skew = 0 }) {
+  const shape = new THREE.Shape();
+  shape.moveTo(-baseWidth / 2, 0);
+  shape.lineTo(baseWidth / 2, 0);
+  shape.lineTo(tipWidth / 2 + skew, depth);
+  shape.lineTo(-tipWidth / 2 + skew, depth);
+  shape.closePath();
+  return extrudeShape(shape, thickness, material, { bevel: false });
 }
 
 export function gear({
@@ -107,15 +139,18 @@ export function gear({
   spokeWidth = .34,
   rimTube = Math.max(.18, radius * .085),
   toothDepth = Math.max(.28, radius * .14),
-  toothWidth = Math.max(.18, radius * .06)
+  toothWidth = Math.max(.18, radius * .06),
+  toothTipScale = .58
 }) {
   const group = new THREE.Group();
   group.userData.geometryType = 'gear';
+  group.userData.toothCount = teeth;
 
-  group.add(ring(Math.max(.1, radius - rimTube * 1.35), rimTube, material, 10, Math.max(64, teeth * 3)));
+  const rootRadius = radius - toothDepth * .58;
+  group.add(ring(Math.max(.1, rootRadius - rimTube * .45), rimTube, material, 10, Math.max(64, teeth * 3)));
   group.add(disc(hubRadius, thickness, hubMaterial, 48));
 
-  const spokeLength = Math.max(.2, radius - hubRadius - rimTube * 2.2);
+  const spokeLength = Math.max(.2, rootRadius - hubRadius - rimTube * 1.4);
   for (let i = 0; i < spokeCount; i++) {
     const angle = (i / spokeCount) * Math.PI * 2;
     const spoke = box(spokeWidth, spokeLength, thickness * .72, material);
@@ -130,16 +165,70 @@ export function gear({
 
   for (let i = 0; i < teeth; i++) {
     const angle = (i / teeth) * Math.PI * 2;
-    const tooth = box(toothWidth, toothDepth, thickness * .86, material);
-    tooth.position.set(
-      Math.cos(angle) * (radius + toothDepth * .15),
-      Math.sin(angle) * (radius + toothDepth * .15),
-      0
-    );
+    const tooth = taperedTooth({
+      baseWidth: toothWidth,
+      tipWidth: toothWidth * toothTipScale,
+      depth: toothDepth,
+      thickness: thickness * .86,
+      material
+    });
+    tooth.position.set(Math.cos(angle) * rootRadius, Math.sin(angle) * rootRadius, 0);
     tooth.rotation.z = angle - Math.PI / 2;
     group.add(tooth);
   }
 
+  return group;
+}
+
+export function escapeWheel({
+  radius,
+  teeth = 15,
+  thickness = .34,
+  material,
+  hubMaterial = material,
+  hubRadius = .42,
+  spokeCount = 5,
+  spokeWidth = .22,
+  rimTube = .14,
+  toothDepth = .82,
+  toothWidth = .18,
+  hook = .22
+}) {
+  const group = new THREE.Group();
+  group.userData.geometryType = 'escape-wheel';
+  group.userData.toothCount = teeth;
+
+  const rootRadius = radius - toothDepth * .7;
+  group.add(ring(Math.max(.25, rootRadius - .04), rimTube, material, 8, 96));
+  group.add(disc(hubRadius, thickness, hubMaterial, 40));
+
+  const spokeLength = Math.max(.3, rootRadius - hubRadius - rimTube * 1.2);
+  for (let i = 0; i < spokeCount; i++) {
+    const angle = (i / spokeCount) * Math.PI * 2;
+    const spoke = box(spokeWidth, spokeLength, thickness * .66, material);
+    spoke.position.set(
+      Math.cos(angle) * (hubRadius + spokeLength / 2),
+      Math.sin(angle) * (hubRadius + spokeLength / 2),
+      0
+    );
+    spoke.rotation.z = angle - Math.PI / 2;
+    group.add(spoke);
+  }
+
+  for (let i = 0; i < teeth; i++) {
+    const angle = (i / teeth) * Math.PI * 2;
+    const tooth = taperedTooth({
+      baseWidth: toothWidth,
+      tipWidth: toothWidth * .26,
+      depth: toothDepth,
+      thickness: thickness * .76,
+      material,
+      skew: hook
+    });
+    tooth.position.set(Math.cos(angle) * rootRadius, Math.sin(angle) * rootRadius, 0);
+    tooth.rotation.z = angle - Math.PI / 2;
+    group.add(tooth);
+  }
   return group;
 }
 
@@ -154,7 +243,8 @@ export function pinion({ radius = .75, teeth = 10, thickness = .8, material }) {
     spokeWidth: .18,
     rimTube: .09,
     toothDepth: .2,
-    toothWidth: .12
+    toothWidth: .12,
+    toothTipScale: .72
   });
 }
 
@@ -175,6 +265,23 @@ export function jewel({ radius = .34, height = .2, material }) {
   const hole = ring(radius * .35, radius * .10, material, 8, 32);
   hole.position.z = height * .56;
   group.add(hole);
+  return group;
+}
+
+export function shockSetting({ radius = .82, material, jewelMaterial, springMaterial }) {
+  const group = new THREE.Group();
+  group.userData.geometryType = 'shock-setting';
+  group.add(ring(radius * .68, radius * .16, material, 10, 64));
+  const cap = jewel({ radius: radius * .34, height: .16, material: jewelMaterial });
+  cap.position.z = .10;
+  group.add(cap);
+  for (let i = 0; i < 3; i++) {
+    const angle = i / 3 * Math.PI * 2;
+    const arm = box(radius * .16, radius * .7, .06, springMaterial);
+    arm.position.set(Math.cos(angle) * radius * .28, Math.sin(angle) * radius * .28, .20);
+    arm.rotation.z = angle - Math.PI / 2;
+    group.add(arm);
+  }
   return group;
 }
 

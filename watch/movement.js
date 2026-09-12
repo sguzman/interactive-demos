@@ -1,19 +1,25 @@
 import * as THREE from 'three';
 import {
-  box, caseRing, coil, disc, gear, jewel, makeHand, pathTube,
-  pinion, polygonPlate, ring, roundedPlate, screw, setShadows
+  box, caseRing, coil, disc, escapeWheel, gear, jewel, makeHand, pathTube,
+  pinion, plateWithHoles, polygonPlate, ring, roundedPlate, screw,
+  setShadows, shockSetting
 } from './geometry.js';
 import { createMaterials } from './materials.js';
+import { ETA6497_2, LAYOUT, MILESTONE, PARTS } from './spec.js';
 
 export const MODEL = {
-  movement: 'ETA / Unitas 6497-2',
-  movementDiameter: 36.6,
-  movementHeight: 4.5,
-  frequencyHz: 3,
-  beatsPerHour: 21600,
-  jewels: 17,
-  referenceWatch: 'Panerai Luminor Marina PAM00111 / OP XI lineage',
-  referenceCaseDiameter: 44
+  movement: ETA6497_2.caliber,
+  movementDiameter: ETA6497_2.diameterMm,
+  movementHeight: ETA6497_2.heightMm,
+  frequencyHz: ETA6497_2.frequencyHz,
+  beatsPerHour: ETA6497_2.alternationsPerHour,
+  jewels: ETA6497_2.jewels,
+  liftAngleDeg: ETA6497_2.liftAngleDeg,
+  powerReserveMinHours: ETA6497_2.powerReserveMinHours,
+  powerReserveTypicalHours: ETA6497_2.powerReserveTypicalHours,
+  referenceWatch: '44 mm exhibition wristwatch / OP XI lineage reference shell',
+  referenceCaseDiameter: 44,
+  milestone: MILESTONE.id
 };
 
 function dialTexture() {
@@ -47,7 +53,7 @@ function dialTexture() {
   ctx.fillText('3', 338, 0);
   ctx.fillText('6', 0, 336);
 
-  // Small-seconds register at 9 o'clock, matching the 6497 wristwatch orientation.
+  // Small seconds at 9 o'clock in this wristwatch orientation.
   const sx = -302;
   const sy = 0;
   ctx.lineWidth = 3;
@@ -76,6 +82,20 @@ function dialTexture() {
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 4;
   return texture;
+}
+
+function addBridgeScrew(group, x, y, z, materials, radius = .31) {
+  const s = screw({ radius, headHeight: .18, material: materials.blueSteel, slotMaterial: materials.darkSteel });
+  s.position.set(x, y, z);
+  group.add(s);
+  return s;
+}
+
+function addBridgeJewel(group, x, y, z, materials, radius = .42) {
+  const j = jewel({ radius, height: .18, material: materials.ruby });
+  j.position.set(x, y, z);
+  group.add(j);
+  return j;
 }
 
 export function buildWatch() {
@@ -122,8 +142,8 @@ export function buildWatch() {
   });
 
   // ---------------------------------------------------------------------------
-  // Reference shell — 44 mm exhibition watch, deliberately separate from the
-  // stricter movement target. Geometry is reference-derived/presentation-grade.
+  // Reference shell. It provides a wristwatch context but is deliberately less
+  // exact than the movement reconstruction.
   // ---------------------------------------------------------------------------
 
   const straps = new THREE.Group();
@@ -143,7 +163,7 @@ export function buildWatch() {
   }
   register(straps, meta(
     '24 mm leather strap', 'Wearability', 'case',
-    'A reference 24 mm leather strap sized to the large 44 mm exhibition-case presentation.',
+    'A reference strap sized to the large 44 mm exhibition-case presentation.',
     'reference-derived', { 'Width': '24 mm', 'Role': 'presentation shell' }, 4, new THREE.Vector3(0, .9, -.22)
   ));
 
@@ -158,7 +178,6 @@ export function buildWatch() {
   innerRehaut.position.z = 2.25;
   caseBody.add(innerRehaut);
 
-  // Crown and a simplified bridge/lever silhouette inspired by Luminor architecture.
   const crown = new THREE.Mesh(new THREE.CylinderGeometry(2.35, 2.35, 3.2, 40), materials.caseSteel);
   crown.rotation.z = Math.PI / 2;
   crown.position.set(24.2, 0, -.55);
@@ -177,8 +196,8 @@ export function buildWatch() {
 
   register(caseBody, meta(
     '44 mm cushion case & crown guard', 'Case / protection', 'case',
-    'A 44 mm exhibition-style wristwatch shell referencing the Luminor/OP XI lineage. The movement geometry is the stricter target; this shell is intentionally reference-derived.',
-    'reference-derived', { 'Case target': '44 mm', 'Material reference': '316L-style steel', 'Exact PAM case CAD': 'no' }, 5.5, new THREE.Vector3(.12, 0, -1)
+    'A 44 mm exhibition-style wristwatch shell referencing the OP XI/Luminor lineage. The movement geometry is the stricter target.',
+    'reference-derived', { 'Case target': '44 mm', 'Exact production case CAD': 'no' }, 5.5, new THREE.Vector3(.12, 0, -1)
   ));
 
   const crystal = new THREE.Group();
@@ -190,7 +209,7 @@ export function buildWatch() {
   crystal.add(edge);
   register(crystal, meta(
     'Front crystal', 'Case / protection', 'case',
-    'Transparent front crystal. Thickness and curvature are presentation geometry rather than a measured production crystal.',
+    'Transparent front crystal. Thickness and curvature are presentation geometry.',
     'presentation', { 'Role': 'protect dial and hands' }, 18, new THREE.Vector3(0, 0, 1)
   ));
 
@@ -203,7 +222,7 @@ export function buildWatch() {
   caseback.add(backGlass);
   register(caseback, meta(
     'Exhibition caseback', 'Case / protection', 'case',
-    'A transparent rear window keeps the large hand-wound movement visible, matching the educational purpose of the reference shell.',
+    'A transparent rear window keeps the hand-wound movement visible.',
     'reference-derived', { 'Window': 'transparent exhibition back' }, 20, new THREE.Vector3(0, 0, -1)
   ));
 
@@ -218,7 +237,7 @@ export function buildWatch() {
   dial.position.z = 2.05;
   register(dial, meta(
     'Black reference dial', 'Display', 'display',
-    'A procedural dial using the large 12/3/6 + small-seconds-at-9 layout associated with 6497-based Luminor Marina watches. Branding is intentionally omitted.',
+    'Procedural dial with 12/3/6 numerals and small seconds at 9. Branding is intentionally omitted.',
     'reference-derived', { 'Small seconds': '9 o’clock', 'Texture': 'procedural canvas' }, 13, new THREE.Vector3(0,0,1)
   ));
 
@@ -230,12 +249,12 @@ export function buildWatch() {
   minute.rotation.z = 1.10;
   minute.position.z = 2.62;
   const seconds = makeHand({ length: 4.0, width: .16, depth: .10, tail: 1.2, material: materials.blueSteel });
-  seconds.position.set(-11.35, 0, 2.66);
+  seconds.position.set(LAYOUT.secondWheel[0], LAYOUT.secondWheel[1], 2.66);
   hands.add(hour, minute, seconds);
   register(hands, meta(
     'Hour, minute & small-seconds hands', 'Display', 'display',
-    'The visible output of the motion works. The small-seconds hand is placed at 9 o’clock in the wristwatch orientation of the 6497 lineage.',
-    'reference-derived', { 'Small seconds': '9 o’clock', 'Drive': 'fourth/seconds wheel' }, 15, new THREE.Vector3(0,0,1)
+    'The visible output of the motion works. Small seconds is driven from the seconds/fourth wheel position.',
+    'reference-derived', { 'Small seconds': '9 o’clock', 'Drive': 'second/fourth wheel' }, 15, new THREE.Vector3(0,0,1)
   ));
   animated.hourHand = hour;
   animated.minuteHand = minute;
@@ -249,40 +268,76 @@ export function buildWatch() {
   hourWheel.position.z = 1.55;
   motion.add(hourWheel);
   register(motion, meta(
-    'Cannon pinion & hour wheel', 'Motion works', 'motion',
-    'The motion works reduce and distribute the wheel-train output so the central hands indicate minutes and hours.',
-    'reference-derived', { 'Components': 'cannon pinion + hour wheel', 'ETA references': '31.080 / 31.046 family' }, 9, new THREE.Vector3(0,0,1)
+    'Driver cannon pinion & hour wheel', 'Motion works', 'motion',
+    'The motion works reduce and distribute wheel-train output to the central minute and hour hands.',
+    'reference-derived', { 'Driver cannon pinion': `ETA pos. ${PARTS.cannonPinion.etaPos}`, 'Hour wheel': `ETA pos. ${PARTS.hourWheel.etaPos}` }, 9, new THREE.Vector3(0,0,1)
+  ));
+
+  // Keyless works are now explicitly represented on the dial side. Their exact
+  // outlines remain approximate, but the parts and causal relationships are real.
+  const keyless = new THREE.Group();
+  const windingPinion = pinion({ radius: .82, teeth: 12, thickness: .72, material: materials.brushedSteel });
+  windingPinion.position.set(14.5, .1, .85);
+  keyless.add(windingPinion);
+  const slidingPinion = pinion({ radius: .96, teeth: 14, thickness: .78, material: materials.brushedSteel });
+  slidingPinion.position.set(12.7, .15, .88);
+  keyless.add(slidingPinion);
+  const settingWheel = gear({ radius: 1.55, teeth: 22, thickness: .32, material: materials.brass, hubRadius: .38, spokeCount: 4, toothDepth: .18, toothWidth: .11 });
+  settingWheel.position.set(10.4, -1.0, .9);
+  keyless.add(settingWheel);
+  const minuteWheel = gear({ radius: 1.9, teeth: 28, thickness: .34, material: materials.brass, hubRadius: .42, spokeCount: 4, toothDepth: .2, toothWidth: .12 });
+  minuteWheel.position.set(7.4, -1.1, .92);
+  keyless.add(minuteWheel);
+  const yoke = polygonPlate([[11.0,1.4],[13.5,.9],[13.8,2.0],[11.5,2.8],[9.7,2.2]], .24, materials.brushedSteel, { bevelSize: .04, bevelThickness: .03, bevelSegments: 2 });
+  yoke.position.z = 1.03;
+  keyless.add(yoke);
+  const settingLever = polygonPlate([[14.8,-2.2],[12.3,-2.4],[11.2,-3.7],[12.1,-4.5],[15.4,-3.4]], .24, materials.brushedSteel, { bevelSize: .04, bevelThickness: .03, bevelSegments: 2 });
+  settingLever.position.z = 1.02;
+  keyless.add(settingLever);
+  register(keyless, meta(
+    'Dial-side keyless & setting works', 'Winding / setting', 'winding',
+    'Winding pinion, sliding pinion, setting wheel, minute wheel, yoke and setting lever make the crown a two-mode control: winding in one position and hand-setting in the other.',
+    'reference-derived', { 'Winding pinion': 'ETA pos. 3 family', 'Sliding pinion': 'ETA pos. 4 family', 'Stem': 'ETA pos. 5 family', 'Geometry': 'M2 approximate outlines' }, 10, new THREE.Vector3(.2,-.03,1)
   ));
 
   // ---------------------------------------------------------------------------
-  // Mainplate and bearings — dimensions anchored to official ETA movement size.
+  // Mainplate and bearings
   // ---------------------------------------------------------------------------
 
   const mainplate = new THREE.Group();
   const plate = disc(MODEL.movementDiameter / 2, 1.05, materials.plate, 160);
   plate.position.z = 0;
   mainplate.add(plate);
-  mainplate.add(ring(17.25, .16, materials.brushedSteel, 10, 128));
+  const outerMachining = ring(17.25, .16, materials.brushedSteel, 10, 128);
+  outerMachining.position.z = -.58;
+  mainplate.add(outerMachining);
+  const bridgeSideWell = disc(15.8, .08, materials.darkSteel, 144);
+  bridgeSideWell.position.z = -.57;
+  mainplate.add(bridgeSideWell);
   register(mainplate, meta(
     'Mainplate', 'Movement structure', 'structure',
-    'Structural reference for the movement. Its outer diameter is anchored to ETA’s official 36.60 mm specification; internal cut-outs and holes remain simplified.',
-    'official', { 'Movement diameter': '36.60 mm', 'Movement height': '4.50 mm', 'Internal geometry': 'approximate' }, 5.2, new THREE.Vector3(0,0,-1)
+    'Structural reference for the movement. The 36.60 mm diameter is official; internal milling and recesses are reconstructed for M2 readability.',
+    'official', { 'ETA position': PARTS.mainplate.etaPos, 'Movement diameter': '36.60 mm', 'Movement height': '4.50 mm', 'Internal milling': 'reference-derived / approximate' }, 5.2, new THREE.Vector3(0,0,-1)
   ));
 
-  const jewels = new THREE.Group();
-  const jewelPositions = [
-    [-7.8, -7.1], [-3.0, -1.4], [2.0, 2.1], [6.9, 1.5], [9.0, -3.5], [1.8, -8.1],
-    [-11.0, .2], [6.2, 7.2]
+  const plateJewels = new THREE.Group();
+  const lowerJewelPositions = [
+    [LAYOUT.centerWheel[0], LAYOUT.centerWheel[1]],
+    [LAYOUT.thirdWheel[0], LAYOUT.thirdWheel[1]],
+    [LAYOUT.secondWheel[0], LAYOUT.secondWheel[1]],
+    [LAYOUT.escapeWheel[0], LAYOUT.escapeWheel[1]],
+    [LAYOUT.pallet[0], LAYOUT.pallet[1]],
+    [LAYOUT.balance[0], LAYOUT.balance[1]]
   ];
-  for (const [x, y] of jewelPositions) {
+  for (const [x, y] of lowerJewelPositions) {
     const j = jewel({ radius: .38, height: .22, material: materials.ruby });
-    j.position.set(x, y, -.78);
-    jewels.add(j);
+    j.position.set(x, y, -.68);
+    plateJewels.add(j);
   }
-  register(jewels, meta(
-    'Visible jewel bearings', 'Movement structure', 'structure',
-    'Synthetic ruby bearing locations are shown to explain pivot support and friction control. The movement has 17 jewels officially; only visually useful bearings are modeled individually in M1.',
-    'official', { 'Official jewel count': '17', 'Individually shown': String(jewelPositions.length) }, 6.2, new THREE.Vector3(0,0,-1)
+  register(plateJewels, meta(
+    'Mainplate-side jewel bearings', 'Movement structure', 'structure',
+    'Lower bearing jewels are aligned with the main train, pallet and balance pivots. The movement officially contains 17 jewels; M2 shows the mechanically legible set rather than claiming every jewel seat is fully reconstructed.',
+    'reference-derived', { 'Official jewel count': '17', 'Shown on mainplate side': String(lowerJewelPositions.length) }, 6.2, new THREE.Vector3(0,0,-1)
   ));
 
   // ---------------------------------------------------------------------------
@@ -298,71 +353,82 @@ export function buildWatch() {
   const spring = coil({ radius: 4.15, turns: 8, wire: .07, material: materials.blueSteel, innerRatio: .12 });
   spring.position.z = .74;
   barrel.add(spring);
-  barrel.position.set(6.7, 6.4, -.55);
+  barrel.position.set(LAYOUT.barrel[0], LAYOUT.barrel[1], -.55);
   register(barrel, meta(
     'Mainspring barrel', 'Power storage', 'power',
-    'The crown winds a coiled mainspring in the barrel. Its stored elastic energy is the movement’s power source.',
-    'reference-derived', { 'ETA part family': '20.010', 'Energy source': 'coiled mainspring' }, 9.2, new THREE.Vector3(.2,.12,-1)
+    'The crown winds a coiled mainspring in the barrel. ETA specifies a 53 h minimum and 60 h typical power reserve for the current 6497-2 communication.',
+    'reference-derived', { 'ETA position': PARTS.barrel.etaPos, 'Minimum reserve': `${MODEL.powerReserveMinHours} h`, 'Typical reserve': `${MODEL.powerReserveTypicalHours} h` }, 9.2, new THREE.Vector3(.2,.12,-1)
   ));
   animated.barrel = barrel;
 
   const winding = new THREE.Group();
   const ratchet = gear({ radius: 4.35, teeth: 44, thickness: .42, material: materials.brushedSteel, hubRadius: 1.0, spokeCount: 5, toothDepth: .34, toothWidth: .18 });
-  ratchet.position.set(6.7, 6.4, -1.55);
+  ratchet.position.set(LAYOUT.barrel[0], LAYOUT.barrel[1], -1.55);
   winding.add(ratchet);
+  const crownWheelRing = ring(2.15, .12, materials.darkSteel, 8, 72);
+  crownWheelRing.position.set(LAYOUT.crownWheel[0], LAYOUT.crownWheel[1], -1.62);
+  winding.add(crownWheelRing);
   const crownWheel = gear({ radius: 3.1, teeth: 34, thickness: .42, material: materials.brushedSteel, hubRadius: .75, spokeCount: 4, toothDepth: .3, toothWidth: .16 });
-  crownWheel.position.set(12.2, 4.0, -1.55);
+  crownWheel.position.set(LAYOUT.crownWheel[0], LAYOUT.crownWheel[1], -1.55);
   winding.add(crownWheel);
   const stem = pathTube([[18.0,0,-1.0],[14.8,0,-1.0],[12.5,1.2,-1.0]], .17, materials.brushedSteel, 50);
   winding.add(stem);
   const click = polygonPlate([[9.2,10.0],[10.8,9.2],[11.5,10.0],[10.1,11.0]], .26, materials.blueSteel, { bevelSize: .05, bevelThickness: .04, bevelSegments: 2 });
   click.position.z = -1.68;
   winding.add(click);
+  const clickSpring = pathTube([[10.0,11.0,-1.69],[12.2,11.3,-1.69],[13.4,9.8,-1.69],[12.8,8.3,-1.69]], .09, materials.blueSteel, 44);
+  winding.add(clickSpring);
   register(winding, meta(
-    'Crown wheel, ratchet & click', 'Winding system', 'winding',
-    'The winding train transmits crown rotation to the mainspring arbor. The click prevents reverse unwinding through the crown.',
-    'reference-derived', { 'Crown wheel family': '31.023', 'Ratchet wheel family': '31.020', 'Click family': '51.120' }, 10.5, new THREE.Vector3(.32,.05,-1)
+    'Crown wheel, ratchet, click & click spring', 'Winding system', 'winding',
+    'The bridge-side winding train transmits crown torque to the barrel arbor; the click and spring prevent reverse unwinding.',
+    'reference-derived', { 'Crown wheel': `ETA pos. ${PARTS.crownWheel.etaPos}`, 'Crown wheel ring': `ETA pos. ${PARTS.crownWheelRing.etaPos}`, 'Click spring': `ETA pos. ${PARTS.clickSpring.etaPos}`, 'Click': `ETA pos. ${PARTS.click.etaPos}`, 'Ratchet': `ETA pos. ${PARTS.ratchetWheel.etaPos}` }, 10.5, new THREE.Vector3(.32,.05,-1)
   ));
   animated.ratchet = ratchet;
   animated.crownWheel = crownWheel;
 
   // ---------------------------------------------------------------------------
-  // Wheel train — deliberately more explicit than the old generic cluster.
-  // Positions are reference-derived, not manufacturing coordinates.
+  // Wheel train. M2 improves tooth silhouette and explicit arbors but still does
+  // not claim manufacturing tooth counts or centre distances.
   // ---------------------------------------------------------------------------
 
   const train = new THREE.Group();
   const centerWheel = gear({ radius: 4.25, teeth: 64, thickness: .46, material: materials.brass, hubMaterial: materials.brushedSteel, hubRadius: .75, spokeCount: 5, toothDepth: .32, toothWidth: .16 });
-  centerWheel.position.set(0.1, 2.2, -.72);
+  centerWheel.position.set(LAYOUT.centerWheel[0], LAYOUT.centerWheel[1], -.72);
   train.add(centerWheel);
   const centerPinion = pinion({ radius: .82, teeth: 10, thickness: .8, material: materials.brushedSteel });
-  centerPinion.position.set(.1, 2.2, -1.0);
+  centerPinion.position.set(LAYOUT.centerWheel[0], LAYOUT.centerWheel[1], -1.0);
   train.add(centerPinion);
 
   const thirdWheel = gear({ radius: 3.55, teeth: 60, thickness: .42, material: materials.gilt, hubMaterial: materials.brushedSteel, hubRadius: .62, spokeCount: 5, toothDepth: .28, toothWidth: .14 });
-  thirdWheel.position.set(-5.4, -1.2, -.76);
+  thirdWheel.position.set(LAYOUT.thirdWheel[0], LAYOUT.thirdWheel[1], -.76);
   train.add(thirdWheel);
   const thirdPinion = pinion({ radius: .70, teeth: 10, thickness: .72, material: materials.brushedSteel });
-  thirdPinion.position.set(-5.4, -1.2, -1.02);
+  thirdPinion.position.set(LAYOUT.thirdWheel[0], LAYOUT.thirdWheel[1], -1.02);
   train.add(thirdPinion);
 
-  const fourthWheel = gear({ radius: 3.15, teeth: 56, thickness: .40, material: materials.brass, hubMaterial: materials.brushedSteel, hubRadius: .55, spokeCount: 5, toothDepth: .27, toothWidth: .13 });
-  fourthWheel.position.set(-11.25, .0, -.72);
-  train.add(fourthWheel);
-  const fourthPinion = pinion({ radius: .62, teeth: 9, thickness: .68, material: materials.brushedSteel });
-  fourthPinion.position.set(-11.25, 0, -1.0);
-  train.add(fourthPinion);
+  const secondWheel = gear({ radius: 3.15, teeth: 56, thickness: .40, material: materials.brass, hubMaterial: materials.brushedSteel, hubRadius: .55, spokeCount: 5, toothDepth: .27, toothWidth: .13 });
+  secondWheel.position.set(LAYOUT.secondWheel[0], LAYOUT.secondWheel[1], -.72);
+  train.add(secondWheel);
+  const secondPinion = pinion({ radius: .62, teeth: 9, thickness: .68, material: materials.brushedSteel });
+  secondPinion.position.set(LAYOUT.secondWheel[0], LAYOUT.secondWheel[1], -1.0);
+  train.add(secondPinion);
 
-  const escapeWheel = gear({ radius: 2.25, teeth: 15, thickness: .34, material: materials.gilt, hubMaterial: materials.brushedSteel, hubRadius: .42, spokeCount: 5, toothDepth: .62, toothWidth: .14 });
-  escapeWheel.position.set(-5.4, -7.2, -.7);
-  train.add(escapeWheel);
+  const escape = escapeWheel({ radius: 2.35, teeth: 15, thickness: .34, material: materials.gilt, hubMaterial: materials.brushedSteel, hubRadius: .42, spokeCount: 5, toothDepth: .9, toothWidth: .2, hook: .24 });
+  escape.position.set(LAYOUT.escapeWheel[0], LAYOUT.escapeWheel[1], -.7);
+  train.add(escape);
+
+  for (const [x,y] of [LAYOUT.centerWheel, LAYOUT.thirdWheel, LAYOUT.secondWheel, LAYOUT.escapeWheel]) {
+    const arbor = disc(.16, 2.25, materials.brushedSteel, 24);
+    arbor.position.set(x, y, -1.1);
+    train.add(arbor);
+  }
 
   register(train, meta(
-    'Centre, third, fourth & escape wheels', 'Wheel train', 'train',
-    'The wheel train carries power from the barrel toward the escapement while establishing the timekeeping ratios. The fourth/seconds wheel aligns with the small-seconds display in this reference orientation.',
-    'reference-derived', { 'Centre wheel': '30.015 family', 'Third wheel': '30.025 family', 'Seconds/fourth wheel': '30.027.13 family', 'Escape wheel': '30.040 family' }, 11.5, new THREE.Vector3(-.05,-.08,-1)
+    'Centre, third, seconds & escape wheels', 'Wheel train', 'train',
+    'The train carries power from the barrel toward the escapement. M2 replaces rectangular-looking teeth with tapered profiles, gives the escape wheel visibly asymmetric teeth, and exposes the arbors.',
+    'reference-derived', { 'Centre wheel': `ETA pos. ${PARTS.centerWheel.etaPos}`, 'Third wheel': `ETA pos. ${PARTS.thirdWheel.etaPos}`, 'Seconds wheel': `ETA pos. ${PARTS.secondWheel.etaPos}`, 'Escape wheel': `ETA pos. ${PARTS.escapeWheel.etaPos}`, 'Tooth counts': 'visual approximation in M2' }, 11.5, new THREE.Vector3(-.05,-.08,-1)
   ));
-  Object.assign(animated, { centerWheel, thirdWheel, fourthWheel, escapeWheel });
+  Object.assign(animated, { centerWheel, thirdWheel, fourthWheel: secondWheel, escapeWheel: escape });
 
   // ---------------------------------------------------------------------------
   // Escapement and oscillator
@@ -377,12 +443,12 @@ export function buildWatch() {
     stone.rotation.z = x < 0 ? -.16 : .16;
     pallet.add(stone);
   }
-  pallet.position.set(-7.2, -10.0, -.45);
+  pallet.position.set(LAYOUT.pallet[0], LAYOUT.pallet[1], -.45);
   pallet.rotation.z = -.22;
   register(pallet, meta(
     'Pallet fork & stones', 'Swiss lever escapement', 'escapement',
-    'The pallet fork alternately locks and releases the escape wheel and passes impulses to the balance. M1 exaggerates clearances so the interaction remains visible.',
-    'reference-derived', { 'ETA pallet fork family': '40.010', 'Geometry': 'visibility-biased' }, 13.2, new THREE.Vector3(-.08,-.18,-1)
+    'The pallet fork alternately locks and releases the escape wheel and passes impulses to the balance. Clearances are still enlarged for visibility.',
+    'reference-derived', { 'ETA position': PARTS.palletFork.etaPos, 'Geometry': 'M2 visibility-biased' }, 13.2, new THREE.Vector3(-.08,-.18,-1)
   ));
   animated.pallet = pallet;
 
@@ -399,56 +465,98 @@ export function buildWatch() {
   const hairspring = coil({ radius: 3.15, turns: 7.5, wire: .045, material: materials.blueSteel, innerRatio: .10 });
   hairspring.position.z = .34;
   balance.add(hairspring);
-  balance.position.set(-10.1, -9.4, -.22);
+  balance.position.set(LAYOUT.balance[0], LAYOUT.balance[1], -.22);
   register(balance, meta(
     'Balance wheel & hairspring', 'Oscillator / regulation', 'regulation',
-    'The balance and hairspring form the oscillator. ETA specifies 3 Hz / 21,600 alternations per hour for the 6497-2.',
-    'official', { 'Frequency': '3 Hz', 'Alternations': '21,600 A/h', 'Lift angle': '44° (ETA technical communication)' }, 15, new THREE.Vector3(-.18,-.14,-1)
+    'The balance and hairspring form the oscillator. ETA specifies 3 Hz / 21,600 alternations per hour and a 44° typical lift angle.',
+    'official', { 'ETA position': PARTS.balance.etaPos, 'Frequency': '3 Hz', 'Alternations': '21,600 A/h', 'Lift angle': '44°' }, 15, new THREE.Vector3(-.18,-.14,-1)
   ));
   animated.balance = balance;
 
   // ---------------------------------------------------------------------------
-  // Bridges and screws. Silhouettes are intentionally reference-derived M1.
+  // M2 bridges. They are now separate inspectable parts with correct official
+  // screw counts and bridge-side jewel locations aligned to the pivots they hold.
+  // Contours remain reference-derived rather than manufacturing CAD.
   // ---------------------------------------------------------------------------
 
-  const bridges = new THREE.Group();
-  const barrelBridge = polygonPlate([
-    [2.1,10.9],[11.2,10.0],[15.1,6.7],[14.1,1.5],[10.6,.4],[7.4,2.2],[3.1,3.7]
-  ], .72, materials.bridge, { bevelSize: .18, bevelThickness: .12, bevelSegments: 3 });
-  barrelBridge.position.z = -2.28;
-  bridges.add(barrelBridge);
-
-  const trainBridge = polygonPlate([
-    [-1.3,5.5],[-6.2,4.7],[-13.7,1.3],[-14.9,-4.0],[-10.0,-5.1],[-5.3,-3.0],[-.5,-.5],[2.1,2.6]
-  ], .72, materials.bridge, { bevelSize: .18, bevelThickness: .12, bevelSegments: 3 });
-  trainBridge.position.z = -2.3;
-  bridges.add(trainBridge);
-
-  const palletBridge = roundedPlate(5.7, 2.6, .7, .65, materials.bridge, { bevelSize: .15, bevelThickness: .1, bevelSegments: 3 });
-  palletBridge.position.set(-7.0, -10.2, -2.25);
-  palletBridge.rotation.z = -.12;
-  bridges.add(palletBridge);
-
-  const balanceCock = polygonPlate([
-    [-15.0,-11.4],[-8.3,-13.1],[-5.5,-11.4],[-7.1,-8.0],[-12.2,-6.9],[-15.7,-8.3]
-  ], .72, materials.bridge, { bevelSize: .18, bevelThickness: .12, bevelSegments: 3 });
-  balanceCock.position.z = -2.32;
-  bridges.add(balanceCock);
-
-  const screwPositions = [[6.0,9.1],[12.1,5.0],[-2.8,4.2],[-12.4,-1.2],[-6.4,-9.9],[-12.6,-9.2]];
-  for (const [x,y] of screwPositions) {
-    const s = screw({ radius: .31, headHeight: .18, material: materials.blueSteel, slotMaterial: materials.darkSteel });
-    s.position.set(x,y,-2.72);
-    bridges.add(s);
-  }
-
-  register(bridges, meta(
-    'Barrel bridge, train bridge, pallet bridge & balance cock', 'Movement structure', 'structure',
-    'M1 bridge silhouettes are reconstructed from the characteristic 6497 family layout. Exact bridge contours, engraving, striping, screw seats, and machining remain targets for later milestones.',
-    'reference-derived', { 'Fidelity': 'M1 silhouette', 'Future': 'reference-derived contour refinement' }, 16.5, new THREE.Vector3(.05,.05,-1)
+  const barrelBridge = new THREE.Group();
+  const barrelBridgePlate = plateWithHoles([
+    [-1.7,4.8],[1.4,10.7],[8.6,11.4],[13.6,8.8],[15.0,5.2],[13.7,1.1],[9.7,-.1],[6.4,1.1],[3.7,.1],[-.9,.5]
+  ], .74, materials.bridge, [
+    [LAYOUT.centerWheel[0], LAYOUT.centerWheel[1], .58],
+    [LAYOUT.barrel[0], LAYOUT.barrel[1], .72]
+  ], { bevelSize: .18, bevelThickness: .12, bevelSegments: 3 });
+  barrelBridgePlate.position.z = -2.28;
+  barrelBridge.add(barrelBridgePlate);
+  addBridgeJewel(barrelBridge, LAYOUT.centerWheel[0], LAYOUT.centerWheel[1], -2.7, materials, .44);
+  const barrelScrews = [[1.5,8.8],[12.9,6.7],[2.0,1.1]];
+  for (const [x,y] of barrelScrews) addBridgeScrew(barrelBridge, x, y, -2.73, materials);
+  register(barrelBridge, meta(
+    'Barrel bridge, jewelled', 'Movement structure', 'structure',
+    'The barrel bridge supports the barrel/centre-wheel side of the movement. M2 uses the official three-screw count and a reference-derived broad bridge silhouette.',
+    'reference-derived', { 'ETA position': PARTS.barrelBridge.etaPos, 'Official screw count': String(PARTS.barrelBridge.screws), 'Contour': 'reference-derived M2' }, 16.0, new THREE.Vector3(.08,.06,-1)
   ));
 
-  // A few exposed screws on the dial-side plate provide useful hard-light relief.
+  const trainBridge = new THREE.Group();
+  const trainBridgePlate = plateWithHoles([
+    [1.4,3.4],[-2.8,4.4],[-7.7,3.0],[-13.5,1.5],[-15.1,-1.9],[-13.5,-4.8],[-9.1,-5.1],[-7.0,-3.6],[-3.7,-4.3],[-2.6,-8.1],[-4.7,-9.5],[-7.3,-9.2],[-8.6,-6.5],[-7.2,-2.8],[-2.6,-.2],[.9,.5]
+  ], .74, materials.bridge, [
+    [LAYOUT.thirdWheel[0], LAYOUT.thirdWheel[1], .54],
+    [LAYOUT.secondWheel[0], LAYOUT.secondWheel[1], .54],
+    [LAYOUT.escapeWheel[0], LAYOUT.escapeWheel[1], .48]
+  ], { bevelSize: .18, bevelThickness: .12, bevelSegments: 3 });
+  trainBridgePlate.position.z = -2.3;
+  trainBridge.add(trainBridgePlate);
+  addBridgeJewel(trainBridge, LAYOUT.thirdWheel[0], LAYOUT.thirdWheel[1], -2.72, materials, .42);
+  addBridgeJewel(trainBridge, LAYOUT.secondWheel[0], LAYOUT.secondWheel[1], -2.72, materials, .42);
+  addBridgeJewel(trainBridge, LAYOUT.escapeWheel[0], LAYOUT.escapeWheel[1], -2.72, materials, .38);
+  for (const [x,y] of [[-2.3,3.0],[-12.7,-3.2]]) addBridgeScrew(trainBridge, x, y, -2.75, materials);
+  register(trainBridge, meta(
+    'Train wheel bridge, jewelled', 'Movement structure', 'structure',
+    'The train bridge carries the upper pivots of the third, seconds and escape wheels. Teardown references show three visible jewels and two bridge screws.',
+    'reference-derived', { 'ETA position': PARTS.trainBridge.etaPos, 'Official screw count': String(PARTS.trainBridge.screws), 'Visible supported pivots': 'third / seconds / escape' }, 16.8, new THREE.Vector3(-.02,.03,-1)
+  ));
+
+  const palletBridge = new THREE.Group();
+  const palletBridgePlate = plateWithHoles([
+    [-10.1,-11.6],[-9.5,-8.7],[-6.0,-8.2],[-4.5,-10.0],[-5.2,-12.0],[-8.2,-12.6]
+  ], .68, materials.bridge, [[LAYOUT.pallet[0], LAYOUT.pallet[1], .42]], { bevelSize: .14, bevelThickness: .1, bevelSegments: 3 });
+  palletBridgePlate.position.z = -2.28;
+  palletBridge.add(palletBridgePlate);
+  addBridgeJewel(palletBridge, LAYOUT.pallet[0], LAYOUT.pallet[1], -2.67, materials, .34);
+  for (const [x,y] of [[-9.2,-10.8],[-5.4,-10.8]]) addBridgeScrew(palletBridge, x, y, -2.71, materials, .28);
+  register(palletBridge, meta(
+    'Pallet bridge, jewelled', 'Movement structure', 'structure',
+    'The pallet bridge retains the upper pallet pivot. The 6497 family uses two screws here; M2 now models that explicitly.',
+    'reference-derived', { 'ETA position': PARTS.palletBridge.etaPos, 'Official screw count': String(PARTS.palletBridge.screws) }, 17.2, new THREE.Vector3(-.08,-.08,-1)
+  ));
+
+  const balanceBridge = new THREE.Group();
+  const balanceBridgePlate = plateWithHoles([
+    [-16.2,-11.5],[-15.4,-7.4],[-13.4,-5.9],[-10.3,-5.7],[-7.6,-7.2],[-6.7,-10.2],[-8.2,-13.1],[-12.3,-13.7],[-15.4,-13.0]
+  ], .72, materials.bridge, [[LAYOUT.balance[0], LAYOUT.balance[1], .86]], { bevelSize: .17, bevelThickness: .12, bevelSegments: 3 });
+  balanceBridgePlate.position.z = -2.3;
+  balanceBridge.add(balanceBridgePlate);
+  const shock = shockSetting({ radius: .92, material: materials.brushedSteel, jewelMaterial: materials.ruby, springMaterial: materials.blueSteel });
+  shock.position.set(LAYOUT.balance[0], LAYOUT.balance[1], -2.73);
+  balanceBridge.add(shock);
+  addBridgeScrew(balanceBridge, -14.6, -9.3, -2.74, materials);
+  const regulator = pathTube([
+    [LAYOUT.balance[0] + .3, LAYOUT.balance[1] + .2, -2.86],
+    [-8.9,-7.3,-2.86],
+    [-7.7,-6.7,-2.86]
+  ], .11, materials.blueSteel, 42);
+  balanceBridge.add(regulator);
+  const regulatorPointer = polygonPlate([[-8.2,-7.1],[-7.0,-6.6],[-7.9,-6.0]], .10, materials.blueSteel, { bevel: false });
+  regulatorPointer.position.z = -2.86;
+  balanceBridge.add(regulatorPointer);
+  register(balanceBridge, meta(
+    'Balance bridge, shock setting & regulator', 'Oscillator / regulation', 'regulation',
+    'The balance bridge now carries a visible shock setting plus an ETACHRON-style regulator indication. The bridge uses the official one-screw retention pattern.',
+    'reference-derived', { 'ETA position': PARTS.balanceBridge.etaPos, 'Official screw count': String(PARTS.balanceBridge.screws), 'Regulator': ETA6497_2.regulator, 'Shock setting': 'schematic Incabloc-style presentation' }, 18.0, new THREE.Vector3(-.12,-.06,-1)
+  ));
+
+  // Dial-side screws provide hard-light relief and mark future exact placement work.
   const dialSideScrews = new THREE.Group();
   for (const [x,y] of [[12,8],[13,-6],[-12,7],[-13,-7]]) {
     const s = screw({ radius: .29, headHeight: .16, material: materials.blueSteel, slotMaterial: materials.darkSteel });
@@ -456,8 +564,8 @@ export function buildWatch() {
     dialSideScrews.add(s);
   }
   register(dialSideScrews, meta(
-    'Movement screws', 'Movement structure', 'structure',
-    'Blued screw heads are used as a visual reference to the decorated 6497/OP XI lineage; their exact locations are partly presentational in M1.',
+    'Dial-side movement screws', 'Movement structure', 'structure',
+    'These screws remain presentation/reference geometry and are not yet asserted as exact production locations.',
     'presentation', { 'Purpose': 'surface readability / future placement target' }, 7, new THREE.Vector3(0,0,1)
   ));
 

@@ -1,152 +1,221 @@
 # ETA / Unitas 6497-2 watch reconstruction
 
+## Current state
+
+**Milestone: M2 — bridge / plate fidelity.**
+
+The demo is a movement-first educational reconstruction centered on the ETA/Unitas 6497-2 family. M2 moves beyond the original generic mechanical-watch sketch: the movement now has separate barrel, train, pallet and balance bridges; official bridge screw counts; bridge-side jewel positions; explicit dial-side keyless works; improved gear teeth; a more legible Swiss-lever escape wheel; and camera presets for inspecting the bridge side, dial side, winding system and escapement.
+
+The project is still intentionally not manufacturing CAD. Every important object is expected to carry a provenance label so that official dimensions and facts remain distinct from reference-derived or presentation geometry.
+
 ## Target
 
-This demo is a **movement-first educational reconstruction** centered on the ETA/Unitas 6497-2 family and the Panerai OP XI / PAM111 reference lineage.
+The movement target is the **ETA / Unitas 6497-2**. The surrounding wristwatch shell is a 44 mm exhibition-style presentation influenced by the OP XI / Luminor lineage, but it is not asserted as exact production-case geometry.
 
-The first goal is not to produce manufacturing-grade CAD. The goal is to make a real mechanical architecture spatially legible: power storage, winding, wheel train, escapement, oscillator, motion works, dial/hands, and case should be understandable as separate but interacting systems.
-
-The wristwatch shell is a 44 mm exhibition-style presentation derived from the well-documented Luminor/OP XI family. Brand marks and exact production engravings are intentionally omitted from the procedural model.
+The movement is the strict target; the shell is context.
 
 ## Why this movement
 
 The 6497 family is unusually good for an interactive explainer:
 
-- it is large and visually legible;
-- it is manually wound, so the power path is comparatively clean;
-- it has a classical Swiss lever escapement;
-- it has extensive service/disassembly documentation;
-- it has a long history as a teaching/watchmaking movement;
-- it has been used and modified in large exhibition-back wristwatches.
+- large 36.60 mm movement diameter;
+- manual winding and therefore a clean, visible power path;
+- classical Swiss lever escapement;
+- small-seconds layout;
+- extensive technical/service documentation;
+- unusually legible bridge architecture;
+- decades of use as a teaching and modification platform.
 
-## Primary movement facts
+## Official movement facts
 
-ETA currently lists the 6497-2 UNITAS as:
+ETA's current 6497-2 technical communication specifies:
 
 - diameter: **36.60 mm**;
-- height: **4.50 mm**;
-- display: hours, minutes, small seconds;
-- architecture: Lépine calibre;
-- winding: manual;
-- frequency: **21,600 alternations/hour (3 Hz)**;
-- jewels: **17**;
-- regulator: ETACHRON.
+- movement height: **4.50 mm**;
+- frequency: **3 Hz / 21,600 A/h**;
+- jewel count: **17**;
+- typical balance lift angle: **44°**;
+- minimum power reserve: **53 h**;
+- typical power reserve: **60 h**;
+- manual winding;
+- hours, minutes and small seconds;
+- ETACHRON regulator system.
 
 Primary source:
 
-- ETA 6497-2 product/technical portal: https://portal.eta.ch/fr/6497-2-6497-2-3.html
+- ETA Technical Communication, 6497-2 (CT 6497-2 FDE 482448 14): https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/
+
+## Official parts backbone
+
+ETA's 6497-2 spare-parts documentation provides a useful canonical vocabulary for the reconstruction. M2 uses the following part identities where relevant:
+
+- pos. 1 — main plate, assembled;
+- pos. 12 — escape wheel;
+- pos. 13 — third wheel;
+- pos. 14 — second / seconds wheel;
+- pos. 15 — centre wheel;
+- pos. 16 — train wheel bridge, jewelled;
+- pos. 17 — movement barrel, complete;
+- pos. 18 — barrel bridge, jewelled;
+- pos. 19 — crown wheel ring;
+- pos. 20 — crown wheel;
+- pos. 21 — click spring;
+- pos. 22 — click;
+- pos. 23 — ratchet wheel;
+- pos. 24 — driver cannon pinion;
+- pos. 25 — pallet fork;
+- pos. 26 — pallet bridge, jewelled;
+- pos. 27 — timed balance regulated, with stud;
+- pos. 28 — balance bridge, assembled;
+- pos. 29 — hour wheel.
+
+Current ETA spare-parts communication:
+
+- https://shopb2b.eta.ch/technicaldocuments/index/pdf/id/1632/
+
+## Bridge screw counts used in M2
+
+The official 6497 documentation gives a useful mechanical constraint that is visually obvious in teardown material:
+
+- **barrel bridge: 3 screws**;
+- **train wheel bridge: 2 screws**;
+- **pallet bridge: 2 screws**;
+- **balance bridge: 1 screw**.
+
+The train wheel bridge also visibly carries three jewels supporting the third, seconds/fourth and escape wheel pivots in teardown references.
+
+Useful teardown reference:
+
+- Case & Caliber, ETA 6497 disassembly: https://caseandcaliber.com/eta-6497-disassembly/
 
 ## Reference-watch lineage
 
-The visual shell and presentation take cues from the **Panerai Luminor Marina PAM00111 / OP XI** lineage because it is one of the best-known wristwatch uses of a 6497-2-derived movement. The OP XI is documented as a hand-wound movement based on the Unitas 6497-2, running at 21,600 vph with 17 jewels and decorated/redesigned bridges.
+The shell and dial presentation take cues from the **Panerai Luminor Marina / OP XI** lineage because it is a famous wristwatch presentation of a 6497-2-derived hand-wound movement. Brand marks and exact production engraving are intentionally excluded.
 
-Reference sources:
+This project should not silently slide from "6497-2 reference reconstruction" into "exact PAM111 clone." A branded case reproduction would be a separate fidelity problem.
 
-- Fratello, Panerai 2000s buying guide / PAM111 discussion: https://www.fratellowatches.com/buying-guide-the-best-panerai-watches-from-the-2000s/
-- Panerai movement reference database, OP XI: https://panerai.watchlounge.com/manual-movements/
-- Panerai archive examples for 44 mm Luminor Marina case/dial architecture: https://www.panerai.com/us/en/collections/special-editions-archive/2013/pam00464-luminor-marina-acciaio---44mm.html
+## Constructive geometry policy
 
-The demo is **not** presented as a dimensionally exact reproduction of a specific production PAM111 case revision. The movement and functional layout are the stricter target; the shell is a documented reference frame around it.
+Authored geometry is expressed in **millimetres** and should be generated from inspectable parameters wherever practical.
 
-## Parts and disassembly references
-
-Case & Caliber's 6497 disassembly guide is particularly useful because it identifies major parts and the order in which the movement is opened. It includes references for the hour wheel, cannon pinion, balance, pallet bridge and fork, crown wheel, ratchet wheel, click, centre wheel, barrel, second/fourth wheel, third wheel, and escape wheel.
-
-- https://caseandcaliber.com/eta-6497-disassembly/
-
-Caliber Corner also collects assembly/disassembly resources for the 6497/6498 family, including references to ETA's original interactive service material:
-
-- https://calibercorner.com/eta-unitas-caliber-6497-6498-assembly-disassembly/
-
-## Geometry policy
-
-All authored geometry should be expressed in **millimetres** and generated from inspectable parameters where practical.
-
-Preferred primitive vocabulary:
+Current primitive vocabulary:
 
 - `disc`
 - `ring`
 - `box`
 - `roundedPlate`
 - `caseRing`
+- `polygonPlate`
+- `plateWithHoles`
 - `gear`
+- `escapeWheel`
 - `pinion`
 - `screw`
 - `jewel`
+- `shockSetting`
 - `coil`
-- `bridge`
 - `pathTube`
+- `makeHand`
 
-The geometry layer is deliberately constructive. A later version may add Boolean operations (`union`, `subtract`, `intersect`) if they materially improve plate/bridge fidelity.
+M2 adds actual holes to bridge shapes rather than drawing every bridge as an opaque slab. Generic gear teeth are tapered rather than rectangular, while the escape wheel receives visibly asymmetric hooked teeth.
+
+The constructive layer remains deliberately small. Boolean CSG should only be added when it becomes materially useful for faithful plate recesses, bridge undercuts, screw seats or case geometry.
 
 ## Provenance classes
 
-Every important component should eventually carry a provenance class:
+Every important component should carry one of these classes:
 
-- **official** — dimension or fact directly supported by ETA/Panerai technical material;
-- **reference-derived** — reconstructed from teardown photographs, service diagrams, or multiple secondary references;
-- **approximate** — deliberately simplified geometry preserving function and relative placement;
-- **presentation** — geometry added for clarity, lighting, or visual communication rather than mechanical fidelity.
+- **official** — a dimension or fact directly supported by technical material;
+- **reference-derived** — reconstructed from service diagrams, teardown photographs or multiple secondary references;
+- **approximate** — deliberately simplified while preserving role and relative placement;
+- **presentation** — geometry added for clarity or visual communication rather than mechanical fidelity.
 
-The component inspector should expose this distinction instead of allowing approximate geometry to masquerade as measured CAD.
+M2 intentionally labels the bridge contours `reference-derived`, not `official`. Their screw counts and part identities are much firmer than their current exact outlines.
 
 ## Functional assemblies
 
-The scene should distinguish at least:
+The scene distinguishes:
 
-1. **case / protection** — case, bezel, crystal, exhibition back, crown guard;
-2. **display** — dial, hour/minute hands, small-seconds display;
-3. **motion works** — cannon pinion, hour wheel, hand-driving reduction;
-4. **winding / keyless works** — crown, stem, crown wheel, ratchet wheel, click;
-5. **power** — barrel, mainspring, arbor;
-6. **wheel train** — centre wheel, third wheel, fourth/seconds wheel, escape wheel;
-7. **escapement** — escape wheel, pallet fork, pallet stones;
-8. **oscillator / regulation** — balance, hairspring, regulator;
-9. **structure** — mainplate, barrel bridge, train-wheel bridge, pallet bridge, balance cock, jewels and screws.
+1. **case / protection** — case, crystal, exhibition back and crown guard;
+2. **display** — dial and hands;
+3. **motion works** — driver cannon pinion and hour wheel;
+4. **winding / keyless works** — stem-side winding pinion, sliding pinion, setting wheel, minute wheel, yoke and setting lever, plus bridge-side crown wheel, crown-wheel ring, ratchet, click and click spring;
+5. **power** — barrel and mainspring;
+6. **wheel train** — centre, third, seconds/fourth and escape wheels with visible arbors;
+7. **escapement** — escape wheel, pallet fork and stones;
+8. **oscillator / regulation** — balance, hairspring, bridge shock setting and regulator indication;
+9. **structure** — mainplate, barrel bridge, train bridge, pallet bridge, balance bridge, jewels and screws.
 
-## Realism milestones
+## M2 changes now implemented
 
-### M1 — architecture
+- separated bridge parts instead of one generic `bridges` object;
+- three-screw barrel bridge;
+- two-screw train bridge;
+- two-screw pallet bridge;
+- one-screw balance bridge;
+- bridge jewel seats aligned to the pivots they retain;
+- visible balance shock setting and regulator indication;
+- dial-side keyless works;
+- crown wheel ring and click spring;
+- explicit wheel arbors;
+- tapered general gear teeth;
+- asymmetric escape-wheel tooth geometry;
+- official current 53 h minimum / 60 h typical power-reserve facts;
+- camera presets for overview, bridge side, dial side, escapement and winding inspection.
 
-Correct overall movement diameter/height, recognizable system layout, explicit assemblies, and honest provenance labels.
-
-### M2 — bridge and plate fidelity
-
-Replace generic bars with reference-derived bridge silhouettes and more faithful screw/jewel placement.
+## Remaining realism milestones
 
 ### M3 — train fidelity
 
-Improve wheel and pinion proportions, arbor relationships, gear pairing, and small-seconds output.
+Next target:
+
+- derive better wheel/pinion diameters and tooth-count relationships;
+- solve centre distances instead of merely placing visually plausible gears;
+- model the second-wheel/small-seconds output more faithfully;
+- distinguish wheel and pinion arbors/staffs more accurately;
+- replace independent decorative train speeds with ratios derived from a gear graph.
 
 ### M4 — winding fidelity
 
-Represent stem, crown wheel, ratchet wheel, click, barrel arbor, and the causal path from crown rotation to stored spring energy.
+- model the winding stem, winding pinion and sliding pinion as a causal state machine;
+- distinguish winding vs hand-setting crown position;
+- transmit crown rotation through the crown wheel and ratchet;
+- represent stored mainspring energy;
+- animate the click as a one-way constraint.
 
 ### M5 — escapement fidelity
 
-Improve escape-wheel tooth shape, pallet geometry, banking/locking visualization, impulse transfer, balance staff, and hairspring presentation.
+- improve escape tooth geometry from real references;
+- place locking and impulse faces on the pallet stones;
+- introduce banking limits;
+- model roller jewel / fork interaction;
+- make escape motion causal rather than beat-indexed animation;
+- improve balance staff and regulator geometry.
 
 ### M6 — simulation
 
-Animate a simplified but causal mechanism: winding raises stored energy; the barrel drives the train; the escapement meters release; the balance oscillates at a documented/visualized rate; hands derive from train state rather than independent decorative animation.
+- barrel energy drives the train;
+- gear ratios derive all wheel speeds;
+- escapement meters release;
+- balance state controls release timing;
+- hands derive from the same solved mechanical state.
 
 ### M7 — shell fidelity
 
-Refine the 44 mm exhibition case, crystal, crown guard, dial layout, strap, and caseback using documented reference geometry.
+- refine case, crystal, crown guard, dial and caseback from explicit reference dimensions;
+- keep this separate from the movement-fidelity truth claims.
 
-## Lighting requirement
+## Lighting and inspection
 
-The demo is an inspection tool, not only a beauty render. It must provide:
+The demo is meant to function as an inspection tool, not merely a beauty render. It therefore provides:
 
-- hard movable key light;
-- azimuth/elevation/distance controls;
-- intensity control;
-- ambient/fill control;
+- hard movable key light via azimuth/elevation/distance controls;
+- intensity and ambient controls;
 - shadow toggle;
-- presets for hard inspection, raking side light, top inspection, backlight, and studio presentation.
-
-The default should favor readable edges and surface relief over soft cinematic lighting.
+- visible light gizmo;
+- hard, raking, top, backlit, studio and dark presets;
+- camera presets aimed at actual mechanical subsystems.
 
 ## Accuracy statement
 
-Until a component is tagged `official`, its geometry must not be interpreted as a manufacturing dimension. The project is allowed to become more exact over time, but it should never hide the boundary between sourced measurement and visual reconstruction.
+Until geometry is tagged `official`, do not interpret it as a manufacturing dimension. The project is explicitly allowed to become more exact over time, but it must preserve the boundary between sourced measurements and reconstruction.

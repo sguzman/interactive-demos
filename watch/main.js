@@ -27,16 +27,15 @@ camera.position.set(50, 31, 59);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = .055;
-controls.minDistance = 28;
+controls.minDistance = 18;
 controls.maxDistance = 145;
 controls.target.set(0, 0, -2);
-controls.maxPolarAngle = Math.PI * .93;
+controls.maxPolarAngle = Math.PI * .96;
 
 const { watch, layers, parts, pickables, animated, materials } = buildWatch();
 scene.add(watch);
 const lighting = createLightingRig(scene, materials);
 
-// A dark backboard catches the hard inspection shadows without pretending to be a tabletop.
 const backboard = new THREE.Mesh(
   new THREE.CircleGeometry(67, 128),
   new THREE.MeshStandardMaterial({ color: 0x0c0f13, metalness: .03, roughness: .92 })
@@ -66,11 +65,8 @@ document.querySelector('#explodeBtn').addEventListener('click', () => setExplosi
 
 const initialCamera = camera.position.clone();
 const initialTarget = controls.target.clone();
-document.querySelector('#resetBtn').addEventListener('click', () => {
-  camera.position.copy(initialCamera);
-  controls.target.copy(initialTarget);
-  controls.update();
-});
+
+document.querySelector('#resetBtn').addEventListener('click', () => setViewPreset('overview'));
 
 for (const checkbox of document.querySelectorAll('[data-layer]')) {
   checkbox.addEventListener('change', () => {
@@ -78,6 +74,53 @@ for (const checkbox of document.querySelectorAll('[data-layer]')) {
     if (group) group.visible = checkbox.checked;
   });
 }
+
+// -----------------------------------------------------------------------------
+// Camera inspection presets. These are intentionally camera-only: they do not
+// hide layers or mutate the model, so the user can combine them with any state.
+// -----------------------------------------------------------------------------
+
+const VIEW_PRESETS = {
+  overview: {
+    position: initialCamera.clone(),
+    target: initialTarget.clone()
+  },
+  bridge: {
+    position: new THREE.Vector3(34, 18, -66),
+    target: new THREE.Vector3(-2, -2, -2)
+  },
+  dial: {
+    position: new THREE.Vector3(35, 18, 68),
+    target: new THREE.Vector3(0, 0, 1)
+  },
+  escapement: {
+    position: new THREE.Vector3(-28, -29, -37),
+    target: new THREE.Vector3(-7.7, -9.0, -1.4)
+  },
+  winding: {
+    position: new THREE.Vector3(35, 21, -38),
+    target: new THREE.Vector3(7.7, 4.9, -1.3)
+  }
+};
+
+let cameraFlight = null;
+const viewButtons = [...document.querySelectorAll('[data-view]')];
+
+function setViewPreset(name) {
+  const preset = VIEW_PRESETS[name] ?? VIEW_PRESETS.overview;
+  cameraFlight = {
+    position: preset.position.clone(),
+    target: preset.target.clone(),
+    name
+  };
+  for (const button of viewButtons) button.classList.toggle('active', button.dataset.view === name);
+}
+
+for (const button of viewButtons) button.addEventListener('click', () => setViewPreset(button.dataset.view));
+controls.addEventListener('start', () => {
+  cameraFlight = null;
+  for (const button of viewButtons) button.classList.remove('active');
+});
 
 // -----------------------------------------------------------------------------
 // Inspection light controls
@@ -197,7 +240,8 @@ renderer.domElement.addEventListener('pointerdown', event => {
 });
 
 // -----------------------------------------------------------------------------
-// Animation. M1 distinguishes sourced frequency from simplified train motion.
+// Animation. M2 still distinguishes sourced oscillator frequency from a future
+// solved gear-state model, but the visual mechanism is now more structurally exact.
 // -----------------------------------------------------------------------------
 
 const clock = new THREE.Clock();
@@ -216,16 +260,28 @@ function animate() {
     part.position.copy(base).addScaledVector(direction, distance);
   }
 
-  // Official oscillator frequency: 3 Hz = three full balance oscillations per second.
+  if (cameraFlight) {
+    const blend = 1 - Math.exp(-5.5 * dt);
+    camera.position.lerp(cameraFlight.position, blend);
+    controls.target.lerp(cameraFlight.target, blend);
+    if (camera.position.distanceTo(cameraFlight.position) < .08 && controls.target.distanceTo(cameraFlight.target) < .05) {
+      camera.position.copy(cameraFlight.position);
+      controls.target.copy(cameraFlight.target);
+      cameraFlight = null;
+    }
+  }
+
   const balanceAngle = Math.sin(elapsed * Math.PI * 2 * MODEL.frequencyHz) * .43;
   animated.balance.rotation.z = balanceAngle;
   animated.pallet.rotation.z = -.22 - balanceAngle * .13;
 
-  // Escape wheel advances in visible beat-sized steps (an educational simplification).
+  // Escape wheel advances by beat-sized steps for legibility. Locking/impulse
+  // geometry remains a later escapement milestone.
   const beat = Math.floor(elapsed * MODEL.frequencyHz * 2);
   animated.escapeWheel.rotation.z = beat * (Math.PI * 2 / 15);
 
-  // M1 train speeds are illustrative; a solved gear-state model is a later milestone.
+  // Train speeds are still illustrative in M2. M3/M6 will derive these from a
+  // solved wheel/pinion graph rather than independently chosen rates.
   animated.centerWheel.rotation.z = -elapsed * .11;
   animated.thirdWheel.rotation.z = elapsed * .19;
   animated.fourthWheel.rotation.z = -elapsed * .34;

@@ -116,6 +116,9 @@ button:hover { filter: brightness(1.07); }
 button.secondary { color: var(--text); background: rgba(255,255,255,.05); }
 .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 9px; }
 .wide { width: 100%; margin-top: 7px; }
+.view-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.view-grid button:last-child { grid-column: 1 / -1; }
+.view-grid button.active { border-color: rgba(216,179,106,.55); background: rgba(216,179,106,.12); color: #edd7a7; }
 
 .toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 11px; }
 .toggles label, .inline-toggles label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; }
