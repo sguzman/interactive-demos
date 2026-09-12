@@ -5,7 +5,6 @@ import {
 } from './escapement-m5d.js';
 
 const NOMINAL_HZ = 3;
-const NOMINAL_BEATS_PER_SECOND = 6;
 const NOMINAL_AH = 21600;
 const SECONDS_PER_DAY = 86400;
 
@@ -54,8 +53,24 @@ function formatSigned(value, digits = 1) {
   return `${n >= 0 ? '+' : ''}${n.toFixed(digits)}`;
 }
 
+function promoteLabels(root) {
+  const eyebrow = root.querySelector('header .eyebrow');
+  const subtitle = root.querySelector('header .identity p');
+  const loading = root.querySelector('#loading');
+  const hint = root.querySelector('.controls > .hint');
+  const infoText = root.querySelector('#infoText');
+  if (eyebrow) eyebrow.textContent = 'REFERENCE RECONSTRUCTION · M5E';
+  if (subtitle) subtitle.textContent = 'dynamic balance amplitude now perturbs simulated rate';
+  if (loading) loading.textContent = 'Constructing 6497-2 M5e isochronism model…';
+  if (hint) hint.textContent = 'M5e removes another hidden idealization: a weak balance no longer keeps perfectly nominal time. The geometry-constrained escapement still decides release, but an explicit amplitude→rate model now changes oscillator phase speed. Nominal ETA rate and simulated instantaneous rate remain separate outputs so the reconstruction does not smuggle assumptions in as specifications.';
+  if (infoText) infoText.textContent = 'M5e retains the M5d geometry-constrained escapement and adds an explicit isochronism layer. Normalized balance amplitude now changes oscillator phase speed, so the released train and hands can gain or lose time relative to the nominal 3 Hz specification.';
+}
+
 function injectUI(root) {
-  if (root.querySelector('#isochronismSection')) return;
+  if (root.querySelector('#isochronismSection')) {
+    promoteLabels(root);
+    return;
+  }
   const controls = root.querySelector('.controls');
   const geometry = root.querySelector('#geometrySolverSection');
   const oscillator = root.querySelector('#balanceAmplitudeValue')?.closest('section');
@@ -85,17 +100,7 @@ function injectUI(root) {
     <div class="winding-note">M5e finally lets amplitude perturb rate. The official specification remains 3 Hz / 21,600 A/h; the amplitude→seconds/day curve shown here is a deliberately transparent reconstruction model, not measured ETA timing data. Low normalized amplitude is modeled as increasingly slow, a narrow reference zone is nominal, and unusually high amplitude can run slightly fast. The diagnostic multipliers exaggerate only this assumed rate error so you can see drift without waiting all day.</div>`;
 
   controls.insertBefore(section, geometry ?? oscillator);
-
-  const eyebrow = root.querySelector('header .eyebrow');
-  const subtitle = root.querySelector('header .identity p');
-  const loading = root.querySelector('#loading');
-  const hint = root.querySelector('.controls > .hint');
-  const infoText = root.querySelector('#infoText');
-  if (eyebrow) eyebrow.textContent = 'REFERENCE RECONSTRUCTION · M5E';
-  if (subtitle) subtitle.textContent = 'dynamic balance amplitude now perturbs simulated rate';
-  if (loading) loading.textContent = 'Constructing 6497-2 M5e isochronism model…';
-  if (hint) hint.textContent = 'M5e removes another hidden idealization: a weak balance no longer keeps perfectly nominal time. The geometry-constrained escapement still decides release, but an explicit amplitude→rate model now changes oscillator phase speed. Nominal ETA rate and simulated instantaneous rate remain separate outputs so the reconstruction does not smuggle assumptions in as specifications.';
-  if (infoText) infoText.textContent = 'M5e retains the M5d geometry-constrained escapement and adds an explicit isochronism layer. Normalized balance amplitude now changes oscillator phase speed, so the released train and hands can gain or lose time relative to the nominal 3 Hz specification.';
+  promoteLabels(root);
 }
 
 function drawPlot(canvas, amplitude, currentError, strength) {
@@ -161,6 +166,9 @@ function drawPlot(canvas, amplitude, currentError, strength) {
 export function createEscapementSystem({ watch, animated, materials, powerSystem, root = document }) {
   injectUI(root);
   const base = createM5dEscapementSystem({ watch, animated, materials, powerSystem, root });
+  // M5d injects its own labels during initialization; promote the outer current
+  // milestone again after the entire wrapped subsystem exists.
+  promoteLabels(root);
 
   const state = {
     runtimeSeconds: powerSystem.state.mechanicalElapsedSeconds,
