@@ -22,9 +22,9 @@
     <header class="topbar panel">
       <a class="gallery-link" href="../">← Gallery</a>
       <div class="identity">
-        <div class="eyebrow">REFERENCE RECONSTRUCTION · M3C</div>
+        <div class="eyebrow">REFERENCE RECONSTRUCTION · M3D</div>
         <h1>ETA / Unitas 6497-2</h1>
-        <p>mesh-derived train geometry + camera-axis inspection lighting</p>
+        <p>compound train planes + camera-axis inspection lighting</p>
       </div>
       <a class="docs-link" href="../docs/watch-eta-6497-2.html">Documentation ↗</a>
     </header>
@@ -148,7 +148,7 @@
         <span class="provenance approximate" id="infoProvenance">approximate</span>
       </div>
       <h2 id="infoName">Mechanical component inspector</h2>
-      <p id="infoText">M3c derives wheel pitch radii from the current train centre distances and the reference tooth/leaf counts, so the visible meshes now have a geometric reason to meet instead of using arbitrary wheel radii.</p>
+      <p id="infoText">M3d keeps the pitch-derived wheel radii from M3c, separates the compound wheel bodies into explicit z-planes, and places each driven pinion in the same plane as the upstream wheel that meshes with it.</p>
       <dl class="part-facts" id="partFacts"></dl>
     </aside>
 
@@ -160,7 +160,7 @@
       <span><i class="dot structure-dot"></i>structure</span>
     </div>
 
-    <div id="loading">Constructing 6497-2 M3c reference…</div>
+    <div id="loading">Constructing 6497-2 M3d reference…</div>
   </div>
 
   <script type="module" src="./main.js"></script>
