@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M3g',
-  label: 'endshake and bearing-stack clearance',
-  note: 'M3g keeps the M3f true-pitch train and stepped staffs, then makes axial body gaps, staff shoulders, jewel-to-jewel bearing spans, and small endshake targets explicit. Endshake values are reconstruction targets for educational inspection rather than asserted ETA production tolerances; 10×/25× motion modes are deliberately exaggerated diagnostics.'
+  id: 'M4a',
+  label: 'causal manual winding state',
+  note: 'M4a preserves the M3g pitch/clearance reconstruction and adds the first user-operated causal subsystem: crown input drives the crown wheel and ratchet, the click blocks reverse ratchet motion, and accepted winding accumulates a normalized mainspring-energy state mapped to the official 60 h typical reserve. The current 45-crown-turn full-wind interaction mapping is explicitly a reconstruction assumption, not an ETA service specification; stored energy does not yet govern train release.'
 };
