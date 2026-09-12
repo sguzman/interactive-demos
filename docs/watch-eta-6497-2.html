@@ -9,99 +9,80 @@
     :root{color-scheme:dark;--bg:#0a0c10;--panel:#11161c;--line:#ffffff16;--text:#eef2f5;--muted:#9aa6b2;--accent:#d8b36a;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;color:var(--text);background:radial-gradient(circle at 15% 0,#202833 0,transparent 34rem),var(--bg)}main{width:min(920px,calc(100% - 36px));margin:auto;padding:48px 0 80px}.top{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:62px}.top a{color:var(--muted);text-decoration:none;font-size:13px}.top a:hover{color:var(--text)}.eyebrow{color:var(--accent);font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}h1{font-size:clamp(2.8rem,8vw,6rem);line-height:.92;letter-spacing:-.055em;margin:12px 0 22px;max-width:10ch}h2{font-size:25px;letter-spacing:-.03em;margin:50px 0 12px}h3{font-size:17px;margin:28px 0 8px}p,li{color:var(--muted);line-height:1.7}a{color:#e3c887}code{background:#ffffff0c;border:1px solid var(--line);border-radius:5px;padding:2px 5px}.lead{font-size:1.12rem;max-width:70ch}.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:#11161cbb;border-radius:12px;padding:18px 20px;margin:28px 0}.specs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:22px 0}.spec{border:1px solid var(--line);background:#10151b;border-radius:12px;padding:14px}.spec span{display:block;color:#68737e;font-size:9px;text-transform:uppercase;letter-spacing:.12em;font-weight:800}.spec strong{display:block;margin-top:5px;font-size:16px}.source{border-top:1px solid var(--line);padding:12px 0}.source strong{display:block;font-size:13px}.source p{margin:4px 0 0;font-size:12px}.badge{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 8px;margin-right:5px;color:#c4ccd4;font-size:10px}.official{color:#8cc39a}.reference{color:#dfc486}.approx{color:#b4b9c0}.presentation{color:#79a9d3}footer{border-top:1px solid var(--line);margin-top:64px;padding-top:18px;color:#68737e;font-size:11px}@media(max-width:650px){.specs{grid-template-columns:1fr 1fr}.top{align-items:flex-start;flex-direction:column;margin-bottom:42px}}
   </style>
 </head>
-<body>
-<main>
+<body><main>
   <nav class="top"><a href="../">← Interactive Demos</a><a href="../watch/">Open 3D demo ↗</a></nav>
-
-  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M5B</div>
+  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M5C</div>
   <h1>ETA / Unitas 6497-2</h1>
-  <p class="lead">M5b makes the Swiss lever geometry itself inspectable: explicit pallet lock and impulse faces, banking limits, safety clearances, contact/drop markers, and event-by-event stepping layered on top of M5a's causal half-tooth release.</p>
+  <p class="lead">M5c makes the balance amplitude a state rather than a fixed animation. Damping removes amplitude between beats, successful escapement events add reserve-dependent impulse packets, and sufficiently weak amplitude can now fail to unlock the pallet and stall the train.</p>
 
-  <div class="callout"><strong>Accuracy contract.</strong><p>This remains an educational reconstruction, not manufacturing CAD or a rigid-body contact simulation. M5b's lock depth, draw, drop and clearance values are deliberately labeled reconstruction targets rather than ETA production tolerances.</p></div>
+  <div class="callout"><strong>Accuracy contract.</strong><p>This is still an educational reconstruction, not manufacturing CAD or a calibrated dynamic simulation. The official ETA rate and reserve remain sourced facts; M5c damping, impulse strength, unlock threshold, restart threshold and torque proxy are normalized reconstruction parameters.</p></div>
 
   <h2>Official movement facts</h2>
   <div class="specs">
-    <div class="spec"><span>Diameter</span><strong>36.60 mm</strong></div>
-    <div class="spec"><span>Movement height</span><strong>4.50 mm</strong></div>
-    <div class="spec"><span>Frequency</span><strong>3 Hz</strong></div>
-    <div class="spec"><span>Alternations</span><strong>21,600 A/h</strong></div>
-    <div class="spec"><span>Jewels</span><strong>17</strong></div>
-    <div class="spec"><span>Power reserve</span><strong>53 h min / 60 h typical</strong></div>
+    <div class="spec"><span>Diameter</span><strong>36.60 mm</strong></div><div class="spec"><span>Movement height</span><strong>4.50 mm</strong></div>
+    <div class="spec"><span>Frequency</span><strong>3 Hz</strong></div><div class="spec"><span>Alternations</span><strong>21,600 A/h</strong></div>
+    <div class="spec"><span>Jewels</span><strong>17</strong></div><div class="spec"><span>Power reserve</span><strong>53 h min / 60 h typical</strong></div>
   </div>
 
-  <h2>Earlier causal foundation</h2>
-  <p>M3 established the train topology and geometry diagnostics. M4 added persistent crown winding, separate winding/setting stem states, stored mainspring reserve and an energy gate that stops an unwound movement. M5a then changed the escapement into a six-beat-per-second event sequence where the 15-tooth escape wheel releases one half-tooth per beat and released escape angle meters downstream train progress.</p>
+  <h2>What M3–M5b already established</h2>
+  <p>The reconstruction retains the pitch-constrained train, explicit compound-wheel planes, staffs and jewel spans, endshake diagnostics, causal crown winding, hand-setting mode, stored reserve, event-resolved Swiss-lever release, explicit pallet locking/impulse faces, banking diagnostics, roller/fork safety envelopes, and event-level stepping.</p>
+  <p>The reference train remains centre 80 teeth; third 60 / 10-leaf pinion; seconds/fourth 120 / 8-leaf pinion; escape 15 / 10-leaf pinion. The 15-tooth escape wheel releases one half-tooth per beat, giving 30 releases per revolution and the existing 5 s/rev reference period at six beats per second.</p>
 
-  <h2>M5b — explicit pallet faces</h2>
-  <p>Each pallet stone now carries two colored educational overlays: a <strong>blue locking face</strong> and a <strong>gold impulse face</strong>. They move with the fork and make it visually obvious that “lock” and “impulse” refer to different functional surface regions rather than one generic ruby block.</p>
-  <p>The face shapes are reference-informed presentation geometry. They are not yet measured ETA production polygons.</p>
+  <h2>M5c — normalized oscillator amplitude</h2>
+  <p>The balance now carries a dimensionless amplitude state from 0 to 1. This is intentionally <em>not</em> presented as measured degrees of ETA balance amplitude. The visible balance swing is scaled by that state, so a weakening oscillator visibly swings through a smaller arc.</p>
 
-  <h2>Banking and safety geometry</h2>
-  <p>The current pallet travel is exposed as a banking arc of approximately <strong>±7.7°</strong> about neutral. The roller table / guard roller / impulse jewel from M5a remain visible, while M5b adds a fork-slot envelope and clearance ring so the horn, dart and roller relationships can be inspected instead of merely named.</p>
+  <h3>Damping</h3>
+  <p>Between beat events the oscillator loses amplitude exponentially. The current educational damping coefficient is <strong>0.16 per simulated second</strong>. This is a model parameter, not a measured friction or hairspring-loss constant.</p>
 
+  <h3>Impulse packets</h3>
+  <p>Every successful unlock adds a discrete normalized impulse packet. The current maximum packet coefficient is <strong>0.070</strong>. The packet is multiplied by a barrel-drive proxy derived from remaining reserve, so the impulse weakens as the spring approaches the bottom of the modeled usable range.</p>
+
+  <h3>Barrel-drive proxy</h3>
+  <p>The drive proxy combines a broad decline with a deliberately visible end-of-reserve collapse. The collapse begins around <strong>0.15% normalized reserve</strong> and spans roughly another <strong>1.5%</strong>. These values exist to make amplitude collapse inspectable; they are not an ETA mainspring torque curve.</p>
+
+  <h3>Unlock threshold and stall</h3>
   <div class="specs">
-    <div class="spec"><span>Bank target</span><strong>±7.7°</strong></div>
-    <div class="spec"><span>Roller/fork clearance</span><strong>0.12 mm target</strong></div>
-    <div class="spec"><span>Horn clearance</span><strong>0.10 mm target</strong></div>
+    <div class="spec"><span>Unlock threshold</span><strong>0.18 normalized</strong></div>
+    <div class="spec"><span>Restart reserve</span><strong>1.2%</strong></div>
+    <div class="spec"><span>Restart amplitude</span><strong>0.34 normalized</strong></div>
   </div>
+  <p>If amplitude falls below the unlock threshold, the movement enters <strong>STOPPED · ESCAPEMENT</strong>. The power gate reports <strong>LOW BALANCE AMPLITUDE</strong>, and the remaining mainspring reserve is held rather than silently consumed through a stalled train.</p>
+  <p>Because the browser demo has no wrist-shake gesture, winding above the restart threshold seeds the normalized oscillator to the restart amplitude so the mechanism can resume. That is an interaction rule, not a statement about exact 6497-2 self-start behavior.</p>
 
-  <h2>Lock depth, draw and drop</h2>
-  <p>M5b promotes three escapement ideas to first-class diagnostic values:</p>
-  <div class="specs">
-    <div class="spec"><span>Lock depth</span><strong>1.8° target</strong></div>
-    <div class="spec"><span>Draw</span><strong>12.0° target</strong></div>
-    <div class="spec"><span>Drop</span><strong>2.2° target</strong></div>
-  </div>
-  <p>These values are intentionally reconstruction targets. Lock depth reduces through release; the drop diagnostic appears around unlock/relock transitions; the draw target is displayed as a persistent design parameter awaiting better measured geometry.</p>
+  <div class="callout"><strong>New causal loop.</strong><p>reserve → barrel-drive proxy → impulse packet → balance amplitude → unlock margin → escapement release → train motion. This is the first pass where reserve affects more than permission to run: it affects the oscillator state that decides whether release is possible.</p></div>
 
-  <h2>Contact and drop markers</h2>
-  <p>The optional pallet-face / safety diagnostic overlay shows an active contact marker on the current entry or exit side and a secondary drop marker around the reconstructed transition region. The goal is to make the event state machine spatially inspectable and easy to challenge later.</p>
+  <h2>End-of-reserve behavior</h2>
+  <p>As reserve falls, the drive proxy weakens and impulse packets shrink. Damping then removes more amplitude than weak impulses restore. The balance swing contracts, unlock margin approaches zero, and the escapement can stall with a small residual spring state still present. Rewinding restores a usable oscillator state and reopens the train.</p>
 
-  <h2>Event stepping</h2>
-  <p>M5a's <strong>Step one beat</strong> control remains. M5b adds <strong>Step next event</strong>. At <code>0× paused</code>, the latter moves mechanical time only far enough to cross the next state boundary:</p>
-  <ol>
-    <li>lock → unlock;</li>
-    <li>unlock → impulse;</li>
-    <li>impulse → relock;</li>
-    <li>relock → the next beat.</li>
-  </ol>
-  <p>This makes the escapement teachable frame by frame instead of forcing the user to infer a fast mechanism from continuous animation.</p>
+  <h2>Live diagnostics</h2>
+  <p>The M5c panel exposes normalized balance amplitude, oscillator state, barrel-drive proxy, current impulse packet, unlock margin, successful impulse count and missed-unlock count. The earlier M5b lock-depth, draw, drop, banking and safety diagnostics remain available beside them.</p>
 
-  <h2>What M5b still does not claim</h2>
+  <h2>What M5c still does not claim</h2>
   <ul>
-    <li>measured ETA entry/exit pallet coordinates;</li>
-    <li>production lock depth, draw, drop or banking-pin dimensions;</li>
-    <li>exact roller-jewel path and fork-slot/horn clearances;</li>
-    <li>pallet/escape friction or lubrication behavior;</li>
-    <li>impulse energy transfer into balance amplitude;</li>
-    <li>a balance amplitude solved from spring torque and losses;</li>
-    <li>production force transmission through the train.</li>
+    <li>measured ETA balance inertia or hairspring stiffness;</li><li>actual balance amplitude in degrees;</li>
+    <li>an ETA barrel torque curve or measured pallet efficiency;</li><li>lubrication, air drag, position-dependent losses or shock behavior;</li>
+    <li>amplitude-dependent rate error or true isochronism;</li><li>exact self-start threshold or exact reserve-to-impulse mapping.</li>
   </ul>
+  <p>The nominal cadence is still based on the official 3 Hz rate. M5c makes amplitude and unlock state dynamic, but it does not yet let amplitude perturb rate.</p>
 
-  <h2>Useful inspection workflow</h2>
-  <p>Wind the watch a little, switch mechanical time to <code>0× paused</code>, open the <strong>Escapement</strong> camera view, enable <strong>pallet-face / safety diagnostics</strong>, then repeatedly press <strong>Step next event</strong>. The center-line guides can be enabled separately.</p>
+  <h2>Inspection workflow</h2>
+  <p>Wind the watch, choose the <strong>Escapement</strong> view, and use 0.1× or 0.25× for slow motion. For discrete inspection, choose <code>0× paused</code> and use <strong>Step next event</strong> or <strong>Step one beat</strong>. To inspect end-of-reserve behavior quickly, use the 3600× reserve-demo scale and watch amplitude / impulse / unlock margin collapse near the bottom of the stored-energy state.</p>
 
   <h2>Provenance classes</h2>
   <p><span class="badge official">official</span> Directly supported by technical material.</p>
   <p><span class="badge reference">reference-derived</span> Reconstructed from service diagrams, teardown photographs or multiple references.</p>
   <p><span class="badge approx">approximate</span> Simplified geometry preserving mechanical role and relationship.</p>
-  <p><span class="badge presentation">presentation</span> Geometry, controls or simulation assumptions added for readability and interaction.</p>
+  <p><span class="badge presentation">presentation</span> Geometry, thresholds, controls or normalized simulation assumptions added for readability and interaction.</p>
 
   <h2>Next work</h2>
-  <h3>M5c — impulse / oscillator coupling</h3>
-  <p>Deliver a normalized impulse packet at each release, let reserve influence delivered impulse, let impulse influence balance amplitude, and allow low amplitude eventually to fail reliable unlocking.</p>
-  <h3>M5d — geometry-constrained release</h3>
-  <p>Move further from phase windows toward reconstructed tooth/pallet intersection tests and derive lock/release from the face geometry itself.</p>
-  <h3>M6 — system simulation</h3>
-  <p>Couple barrel release, train power, escapement impulse, balance amplitude and rate into one system state instead of retaining normalized subsystems.</p>
+  <h3>M5d — geometry-constrained escapement</h3><p>Replace more phase-window assumptions with actual reconstructed tooth/pallet intersection tests, derive lock/release from geometry, and tighten drop and safety validation.</p>
+  <h3>M5e — amplitude / rate coupling</h3><p>Let oscillator state perturb simulated rate instead of maintaining a perfectly nominal 3 Hz cadence, while keeping nominal specification and simulated instantaneous rate clearly separate.</p>
+  <h3>M6 — shared system simulation</h3><p>Separate barrel-arbor winding from drum release, improve force transmission through the train, and couple reserve, impulse, amplitude and rate in one shared state.</p>
 
   <h2>Sources</h2>
   <div class="source"><strong>ETA — current 6497-2 Technical Communication</strong><p><a href="https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/">official dimensions, rate, reserve, lift angle and service data</a></p></div>
   <div class="source"><strong>ETA — 6497-2 spare-parts communication</strong><p><a href="https://shopb2b.eta.ch/technicaldocuments/index/pdf/id/1632/">official part identities and positions</a></p></div>
   <div class="source"><strong>Case &amp; Caliber — ETA 6497 disassembly</strong><p><a href="https://caseandcaliber.com/eta-6497-disassembly/">photographed bridge, jewel and part relationships</a></p></div>
   <div class="source"><strong>Horology Student — Unitas/ETA 6497/6498</strong><p><a href="https://horology-student.org/movements/modern-eta-and-clones/unitas-eta-6497-6498/">reference train tooth counts and revolution periods</a></p></div>
-
   <footer>interactive-demos / watch · documentation is part of the model.</footer>
-</main>
-</body>
-</html>
+</main></body></html>
