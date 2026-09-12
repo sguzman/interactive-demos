@@ -85,7 +85,7 @@ function injectUI(root) {
       <option value="20">20× extreme inspection</option>
     </select></label>
     <canvas id="oscillatorPortrait" width="280" height="132" style="width:100%;height:132px;border:1px solid #ffffff12;border-radius:8px;background:#080b0f;margin-top:8px"></canvas>
-    <div class="winding-note">M5f no longer advances the balance by assigning it a smart phase clock. It integrates θ and ω under a restoring term and damping term, then applies discrete angular-velocity kicks at center crossings when reserve and escapement geometry permit an impulse. Later milestones can supply an explicit impulse-admission callback so a crossing alone is not sufficient. The phase portrait plots θ against ω/ω₀.</div>`;
+    <div class="winding-note">M5f no longer advances the balance by assigning it a smart phase clock. It integrates θ and ω under a restoring term and damping term, then applies discrete angular-velocity kicks at center crossings when reserve and escapement geometry permit an impulse. Later geometry layers may also scale the admitted kick, so an accepted contact no longer has to deliver a fixed packet. The phase portrait plots θ against ω/ω₀.</div>`;
 
   controls.insertBefore(section, geometry ?? oscillator);
 
@@ -168,6 +168,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     effectiveHz: 0,
     torqueProxy: 0,
     lastImpulseDeltaOmega: 0,
+    lastImpulseScale: 0,
     lastImpulseAdmission: null,
     centerCrossings: 0,
     successfulImpulses: 0,
@@ -265,6 +266,12 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     }
   }
 
+  function impulseScaleForAdmission(admission) {
+    if (admission?.admitted === false) return 0;
+    const candidate = Number(admission?.impulseScale ?? admission?.workScale ?? 1);
+    return Number.isFinite(candidate) ? clamp01(candidate) : 1;
+  }
+
   function applyCenterImpulse(drive, geometryHealthy, extra = {}) {
     state.centerCrossings += 1;
     state.amplitude = oscillatorAmplitude();
@@ -280,11 +287,13 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
       ...extra
     });
     state.lastImpulseAdmission = admission;
+    const impulseScale = impulseScaleForAdmission(admission);
+    state.lastImpulseScale = impulseScale;
 
-    if (state.canUnlock && drive > 0 && geometryHealthy && admission.admitted !== false) {
+    if (state.canUnlock && drive > 0 && geometryHealthy && admission.admitted !== false && impulseScale > 0) {
       const direction = Math.sign(state.omega) || 1;
       const saturation = Math.max(0.25, 1 - state.amplitude * 0.28);
-      const kick = PHYSICS.impulseVelocityGain * drive * saturation;
+      const kick = PHYSICS.impulseVelocityGain * drive * saturation * impulseScale;
       state.omega += direction * kick;
       state.lastImpulseDeltaOmega = kick;
       state.successfulImpulses += 1;
@@ -322,7 +331,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
   }
 
   function fastForwardAdmissionFraction(drive, geometryHealthy) {
-    if (!impulseAdmission) return { fraction: geometryHealthy ? 1 : 0, last: null };
+    if (!impulseAdmission) return { fraction: geometryHealthy ? 1 : 0, meanScale: geometryHealthy ? 1 : 0, last: null };
     const results = [1, 2].map(offset => admissionForCrossing({
       crossingIndex: state.centerCrossings + offset,
       oscillatorSeconds: (state.phaseUnwrapped + offset * Math.PI) / NOMINAL_OMEGA,
@@ -334,7 +343,8 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
       fastForward: true
     }));
     const admitted = results.filter(result => result.admitted !== false).length;
-    return { fraction: admitted / results.length, last: results.at(-1), results };
+    const meanScale = results.reduce((sum, result) => sum + impulseScaleForAdmission(result), 0) / results.length;
+    return { fraction: admitted / results.length, meanScale, last: results.at(-1), results };
   }
 
   function integrateFastForward(deltaSeconds, drive, geometryHealthy) {
@@ -343,7 +353,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     const normalizedKick = PHYSICS.impulseVelocityGain / (NOMINAL_OMEGA * PHYSICS.maxVisualAngleRad);
     const admission = fastForwardAdmissionFraction(drive, geometryHealthy);
     const impulseRate = startAmplitude >= PHYSICS.unlockAmplitude && geometryHealthy
-      ? NOMINAL_HZ * 2 * normalizedKick * drive * admission.fraction
+      ? NOMINAL_HZ * 2 * normalizedKick * drive * admission.meanScale
       : 0;
     const totalRate = decayRate + impulseRate;
     const equilibrium = totalRate > 0 ? impulseRate / totalRate : 0;
@@ -359,9 +369,11 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     if (impulseRate > 0) {
       state.successfulImpulses += admittedCrossings;
       state.missedImpulses += Math.max(0, crossings - admittedCrossings);
-      state.lastImpulseDeltaOmega = PHYSICS.impulseVelocityGain * drive * Math.max(0.25, 1 - averageAmplitude * 0.28);
+      state.lastImpulseScale = admission.meanScale;
+      state.lastImpulseDeltaOmega = PHYSICS.impulseVelocityGain * drive * Math.max(0.25, 1 - averageAmplitude * 0.28) * admission.meanScale;
     } else {
       state.missedImpulses += crossings;
+      state.lastImpulseScale = 0;
       state.lastImpulseDeltaOmega = 0;
     }
     state.lastImpulseAdmission = admission.last;
@@ -470,6 +482,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
       effectiveAlternationsPerHour: state.effectiveHz * 7200,
       torqueProxy: state.torqueProxy,
       impulseDeltaOmega: state.lastImpulseDeltaOmega,
+      impulseScale: state.lastImpulseScale,
       impulseAdmission: state.lastImpulseAdmission,
       canUnlock: state.canUnlock,
       oscillatorStatus: state.status,
