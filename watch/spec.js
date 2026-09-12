@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M4c',
-  label: 'energy-gated power release',
-  note: 'M4c closes the first causal power loop: M4a crown winding creates normalized reserve, M4b keeps winding and setting as distinct stem modes, and M4c lets stored reserve gate a shared mechanical clock for balance, escapement, train and hands. Running linearly depletes reserve against the official 60 h typical endpoint; zero reserve stops the mechanical clock. Torque magnitude, friction and escapement losses remain normalized rather than presented as production physics.'
+  id: 'M5a',
+  label: 'event-resolved Swiss lever release',
+  note: 'M5a replaces the old shared-clock pallet/escape choreography with an educational event state machine. Each of the documented 6 beats per second is resolved into lock, unlock, impulse and relock windows; the 15-tooth escape wheel advances one half-tooth per beat only during release. A roller table/impulse jewel, fork horns/safety dart and banking pins are now visible. Released escape motion becomes the time source for the fourth, third and centre wheels and the hands, so the train visibly waits on escapement release. Exact pallet-face angles, draw, drop, roller geometry and dynamic impulse energy remain reconstruction-level rather than production physics.'
 };
