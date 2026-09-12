@@ -2,7 +2,7 @@
 
 ## Current state
 
-**Milestone: M4b — stem selection and causal hand setting.**
+**Milestone: M4c — energy-gated power release.**
 
 The project remains an educational reconstruction, not manufacturing CAD. Official movement facts, reference-derived geometry, approximation, and presentation-only simulation assumptions remain separate provenance classes.
 
@@ -35,7 +35,7 @@ The train reconstruction progressed from timing topology toward a mechanically l
 - M3c derived nominal module and pitch radii from the current reconstruction centres;
 - M3d separated compound wheel bodies into distinct axial planes;
 - M3e solved initial tooth/gap phase and added pitch-circle/contact diagnostics;
-- M3f replaced the decorative train radius with a pitch-radius-native educational spur construction and added stepped staffs;
+- M3f replaced decorative train radius logic with a pitch-radius-native educational spur construction and added stepped staffs;
 - M3g added explicit wheel-body gaps, jewel-to-jewel bearing spans, pivot shoulders, and small endshake reconstruction targets.
 
 Current reference train counts remain:
@@ -49,100 +49,100 @@ At 21,600 A/h this closes to approximately 5 s/rev for the escape wheel, 60 s/re
 
 The current pitch solve is still based on **reference-derived reconstruction centres**, not ETA manufacturing coordinates.
 
-## M4a retained — causal manual winding
+## M4a — causal winding
 
-M4a remains active inside M4b. User input can still wind the crown, drive the crown wheel and ratchet, advance the one-way click state, and accumulate normalized mainspring energy mapped to the official 60 h typical reserve. The current 45-turn full-wind interaction mapping remains a reconstruction assumption, not an ETA service specification.
+M4a introduced persistent user-operated winding state:
 
-The simplified return path continues to behave like an upstream free-return/clutch state: the crown can return without visually forcing the meshed crown wheel and ratchet through one another.
+- crown input advances the crown wheel and ratchet;
+- the click enforces one-way ratchet behavior;
+- accepted winding accumulates normalized mainspring energy;
+- a blue procedural mainspring overlay visualizes stored energy;
+- a full-wind stop prevents infinite winding.
 
-## M4b — stem position becomes a mode selector
+The current interaction mapping uses **45 crown turns** to represent a full wind. That is a presentation/reconstruction assumption, not an ETA service specification. The **60 h typical reserve** endpoint is sourced from ETA.
 
-M4b adds a second stem position and turns the crown from a single-purpose winding control into a mode-dependent input.
+## M4b — stem positions and hand setting
 
-### Position 0 — winding
+M4b makes the crown a two-mode control:
 
-In the default position:
+- **Position 0 · winding** keeps the M4a power-storage path active;
+- **Position 1 · setting** pulls the reconstructed crown/stem outward, shifts the sliding pinion and selector pieces toward the setting path, disables barrel winding, and lets the user set the visible hour/minute hands.
 
-- the M4a winding controls are enabled;
-- the crown wheel and ratchet can advance;
-- stored mainspring energy can increase;
-- the setting controls are disabled;
-- the reconstructed sliding pinion remains on the winding side.
-
-### Position 1 — hand setting
-
-Selecting the setting position:
-
-- translates the visible crown/stem outward;
-- disables the barrel-winding controls;
-- shifts the reconstructed sliding pinion toward the setting wheel;
-- moves the yoke and setting-lever geometry with the selection state;
-- enables clockwise/counter-clockwise setting input;
-- rotates the visible setting wheel and minute wheel;
-- changes the displayed hour and minute hands without adding mainspring energy.
-
-A dedicated **Keyless works** camera preset centers the dial-side setting mechanism for inspection.
-
-### Reconstruction pull distance
-
-The current visible stem pull is **1.35 mm**. This is a presentation/reconstruction displacement chosen to make the state transition easy to read. It is not asserted as an ETA production stem-position dimension.
-
-### Reconstructed setting ratio
-
-The visible setting chain currently uses the constructive tooth counts already present in the demo:
+The visible reconstruction currently uses:
 
 - sliding pinion: **14 teeth**;
 - setting wheel: **22 teeth**;
-- minute wheel: **28 teeth**.
+- minute wheel: **28 teeth**;
+- crown pull: **1.35 mm** presentation/reconstruction displacement.
 
-Those counts drive the visible intermediate-wheel rotations. M4b then uses the reconstructed minute-wheel rotation as a direct proxy for hand-setting displacement. That final mapping is intentionally a simplification rather than a claim about the exact production cannon-pinion / minute-wheel ratio.
+The setting-wheel and minute-wheel motion is causal inside the educational model. The final mapping from minute-wheel movement to the hand-setting displacement remains reconstruction-level rather than an asserted ETA production ratio.
 
-### Isolation between modes
+## M4c — power release
 
-The important causal rule in M4b is mode exclusivity:
+M4c closes the first causal power loop.
 
-- winding position can increase stored mainspring energy;
-- setting position cannot increase stored mainspring energy;
-- setting position can change hour/minute display offset;
-- winding position cannot use the setting controls.
+The watch now starts **stopped and unwound**. The train no longer advances from wall-clock time by itself.
 
-This is still not a complete keyless-work simulation, but it establishes the correct topological distinction between winding and hand-setting modes.
+The runtime is now:
 
-## What M4b still does not claim
+1. crown winding creates stored mainspring reserve;
+2. any positive reserve opens the power gate;
+3. one shared **mechanical elapsed time** advances;
+4. balance, pallet/escapement presentation, escape wheel, fourth/seconds wheel, third wheel, centre wheel, small seconds, minute hand and hour hand all derive from that same mechanical clock;
+5. running consumes reserve;
+6. reserve reaching zero freezes the mechanical clock and therefore stops the movement.
 
-M4b does **not yet** model:
+This removes the previous contradiction where a visibly unwound watch could continue running.
 
-- exact ETA stem travel;
-- production Breguet/clutch tooth geometry;
-- exact yoke and setting-lever pivot geometry;
-- exact keyless-work tooth counts for every part;
-- exact motion-work setting ratio;
-- friction, backlash, or spring loading in the keyless works;
-- barrel torque release into the train;
-- reserve depletion through the escapement.
+### Reserve depletion model
 
-The train and hands still have an underlying presentation timing graph even at zero stored mainspring energy. M4c will address that power-release mismatch.
+For M4c, depletion is intentionally simple and explicit:
 
-## M3g diagnostics retained
+- normalized stored energy is mapped linearly to the sourced **60 h typical reserve**;
+- one simulated second of running consumes one second from that reserve at 1×;
+- winding while the watch is running can replenish reserve;
+- hand setting remains possible independently of whether the movement has power.
 
-M4b preserves the earlier geometry inspection tools:
+This is a **normalized runtime model**, not a production torque curve. It does not yet model declining torque, friction losses, position-dependent rate error, or escapement efficiency.
+
+### Mechanical time scale
+
+The old train-only speed control is now a **mechanical time scale** because M4c ties visible motion and reserve depletion to the same simulated clock.
+
+Available modes include:
+
+- `0×` — paused, reserve preserved;
+- `1×` — real-time simulation;
+- `10×`, `60×`, `300×` — inspection speeds;
+- `3600×` — reserve demonstration mode, where one simulated hour passes per real second.
+
+At 3600×, a full nominal 60 h reserve can therefore be observed running down in about one real minute. This is explicitly a simulation-time acceleration, not a claim about watch behavior.
+
+## What M4c intentionally does not claim
+
+M4c does **not yet** model:
+
+- production mainspring torque curves;
+- exact barrel-arbor vs barrel-drum release geometry;
+- friction losses through each wheel/pinion pair;
+- escapement efficiency;
+- amplitude decay as reserve falls;
+- positional rate error;
+- exact keyless clutch/Breguet-tooth geometry;
+- exact crown-turn count to full wind.
+
+The power model currently decides whether the mechanical clock may advance and how long nominal reserve remains. It does not yet calculate force transmission through the train.
+
+## Inspection tools retained
 
 - **Train mesh** view;
 - pitch-circle/contact guides;
 - **Train stack** side view;
 - staff / bridge-clearance guides;
 - endshake guides and optional exaggerated endshake motion;
-- wheel-body axial-gap guides.
-
-## Lighting
-
-The balanced camera-axis lighting system remains in place:
-
-- **Camera aligned / balanced** default;
-- movable manual key light;
-- combined camera + manual mode;
-- high-headroom intensity and exposure controls;
-- intentionally excessive **Full bright / diagnostic** preset for geometry inspection.
+- wheel-body axial-gap guides;
+- **Keyless works** inspection view;
+- camera-aligned and movable inspection lighting.
 
 ## Provenance classes
 
@@ -153,27 +153,22 @@ The balanced camera-axis lighting system remains in place:
 
 ## Next milestones
 
-### M4c — power release
-
-- let stored mainspring energy gate whether the train can run;
-- decrement reserve from simulated running time;
-- separate winding of the barrel arbor from release of the barrel drum;
-- freeze train and hands when reserve reaches zero;
-- keep torque magnitude normalized until escapement/friction modeling is credible.
-
 ### M5 — escapement fidelity
 
 - locking and impulse faces;
 - banking limits;
 - roller jewel / fork interaction;
-- causal escape release.
+- discrete causal escape release rather than merely sharing a timing clock;
+- begin relating balance amplitude to delivered impulse.
 
 ### M6 — system simulation
 
-- barrel energy drives train;
+- separate barrel arbor winding from barrel drum release;
+- power transmission through the train;
 - escapement meters release;
 - balance state governs timing;
-- hands derive from the same shared mechanical state.
+- hands derive from the same shared mechanical state;
+- reserve, amplitude and rate become coupled instead of only gated.
 
 ## Sources
 
