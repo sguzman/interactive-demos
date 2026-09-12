@@ -2,7 +2,7 @@
 
 ## Current state
 
-**Milestone: M3d — compound train planes + camera-axis inspection lighting.**
+**Milestone: M3e — pitch-envelope meshing + balanced camera-axis inspection lighting.**
 
 The project remains an educational reconstruction, not manufacturing CAD. Official movement facts, reference-derived geometry, approximation, and presentation-only geometry remain separate provenance classes.
 
@@ -75,40 +75,63 @@ Those radii close against the current centre distances by construction. The cent
 
 ## M3d compound wheel planes
 
-Pitch-derived wheels are much larger than the old decorative placeholders, so a real compound train cannot keep every wheel body in one flat plane. M3d therefore introduces explicit bridge-side wheel planes:
+Pitch-derived wheels are much larger than the old decorative placeholders, so a real compound train cannot keep every wheel body in one flat plane. M3d introduced explicit bridge-side wheel planes:
 
 - centre wheel: **z = -0.65 mm**;
 - third wheel: **z = -1.10 mm**;
 - seconds/fourth wheel: **z = -1.55 mm**;
 - escape wheel: **z = -0.65 mm**.
 
-The z values are still reconstruction dimensions. The mechanically important constraint is relational:
+The z values remain reconstruction dimensions. The mechanically important constraint is relational:
 
 - the **third pinion** is placed in the centre-wheel plane;
 - the **seconds/fourth pinion** is placed in the third-wheel plane;
 - the **escape pinion** is placed in the seconds/fourth-wheel plane.
 
-That means each compound wheel/pinion assembly now has a reason for its axial arrangement. Large wheel bodies can pass over or under one another while the pinions meet the wheels that actually drive them.
+That gives each compound wheel/pinion assembly a reason for its axial arrangement rather than simply drawing four wheel bodies on one sheet.
 
-The existing long visible arbors span these planes; later work will refine shoulder heights, pivot lengths, bridge clearances and jewel seating.
+## M3e pitch-envelope meshing and contact phase
+
+M3e addresses the user's correct visual complaint that the train still did not *read* as connected even though the pitch-radius math closed.
+
+The simplified constructive gear primitive does not take a true pitch radius directly: its authored `radius` sits between root and tip conventions. M3e therefore compensates the visual radius so the simplified tooth envelope actually straddles the solved pitch circle instead of sitting noticeably inside it.
+
+It also solves a static tooth/gap phase through the compound train:
+
+1. the centre wheel is the phase anchor;
+2. the third pinion is rotated so a gap complements the centre-wheel tooth phase at their line of centres;
+3. the seconds/fourth pinion is solved from the already-constrained third-wheel phase;
+4. the escape pinion is solved from the seconds/fourth-wheel phase.
+
+The dynamic velocity ratios remain those from M3a, so this phase solve changes initial engagement, not the train ratios.
+
+### Mesh guides
+
+The demo now has an optional **Show pitch mesh guides** control plus a dedicated **Train mesh** camera preset.
+
+For each compound mesh the guide shows:
+
+- the upstream wheel pitch circle;
+- the driven pinion pitch circle in the same axial plane;
+- the line of centres connecting them.
+
+This matters because a front projection can make the large wheel bodies look separated: the real train connection is wheel → **small coaxial pinion**, not wheel → neighboring large wheel. The guides make that hidden relationship explicit instead of asking the viewer to infer it.
 
 ## Camera-axis inspection lighting
 
-The default lighting is intentionally an **inspection instrument** rather than a dark beauty render.
+The M3d lighting fix overshot in the opposite direction, so M3e rebalances the default rather than removing the useful headroom.
 
-Current controls include:
+Current behavior:
 
-- **Camera aligned** mode: a directional source conceptually behind the camera shines straight through the orbit target;
-- **Manual key only**: movable azimuth/elevation/distance key for raking light;
-- **Camera + manual key**: frontal readability plus surface relief;
-- camera intensity up to **700**;
-- manual key intensity up to **700**;
-- ambient/fill up to **1.20**;
-- exposure up to **3.20×**;
-- **Full bright / diagnostic** preset;
-- neutral `RoomEnvironment` reflections, broad fill, rim light and a lighter backboard.
+- **Camera aligned / balanced** is the default;
+- the camera source remains directional and therefore independent of zoom distance;
+- default camera intensity, ambient/fill, environment reflection and exposure are all reduced from M3d;
+- **Full bright / diagnostic** remains intentionally excessive when geometry is genuinely hard to read;
+- camera and manual intensity sliders still reach **700**;
+- exposure still reaches **3.20×**;
+- manual azimuth/elevation/distance controls remain available for raking light.
 
-The camera source is directional so its readability does not collapse with camera distance.
+The goal is now a neutral middle default with a very large usable adjustment range in both directions.
 
 ## Simulation presentation
 
@@ -124,6 +147,8 @@ Authored geometry is expressed in millimetres. Current primitives include:
 - `screw`, `jewel`, `shockSetting`;
 - `coil`, `pathTube`, `makeHand`.
 
+M3e still uses deliberately simplified tooth geometry. True involute/cycloidal tooth profiles remain a later fidelity problem.
+
 ## Provenance classes
 
 - **official** — directly supported by technical material;
@@ -133,12 +158,14 @@ Authored geometry is expressed in millimetres. Current primitives include:
 
 ## Next milestones
 
-### M3e — interference and staff refinement
+### M3f — interference, staffs and bridge clearance
 
 - inspect pitch-derived wheel envelopes against bridges and neighboring parts;
-- refine arbor/staff shoulder geometry;
-- improve bridge-side pivot heights and clearances;
-- add optional train mesh/pitch diagnostics in the scene.
+- replace uniform arbors with more believable stepped staffs / shoulders;
+- refine bridge-side and mainplate-side pivot heights;
+- align staffs with jewel seats through the compound planes;
+- make bridge clearances and wheel endshake visually defensible;
+- keep explicit diagnostics for any reconstructed rather than sourced dimensions.
 
 ### M4 — winding fidelity
 
