@@ -16,7 +16,7 @@
   </script>
 
   <style>
-    .power-state{display:grid;gap:9px;margin-top:9px}.power-meter{width:100%;height:12px;accent-color:#d8b36a}.power-stats,.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.power-stat,.mode-stat{border:1px solid #ffffff12;border-radius:8px;padding:7px 8px;background:#ffffff05}.power-stat span,.mode-stat span{display:block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#727c86}.power-stat output,.mode-stat output{display:block;margin-top:3px;font-size:11px;color:#dce2e7}.winding-note{font-size:10px;line-height:1.45;color:#7f8993;margin-top:7px}.winding-buttons button,.setting-buttons button{touch-action:none;user-select:none}.winding-buttons button:disabled,.setting-buttons button:disabled{opacity:.42;cursor:not-allowed}.mode-grid{margin-top:8px}.mode-accent{color:#e4c87c!important}.power-running{color:#8fd2a1!important}
+    .power-state{display:grid;gap:9px;margin-top:9px}.power-meter{width:100%;height:12px;accent-color:#d8b36a}.power-stats,.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.power-stat,.mode-stat{border:1px solid #ffffff12;border-radius:8px;padding:7px 8px;background:#ffffff05}.power-stat span,.mode-stat span{display:block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#727c86}.power-stat output,.mode-stat output{display:block;margin-top:3px;font-size:11px;color:#dce2e7}.winding-note{font-size:10px;line-height:1.45;color:#7f8993;margin-top:7px}.winding-buttons button,.setting-buttons button{touch-action:none;user-select:none}.winding-buttons button:disabled,.setting-buttons button:disabled{opacity:.42;cursor:not-allowed}.mode-grid{margin-top:8px}.mode-accent{color:#e4c87c!important}.power-running{color:#8fd2a1!important}.escapement-phase{color:#82c7ff!important}.escapement-actions{display:grid;grid-template-columns:1fr;gap:7px;margin-top:8px}
   </style>
 </head>
 <body>
@@ -26,9 +26,9 @@
     <header class="topbar panel">
       <a class="gallery-link" href="../">← Gallery</a>
       <div class="identity">
-        <div class="eyebrow">REFERENCE RECONSTRUCTION · M4C</div>
+        <div class="eyebrow">REFERENCE RECONSTRUCTION · M5A</div>
         <h1>ETA / Unitas 6497-2</h1>
-        <p>stored mainspring energy now gates and powers the movement</p>
+        <p>event-resolved Swiss lever release: lock → unlock → impulse → relock</p>
       </div>
       <a class="docs-link" href="../docs/watch-eta-6497-2.html">Documentation ↗</a>
     </header>
@@ -65,6 +65,9 @@
           <span>Mechanical time scale</span>
           <select id="trainScale">
             <option value="0">0× paused</option>
+            <option value="0.1">0.1× escapement slow</option>
+            <option value="0.25">0.25× escapement inspect</option>
+            <option value="0.5">0.5× slow</option>
             <option value="1" selected>1× real time</option>
             <option value="10">10× inspect</option>
             <option value="60">60× inspect</option>
@@ -90,14 +93,31 @@
       </section>
 
       <section>
-        <div class="section-title">Power release · M4c</div>
+        <div class="section-title">Swiss lever escapement · M5a</div>
+        <div class="mode-grid">
+          <div class="mode-stat"><span>Phase</span><output id="escapementPhaseValue" class="escapement-phase">LOCK · ENTRY</output></div>
+          <div class="mode-stat"><span>Active pallet</span><output id="activePalletValue">ENTRY PALLET</output></div>
+          <div class="mode-stat"><span>Beat index</span><output id="escapementBeatValue">0</output></div>
+          <div class="mode-stat"><span>Escape release</span><output id="escapeReleaseValue">HELD</output></div>
+        </div>
+        <div class="escapement-actions">
+          <button id="stepBeatBtn" class="secondary">Step exactly one beat</button>
+        </div>
+        <div class="inline-toggles">
+          <label><input id="escapementGuides" type="checkbox" /> Show escape → pallet → balance guides</label>
+        </div>
+        <div class="winding-note">At 3 Hz the balance crosses center 6 times per second. M5a resolves each beat into lock, unlock, impulse and relock windows. The escape wheel advances only during release, one half-tooth per beat; the rest of the wheel train now follows that released motion instead of a continuously running presentation clock. Pause at 0× and use Step exactly one beat for inspection.</div>
+      </section>
+
+      <section>
+        <div class="section-title">Power release · M4c retained</div>
         <div class="mode-grid">
           <div class="mode-stat"><span>Movement state</span><output id="movementStateValue" class="power-running">STOPPED · UNWOUND</output></div>
           <div class="mode-stat"><span>Power flow</span><output id="powerFlowValue">NO RELEASE</output></div>
           <div class="mode-stat"><span>Mechanical elapsed</span><output id="runElapsedValue">00:00:00</output></div>
           <div class="mode-stat"><span>Energy gate</span><output id="energyGateValue">BLOCKED · NO ENERGY</output></div>
         </div>
-        <div class="winding-note">The watch now starts genuinely unwound. Give it energy with the crown and the balance, escapement, wheel train and hands begin advancing from one shared mechanical clock. When reserve reaches zero, that clock freezes. 3600× drains one simulated hour per real second for a quick reserve demo.</div>
+        <div class="winding-note">The watch starts genuinely unwound. Give it energy with the crown and the oscillator/escapement can release the train. When reserve reaches zero, mechanical time freezes.</div>
       </section>
 
       <section>
@@ -201,7 +221,7 @@
         </div>
       </section>
 
-      <div class="hint">M4c closes the first power loop: crown winding creates reserve; reserve opens the movement gate; the shared mechanical clock drives balance, escapement, train and hands; running consumes reserve; an empty mainspring stops them. Torque magnitude and escapement losses are still normalized rather than falsely simulated.</div>
+      <div class="hint">M5a replaces the old pallet/escape-wheel choreography with an event-resolved educational Swiss-lever state machine. The balance crossing selects alternating pallets; lock, unlock and impulse windows govern the escape wheel; released escape motion is converted back into train time so the fourth, third, centre wheels and hands visibly wait on escapement release. Exact pallet-face angles, draw, drop and impulse geometry are still reconstruction-level and remain future M5 work.</div>
     </aside>
 
     <aside class="inspector panel" id="infoPanel">
@@ -210,7 +230,7 @@
         <span class="provenance approximate" id="infoProvenance">approximate</span>
       </div>
       <h2 id="infoName">Mechanical component inspector</h2>
-      <p id="infoText">M4c connects the persistent mainspring state to the movement runtime. The watch now begins stopped and unwound; stored reserve permits one shared mechanical clock to advance, and reserve depletion stops that clock at zero.</p>
+      <p id="infoText">M5a adds an event-resolved Swiss-lever layer: roller table and impulse jewel, fork horns and safety dart, banking pins, alternating pallet state, and discrete half-tooth escape release. The rest of the train now follows released escapement motion rather than continuous wall-clock motion.</p>
       <dl class="part-facts" id="partFacts"></dl>
     </aside>
 
@@ -222,9 +242,9 @@
       <span><i class="dot structure-dot"></i>structure</span>
     </div>
 
-    <div id="loading">Constructing 6497-2 M4c power state…</div>
+    <div id="loading">Constructing 6497-2 M5a escapement state…</div>
   </div>
 
-  <script type="module" src="./main-m4c.js"></script>
+  <script type="module" src="./main-m5a.js"></script>
 </body>
 </html>
