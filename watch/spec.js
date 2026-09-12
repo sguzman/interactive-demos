@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M3e',
-  label: 'pitch-envelope meshing and contact phase',
-  note: 'M3e keeps the pitch-derived radii and compound axial planes, then aligns the simplified visual tooth envelopes around those pitch circles and solves static tooth/gap phase offsets through the centre→third→seconds→escape pinion chain. Optional pitch-circle guides expose the hidden wheel-to-pinion contacts. Geometry remains a reference reconstruction, not ETA manufacturing CAD.'
+  id: 'M3f',
+  label: 'true-pitch train and stepped staffs',
+  note: 'M3f keeps the reference-derived XY layout and ratio graph, replaces the decorative train tooth radius with a pitch-radius-native spur construction, tightens the compound z-stack against reconstructed mainplate/bridge clearance planes, and adds stepped staffs/pivots between the visible jewel planes. Tooth flanks are still educational approximations rather than manufacturing involutes.'
 };
