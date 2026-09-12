@@ -11,11 +11,11 @@
 </head>
 <body><main>
   <nav class="top"><a href="../">← Interactive Demos</a><a href="../watch/">Open 3D demo ↗</a></nav>
-  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M5E</div>
+  <div class="eyebrow">DOCUMENTATION · PROVENANCE · M5F</div>
   <h1>ETA / Unitas 6497-2</h1>
-  <p class="lead">M5e separates reserve-consuming runtime from oscillator phase time. Dynamic balance amplitude now perturbs simulated rate, so a weak oscillator can lose time before it becomes too weak to unlock the escapement.</p>
+  <p class="lead">M5f turns the balance from an assigned phase clock into an integrated oscillator. Angle and angular velocity now evolve under restoring force, damping, and discrete escapement impulse kicks; recovered oscillator phase then drives the geometry-constrained Swiss lever and the downstream train.</p>
 
-  <div class="callout"><strong>Accuracy contract.</strong><p>The official reference remains 3 Hz / 21,600 A/h. The new amplitude→rate curve is an explicit educational isochronism model, not measured ETA 6497-2 timing data. Nominal specification and simulated instantaneous rate are shown separately.</p></div>
+  <div class="callout"><strong>Accuracy contract.</strong><p>The official reference remains 3 Hz / 21,600 A/h. M5f improves causal architecture, but its damping, impulse gain, visual amplitude normalization, restart state, and amplitude-rate law are educational reconstruction parameters—not measured ETA balance inertia, hairspring stiffness, Q, pallet efficiency, or factory timing data.</p></div>
 
   <h2>Official movement facts</h2>
   <div class="specs">
@@ -24,84 +24,87 @@
     <div class="spec"><span>Jewels</span><strong>17</strong></div><div class="spec"><span>Power reserve</span><strong>53 h min / 60 h typical</strong></div>
   </div>
 
-  <h2>What the earlier milestones already established</h2>
-  <p>M3 built the reference-derived train topology, pitch geometry, axial planes, staffs and bearing diagnostics. M4 made winding, hand setting and reserve stateful. M5a–M5c made the Swiss lever release event-driven, added pallet/safety geometry, and gave the balance a reserve-dependent normalized amplitude that can decay into a low-amplitude stall. M5d then moved each half-tooth release toward reconstructed spatial contact using pallet-face travel and tooth-to-segment clearance.</p>
+  <h2>Foundation retained from M3–M5e</h2>
+  <p>M3 established the reference-derived train topology, axial wheel planes, staffs, jewels, pitch and clearance diagnostics. M4 made winding, hand-setting and reserve stateful. M5a–M5d made Swiss-lever release event-resolved and then geometry-constrained using reconstructed pallet faces and tooth/contact distances. M5e exposed amplitude-dependent rate explicitly instead of assuming perfect timekeeping at every usable amplitude.</p>
 
-  <h2>M5e — two clocks</h2>
-  <p>The model now tracks two distinct time quantities:</p>
-  <ul>
-    <li><strong>Reserve-consuming runtime</strong> — the simulated seconds paid for by stored mainspring reserve.</li>
-    <li><strong>Oscillator phase time</strong> — the clock used for balance center crossings, pallet motion and escapement events.</li>
-  </ul>
-  <p>Before M5e those clocks advanced together. M5e allows oscillator phase to run slightly fast or slow relative to reserve-consuming runtime. The watch can therefore consume one hour of modeled reserve while indicating a slightly different amount of elapsed time.</p>
-
-  <h2>Educational isochronism curve</h2>
+  <h2>M5f — explicit oscillator state</h2>
+  <p>The balance now owns two primary states:</p>
   <div class="specs">
-    <div class="spec"><span>Reference amplitude</span><strong>0.74 normalized</strong></div>
-    <div class="spec"><span>Nominal deadband</span><strong>±0.025</strong></div>
-    <div class="spec"><span>Low-amplitude endpoint</span><strong>−120 s/day</strong></div>
-    <div class="spec"><span>High-amplitude endpoint</span><strong>+12 s/day</strong></div>
-    <div class="spec"><span>Unlock threshold</span><strong>0.18 normalized</strong></div>
-    <div class="spec"><span>Nominal spec</span><strong>3 Hz / 21,600 A/h</strong></div>
+    <div class="spec"><span>Angular position</span><strong>θ</strong></div>
+    <div class="spec"><span>Angular velocity</span><strong>ω</strong></div>
+    <div class="spec"><span>Nominal natural frequency</span><strong>2π · 3 rad/s</strong></div>
   </div>
-  <p>Below the reference zone, progressively lower normalized amplitude is modeled as increasingly slow. Above the reference zone, unusually high amplitude can run slightly fast. The curve is smooth and intentionally visible enough to teach the dependency.</p>
-  <p>These endpoint values and the 0.74 reference amplitude are reconstruction parameters. They are not factory timing curves or measured 6497-2 performance.</p>
+  <p>Those values are advanced numerically rather than reconstructed from a preassigned phase clock.</p>
 
-  <h2>Rate multiplier</h2>
-  <p>The model converts the current seconds/day error into a phase multiplier:</p>
-  <div class="callout"><strong>rate multiplier = 1 + (seconds/day error ÷ 86,400)</strong><p>Reserve consumption continues on runtime. The oscillator advances on runtime multiplied by this rate factor. That distinction is what lets rate error accumulate without pretending the spring itself gained or lost reserve.</p></div>
+  <h2>Restoring and damping terms</h2>
+  <p>The educational balance/hairspring equation is approximately:</p>
+  <div class="callout"><strong>θ¨ = −ωₙ²θ − 2ζωₙω</strong><p>The first term is the hairspring-like restoring acceleration; the second is velocity-dependent damping. M5f currently uses a normalized damping ratio around 0.006. No claim is made that this equals the physical 6497-2 balance/hairspring damping coefficient.</p></div>
 
-  <h2>Rate error now propagates into the mechanism</h2>
-  <p>The adjusted oscillator phase drives the same geometry-constrained escapement from M5d. Therefore the rate error is not a disconnected number in a dashboard. It propagates through:</p>
+  <h2>Escapement impulse is now Δω</h2>
+  <p>Successful impulse no longer directly adds “amplitude.” Near a balance center crossing, the escapement can add an angular-velocity increment in the direction of motion. The maximum current reconstruction kick is about <strong>0.42 rad/s</strong> before reserve and saturation scaling.</p>
+  <p>Stored reserve still feeds a normalized barrel-drive proxy, so declining reserve reduces the impulse available to sustain the oscillator.</p>
+
+  <h2>Amplitude emerges from phase space</h2>
+  <p>Normalized balance amplitude is now derived from the current θ/ω state rather than being the oscillator's primary state:</p>
+  <div class="callout"><strong>amplitude ∝ √(θ² + (ω/ω₀)²)</strong><p>The current visual normalization uses about 0.43 rad as the 100% angle scale. That is a presentation normalization, not a sourced physical balance amplitude.</p></div>
+
+  <h2>Phase is measured from the oscillator</h2>
+  <p>M5f recovers phase approximately as <code>atan2(ωₙθ, ω)</code>, unwraps it continuously, and converts that phase into the time coordinate used by the M5d pallet/contact solver.</p>
+  <p>This is the architectural reversal that matters: previously phase was assigned first and the balance followed. Now θ and ω evolve first and phase is measured from that state.</p>
+
+  <h2>Geometry-constrained release remains downstream</h2>
+  <p>M5d still constrains escape-wheel release from reconstructed contact geometry. Current contact targets remain 0.030 mm unlock travel, 0.040 mm capture distance, 0.035 mm nominal contact tolerance, and a 0.006 mm penetration guard.</p>
+  <p>The recovered oscillator phase drives pallet motion; the contact solver determines the allowed half-tooth escape release; that released angle is converted into train time for the fourth/seconds, third and centre wheels and the hands.</p>
+
+  <h2>Current causal chain</h2>
+  <div class="callout"><strong>crown → stored reserve → drive proxy → impulse Δω → integrated balance θ/ω → recovered phase → pallet/contact geometry → escape release → train → hands</strong><p>M5f is the first milestone where balance phase is genuinely downstream of a dynamical state instead of being a prescribed input.</p></div>
+
+  <h2>Live M5f diagnostics</h2>
+  <p>The new panel reports balance angle, angular velocity, normalized amplitude, restoring acceleration, damping acceleration, last impulse Δω, effective frequency, educational seconds/day error, accumulated phase drift, center crossings, successful impulses, and the current integrator mode.</p>
+  <p>A live phase portrait plots <strong>θ</strong> against <strong>ω/ω₀</strong>. Damping tends to spiral the state inward; repeated escapement impulses replenish it.</p>
+
+  <h2>Detailed ODE integration versus fast-forward</h2>
+  <p>At normal and slow speeds the oscillator is stepped with small numerical substeps, targeting roughly <strong>1/240 s</strong> of simulated mechanical time per integration step.</p>
+  <p>At very large diagnostic time scales, explicitly integrating thousands of 3 Hz cycles per rendered browser frame would be wasteful and could make the UI unusable. M5f therefore switches to a clearly labeled <strong>FAST-FORWARD ENVELOPE</strong> approximation that advances amplitude and phase in aggregate, then reconstructs θ and ω. The UI tells you when that mode is active.</p>
+
+  <h2>M5e isochronism retained as a transparent modifier</h2>
+  <p>The earlier amplitude-rate curve remains available as a user-adjustable natural-frequency modifier:</p>
   <ul>
-    <li>balance center crossings;</li>
-    <li>pallet motion;</li>
-    <li>entry/exit contact clearance;</li>
-    <li>geometry-constrained half-tooth release;</li>
-    <li>fourth/seconds wheel motion;</li>
-    <li>third and centre wheels;</li>
-    <li>small seconds, minute and hour hands.</li>
-  </ul>
-
-  <h2>Accumulated phase drift</h2>
-  <p>The live panel reports <strong>oscillator phase drift</strong> as oscillator phase time minus reserve-consuming runtime. A negative value means the model has lost time against nominal runtime; a positive value means it has gained.</p>
-  <p>This separates an instantaneous rate such as −40 s/day from the accumulated consequence of having run at that error for some duration.</p>
-
-  <h2>Effective frequency and A/h</h2>
-  <p>M5e reports a live effective frequency and effective alternations-per-hour value in addition to the fixed nominal ETA reference. When the watch is stopped, effective frequency is displayed as zero instead of implying that a stationary balance is still oscillating at 3 Hz.</p>
-
-  <h2>Live isochronism plot</h2>
-  <p>A small curve in the control panel plots normalized balance amplitude against the current educational seconds/day model. A moving point shows the oscillator's present state. As reserve weakens and amplitude falls, the point moves down the modeled low-amplitude side before the M5c unlock threshold eventually stops the watch.</p>
-
-  <h2>Diagnostic exaggeration</h2>
-  <p>The rate-model strength control provides:</p>
-  <ul>
-    <li><strong>0×</strong> — nominal phase speed; amplitude-rate coupling disabled;</li>
-    <li><strong>1×</strong> — educational model;</li>
+    <li><strong>0×</strong> — nominal spring / no assumed amplitude-rate coupling;</li>
+    <li><strong>1×</strong> — educational curve;</li>
     <li><strong>5×</strong> — diagnostic exaggeration;</li>
     <li><strong>20×</strong> — extreme inspection.</li>
   </ul>
-  <p>Only the assumed rate error is magnified. Stored reserve, M5c damping/impulse dynamics and M5d contact geometry are not multiplied. The high settings exist so timing drift is visible without waiting for hours.</p>
+  <p>At 1× the current reconstruction curve uses a reference amplitude around 0.74, a low-amplitude endpoint near −120 s/day, and a high-amplitude endpoint near +12 s/day. Those remain explicit assumptions rather than measured ETA data.</p>
 
-  <h2>M5d contact solver retained</h2>
-  <p>The visible escapement still uses the 15-tooth wheel with a 24° tooth pitch and 12° half-tooth release. Current reconstructed spatial targets remain 0.030 mm unlock travel, 0.040 mm capture distance, 0.035 mm nominal contact tolerance and a 0.006 mm penetration guard. These are reconstruction targets rather than ETA production tolerances.</p>
+  <h2>Power-system ownership</h2>
+  <p>M5f now owns the escapement power gate. The M4c reserve system exposes its original reserve-consuming advance path so the M5f oscillator can decide whether motion is physically permitted, hold reserve on an oscillator/contact stall, and then call the original reserve accounting only when the mechanism is allowed to run.</p>
 
-  <h2>Current causal chain</h2>
-  <div class="callout"><strong>crown → reserve → drive proxy → impulse → balance amplitude → amplitude-dependent phase speed → pallet/contact geometry → escape release → train → hands</strong><p>M5e closes the conceptual gap between “amplitude changes” and “timekeeping changes,” while still making the assumed isochronism law explicit.</p></div>
+  <h2>Current reconstruction dynamics</h2>
+  <div class="specs">
+    <div class="spec"><span>Damping ratio</span><strong>0.006</strong></div>
+    <div class="spec"><span>Max impulse Δω</span><strong>≈0.42 rad/s</strong></div>
+    <div class="spec"><span>Unlock amplitude</span><strong>0.18 normalized</strong></div>
+    <div class="spec"><span>Restart reserve</span><strong>1.2%</strong></div>
+    <div class="spec"><span>Restart amplitude</span><strong>0.34 normalized</strong></div>
+    <div class="spec"><span>Detailed step target</span><strong>1/240 s</strong></div>
+  </div>
+  <p>Every value in this block is a simulation/reconstruction parameter except the nominal 3 Hz reference.</p>
 
-  <h2>What M5e still does not claim</h2>
+  <h2>What M5f still does not claim</h2>
   <ul>
-    <li>measured ETA rate-vs-amplitude data or physical balance amplitude in degrees;</li>
-    <li>ETA balance inertia, hairspring stiffness or a calibrated restoring-force law;</li>
-    <li>real regulator-pin geometry, beat error or poise error;</li>
-    <li>position-dependent timing, temperature effects or shock response;</li>
-    <li>real barrel-torque-to-rate calibration;</li>
-    <li>escapement friction/lubrication influence on rate;</li>
-    <li>factory adjustment grades or production timing tolerances.</li>
+    <li>measured ETA balance inertia or hairspring stiffness;</li>
+    <li>actual damping/Q or escapement efficiency;</li>
+    <li>real impulse torque, contact duration or oil friction;</li>
+    <li>physical balance amplitude in degrees;</li>
+    <li>regulator-pin geometry, poise error, beat error or positional timing;</li>
+    <li>temperature effects or shock response;</li>
+    <li>calibrated barrel torque-to-oscillator dynamics;</li>
+    <li>factory timing performance.</li>
   </ul>
 
   <h2>Inspection workflow</h2>
-  <p>For normal use, leave <strong>Rate-model strength</strong> at 1×. To make M5e obvious quickly, wind the watch, use the Escapement view, run at 300× or 3600×, and switch the rate model to 5× or 20×. Watch balance amplitude, seconds/day error and phase drift together. Return to 0.1× / 0.25× and the M5d contact overlay for detailed escapement inspection.</p>
+  <p>Wind the watch, choose the <strong>Escapement</strong> view, and use 0.1×, 0.25×, 0.5× or 1× to inspect the actual θ/ω integration. Watch restoring acceleration, damping and Δω while the phase portrait loops. Enable the M5d solver overlay to compare oscillator-driven pallet phase with contact geometry. Use 300× or 3600× for reserve/run-down demonstrations; the integrator readout will explicitly switch to fast-forward envelope mode.</p>
 
   <h2>Provenance classes</h2>
   <p><span class="badge official">official</span> Directly supported by technical material.</p>
@@ -110,9 +113,9 @@
   <p><span class="badge presentation">presentation</span> Geometry, thresholds, controls or normalized simulation assumptions added for readability and interaction.</p>
 
   <h2>Next work</h2>
-  <h3>M5f — state-integrated oscillator</h3><p>Represent balance phase and angular velocity as explicit state, add a normalized hairspring restoring term, inject escapement impulse into velocity/energy, and let timing emerge from the integrated oscillator rather than directly assigning phase speed from a curve.</p>
-  <h3>M5g — deeper polygonal contact</h3><p>Replace tooth-tip/face-segment distance with reconstructed tooth and pallet polygons, derive lock/drop from those surfaces, and include roller-jewel/fork-slot safety tests in the same framework.</p>
-  <h3>M6 — shared system simulation</h3><p>Separate barrel-arbor winding from barrel-drum release, improve train force transmission, and consolidate reserve, impulse, oscillator and escapement state into one system model.</p>
+  <h3>M5g — geometry-admitted impulse</h3><p>Make the M5d impulse-contact state itself admit or reject each M5f Δω packet, so an eligible center crossing is no longer sufficient by itself. Expose delivered impulse work and missed-contact diagnostics.</p>
+  <h3>M5h — deeper polygonal contact</h3><p>Replace tooth-tip/segment distance with reconstructed tooth and pallet-face polygon intersection, derive lock/drop from those surfaces, and bring roller-jewel/fork-slot safety checks into the same contact framework.</p>
+  <h3>M6 — shared system simulation</h3><p>Separate barrel-arbor winding from barrel-drum release, improve train force transmission, and consolidate barrel torque, escapement impulse, oscillator state and reserve into one system model.</p>
 
   <h2>Sources</h2>
   <div class="source"><strong>ETA — current 6497-2 Technical Communication</strong><p><a href="https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/">official dimensions, rate, reserve, lift angle and service data</a></p></div>
