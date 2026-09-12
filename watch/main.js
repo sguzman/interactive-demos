@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { buildWatch, MODEL } from './movement.js';
 import { createLightingRig } from './lighting.js';
 import { movementAngles, validateTrainReference } from './kinematics.js';
+import { refineTrainGeometry } from './train-refinement.js';
 
 const canvas = document.querySelector('#scene');
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x080a0d, 0.0105);
+scene.fog = new THREE.FogExp2(0x080a0d, 0.0042);
 
 const renderer = new THREE.WebGLRenderer({
   canvas,
@@ -18,9 +20,19 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.18;
+renderer.toneMappingExposure = 1.58;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
+
+// Metal-heavy PBR materials need something to reflect. The earlier scene had
+// direct lights but no environment map, so most steel/brass faces could still
+// read almost black. RoomEnvironment supplies a neutral studio reflection field
+// without changing the visible background.
+const pmrem = new THREE.PMREMGenerator(renderer);
+const environmentTarget = pmrem.fromScene(new RoomEnvironment(), 0.04);
+scene.environment = environmentTarget.texture;
+scene.environmentIntensity = 1.18;
+pmrem.dispose();
 
 const camera = new THREE.PerspectiveCamera(33, innerWidth / innerHeight, .1, 420);
 camera.position.set(50, 31, 59);
@@ -34,12 +46,13 @@ controls.target.set(0, 0, -2);
 controls.maxPolarAngle = Math.PI * .96;
 
 const { watch, layers, parts, pickables, animated, materials } = buildWatch();
+refineTrainGeometry(animated, materials, pickables);
 scene.add(watch);
 const lighting = createLightingRig(scene, materials);
 
 const backboard = new THREE.Mesh(
   new THREE.CircleGeometry(67, 128),
-  new THREE.MeshStandardMaterial({ color: 0x0c0f13, metalness: .03, roughness: .92 })
+  new THREE.MeshStandardMaterial({ color: 0x161a20, metalness: .02, roughness: .88 })
 );
 backboard.position.z = -27;
 backboard.receiveShadow = true;
@@ -107,6 +120,16 @@ controls.addEventListener('start', () => {
 });
 
 // -----------------------------------------------------------------------------
+// Simulation presentation controls
+// -----------------------------------------------------------------------------
+
+const trainScale = document.querySelector('#trainScale');
+let trainTimeScale = Number(trainScale?.value ?? 1);
+trainScale?.addEventListener('change', () => {
+  trainTimeScale = Number(trainScale.value);
+});
+
+// -----------------------------------------------------------------------------
 // Inspection light controls
 // -----------------------------------------------------------------------------
 
@@ -116,14 +139,17 @@ const lightElevation = document.querySelector('#lightElevation');
 const lightDistance = document.querySelector('#lightDistance');
 const lightIntensity = document.querySelector('#lightIntensity');
 const ambient = document.querySelector('#ambient');
+const exposure = document.querySelector('#exposure');
 const shadows = document.querySelector('#shadows');
 const lightGizmo = document.querySelector('#lightGizmo');
+const headlamp = document.querySelector('#headlamp');
 
 const lightAzimuthValue = document.querySelector('#lightAzimuthValue');
 const lightElevationValue = document.querySelector('#lightElevationValue');
 const lightDistanceValue = document.querySelector('#lightDistanceValue');
 const lightIntensityValue = document.querySelector('#lightIntensityValue');
 const ambientValue = document.querySelector('#ambientValue');
+const exposureValue = document.querySelector('#exposureValue');
 
 function syncLightUI(state) {
   lightAzimuth.value = String(Math.round(state.azimuth));
@@ -131,20 +157,29 @@ function syncLightUI(state) {
   lightDistance.value = String(Math.round(state.distance));
   lightIntensity.value = String(Math.round(state.intensity));
   ambient.value = String(Math.round(state.ambient * 100));
+  exposure.value = String(Math.round(state.exposure * 100));
   shadows.checked = state.shadows;
   lightGizmo.checked = state.gizmo;
+  headlamp.checked = state.headlamp;
 
   lightAzimuthValue.value = `${Math.round(state.azimuth)}°`;
   lightElevationValue.value = `${Math.round(state.elevation)}°`;
   lightDistanceValue.value = `${Math.round(state.distance)} mm`;
   lightIntensityValue.value = `${Math.round(state.intensity)}`;
   ambientValue.value = state.ambient.toFixed(2);
+  exposureValue.value = `${state.exposure.toFixed(2)}×`;
+  renderer.toneMappingExposure = state.exposure;
 }
 
 lightPreset.addEventListener('change', () => {
+  const preserve = {
+    shadows: shadows.checked,
+    gizmo: lightGizmo.checked,
+    headlamp: headlamp.checked
+  };
   const preset = lighting.setPreset(lightPreset.value);
-  lighting.patch({ shadows: shadows.checked, gizmo: lightGizmo.checked });
-  syncLightUI({ ...preset, shadows: shadows.checked, gizmo: lightGizmo.checked });
+  const state = lighting.patch(preserve);
+  syncLightUI({ ...preset, ...state });
 });
 
 function patchLight() {
@@ -154,15 +189,20 @@ function patchLight() {
     distance: Number(lightDistance.value),
     intensity: Number(lightIntensity.value),
     ambient: Number(ambient.value) / 100,
+    exposure: Number(exposure.value) / 100,
     shadows: shadows.checked,
-    gizmo: lightGizmo.checked
+    gizmo: lightGizmo.checked,
+    headlamp: headlamp.checked
   });
   syncLightUI(state);
 }
 
-for (const input of [lightAzimuth, lightElevation, lightDistance, lightIntensity, ambient]) input.addEventListener('input', patchLight);
+for (const input of [lightAzimuth, lightElevation, lightDistance, lightIntensity, ambient, exposure]) {
+  input.addEventListener('input', patchLight);
+}
 shadows.addEventListener('change', patchLight);
 lightGizmo.addEventListener('change', patchLight);
+headlamp.addEventListener('change', patchLight);
 syncLightUI(lighting.state);
 
 // -----------------------------------------------------------------------------
@@ -212,15 +252,16 @@ renderer.domElement.addEventListener('pointerdown', event => {
   pointer.x = (event.clientX / innerWidth) * 2 - 1;
   pointer.y = -(event.clientY / innerHeight) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
-  const candidates = pickables.filter(mesh => mesh.userData.pickRoot?.parent?.visible !== false);
+  const candidates = pickables.filter(mesh => mesh.visible && mesh.userData.pickRoot?.parent?.visible !== false);
   const hits = raycaster.intersectObjects(candidates, false);
   if (!hits.length) return;
   inspect(hits[0].object.userData.pickRoot);
 });
 
 // -----------------------------------------------------------------------------
-// Kinematics. M3a replaces arbitrary train speeds with a reference-derived gear
-// graph while leaving power transmission and locking/impulse physics for later.
+// Kinematics. M3b keeps the M3a ratio graph and now makes the visible train use
+// the same reference tooth/leaf counts. The optional time scale accelerates the
+// train for inspection only; the balance remains at its documented real 3 Hz.
 // -----------------------------------------------------------------------------
 
 const clock = new THREE.Clock();
@@ -259,7 +300,7 @@ function animate() {
   animated.balance.rotation.z = balanceAngle;
   animated.pallet.rotation.z = -.22 - balanceAngle * .13;
 
-  const k = movementAngles(elapsed);
+  const k = movementAngles(elapsed * trainTimeScale);
   animated.escapeWheel.rotation.z = k.escape;
   animated.fourthWheel.rotation.z = k.seconds;
   animated.thirdWheel.rotation.z = k.third;
@@ -278,6 +319,7 @@ function animate() {
   if (selectionHelper && selectedRoot) selectionHelper.box.setFromObject(selectedRoot);
 
   controls.update();
+  lighting.followCamera(camera, controls.target);
   renderer.render(scene, camera);
 }
 

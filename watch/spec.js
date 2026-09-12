@@ -50,7 +50,7 @@ export const LAYOUT = {
 };
 
 export const MILESTONE = {
-  id: 'M3a',
-  label: 'reference train kinematics',
-  note: 'M2 bridge/plate fidelity is in place; M3a replaces arbitrary train animation with a reference-derived ratio graph while geometry ratios remain under refinement.'
+  id: 'M3b',
+  label: 'reference train geometry',
+  note: 'The visible train now uses the same reference-derived tooth and pinion counts as the M3a timing graph. Wheel radii and centre distances remain reconstruction geometry pending a later solved layout pass.'
 };
