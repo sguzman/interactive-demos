@@ -50,3 +50,48 @@ Planned/active capabilities include:
 - progressively more faithful wheel train, escapement, winding works, bridges, and case architecture.
 
 See `docs/watch-eta-6497-2.md`.
+
+
+## Taria Engineering projection contract
+
+For engineering showcases, this repository is a **public projection surface**, not the canonical technical knowledge base.
+
+```text
+private Taria Engineering
+    facts
+    provenance
+    mechanism ontology
+    source ledger
+    model definitions
+    open questions
+    reconstruction assumptions
+            ↓
+projection / implementation
+            ↓
+interactive-demos
+    Three.js scenes
+    animations
+    exploded views
+    controls
+    public explanatory UI
+    showcase-specific simplification
+```
+
+A value invented or tuned for a visual reconstruction does not become an engineering fact merely because the demo works.
+
+Likewise, a canonical Engineering update does not need to appear publicly until it is useful to the showcase.
+
+`engineering-projections.json` records which public demos are explicitly bound to canonical Engineering specimens.
+
+The first binding is:
+
+```text
+watch
+-> specimen:eta-unitas-6497-2
+```
+
+Engineering-linked demos should preserve distinctions among manufacturer specification, measured observation, derived quantity, audited secondary claim, reconstruction parameter, visual simplification, and hypothesis.
+
+The current watch documentation already follows this direction by distinguishing official ETA values from normalized educational reconstruction parameters.
+
+This repository remains authoritative for **public implementation state**. Taria Engineering is authoritative for technical claims after explicit ingestion and provenance classification.
