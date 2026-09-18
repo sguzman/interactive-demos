@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "authority": "public-projection-registry",
+  "canonicalEngineeringAuthority": "Taria / taria/engineering",
+  "projections": [
+    {
+      "demoSlug": "watch",
+      "engineeringSpecimenId": "specimen:eta-unitas-6497-2",
+      "engineeringCanonicalPath": "taria/engineering/specimens/eta-unitas-6497-2",
+      "publicPath": "./watch/",
+      "documentationPath": "./docs/watch-eta-6497-2.html",
+      "modelClass": "causal educational reconstruction / interactive constructive geometry",
+      "examinedMaturity": "M6e stage-resolved closed-loop mechanics",
+      "authorityRule": "Public implementation state is authoritative here; technical claims and provenance are authoritative in Engineering after explicit ingestion.",
+      "primaryManufacturerSources": [
+        "https://portal.eta.ch/en/6497-2-6497-2-3.html",
+        "https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/",
+        "https://shopb2b.eta.ch/technicaldocuments/index/pdf/id/1632/"
+      ]
+    }
+  ]
+}
