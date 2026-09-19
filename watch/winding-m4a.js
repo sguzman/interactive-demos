@@ -4,7 +4,6 @@ const TAU = Math.PI * 2;
 const RATCHET_TEETH = 44;
 const CROWN_WHEEL_TEETH = 34;
 const RATCHET_PER_CROWN = CROWN_WHEEL_TEETH / RATCHET_TEETH;
-const FULL_WIND_CROWN_TURNS = 45; // reconstruction/presentation assumption, not an ETA service dimension
 const HOLD_SPEED_TURNS_PER_SECOND = 2.6;
 
 function clamp01(value) {
@@ -121,6 +120,10 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
   };
 
   const maxReserveHours = model.powerReserveTypicalHours ?? 60;
+  // ETA IH 6497-2 FDE 482414 11 (2020-08-12): complete winding
+  // through the winding stem = 25 turns. This is a dated P0 winding-input
+  // anchor. It is NOT the M6a barrel-drum release-turn parameter.
+  const fullWindStemTurns = Math.max(1, Number(model.fullWindStemTurns2020) || 25);
   const maxReserveSeconds = maxReserveHours * 3600;
   const toothPitch = TAU / RATCHET_TEETH;
 
@@ -129,7 +132,7 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
 
     if (deltaAngle > 0) {
       const requestedTurns = deltaAngle / TAU;
-      const remainingTurns = Math.max(0, FULL_WIND_CROWN_TURNS - state.acceptedCrownTurns);
+      const remainingTurns = Math.max(0, fullWindStemTurns - state.acceptedCrownTurns);
       const acceptedTurns = Math.min(requestedTurns, remainingTurns);
       const acceptedAngle = acceptedTurns * TAU;
 
@@ -137,7 +140,7 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
       state.crownWheelAngle -= acceptedAngle;
       state.ratchetAngle += acceptedAngle * RATCHET_PER_CROWN;
       state.acceptedCrownTurns += acceptedTurns;
-      state.energy = clamp01(state.acceptedCrownTurns / FULL_WIND_CROWN_TURNS);
+      state.energy = clamp01(state.acceptedCrownTurns / fullWindStemTurns);
       state.full = state.energy >= .999999;
       state.lastAction = state.full && acceptedTurns === 0 ? 'full stop' : 'winding';
     } else {
@@ -156,7 +159,7 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
     const availableSeconds = state.energy * maxReserveSeconds;
     const consumedSeconds = Math.min(requested, availableSeconds);
     state.energy = clamp01(state.energy - consumedSeconds / maxReserveSeconds);
-    state.acceptedCrownTurns = state.energy * FULL_WIND_CROWN_TURNS;
+    state.acceptedCrownTurns = state.energy * fullWindStemTurns;
     state.full = state.energy >= .999999;
 
     if (state.energy <= 1e-10) {
@@ -286,7 +289,9 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
     constants: {
       ratchetTeeth: RATCHET_TEETH,
       crownWheelTeeth: CROWN_WHEEL_TEETH,
-      fullWindCrownTurns: FULL_WIND_CROWN_TURNS,
+      fullWindStemTurns,
+      fullWindCrownTurns: fullWindStemTurns, // compatibility alias; crown/stem rotate together in this projection
+      fullWindTurnsProvenance: 'P0 dated · ETA IH 6497-2 FDE 482414 11 · 2020-08-12',
       maxReserveHours,
       maxReserveSeconds
     }
