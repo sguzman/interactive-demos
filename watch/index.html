@@ -20,9 +20,9 @@
   <header class="topbar panel">
     <a class="gallery-link" href="../">← Gallery</a>
     <div class="identity">
-      <div class="eyebrow">REFERENCE RECONSTRUCTION · M5C</div>
+      <div class="eyebrow">REFERENCE RECONSTRUCTION · M6E</div>
       <h1>ETA / Unitas 6497-2</h1>
-      <p>reserve-coupled impulse packets, falling balance amplitude, and low-amplitude stall</p>
+      <p>stage-resolved closed-loop mechanics with provenance-separated calibration</p>
     </div>
     <a class="docs-link" href="../docs/watch-eta-6497-2.html">Documentation ↗</a>
   </header>
@@ -65,7 +65,7 @@
     </section>
 
     <section>
-      <div class="section-title">Oscillator dynamics · M5c</div>
+      <div class="section-title">Oscillator energy gate · M5c retained</div>
       <div class="mode-grid diagnostic-stat">
         <div class="mode-stat"><span>Balance amplitude</span><output id="balanceAmplitudeValue" class="amplitude-live">0.0%</output></div>
         <div class="mode-stat"><span>Oscillator state</span><output id="oscillatorStateValue">STOPPED</output></div>
@@ -138,7 +138,7 @@
           <div class="power-stat"><span>Action</span><output id="windingActionValue">idle</output></div>
         </div>
       </div>
-      <div class="winding-note">The 45-turn full-wind mapping remains a reconstruction assumption; the 60 h typical reserve endpoint is sourced from ETA.</div>
+      <div class="winding-note">Full winding is mapped to ETA's dated 2020 manufacturer anchor of 25 winding-stem turns. The current 53 h minimum / 60 h typical reserve is sourced from ETA 2025. M6a's modeled 8 barrel-drum release turns remain a separate P4 reconstruction parameter.</div>
     </section>
 
     <section>
@@ -166,18 +166,18 @@
       <div class="inline-toggles"><label><input id="shadows" type="checkbox" checked /> Shadows</label><label><input id="lightGizmo" type="checkbox" checked /> Show manual key</label></div>
     </section>
 
-    <div class="hint">M5c introduces a normalized oscillator-energy loop on top of the M5b geometry. Stored reserve no longer merely grants permission to run: it also influences impulse strength. The balance loses amplitude between beats, receives discrete impulse packets, and can fall below the unlock threshold near the end of usable reserve. Exact inertia, torque, hairspring stiffness, friction and amplitude calibration remain future system-identification work.</div>
+    <div class="hint">M6e is the current projection. It retains the integrated M5f oscillator and finite-contact escapement, then closes the loop through normalized barrel torque, dynamic reaction load, stage-resolved train losses and movement-level fault states. Manufacturer facts, audited reference values and reconstruction parameters remain deliberately separate.</div>
   </aside>
 
   <aside class="inspector panel" id="infoPanel">
     <div class="inspector-topline"><div class="eyebrow" id="infoCategory">SELECT A COMPONENT</div><span class="provenance approximate" id="infoProvenance">approximate</span></div>
     <h2 id="infoName">Mechanical component inspector</h2>
-    <p id="infoText">M5c retains the event-resolved Swiss-lever geometry and adds a normalized balance-energy state. Discrete impulses replenish amplitude, damping removes it, low reserve weakens impulse, and insufficient amplitude can now hold the escapement even while residual spring energy remains.</p>
+    <p id="infoText">M6e is a public projection of canonical specimen:eta-unitas-6497-2. The causal model couples winding, reserve, normalized barrel torque, stage-resolved train demand, finite escapement contact and integrated oscillator state. Physical calibration and reconstruction parameters remain visibly distinct.</p>
     <dl class="part-facts" id="partFacts"></dl>
   </aside>
 
   <div class="legend panel" aria-label="Functional color legend"><span><i class="dot display-dot"></i>display</span><span><i class="dot power-dot"></i>power</span><span><i class="dot train-dot"></i>train</span><span><i class="dot regulation-dot"></i>regulation</span><span><i class="dot structure-dot"></i>structure</span></div>
-  <div id="loading">Constructing 6497-2 M5c oscillator dynamics…</div>
+  <div id="loading">Constructing 6497-2 M6e stage-resolved mechanics…</div>
 </div>
 <script type="module" src="./main-m5a.js"></script>
 </body>
