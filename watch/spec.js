@@ -10,32 +10,43 @@ export const ETA6497_2 = {
   powerReserveTypicalHours: 60,
   winding: 'manual',
   display: 'hours, minutes, small seconds',
-  regulator: 'ETACHRON'
+  regulator: 'ETACHRON',
+  fullWindStemTurns2020: 25,
+  fullWindStemTurns2020Source: 'ETA IH 6497-2 FDE 482414 11 · 2020-08-12 · P0 dated'
+};
+
+export const CANONICAL = {
+  specimenId: 'specimen:eta-unitas-6497-2',
+  projectionMilestone: 'M6e',
+  engineeringSyncDate: '2026-09-19',
+  engineeringFrontier: 'ENG-6497-008 complete · ENG-6497-009 physical validation blocked on identified specimen',
+  provenanceScheme: 'P0 manufacturer · P1 measurement · P2 derived · P3 audited secondary · P4 reconstruction · P5 presentation',
+  publicationBoundary: 'Public projection only; private canonical corpus is not linked.'
 };
 
 // Part numbers follow ETA's current 6497-2 spare-parts list where available.
 // Geometry positions are reference-derived presentation coordinates in millimetres,
 // not manufacturing coordinates.
 export const PARTS = {
-  mainplate: { etaPos: '1', name: 'Main plate, assembled' },
-  escapeWheel: { etaPos: '12', name: 'Escape wheel' },
-  thirdWheel: { etaPos: '13', name: 'Third wheel' },
-  secondWheel: { etaPos: '14', name: 'Second / fourth wheel' },
-  centerWheel: { etaPos: '15', name: 'Centre wheel' },
-  trainBridge: { etaPos: '16', name: 'Train wheel bridge, jewelled', screws: 2 },
-  barrel: { etaPos: '17', name: 'Movement barrel, complete' },
-  barrelBridge: { etaPos: '18', name: 'Barrel bridge, jewelled', screws: 3 },
-  crownWheelRing: { etaPos: '19', name: 'Crown wheel ring' },
-  crownWheel: { etaPos: '20', name: 'Crown wheel' },
-  clickSpring: { etaPos: '21', name: 'Click spring' },
-  click: { etaPos: '22', name: 'Click' },
-  ratchetWheel: { etaPos: '23', name: 'Ratchet wheel' },
-  cannonPinion: { etaPos: '24', name: 'Driver cannon pinion' },
-  palletFork: { etaPos: '25', name: 'Pallet fork' },
-  palletBridge: { etaPos: '26', name: 'Pallet bridge, jewelled', screws: 2 },
-  balance: { etaPos: '27', name: 'Timed balance regulated, with stud' },
-  balanceBridge: { etaPos: '28', name: 'Balance bridge, assembled', screws: 1 },
-  hourWheel: { etaPos: '29', name: 'Hour wheel' }
+  mainplate: { etaPos: '1', canonicalId: 'eta6497-pos-1-main-plate-assembled', name: 'Main plate, assembled' },
+  escapeWheel: { etaPos: '12', canonicalId: 'eta6497-pos-12-escape-wheel', name: 'Escape wheel' },
+  thirdWheel: { etaPos: '13', canonicalId: 'eta6497-pos-13-third-wheel', name: 'Third wheel' },
+  secondWheel: { etaPos: '14', canonicalId: 'eta6497-pos-14-second-wheel', name: 'Second / fourth wheel' },
+  centerWheel: { etaPos: '15', canonicalId: 'eta6497-pos-15-centre-wheel', name: 'Centre wheel' },
+  trainBridge: { etaPos: '16', canonicalId: 'eta6497-pos-16-train-wheel-bridge', name: 'Train wheel bridge, jewelled', screws: 2 },
+  barrel: { etaPos: '17', canonicalId: 'eta6497-pos-17-movement-barrel-complete', name: 'Movement barrel, complete' },
+  barrelBridge: { etaPos: '18', canonicalId: 'eta6497-pos-18-barrel-bridge', name: 'Barrel bridge, jewelled', screws: 3 },
+  crownWheelRing: { etaPos: '19', canonicalId: 'eta6497-pos-19-crown-wheel-ring', name: 'Crown wheel ring' },
+  crownWheel: { etaPos: '20', canonicalId: 'eta6497-pos-20-crown-wheel', name: 'Crown wheel' },
+  clickSpring: { etaPos: '21', canonicalId: 'eta6497-pos-21-click-spring', name: 'Click spring' },
+  click: { etaPos: '22', canonicalId: 'eta6497-pos-22-click', name: 'Click' },
+  ratchetWheel: { etaPos: '23', canonicalId: 'eta6497-pos-23-ratchet-wheel', name: 'Ratchet wheel' },
+  cannonPinion: { etaPos: '24', canonicalId: 'eta6497-pos-24-driver-cannon-pinion', name: 'Driver cannon pinion' },
+  palletFork: { etaPos: '25', canonicalId: 'eta6497-pos-25-pallet-fork', name: 'Pallet fork' },
+  palletBridge: { etaPos: '26', canonicalId: 'eta6497-pos-26-pallet-bridge', name: 'Pallet bridge, jewelled', screws: 2 },
+  balance: { etaPos: '27', canonicalId: 'eta6497-pos-27-timed-balance-with-stud', name: 'Timed balance regulated, with stud' },
+  balanceBridge: { etaPos: '28', canonicalId: 'eta6497-pos-28-balance-bridge-assembled', name: 'Balance bridge, assembled', screws: 1 },
+  hourWheel: { etaPos: '29', canonicalId: 'eta6497-pos-29-hour-wheel', name: 'Hour wheel' }
 };
 
 export const LAYOUT = {
