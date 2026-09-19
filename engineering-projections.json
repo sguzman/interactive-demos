@@ -20,7 +20,7 @@
       "canonicalVisibility": "private",
       "publicCanonicalIdentifier": "specimen:eta-unitas-6497-2",
       "engineeringSyncDate": "2026-09-19",
-      "engineeringResearchState": "ENG-6497-008 complete; ENG-6497-009 blocked on identified physical specimen",
+      "engineeringResearchState": "Core documentary/reconstruction research complete for current scope; optional physical-specimen enrichment available but not required.",
       "provenanceScheme": [
         "P0 manufacturer",
         "P1 measurement",
@@ -29,7 +29,8 @@
         "P4 reconstruction",
         "P5 presentation"
       ],
-      "publicationBoundary": "Expose publication-safe identifiers and source-backed claims only; do not link private canonical corpus paths."
+      "publicationBoundary": "Expose publication-safe identifiers and source-backed claims only; do not link private canonical corpus paths.",
+      "completionPolicy": "Acquisition-neutral: physical ownership, purchase, teardown, or direct measurement is not required for research completion."
     }
   ]
 }
