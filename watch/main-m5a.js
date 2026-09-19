@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { buildWatch } from './movement.js';
+import { buildWatch, MODEL } from './movement.js';
 import { createLightingRig } from './lighting.js';
 import { movementAngles, validateTrainReference } from './kinematics.js';
 import { refineTrainGeometry } from './train-m3g.js';
@@ -43,7 +43,8 @@ controls.maxPolarAngle = Math.PI * .96;
 const { watch, layers, parts, pickables, animated, materials } = buildWatch();
 const trainGeometry = refineTrainGeometry(animated, materials, pickables);
 const windingSystem = createWindingSystem({ watch, animated, materials, model: {
-  powerReserveTypicalHours: 60
+  powerReserveTypicalHours: MODEL.powerReserveTypicalHours,
+  fullWindStemTurns2020: MODEL.fullWindStemTurns2020
 } });
 const keylessSystem = createKeylessSettingSystem({ watch, windingSystem, animated, materials });
 const powerSystem = createPowerReleaseSystem({ windingSystem });
