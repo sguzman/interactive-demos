@@ -16,11 +16,37 @@ ETA technical material supports:
 - jewels: **17**;
 - lift angle: **44°**;
 - power reserve: **53 h minimum / 60 h typical**;
+- dated 2020 complete winding input: **25 winding-stem turns**;
 - manual winding;
 - hours, minutes, small seconds;
 - ETACHRON regulation.
 
 Primary source: https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/
+
+## Canonical projection identity
+
+Public canonical identifier:
+
+`specimen:eta-unitas-6497-2`
+
+This repository is the public implementation/projection surface. The canonical Engineering corpus is private and is not linked from this public document.
+
+Current public synchronization pass:
+
+- **date:** 2026-09-19;
+- **projection milestone:** M6e;
+- **Engineering research state:** ENG-6497-008 complete; ENG-6497-009 blocked on an identified physical specimen.
+
+Provenance classes used by the projection:
+
+- **P0** manufacturer;
+- **P1** direct measurement;
+- **P2** derived;
+- **P3** audited secondary;
+- **P4** reconstruction;
+- **P5** presentation.
+
+A part can have P0 identity while its Three.js shape remains P4/P5.
 
 ## What M6 now means
 
@@ -41,6 +67,8 @@ This is the central M6 achievement.
 ## M6a — barrel arbor and barrel drum
 
 M6a stopped treating reserve as the escapement's work source directly.
+
+The winding-input endpoint is now calibrated to ETA's dated 2020 manufacturer instruction of **25 winding-stem turns to complete winding**. This is a winding-side input anchor. It does **not** establish barrel-drum rundown turns or mainspring development turns.
 
 The barrel now has distinct causal roles:
 
@@ -200,6 +228,70 @@ The **Stage-resolved train path · M6e** panel shows:
 
 These values feed the same M6b torque-margin calculation, the M6c ledger, and the M6d movement-level stall / operating-state logic.
 
+## Physical amplitude versus normalized oscillator state
+
+The public oscillator uses integrated angle/velocity state and a normalized 0–1 amplitude coordinate.
+
+Do not collapse:
+
+```text
+normalized model amplitude
+!=
+visual balance angle
+!=
+physical balance amplitude in degrees
+```
+
+The M5f `0.43 rad` scale is a P4 visual/dynamical normalization, not the physical maximum swing of the real movement.
+
+ETA's dated 2020 adjustment sheet instead gives physical amplitude criteria including:
+
+- up to **320°** in the horizontal CH position at 0 h;
+- minimum **210°** at 12H / 0 h;
+- minimum **200°** at 12H / 24 h.
+
+These manufacturer criteria are reference envelopes, not a direct map onto the demo's normalized oscillator variable.
+
+## Materials, surfaces, lubrication and service state
+
+The Engineering materials/tribology pass adds exact-calibre manufacturer anchors:
+
+- main plate and bridges: **brass**;
+- escape wheel: **steel**;
+- pallet fork: **steel**;
+- balance: **gilt Glucydur**;
+- balance spring: **nickel steel**.
+
+Current ETA service documentation distinguishes lubricant and surface-treatment classes including:
+
+- Moebius 9010;
+- HP-1300 / 9104;
+- HP-1300 SC / 9104-SC;
+- 9501;
+- 9504;
+- 9415 for pallet-stone service points;
+- Fixodrop 8981 epilame treatment.
+
+The complete movement barrel is a particularly important service object: ETA marks it as **do not wash** and directs replacement with an original **prelubricated** ETA part when required.
+
+Therefore the model now treats service condition as a separate physical state:
+
+```text
+component identity
++
+surface condition
++
+epilame condition
++
+lubricant identity / amount / age
++
+contamination / wear / assembly state
+=
+tribological operating state
+```
+
+Lubricant identity is not converted into an invented friction coefficient.
+
 ## The M5 escapement remains the mechanical gate
 
 M6 does not replace the detailed M5 escapement. It supplies the missing upstream power and feedback context.
@@ -285,23 +377,34 @@ For the clearest M6 inspection:
 
 Current M6-specific values such as the 8-turn full-release mapping, normalized torque curve, stage loads and efficiencies, feedback gains, load-dependent transmission law, stall thresholds and work units are transparent **simulation parameters**.
 
-They should not be confused with the source-backed ETA anchors: caliber identity, 36.60 mm diameter, 4.50 mm height, 3 Hz / 21,600 A/h rate, 17 jewels, 44° lift angle, and 53 h minimum / 60 h typical reserve.
+They should not be confused with the source-backed ETA anchors: caliber identity, 36.60 mm diameter, 4.50 mm height, 3 Hz / 21,600 A/h rate, 17 jewels, 44° lift angle, 53 h minimum / 60 h typical reserve, and the dated 2020 25-turn winding-stem complete-wind instruction.
 
 ## Future deepening after M6
 
-The highest-value next work is no longer “connect the subsystems”; they are connected. It is to replace normalized assumptions with more defensible mechanics where data permits:
+The next major step is validation against an **identified physical 6497-2 specimen**.
 
-- better barrel / mainspring geometry and torque calibration;
-- per-mesh wheel/pinion inertia and friction;
-- force/torque propagation rather than only normalized opportunity work;
-- finite roller-jewel / fork-slot / horn / safety-dart collision geometry;
-- regulator / hairspring geometry;
-- positional and temperature effects;
-- validation against measured 6497-2 amplitude, reserve and rate behavior if suitable data can be sourced.
+The measurement protocol is intended to preserve:
+
+- specimen identity/provenance;
+- 25-turn complete-wind check;
+- measured rundown reserve;
+- timegrapher rate / amplitude / beat error;
+- positional variation;
+- train tooth counts;
+- dimensional geometry;
+- barrel / mainspring measurements where appropriate;
+- service / tribology observations;
+- model-versus-specimen residuals and uncertainty.
+
+Until that specimen exists, unresolved physical values remain unknown rather than being back-filled from presentation geometry or generic watchmaking assumptions.
 
 ## Sources
 
 - ETA 6497-2 Technical Communication: https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/
+- ETA 6497-2 Manufacturing Information 2020: https://www.files.masteroftime.ch/6497-2%20ETA%20Manufacturing%20information.pdf
 - ETA 6497-2 spare-parts communication: https://shopb2b.eta.ch/technicaldocuments/index/pdf/id/1632/
 - Case & Caliber ETA 6497 disassembly: https://caseandcaliber.com/eta-6497-disassembly/
 - Horology Student Unitas/ETA 6497/6498 reference: https://horology-student.org/movements/modern-eta-and-clones/unitas-eta-6497-6498/
+
+- Moebius lubricant / epilame supplier documentation: https://www.moebius-lubricants.ch/en/
+- Incabloc supplier-family shock-bearing / jewel documentation: https://www.incabloc.ch/en/
