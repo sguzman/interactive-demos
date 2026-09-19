@@ -35,7 +35,7 @@ Current public synchronization pass:
 
 - **date:** 2026-09-19;
 - **projection milestone:** M6e;
-- **Engineering research state:** ENG-6497-008 complete; ENG-6497-009 blocked on an identified physical specimen.
+- **Engineering research state:** core documentary/reconstruction scope complete; optional physical-specimen enrichment available but not required.
 
 Provenance classes used by the projection:
 
@@ -379,11 +379,13 @@ Current M6-specific values such as the 8-turn full-release mapping, normalized t
 
 They should not be confused with the source-backed ETA anchors: caliber identity, 36.60 mm diameter, 4.50 mm height, 3 Hz / 21,600 A/h rate, 17 jewels, 44° lift angle, 53 h minimum / 60 h typical reserve, and the dated 2020 25-turn winding-stem complete-wind instruction.
 
-## Future deepening after M6
+## Completion and optional physical enrichment
 
-The next major step is validation against an **identified physical 6497-2 specimen**.
+The current documentary / analytical / reconstruction scope is complete.
 
-The measurement protocol is intended to preserve:
+The remaining unmeasured quantities are explicit evidence boundaries, not unfinished debt.
+
+If an identified physical 6497-2 later becomes conveniently available and direct work is desirable, an optional enrichment protocol can add:
 
 - specimen identity/provenance;
 - 25-turn complete-wind check;
@@ -396,7 +398,7 @@ The measurement protocol is intended to preserve:
 - service / tribology observations;
 - model-versus-specimen residuals and uncertainty.
 
-Until that specimen exists, unresolved physical values remain unknown rather than being back-filled from presentation geometry or generic watchmaking assumptions.
+No physical purchase, ownership, teardown, or direct measurement is required for the specimen to remain research-complete for its current scope.
 
 ## Sources
 
