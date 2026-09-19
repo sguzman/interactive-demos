@@ -5,7 +5,7 @@ import {
   setShadows, shockSetting
 } from './geometry.js';
 import { createMaterials } from './materials.js';
-import { ETA6497_2, LAYOUT, MILESTONE, PARTS } from './spec.js';
+import { CANONICAL, ETA6497_2, LAYOUT, MILESTONE, PARTS } from './spec.js';
 
 export const MODEL = {
   movement: ETA6497_2.caliber,
@@ -17,6 +17,10 @@ export const MODEL = {
   liftAngleDeg: ETA6497_2.liftAngleDeg,
   powerReserveMinHours: ETA6497_2.powerReserveMinHours,
   powerReserveTypicalHours: ETA6497_2.powerReserveTypicalHours,
+  fullWindStemTurns2020: ETA6497_2.fullWindStemTurns2020,
+  canonicalSpecimenId: CANONICAL.specimenId,
+  canonicalProjectionMilestone: CANONICAL.projectionMilestone,
+  engineeringSyncDate: CANONICAL.engineeringSyncDate,
   referenceWatch: '44 mm exhibition wristwatch / OP XI lineage reference shell',
   referenceCaseDiameter: 44,
   milestone: MILESTONE.id
