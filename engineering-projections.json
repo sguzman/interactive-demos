@@ -1,12 +1,11 @@
 {
-  "version": 1,
+  "version": 2,
   "authority": "public-projection-registry",
-  "canonicalEngineeringAuthority": "Taria / taria/engineering",
+  "canonicalEngineeringAuthority": "Taria Engineering",
   "projections": [
     {
       "demoSlug": "watch",
       "engineeringSpecimenId": "specimen:eta-unitas-6497-2",
-      "engineeringCanonicalPath": "taria/engineering/specimens/eta-unitas-6497-2",
       "publicPath": "./watch/",
       "documentationPath": "./docs/watch-eta-6497-2.html",
       "modelClass": "causal educational reconstruction / interactive constructive geometry",
@@ -15,8 +14,22 @@
       "primaryManufacturerSources": [
         "https://portal.eta.ch/en/6497-2-6497-2-3.html",
         "https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/",
-        "https://shopb2b.eta.ch/technicaldocuments/index/pdf/id/1632/"
-      ]
+        "https://shopb2b.eta.ch/technicaldocuments/index/pdf/id/1632/",
+        "https://www.files.masteroftime.ch/6497-2%20ETA%20Manufacturing%20information.pdf"
+      ],
+      "canonicalVisibility": "private",
+      "publicCanonicalIdentifier": "specimen:eta-unitas-6497-2",
+      "engineeringSyncDate": "2026-09-19",
+      "engineeringResearchState": "ENG-6497-008 complete; ENG-6497-009 blocked on identified physical specimen",
+      "provenanceScheme": [
+        "P0 manufacturer",
+        "P1 measurement",
+        "P2 derived",
+        "P3 audited secondary",
+        "P4 reconstruction",
+        "P5 presentation"
+      ],
+      "publicationBoundary": "Expose publication-safe identifiers and source-backed claims only; do not link private canonical corpus paths."
     }
   ]
 }
