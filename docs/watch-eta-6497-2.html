@@ -15,20 +15,26 @@
   <h1>ETA / Unitas 6497-2</h1>
   <p class="lead">M6e closes the current normalized movement architecture and resolves the train power path into named reconstructed stages. Barrel torque, stage-resolved train load, dynamic feedback, finite escapement work, integrated balance state, release timing, reserve and explicit stall modes now participate in one causal loop.</p>
 
-  <div class="callout"><strong>Accuracy contract.</strong><p>The official reference remains 3 Hz / 21,600 A/h, 17 jewels, 44° lift angle, and 53 h minimum / 60 h typical reserve. M6 torque, load, stage efficiency, spring-turn, work and stall values are educational reconstruction parameters—not ETA production measurements.</p></div>
+  <div class="callout"><strong>Accuracy contract.</strong><p>The current official reference remains 3 Hz / 21,600 A/h, 17 jewels, 44° lift angle, and 53 h minimum / 60 h typical reserve. ETA's dated 2020 manufacturing sheet also gives 25 winding-stem turns for complete winding; the public winding-input model now uses that P0 dated anchor. M6 barrel-drum release turns, torque, load, stage efficiency, work and stall values remain educational reconstruction parameters—not ETA production measurements.</p></div>
 
   <h2>Official movement facts</h2>
   <div class="specs">
     <div class="spec"><span>Diameter</span><strong>36.60 mm</strong></div><div class="spec"><span>Movement height</span><strong>4.50 mm</strong></div>
     <div class="spec"><span>Nominal frequency</span><strong>3.000 Hz</strong></div><div class="spec"><span>Alternations</span><strong>21,600 A/h</strong></div>
     <div class="spec"><span>Jewels</span><strong>17</strong></div><div class="spec"><span>Power reserve</span><strong>53 h min / 60 h typical</strong></div>
+    <div class="spec"><span>Full winding · dated 2020</span><strong>25 stem turns</strong></div><div class="spec"><span>Canonical specimen</span><strong>specimen:eta-unitas-6497-2</strong></div>
   </div>
+
+  <h2>Projection identity and provenance</h2>
+  <p>This page is the public projection of canonical specimen <code>specimen:eta-unitas-6497-2</code>. The private Engineering corpus is not linked from the public site; only publication-safe identifiers and source-backed claims are projected here.</p>
+  <div class="callout"><strong>Provenance classes.</strong><p><code>P0</code> manufacturer · <code>P1</code> direct measurement · <code>P2</code> derived · <code>P3</code> audited secondary · <code>P4</code> reconstruction · <code>P5</code> presentation. A component can have P0 identity while its displayed Three.js geometry remains P4/P5.</p></div>
+  <p>Public synchronization pass: <strong>2026-09-19 · M6e</strong>. Physical validation remains pending access to an identified 6497-2 specimen.</p>
 
   <h2>Closed-loop causal chain</h2>
   <div class="callout"><strong>crown → arbor winding → spring twist → barrel torque → stage-resolved train load → compounded transmission → available escapement work → finite polygon work transfer → delivered Δω → integrated balance θ/ω → pallet / escape release → train → hands</strong><p>Downstream demand also feeds back upstream: rejected work, low amplitude, geometry blockage and stall state raise reaction load, reducing torque margin and available impulse.</p></div>
 
   <h2>M6a — arbor / drum power separation</h2>
-  <p>M6a distinguishes crown/ratchet-driven <strong>barrel-arbor winding</strong> from slow <strong>barrel-drum release</strong>. Reserve becomes normalized spring twist; that twist feeds a reconstructed torque curve; load and transmission reduce that torque before it reaches the escapement work layer.</p>
+  <p>M6a distinguishes crown/ratchet-driven <strong>barrel-arbor winding</strong> from slow <strong>barrel-drum release</strong>. The winding-input endpoint is now calibrated to ETA's dated 2020 statement of <strong>25 winding-stem turns to complete winding</strong>. That does not determine barrel-drum rundown turns or mainspring development turns. Reserve becomes normalized spring twist; that twist feeds a reconstructed torque curve; load and transmission reduce that torque before it reaches the escapement work layer.</p>
   <div class="specs">
     <div class="spec"><span>Modeled full drum release</span><strong>8 turns</strong></div>
     <div class="spec"><span>Low-twist knee</span><strong>0.12</strong></div>
@@ -62,6 +68,15 @@
   <p>The stage efficiencies multiply into a transmission ceiling. M6b then applies additional load-dependent degradation below that ceiling. Dynamic running, delivered-work demand, rejected-work backpressure, low amplitude, geometry blockage and stall penalties are added mainly on the escapement/load side.</p>
   <p>The important architectural benefit is replaceability: future measured or better-founded losses can be attached to specific stages instead of replacing one opaque train-efficiency number.</p>
 
+  <h2>Physical amplitude vs normalized oscillator state</h2>
+  <p>The public oscillator uses integrated angle/velocity state and a normalized 0–1 amplitude coordinate. Its <code>0.43 rad</code> visual/state scale is a reconstruction parameter, not the physical maximum swing of the real balance. ETA's dated 2020 adjustment sheet instead gives real timegrapher-style amplitude criteria reaching 320° horizontally and minima of 210° / 200° vertically under specified wind-state conditions.</p>
+  <p>Therefore <code>normalized amplitude</code>, <code>visual balance angle</code>, and <code>physical balance amplitude in degrees</code> are three different quantities.</p>
+
+  <h2>Materials, surfaces and service state</h2>
+  <p>Exact ETA 6497-2 documentation identifies brass plates/bridges, a steel escape wheel and pallet fork, a gilt Glucydur balance, and a nickel-steel balance spring. Current service documentation also distinguishes thin oil, high-pressure oil, greases, pallet-stone escapement lubricant and Fixodrop epilame treatment.</p>
+  <p>The complete movement barrel is treated by ETA as a service-preserved prelubricated assembly: the current communication marks it as a do-not-wash part and directs replacement with an original prelubricated ETA part when required.</p>
+  <div class="callout"><strong>Service state is mechanical state.</strong><p>Cleanliness, epilame condition, lubricant identity/amount, contamination, wear and assembly condition can change behavior even when component identity is unchanged. Lubricant names are not converted into invented friction coefficients.</p></div>
+
   <h2>M5 escapement causality retained</h2>
   <p>M6 supplies upstream mechanics; it does not replace the M5 escapement. The live movement still uses integrated θ/ω balance state, finite escape-tooth and pallet-jewel polygons, geometry-derived lock/impulse/drop/capture, polygon surface-follow distance, variable work-scaled Δω, and geometry-derived escape release as the downstream train's timing source.</p>
 
@@ -87,12 +102,15 @@
   <p>Wind the assembled movement in <strong>Winding</strong> view, then switch to <strong>Escapement</strong> and run at 0.1× or 0.25×. Compare the M6e stage load with M6b drive margin, M5i available/delivered/lost work, M6c ledger closure and M5f oscillator Δω/amplitude. M6d reports the movement-level operating or fault state.</p>
 
   <h2>Future deepening after M6</h2>
-  <p>The highest-value future work is now calibration and physical fidelity: better barrel/mainspring geometry and torque data, per-mesh inertia/friction and force propagation, finite roller-jewel/fork-slot/horn/safety geometry, regulator/hairspring mechanics, positional effects, temperature response, and validation against measured 6497-2 amplitude/reserve/rate behavior when defensible data is available.</p>
+  <p>The next major step is physical validation against an identified 6497-2 movement. The validation plan targets winding count, rundown reserve, timegrapher rate/amplitude/beat error, train tooth counts, dimensional geometry, service state, barrel/mainspring geometry and model-vs-specimen residuals. Until such a specimen is measured, unresolved physical values remain unknown rather than being back-filled from the visualization.</p>
 
   <h2>Sources</h2>
-  <div class="source"><strong>ETA — current 6497-2 Technical Communication</strong><p><a href="https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/">official dimensions, rate, reserve, lift angle and service data</a></p></div>
+  <div class="source"><strong>ETA — current 6497-2 Technical Communication</strong><p><a href="https://portal.eta.ch/en/technicaldocuments/index/pdf/id/1532/">official dimensions, rate, reserve, lift angle, parts, lubrication and service data</a></p></div>
+  <div class="source"><strong>ETA — 6497-2 Manufacturing Information · 2020</strong><p><a href="https://www.files.masteroftime.ch/6497-2%20ETA%20Manufacturing%20information.pdf">dated materials, adjustment envelope and 25-turn complete-winding instruction</a></p></div>
   <div class="source"><strong>ETA — 6497-2 spare-parts communication</strong><p><a href="https://shopb2b.eta.ch/technicaldocuments/index/pdf/id/1632/">official part identities and positions</a></p></div>
   <div class="source"><strong>Case &amp; Caliber — ETA 6497 disassembly</strong><p><a href="https://caseandcaliber.com/eta-6497-disassembly/">photographed bridge, jewel and part relationships</a></p></div>
-  <div class="source"><strong>Horology Student — Unitas/ETA 6497/6498</strong><p><a href="https://horology-student.org/movements/modern-eta-and-clones/unitas-eta-6497-6498/">reference train tooth counts and revolution periods</a></p></div>
+  <div class="source"><strong>Horology Student — Unitas/ETA 6497/6498</strong><p><a href="https://horology-student.org/movements/modern-eta-and-clones/unitas-eta-6497-6498/">P3 reference train tooth counts and revolution periods</a></p></div>
+  <div class="source"><strong>Moebius</strong><p><a href="https://www.moebius-lubricants.ch/en/">supplier properties for ETA-specified lubricant and epilame classes</a></p></div>
+  <div class="source"><strong>Incabloc</strong><p><a href="https://www.incabloc.ch/en/">supplier-family shock-bearing, jewel and surface-treatment context</a></p></div>
   <footer>interactive-demos / watch · documentation is part of the model.</footer>
 </main></body></html>
