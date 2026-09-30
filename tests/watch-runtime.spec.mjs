@@ -10,6 +10,7 @@ test('Wind & Run advances the ETA 6497-2 simulation', async ({ page }) => {
   const before = await page.evaluate(() => window.__watchDebug.snapshot());
   expect(before.reserve).toBeLessThan(0.01);
 
+  page.on('console', message => console.log('[browser]', message.type(), message.text()));
   const buttonCount = await page.locator('#windRunBtn').count();
   expect(buttonCount).toBe(1);
   await page.evaluate(() => document.querySelector('#windRunBtn').click());
