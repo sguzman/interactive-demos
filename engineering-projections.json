@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "authority": "public-projection-registry",
   "canonicalEngineeringAuthority": "Taria Engineering",
   "projections": [
@@ -19,8 +19,8 @@
       ],
       "canonicalVisibility": "private",
       "publicCanonicalIdentifier": "specimen:eta-unitas-6497-2",
-      "engineeringSyncDate": "2026-09-19",
-      "engineeringResearchState": "Core documentary/reconstruction research complete for current scope; optional physical-specimen enrichment available but not required.",
+      "engineeringSyncDate": "2026-09-30",
+      "engineeringResearchState": "Core documentary/reconstruction research complete for current scope; public Works guide and basic/advanced UX tranche published; optional physical-specimen enrichment remains available but is not required.",
       "provenanceScheme": [
         "P0 manufacturer",
         "P1 measurement",
@@ -29,8 +29,16 @@
         "P4 reconstruction",
         "P5 presentation"
       ],
-      "publicationBoundary": "Expose publication-safe identifiers and source-backed claims only; do not link private canonical corpus paths.",
-      "completionPolicy": "Acquisition-neutral: physical ownership, purchase, teardown, or direct measurement is not required for research completion."
+      "publicationBoundary": "Expose publication-safe identifiers and source-backed claims only; keep private canonical corpus paths unpublished. Works expression identity may be public; internal Works/Engineering paths may not.",
+      "completionPolicy": "Acquisition-neutral: physical ownership, purchase, teardown, or direct measurement is not required for research completion.",
+      "worksExpressionId": "expression:eta-unitas-6497-2-public-engineering-guide:en:v1",
+      "publicGuideStatus": "published",
+      "readerJourney": [
+        "gallery",
+        "interactive specimen",
+        "rich guide"
+      ],
+      "publicUx": "basic Run the watch surface + progressive Advanced inspection"
     }
   ]
 }
