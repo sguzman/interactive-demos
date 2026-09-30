@@ -51,6 +51,21 @@ const keylessSystem = createKeylessSettingSystem({ watch, windingSystem, animate
 const powerSystem = createPowerReleaseSystem({ windingSystem });
 const escapementSystem = createEscapementSystem({ watch, animated, materials, powerSystem });
 const watchAudio = createWatchAudio({ root: document });
+
+// Manual winding needs acoustic feedback at the gesture boundary: a quick tap
+// can complete its nudge before the next animation frame sees windingSystem.input.
+const manualWindAudioBtn = document.querySelector('#windCrownBtn');
+manualWindAudioBtn?.addEventListener('pointerdown', event => {
+  if (!event.isTrusted) return;
+  watchAudio.markGesture();
+  watchAudio.playWindingBurst(900);
+});
+window.addEventListener('keydown', event => {
+  if (event.code !== 'KeyW' || event.repeat) return;
+  watchAudio.markGesture();
+  watchAudio.playWindingBurst(900);
+});
+
 scene.add(watch);
 const lighting = createLightingRig(scene, materials);
 
