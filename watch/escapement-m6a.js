@@ -86,6 +86,7 @@ function injectUI(root) {
 }
 
 export function createEscapementSystem({ watch, animated, materials, powerSystem, root = document }) {
+  const advancedInspectionOpen = () => root.querySelector('.controls')?.classList.contains('advanced-open') === true;
   const base = createM5iEscapementSystem({ watch, animated, materials, powerSystem, root });
   injectUI(root);
 
@@ -136,6 +137,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
   }
 
   function syncUI() {
+    if (!advancedInspectionOpen()) return;
     if (ui.twist) ui.twist.value = `${(state.springTwist * 100).toFixed(1)}%`;
     if (ui.torque) ui.torque.value = `${state.springTorque.toFixed(3)} normalized`;
     if (ui.arbor) {
