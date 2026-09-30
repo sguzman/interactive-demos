@@ -61,6 +61,7 @@ function injectUI(root) {
 }
 
 export function createEscapementSystem({ watch, animated, materials, powerSystem, root = document }) {
+  const advancedInspectionOpen = () => root.querySelector('.controls')?.classList.contains('advanced-open') === true;
   const base = createM6aEscapementSystem({ watch, animated, materials, powerSystem, root });
   injectUI(root);
 
@@ -220,6 +221,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
   };
 
   function syncUI() {
+    if (!advancedInspectionOpen()) return;
     if (ui.load) ui.load.value = `${state.trainLoad.toFixed(3)} normalized`;
     if (ui.margin) ui.margin.value = `${state.driveMargin >= 0 ? '+' : ''}${state.driveMargin.toFixed(3)} normalized`;
     if (ui.transmission) ui.transmission.value = `${(state.transmissionEfficiency * 100).toFixed(1)}%`;
