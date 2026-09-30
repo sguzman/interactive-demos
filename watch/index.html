@@ -28,6 +28,39 @@
   </header>
 
   <aside class="controls panel" aria-label="Watch controls">
+    <section class="basic-controls" aria-labelledby="basicControlsTitle">
+      <div class="section-title" id="basicControlsTitle">Run the watch</div>
+      <p class="basic-intro">This is a hand-wound movement, so it intentionally starts unwound. Use <strong>Wind &amp; Run</strong> for a healthy demonstration state, then explore the mechanism. Manual winding and the full diagnostic controls remain below.</p>
+      <div class="basic-action-grid">
+        <button id="windRunBtn">Wind &amp; Run</button>
+        <button id="pauseResumeBtn" class="secondary">Pause</button>
+        <button id="basicUnwindBtn" class="secondary">Fully unwind</button>
+      </div>
+      <div class="basic-state-grid">
+        <div class="mode-stat"><span>Movement</span><output id="basicMovementState">UNWOUND</output></div>
+        <div class="mode-stat"><span>Reserve</span><output id="basicReserveValue">0% · 0.0 h</output></div>
+      </div>
+      <progress id="basicPowerMeter" class="power-meter" max="1" value="0"></progress>
+      <label class="select-row"><span>Speed</span><select id="basicTrainScale">
+        <option value="0.25">0.25× slow inspection</option>
+        <option value="1" selected>1× real time</option>
+        <option value="10">10×</option>
+        <option value="60">60×</option>
+        <option value="3600">3600× reserve demo</option>
+      </select></label>
+      <div class="basic-view-grid">
+        <button class="secondary" data-view="overview">Overview</button>
+        <button class="secondary" data-view="winding">Winding</button>
+        <button class="secondary" data-view="train">Train</button>
+        <button class="secondary" data-view="escapement">Escapement</button>
+      </div>
+      <div class="button-row">
+        <button id="basicAssembleBtn" class="secondary">Assemble</button>
+        <button id="basicExplodeBtn" class="secondary">Explode</button>
+      </div>
+      <div class="winding-note"><strong>Wind &amp; Run</strong> is a presentation shortcut: it raises the modeled reserve to 60% and returns the simulation to 1×. It does not replace the manual 25-stem-turn winding model.</div>
+    </section>
+
     <section>
       <div class="section-title">Assembly</div>
       <label class="range-row" for="explode"><span>Exploded view</span><output id="explodeValue">22%</output></label>
@@ -127,7 +160,7 @@
     <section>
       <div class="section-title">Manual winding · M4a retained</div>
       <div class="button-row winding-buttons"><button id="windCrownBtn">Wind crown ↻</button><button id="returnCrownBtn" class="secondary">Return crown ↺</button></div>
-      <button id="resetWindBtn" class="secondary wide">Reset / fully unwind</button>
+      <button id="resetWindBtn" class="secondary wide">Fully unwind</button>
       <div class="power-state">
         <label class="range-row"><span>Mainspring reserve</span><output id="reserveValue">0.00 h / 60 h</output></label>
         <progress id="powerMeter" class="power-meter" max="1" value="0"></progress>
