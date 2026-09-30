@@ -271,6 +271,8 @@ export function buildWatch() {
   const hourWheel = gear({ radius: 2.25, teeth: 36, thickness: .42, material: materials.brass, hubRadius: .78, spokeCount: 4, toothDepth: .25, toothWidth: .15 });
   hourWheel.position.z = 1.55;
   motion.add(hourWheel);
+  animated.cannonPinion = cannon;
+  animated.hourWheel = hourWheel;
   register(motion, meta(
     'Driver cannon pinion & hour wheel', 'Motion works', 'motion',
     'The motion works reduce and distribute wheel-train output to the central minute and hour hands.',
@@ -292,6 +294,8 @@ export function buildWatch() {
   const minuteWheel = gear({ radius: 1.9, teeth: 28, thickness: .34, material: materials.brass, hubRadius: .42, spokeCount: 4, toothDepth: .2, toothWidth: .12 });
   minuteWheel.position.set(7.4, -1.1, .92);
   keyless.add(minuteWheel);
+  animated.settingWheel = settingWheel;
+  animated.minuteWheel = minuteWheel;
   const yoke = polygonPlate([[11.0,1.4],[13.5,.9],[13.8,2.0],[11.5,2.8],[9.7,2.2]], .24, materials.brushedSteel, { bevelSize: .04, bevelThickness: .03, bevelSegments: 2 });
   yoke.position.z = 1.03;
   keyless.add(yoke);
