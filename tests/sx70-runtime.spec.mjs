@@ -41,7 +41,20 @@ test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', asyn
   expect(cycleResult.events).toContain('reflex-recock-phase');
   expect(cycleResult.events).toContain('S5-terminal');
   expect(cycleResult.events).toContain('S1-released-and-shutter-open');
+  expect(cycleResult.transport.sheetsRemaining).toBe(9);
+  expect(cycleResult.transport.counter).toBe(9);
+  expect(cycleResult.transport.filmInTransport).toBe(false);
+  expect(cycleResult.transport.ejectedCount).toBe(1);
   expect((await page.evaluate(() => window.__sx70Debug.state)).violations).toEqual([]);
+
+  // A fresh pack uses the same transport hardware to eject the dark slide, but does not
+  // consume one of the ten photographic sheets.
+  expect(await page.evaluate(() => window.__sx70Debug.loadFreshPack())).toBe(true);
+  const freshPack = await page.evaluate(() => window.__sx70Debug.advanceCycle(1 / 120, 240));
+  expect(freshPack.transport.darkSlidePresent).toBe(false);
+  expect(freshPack.transport.sheetsRemaining).toBe(10);
+  expect(freshPack.transport.counter).toBe(10);
+  expect(freshPack.transport.filmInTransport).toBe(false);
 
   await page.locator('#focus').evaluate(element => {
     element.value = '82';
@@ -49,6 +62,10 @@ test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', asyn
   });
   const focused = await page.evaluate(() => window.__sx70Debug.state);
   expect(focused.focus).toBeCloseTo(0.82, 2);
+
+  await page.locator('[data-view="transport"]').click();
+  await page.waitForTimeout(250);
+  await page.screenshot({ path: 'test-results/sx70-film-transport.png', fullPage: true });
 
   await page.locator('[data-view="viewing"]').click();
   await page.waitForFunction(() => window.__sx70Debug.state.opticsMode === 'viewing');
