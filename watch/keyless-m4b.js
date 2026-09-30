@@ -13,15 +13,52 @@ function damp(current, target, lambda, dt) {
 
 function bindHoldButton(button, direction, controller) {
   if (!button) return;
+
+  const holdDelayMs = 180;
+  let holdTimer = null;
+  let continuous = false;
+  let activePointerId = null;
+
+  const clearHoldTimer = () => {
+    if (holdTimer !== null) clearTimeout(holdTimer);
+    holdTimer = null;
+  };
+
   button.addEventListener('pointerdown', event => {
+    if (activePointerId !== null) return;
+    activePointerId = event.pointerId;
+    continuous = false;
     button.setPointerCapture?.(event.pointerId);
-    controller.setInput(direction);
+    clearHoldTimer();
+    holdTimer = setTimeout(() => {
+      holdTimer = null;
+      continuous = true;
+      controller.setInput(direction);
+    }, holdDelayMs);
   });
-  const release = () => controller.setInput(0);
-  button.addEventListener('pointerup', release);
-  button.addEventListener('pointercancel', release);
-  button.addEventListener('lostpointercapture', release);
-  button.addEventListener('click', () => controller.nudge(direction, .35));
+
+  button.addEventListener('pointerup', event => {
+    if (activePointerId !== event.pointerId) return;
+    clearHoldTimer();
+    if (continuous) controller.setInput(0);
+    else controller.nudge(direction, .35);
+    continuous = false;
+    activePointerId = null;
+  });
+
+  const cancel = () => {
+    clearHoldTimer();
+    if (continuous) controller.setInput(0);
+    continuous = false;
+    activePointerId = null;
+  };
+  button.addEventListener('pointercancel', cancel);
+  button.addEventListener('lostpointercapture', cancel);
+
+  // Preserve keyboard activation without re-applying a pointer nudge.
+  button.addEventListener('click', event => {
+    if (event.detail === 0) controller.nudge(direction, .35);
+  });
 }
 
 function makeStemVisual(keylessRoot, materials) {
