@@ -151,8 +151,8 @@ const VIEW_PRESETS = {
     target: new THREE.Vector3(0, 38, 6)
   },
   folding: {
-    position: new THREE.Vector3(245, 118, 190),
-    target: new THREE.Vector3(0, 42, -3)
+    position: new THREE.Vector3(305, 102, 52),
+    target: new THREE.Vector3(0, 43, -2)
   },
   viewing: {
     position: new THREE.Vector3(198, 126, 205),
