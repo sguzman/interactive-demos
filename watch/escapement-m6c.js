@@ -47,6 +47,7 @@ function injectUI(root) {
 }
 
 export function createEscapementSystem({ watch, animated, materials, powerSystem, root = document }) {
+  const advancedInspectionOpen = () => root.querySelector('.controls')?.classList.contains('advanced-open') === true;
   const base = createM6bEscapementSystem({ watch, animated, materials, powerSystem, root });
   injectUI(root);
 
@@ -115,6 +116,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
   }
 
   function syncUI() {
+    if (!advancedInspectionOpen()) return;
     if (ui.spring) ui.spring.value = `${state.springBudget.toFixed(3)} units`;
     if (ui.train) ui.train.value = `${state.trainAvailable.toFixed(3)} units`;
     if (ui.trainLoss) ui.trainLoss.value = `${state.trainLoss.toFixed(3)} units`;
