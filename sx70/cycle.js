@@ -67,6 +67,7 @@ export function createExposureCycle() {
     S4: 'viewing/open-state',
     S5: 'reset',
     lastEvent: 'ready-viewing',
+    eventHistory: [],
     provenance: {
       transitionOrder: 'P0/P2 canonical Engineering state model',
       yDelay: 'P0 service anchor · 40 ± 5 ms',
@@ -79,6 +80,7 @@ export function createExposureCycle() {
 
   function emit(event) {
     state.lastEvent = event;
+    state.eventHistory.push(event);
     pendingEvents.push(event);
   }
 
@@ -185,6 +187,7 @@ export function createExposureCycle() {
 
     state.cycleCount += 1;
     state.cycleElapsed = 0;
+    state.eventHistory = [];
     enter('shutter-closing', 'S1-close');
     return true;
   }
@@ -324,8 +327,10 @@ export function createExposureCycle() {
   function reset() {
     state.cycleElapsed = 0;
     state.cycleCount = 0;
+    state.eventHistory = [];
     enter('idle', 'reset');
     drainEvents();
+    state.eventHistory = [];
   }
 
   function snapshot() {
