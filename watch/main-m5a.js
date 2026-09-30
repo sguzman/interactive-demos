@@ -399,6 +399,12 @@ const handPhase = {
   minute: animated.minuteHand.rotation.z,
   hour: animated.hourHand.rotation.z
 };
+const motionPhase = {
+  cannonPinion: animated.cannonPinion?.rotation.z ?? 0,
+  hourWheel: animated.hourWheel?.rotation.z ?? 0,
+  minuteWheel: animated.minuteWheel?.rotation.z ?? 0,
+  settingWheel: animated.settingWheel?.rotation.z ?? 0
+};
 let lastEscapeState = null;
 let previousAcceptedCrownTurns = windingSystem.state.acceptedCrownTurns;
 
@@ -519,6 +525,32 @@ function advanceSimulationFrame(dt, renderFrame = true) {
   animated.secondsHand.rotation.z = handPhase.seconds + k.smallSecondsHand;
   animated.minuteHand.rotation.z = handPhase.minute + k.minuteHand + handOffsets.minute;
   animated.hourHand.rotation.z = handPhase.hour + k.hourHand + handOffsets.hour;
+
+  // Complete the dial-side motion works. The cannon pinion follows the minute
+  // indication, the hour wheel follows the 12:1 hour reduction, and the visible
+  // minute/setting wheel chain receives a P4 presentation rotation. A 6497
+  // motion-works reference describes the minute wheel at roughly 1/3 rev/hour;
+  // the setting-wheel rate below then follows the visible reconstructed 28:22 mesh.
+  if (animated.cannonPinion) {
+    animated.cannonPinion.rotation.z = motionPhase.cannonPinion + k.minuteHand + handOffsets.minute;
+  }
+  if (animated.hourWheel) {
+    animated.hourWheel.rotation.z = motionPhase.hourWheel + k.hourHand + handOffsets.hour;
+  }
+  const motionMinuteRun = -k.minuteHand / 3;
+  if (animated.minuteWheel) {
+    animated.minuteWheel.rotation.z =
+      motionPhase.minuteWheel +
+      keylessSystem.state.minuteWheelAngle +
+      motionMinuteRun;
+  }
+  if (animated.settingWheel) {
+    const settingRun = -motionMinuteRun * (keylessSystem.constants.minuteWheelTeeth / keylessSystem.constants.settingWheelTeeth);
+    animated.settingWheel.rotation.z =
+      motionPhase.settingWheel +
+      keylessSystem.state.settingWheelAngle +
+      settingRun;
+  }
 
   if (selectionHelper && selectedRoot) selectionHelper.box.setFromObject(selectedRoot);
 
