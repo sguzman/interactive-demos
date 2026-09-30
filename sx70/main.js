@@ -5,6 +5,7 @@ import { createOpticsVisualization } from './optics.js';
 import { createExposureCycle } from './cycle.js';
 import { createMechanismVisualization } from './mechanism.js';
 import { createTransportVisualization } from './transport.js';
+import { createChemistryVisualization } from './chemistry.js';
 import { CANONICAL, COMPONENTS, RECONSTRUCTION } from './spec.js';
 
 const canvas = document.querySelector('#scene');
@@ -79,6 +80,10 @@ scene.add(mechanism.root);
 const transport = createTransportVisualization();
 scene.add(transport.root);
 
+const chemistry = createChemistryVisualization();
+scene.add(chemistry.root);
+let observedEjectedCount = 0;
+
 const ui = {
   controlsPanel: document.querySelector('.controls'),
   openBtn: document.querySelector('#openBtn'),
@@ -96,6 +101,8 @@ const ui = {
   lastEventState: document.querySelector('#lastEventState'),
   packState: document.querySelector('#packState'),
   sheetState: document.querySelector('#sheetState'),
+  chemistryState: document.querySelector('#chemistryState'),
+  chemistryClock: document.querySelector('#chemistryClock'),
   focus: document.querySelector('#focus'),
   focusValue: document.querySelector('#focusValue'),
   sceneLight: document.querySelector('#sceneLight'),
@@ -124,6 +131,17 @@ const ui = {
   rollerState: document.querySelector('#rollerState'),
   darkSlideState: document.querySelector('#darkSlideState'),
   platenState: document.querySelector('#platenState'),
+  chemistryTemperature: document.querySelector('#chemistryTemperature'),
+  chemistryTemperatureValue: document.querySelector('#chemistryTemperatureValue'),
+  chemistrySpeedBtn: document.querySelector('#chemistrySpeedBtn'),
+  chemistryViewBtn: document.querySelector('#chemistryViewBtn'),
+  phState: document.querySelector('#phState'),
+  opacityState: document.querySelector('#opacityState'),
+  dyeTransferState: document.querySelector('#dyeTransferState'),
+  neutralizationState: document.querySelector('#neutralizationState'),
+  receiverCState: document.querySelector('#receiverCState'),
+  receiverMState: document.querySelector('#receiverMState'),
+  receiverYState: document.querySelector('#receiverYState'),
   loading: document.querySelector('#loading')
 };
 
@@ -151,6 +169,10 @@ const VIEW_PRESETS = {
   transport: {
     position: new THREE.Vector3(200, 92, 225),
     target: new THREE.Vector3(0, 12, 40)
+  },
+  chemistry: {
+    position: new THREE.Vector3(185, 125, 205),
+    target: new THREE.Vector3(0, 48, 4)
   }
 };
 
@@ -168,6 +190,8 @@ function setView(name, immediate = false) {
 
   mechanism.setVisible(name === 'sequence');
   transport.setVisible(name === 'sequence' || name === 'transport');
+  chemistry.setVisible(name === 'chemistry');
+  model.root.visible = name !== 'chemistry';
 
   if (name === 'viewing' || name === 'exposure') {
     setDeploymentTarget(1);
@@ -197,6 +221,14 @@ function setView(name, immediate = false) {
       provenance: 'P0 functional architecture · P4 geometry',
       name: 'Pack, pick, and processing rollers',
       description: 'The original pack combines ten film units, dark slide, spring platen, and a flat 6 V battery. The pick advances one unit to the roller nip; powered rollers then take over transport and rupture/spread the processing pod.'
+    });
+  } else if (name === 'chemistry') {
+    optics.setMode('none');
+    inspectComponent({
+      category: 'integral-film chemistry',
+      provenance: 'P0/P2 process architecture · P5 normalized rates',
+      name: 'Sealed reaction-diffusion laminate',
+      description: 'After roller spread, the film evolves on its own chemical clock: exposure-dependent dye immobilization, CMY transfer, temporary high-pH opacification, delayed neutralization, and optical-filter discharge.'
     });
   } else {
     optics.setMode('none');
@@ -244,6 +276,7 @@ ui.foldBtn.addEventListener('click', () => {
 
 ui.takePhotoBtn.addEventListener('click', () => {
   const pack = transport.snapshot();
+  const chemical = chemistry.snapshot();
   const accepted = cycle.requestExposure({
     deploymentReady: model.state.deployment >= 0.985,
     packReady: pack.ready,
@@ -258,6 +291,19 @@ ui.loadPackBtn.addEventListener('click', () => {
   if (model.state.deployment < 0.985) model.setDeploymentTarget(1);
   if (transport.loadFreshPack()) setView('transport');
 });
+
+ui.chemistryTemperature.addEventListener('input', () => {
+  const value = Number(ui.chemistryTemperature.value);
+  chemistry.setTemperature(value);
+  ui.chemistryTemperatureValue.value = `${value} °C`;
+});
+
+ui.chemistrySpeedBtn.addEventListener('click', () => {
+  const scale = chemistry.toggleFastForward();
+  ui.chemistrySpeedBtn.textContent = `Chemistry ${scale}×`;
+});
+
+ui.chemistryViewBtn.addEventListener('click', () => setView('chemistry'));
 
 ui.deployment.addEventListener('input', () => {
   setDeploymentImmediate(Number(ui.deployment.value) / 100);
@@ -309,8 +355,12 @@ ui.advancedToggleBtn.addEventListener('click', () => {
 function resetSpecimen() {
   cycle.reset();
   transport.reset();
+  chemistry.reset();
+  observedEjectedCount = 0;
   mechanism.setVisible(false);
   transport.setVisible(false);
+  chemistry.setVisible(false);
+  model.root.visible = true;
   model.setExplode(0);
   ui.explode.value = '0';
   ui.explodeValue.value = '0%';
@@ -327,6 +377,11 @@ function resetSpecimen() {
   ui.sceneLightValue.value = '85%';
   ui.exposureComp.value = '0';
   ui.exposureCompValue.value = '+0.0 EV';
+  chemistry.setTemperature(22);
+  chemistry.setTimeScale(1);
+  ui.chemistryTemperature.value = '22';
+  ui.chemistryTemperatureValue.value = '22 °C';
+  ui.chemistrySpeedBtn.textContent = 'Chemistry 1×';
 
   model.setDeploymentImmediate(0);
   model.setDeploymentTarget(0);
@@ -361,6 +416,8 @@ function syncStateUI() {
   ui.lastEventState.value = cycleState.lastEvent.toUpperCase();
   ui.packState.value = !pack.packPresent ? 'NO PACK' : pack.darkSlidePresent ? 'DARK SLIDE' : pack.sheetsRemaining > 0 ? 'READY' : 'EMPTY';
   ui.sheetState.value = `${pack.sheetsRemaining} / 10`;
+  ui.chemistryState.value = chemical.active ? chemical.processState.toUpperCase() : 'NO PRINT';
+  ui.chemistryClock.value = `${chemical.chemicalTime.toFixed(1)} s`;
   ui.s1State.textContent = cycleState.S1;
   ui.s3State.textContent = cycleState.S3;
   ui.s4State.textContent = cycleState.S4;
@@ -375,6 +432,13 @@ function syncStateUI() {
   ui.rollerState.textContent = pack.darkSlideCycle === 'rollers' || cycleState.phase === 'roller-processing' ? 'driving' : 'idle';
   ui.darkSlideState.textContent = pack.darkSlidePresent ? 'present' : 'absent';
   ui.platenState.textContent = `${Math.round(pack.platenDeflection * 100)}%`;
+  ui.phState.textContent = `${Math.round(chemical.localPH * 100)}%`;
+  ui.opacityState.textContent = `${Math.round(chemical.opacification * 100)}%`;
+  ui.dyeTransferState.textContent = `${Math.round(chemical.dyeTransferProgress * 100)}%`;
+  ui.neutralizationState.textContent = `${Math.round(chemical.neutralizationProgress * 100)}%`;
+  ui.receiverCState.textContent = `${Math.round(chemical.receiverCmy[0] * 100)}%`;
+  ui.receiverMState.textContent = `${Math.round(chemical.receiverCmy[1] * 100)}%`;
+  ui.receiverYState.textContent = `${Math.round(chemical.receiverCmy[2] * 100)}%`;
 
   const transportBusy = pack.filmInTransport || Boolean(pack.darkSlideCycle);
   const ready = t >= 0.985 && cycleState.phase === 'idle' && pack.ready && !transportBusy;
@@ -448,6 +512,15 @@ function animate() {
   const cycleEvents = cycle.step(dt);
   mechanism.update(cycle.state, dt);
   transport.step(dt, cycle.state, cycleEvents);
+  const packAfterStep = transport.snapshot();
+  if (packAfterStep.ejectedCount > observedEjectedCount) {
+    observedEjectedCount = packAfterStep.ejectedCount;
+    chemistry.startPrint({
+      sceneLight: cycle.state.sceneLight,
+      exposureCompensationEv: cycle.state.exposureCompensationEv
+    });
+  }
+  chemistry.step(dt);
   optics.setDeployment(model.state.deployment);
 
   if (activeView === 'sequence') {
@@ -498,6 +571,7 @@ window.__sx70Debug = {
       opticsMode: optics.state.mode,
       cycle: cycle.snapshot(),
       transport: transport.snapshot(),
+      chemistry: chemistry.snapshot(),
       violations: cycle.assertInvariants({
         deploymentReady: model.state.deployment >= 0.985,
         filmInTransport: transport.state.filmInTransport
@@ -522,6 +596,8 @@ window.__sx70Debug = {
     });
   },
   loadFreshPack: () => transport.loadFreshPack(),
+  setChemistryTimeScale: value => chemistry.setTimeScale(value),
+  setChemistryTemperature: value => chemistry.setTemperature(value),
   advanceCycle: (dt = 1 / 60, frames = 1) => {
     let events = [];
     for (let i = 0; i < frames; i += 1) {
@@ -529,8 +605,21 @@ window.__sx70Debug = {
       events = events.concat(nextEvents);
       mechanism.update(cycle.state, dt);
       transport.step(dt, cycle.state, nextEvents);
+      const pack = transport.snapshot();
+      if (pack.ejectedCount > observedEjectedCount) {
+        observedEjectedCount = pack.ejectedCount;
+        chemistry.startPrint({
+          sceneLight: cycle.state.sceneLight,
+          exposureCompensationEv: cycle.state.exposureCompensationEv
+        });
+      }
+      chemistry.step(dt);
     }
-    return { state: cycle.snapshot(), transport: transport.snapshot(), events };
+    return { state: cycle.snapshot(), transport: transport.snapshot(), chemistry: chemistry.snapshot(), events };
+  },
+  advanceChemistry: (dt = 1 / 60, frames = 1) => {
+    for (let i = 0; i < frames; i += 1) chemistry.step(dt);
+    return chemistry.snapshot();
   }
 };
 
