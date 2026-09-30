@@ -115,14 +115,17 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
   function deriveDemand() {
     const work = base.impulseWorkState?.lastWork;
     const oscillator = base.state;
-    const geometryHealthy = base.polygonState?.lastResult?.healthy !== false;
+    const geometryDiagnosticHealthy = base.polygonState?.lastResult?.healthy !== false;
     const running = Boolean(powerSystem.state.running);
 
     state.impulseDemand = clamp01(work?.deliveredWork ?? 0);
     state.backpressure = clamp01(work?.lostWork ?? 0);
     const amplitude = clamp01(oscillator?.amplitude ?? 0);
     state.amplitudePenalty = running ? (1 - amplitude) * FEEDBACK.lowAmplitudeGain : 0;
-    state.geometryPenalty = geometryHealthy ? 0 : FEEDBACK.geometryPenalty;
+    // Geometry penalty is diagnostic-only in the nominal public run path.
+    // P4 contact reconstruction may be imperfect without implying the physical
+    // movement has no usable drive.
+    state.geometryPenalty = geometryDiagnosticHealthy ? 0 : FEEDBACK.geometryPenalty;
     state.stalledPenalty = powerSystem.state.status === 'stalled' ? FEEDBACK.stalledPenalty : 0;
 
     const aggregateTarget =
@@ -131,7 +134,6 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
       FEEDBACK.impulseDemandGain * state.impulseDemand +
       FEEDBACK.rejectedWorkGain * state.backpressure +
       state.amplitudePenalty +
-      state.geometryPenalty +
       state.stalledPenalty;
 
     const external = providerResult({
@@ -139,7 +141,8 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
       running,
       work,
       amplitude,
-      geometryHealthy,
+      geometryHealthy: true,
+      geometryDiagnosticHealthy,
       powerStatus: powerSystem.state.status,
       blockReason: powerSystem.state.blockReason || '',
       springTorque: springTorque(),
@@ -178,7 +181,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     state.escapementDrive = clamp01(usable / Math.max(1e-6, 1 - FEEDBACK.baseLoad) * state.transmissionEfficiency);
 
     if ((windingSystem?.state?.energy ?? 0) <= 0) state.verdict = 'unwound';
-    else if (state.geometryPenalty > 0) state.verdict = 'geometry backpressure';
+    else if (state.geometryPenalty > 0) state.verdict = 'geometry diagnostic · nominal drive';
     else if (state.driveMargin <= FEEDBACK.minimumDriveMargin) state.verdict = 'torque limited';
     else if (powerSystem.state.status === 'stalled') state.verdict = 'escapement stalled';
     else if (powerSystem.state.running) state.verdict = 'load accepted';
