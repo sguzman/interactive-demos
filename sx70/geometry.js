@@ -37,6 +37,32 @@ function box(w, h, d, mat = materials.black) {
   return mesh;
 }
 
+function chamferedFrontStandard(width, height, depth, mat = materials.chrome) {
+  const chamfer = 4.5;
+  const shape = new THREE.Shape();
+  shape.moveTo(-width / 2 + chamfer, 0);
+  shape.lineTo(width / 2 - chamfer, 0);
+  shape.lineTo(width / 2, chamfer);
+  shape.lineTo(width / 2, height - chamfer);
+  shape.lineTo(width / 2 - chamfer, height);
+  shape.lineTo(-width / 2 + chamfer, height);
+  shape.lineTo(-width / 2, height - chamfer);
+  shape.lineTo(-width / 2, chamfer);
+  shape.closePath();
+
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth,
+    bevelEnabled: false,
+    curveSegments: 1
+  });
+  geometry.translate(0, 0, -depth / 2);
+
+  const mesh = new THREE.Mesh(geometry, mat);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
 function cylinder(radius, depth, mat = materials.chrome, radialSegments = 48) {
   const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, depth, radialSegments), mat);
   mesh.castShadow = true;
@@ -184,11 +210,15 @@ export function createSX70Model() {
   packCavity.position.set(0, 2.2, -11);
   base.add(packCavity);
 
-  const rearLeatherDeck = box(88, 2.2, 52, materials.leather);
-  rearLeatherDeck.position.set(0, baseTopY + 1.2, -43);
+  const darkDeck = box(96, 2.0, 112, materials.black);
+  darkDeck.position.set(0, baseTopY + 1.1, -4);
+  base.add(darkDeck);
+
+  const rearLeatherDeck = box(86, 2.2, 48, materials.leather);
+  rearLeatherDeck.position.set(0, baseTopY + 2.25, -43);
   base.add(rearLeatherDeck);
 
-  const frontDeck = box(96, 3.0, 37, materials.chromeDark);
+  const frontDeck = box(94, 2.6, 34, materials.chromeDark);
   frontDeck.position.set(0, baseTopY + 1.55, 53);
   base.add(frontDeck);
 
@@ -208,7 +238,7 @@ export function createSX70Model() {
   // --- Rear wall -------------------------------------------------------------
   // A rigid member rotating around one base hinge, rather than translating
   // through the camera between arbitrary end poses.
-  const rearPanel = makePanel(98, 6.2, materials.chrome, materials.leather);
+  const rearPanel = makePanel(86, 3.8, materials.black, null);
   register('rearPanel', rearPanel);
   root.add(rearPanel);
 
@@ -217,8 +247,8 @@ export function createSX70Model() {
   // are driven from the rear wall and lens standard, preserving a coupled
   // visual chain without claiming exact production link lengths.
   const forwardPanel = new THREE.Group();
-  const forwardLeft = makeRod(1.75, materials.chrome);
-  const forwardRight = makeRod(1.75, materials.chrome);
+  const forwardLeft = makeRod(1.15, materials.chrome);
+  const forwardRight = makeRod(1.15, materials.chrome);
   forwardPanel.add(forwardLeft, forwardRight);
   register('forwardPanel', forwardPanel);
   root.add(forwardPanel);
@@ -226,13 +256,12 @@ export function createSX70Model() {
   // --- Lens / shutter standard ----------------------------------------------
   const lensHousing = new THREE.Group();
 
-  const lensBody = box(
+  const lensBody = chamferedFrontStandard(
     RECONSTRUCTION.body.lensHousingWidth,
     RECONSTRUCTION.body.lensHousingHeight,
     RECONSTRUCTION.body.lensHousingDepth,
     materials.chrome
   );
-  lensBody.position.y = RECONSTRUCTION.body.lensHousingHeight / 2;
   lensHousing.add(lensBody);
 
   // Thin dark control strip is visually characteristic and prevents the front
@@ -243,36 +272,36 @@ export function createSX70Model() {
     2.4,
     materials.black
   );
-  controlStrip.position.set(0, RECONSTRUCTION.body.lensHousingHeight - 10, RECONSTRUCTION.body.lensHousingDepth / 2 + 1.3);
+  controlStrip.position.set(0, RECONSTRUCTION.body.lensHousingHeight - 8.5, RECONSTRUCTION.body.lensHousingDepth / 2 + 1.3);
   lensHousing.add(controlStrip);
 
   const lensBarrel = cylinder(17.2, 14.5, materials.chromeDark, 64);
   lensBarrel.rotation.x = Math.PI / 2;
-  lensBarrel.position.set(-6, 28, RECONSTRUCTION.body.lensHousingDepth / 2 + 8.5);
+  lensBarrel.position.set(-5, 24, RECONSTRUCTION.body.lensHousingDepth / 2 + 8.5);
   lensHousing.add(lensBarrel);
 
   const lensRing = cylinder(14.8, 2.5, materials.chrome, 64);
   lensRing.rotation.x = Math.PI / 2;
-  lensRing.position.set(-6, 28, RECONSTRUCTION.body.lensHousingDepth / 2 + 16.0);
+  lensRing.position.set(-5, 24, RECONSTRUCTION.body.lensHousingDepth / 2 + 16.0);
   lensHousing.add(lensRing);
 
   const lensGlass = cylinder(12.8, 1.4, materials.glass, 64);
   lensGlass.rotation.x = Math.PI / 2;
-  lensGlass.position.set(-6, 28, RECONSTRUCTION.body.lensHousingDepth / 2 + 17.6);
+  lensGlass.position.set(-5, 24, RECONSTRUCTION.body.lensHousingDepth / 2 + 17.6);
   lensHousing.add(lensGlass);
 
   const photocell = cylinder(5.9, 2.2, materials.glass, 32);
   photocell.rotation.x = Math.PI / 2;
-  photocell.position.set(25, 28, RECONSTRUCTION.body.lensHousingDepth / 2 + 16.9);
+  photocell.position.set(24, 24, RECONSTRUCTION.body.lensHousingDepth / 2 + 16.9);
   lensHousing.add(photocell);
 
   const shutterButton = cylinder(5.1, 2.7, materials.red, 32);
   shutterButton.rotation.x = Math.PI / 2;
-  shutterButton.position.set(-34, 38, RECONSTRUCTION.body.lensHousingDepth / 2 + 17.0);
+  shutterButton.position.set(-32, 34, RECONSTRUCTION.body.lensHousingDepth / 2 + 17.0);
   lensHousing.add(shutterButton);
 
   const lightenDarken = box(16, 4.2, 3, materials.black);
-  lightenDarken.position.set(25, 43, RECONSTRUCTION.body.lensHousingDepth / 2 + 17.2);
+  lightenDarken.position.set(23, 38, RECONSTRUCTION.body.lensHousingDepth / 2 + 17.2);
   lensHousing.add(lightenDarken);
 
   register('lensHousing', lensHousing);
@@ -285,21 +314,21 @@ export function createSX70Model() {
   // The long shallow cap is one of the strongest SX-70 silhouette cues.
   const viewfinder = new THREE.Group();
 
-  const capBody = box(96, 13.5, 110, materials.chrome);
-  capBody.position.set(0, 7.3, 15);
+  const capBody = box(94, 10.2, 104, materials.chrome);
+  capBody.position.set(0, 5.6, 17);
   viewfinder.add(capBody);
 
-  const capLeather = box(84, 2.1, 88, materials.leather);
-  capLeather.position.set(0, 14.25, 15);
+  const capLeather = box(84, 2.0, 88, materials.leather);
+  capLeather.position.set(0, 11.1, 17);
   viewfinder.add(capLeather);
 
-  const capUnderside = box(88, 3.2, 93, materials.black);
-  capUnderside.position.set(0, 0.8, 15);
+  const capUnderside = box(88, 2.6, 91, materials.black);
+  capUnderside.position.set(0, 0.4, 17);
   viewfinder.add(capUnderside);
 
   const eyepiece = cylinder(7.3, 3.5, materials.glass, 32);
   eyepiece.rotation.x = Math.PI / 2;
-  eyepiece.position.set(18, 7.0, -41.5);
+  eyepiece.position.set(18, 5.6, -34.5);
   viewfinder.add(eyepiece);
 
   register('viewfinder', viewfinder);
@@ -333,10 +362,10 @@ export function createSX70Model() {
 
   // --- Exterior erecting rails ----------------------------------------------
   const links = {
-    leftRear: makeRod(1.45, materials.link),
-    rightRear: makeRod(1.45, materials.link),
-    leftFront: makeRod(1.45, materials.link),
-    rightFront: makeRod(1.45, materials.link)
+    leftRear: makeRod(1.15, materials.link),
+    rightRear: makeRod(1.15, materials.link),
+    leftFront: makeRod(1.15, materials.link),
+    rightFront: makeRod(1.15, materials.link)
   };
   const linksRoot = new THREE.Group();
   Object.values(links).forEach(link => linksRoot.add(link));
@@ -446,6 +475,14 @@ export function createSX70Model() {
     updateRod(links.rightFront, frontBaseRight, lensTopRight);
 
     updateBellows(s);
+
+    const frontFaceVisible = s.e > 0.07;
+    lensBarrel.visible = frontFaceVisible;
+    lensRing.visible = frontFaceVisible;
+    lensGlass.visible = frontFaceVisible;
+    photocell.visible = frontFaceVisible;
+    shutterButton.visible = frontFaceVisible;
+    lightenDarken.visible = frontFaceVisible;
   }
 
   function applyExplosion(value) {
