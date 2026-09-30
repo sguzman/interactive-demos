@@ -152,7 +152,7 @@ export const PUBLIC_VIEWS = {
   },
   sequence: {
     label: 'Exposure sequence',
-    ready: false
+    ready: true
   },
   transport: {
     label: 'Film transport',
