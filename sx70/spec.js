@@ -160,6 +160,6 @@ export const PUBLIC_VIEWS = {
   },
   chemistry: {
     label: 'Film chemistry',
-    ready: false
+    ready: true
   }
 };
