@@ -59,8 +59,8 @@ function injectUI(root) {
   const subtitle = root.querySelector('header .identity p');
   const loading = root.querySelector('#loading');
   const hint = root.querySelector('.controls > .hint');
-  if (eyebrow) eyebrow.textContent = 'REFERENCE RECONSTRUCTION · M6E';
-  if (subtitle) subtitle.textContent = 'stage-resolved train losses inside the closed-loop normalized movement';
+  if (eyebrow) eyebrow.textContent = 'INTERACTIVE ENGINEERING SPECIMEN';
+  if (subtitle) subtitle.textContent = 'hand-wound 3 Hz movement · mainspring → train → escapement → balance → hands';
   if (loading) loading.textContent = 'Constructing 6497-2 M6e stage-resolved power path…';
   if (hint) hint.textContent = 'M6e resolves the M6 train load into the actual reconstructed centre→third→fourth→escape topology plus pivots, motion works and escapement demand. Those stage loads and compounded stage efficiencies now feed the same M6b/M6d feedback and torque-stall loop.';
 }
