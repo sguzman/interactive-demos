@@ -14,7 +14,7 @@ export const CANONICAL = {
   specimenId: 'specimen:polaroid-sx-70',
   worksExpressionId: 'expression:polaroid-sx-70-public-engineering-guide:en:v1',
   engineeringSyncDate: '2026-09-30',
-  projectionState: 'public implementation tranche in progress',
+  projectionState: 'published integrated specimen; geometry fidelity repair active',
   provenanceScheme: 'P0 primary · P1 measurement · P2 derived · P3 audited secondary · P4 reconstruction · P5 presentation',
   publicationBoundary: 'Public projection only. Geometry and animation tuned here do not become canonical Engineering facts.'
 };
@@ -60,6 +60,23 @@ export const RECONSTRUCTION = {
     forwardAngleDeg: -3,
     lensAngleDeg: 3,
     viewfinderLiftMm: 0
+  },
+  articulation: {
+    revision: 'articulated-v2',
+    provenance: 'P4/P5 visual reconstruction; not measured production pivot geometry',
+    rearBasePivotZ: -67,
+    frontStandardPivotZ: 58,
+    rearWallLength: 84,
+    lensStandardHeight: 54,
+    rearFoldedAngleDeg: 86,
+    rearOpenAngleDeg: 32,
+    lensFoldedAngleDeg: -88,
+    lensOpenAngleDeg: -6,
+    topCapFoldedAngleDeg: 0,
+    topCapOpenAngleDeg: -7,
+    bellowsHalfWidth: 42,
+    sideRailX: 46,
+    clearanceMmPresentation: 2.2
   },
   focus: {
     normalizedDefault: 0.55,
