@@ -45,9 +45,9 @@ export const RECONSTRUCTION = {
     forwardPanelWidth: 96,
     forwardPanelHeight: 77,
     forwardPanelThickness: 7,
-    lensHousingWidth: 82,
-    lensHousingHeight: 57,
-    lensHousingDepth: 30
+    lensHousingWidth: 79,
+    lensHousingHeight: 49,
+    lensHousingDepth: 26
   },
   openPose: {
     rearAngleDeg: 58,
@@ -67,11 +67,11 @@ export const RECONSTRUCTION = {
     rearBasePivotZ: -67,
     frontStandardPivotZ: 58,
     rearWallLength: 84,
-    lensStandardHeight: 54,
+    lensStandardHeight: 48,
     rearFoldedAngleDeg: 86,
     rearOpenAngleDeg: 32,
     lensFoldedAngleDeg: -88,
-    lensOpenAngleDeg: -6,
+    lensOpenAngleDeg: -8,
     topCapFoldedAngleDeg: 0,
     topCapOpenAngleDeg: -7,
     bellowsHalfWidth: 42,
