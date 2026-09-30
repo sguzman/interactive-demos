@@ -233,6 +233,15 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
     applyCrownDelta(Math.sign(direction) * Math.max(0, turns) * TAU);
   }
 
+  function setReserveFraction(fraction) {
+    const next = clamp01(Number(fraction) || 0);
+    state.input = 0;
+    state.energy = next;
+    state.acceptedCrownTurns = next * fullWindStemTurns;
+    state.full = next >= .999999;
+    state.lastAction = next > 0 ? 'demonstration reserve set' : 'reset / unwound';
+  }
+
   function reset() {
     state.input = 0;
     state.crownAngle = 0;
@@ -317,6 +326,7 @@ export function createWindingSystem({ watch, animated, materials, model, root = 
     update,
     setInput,
     nudge,
+    setReserveFraction,
     reset,
     setEnabled,
     rotateCrownOnly,
