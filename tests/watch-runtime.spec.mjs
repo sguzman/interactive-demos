@@ -36,6 +36,11 @@ test('Wind & Run advances the ETA 6497-2 simulation', async ({ page }) => {
   expect(after.rotations.minuteWheel).not.toBeCloseTo(before.rotations.minuteWheel, 5);
   expect(after.rotations.settingWheel).not.toBeCloseTo(before.rotations.settingWheel, 5);
   expect(after.rotations.hourWheel).not.toBeCloseTo(before.rotations.hourWheel, 6);
+
+  // Winding-side crown wheel and ratchet remain held during ordinary running.
+  // They move when the user actually winds the watch, not as part of the going train.
+  expect(after.rotations.crownWheel).toBeCloseTo(before.rotations.crownWheel, 10);
+  expect(after.rotations.ratchet).toBeCloseTo(before.rotations.ratchet, 10);
   expect(pageErrors).toEqual([]);
 
   // Pause freezes the mechanism; Resume releases it again.
