@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { COMPONENTS, RECONSTRUCTION } from './spec.js';
 
 const DEG = Math.PI / 180;
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 function material(color, options = {}) {
   return new THREE.MeshStandardMaterial({
@@ -10,19 +11,22 @@ function material(color, options = {}) {
     roughness: options.roughness ?? 0.58,
     transparent: options.transparent ?? false,
     opacity: options.opacity ?? 1,
-    side: options.side ?? THREE.FrontSide
+    side: options.side ?? THREE.FrontSide,
+    depthWrite: options.depthWrite ?? true
   });
 }
 
 const materials = {
-  chrome: material(0xb8bec4, { metalness: 0.82, roughness: 0.26 }),
-  chromeDark: material(0x596169, { metalness: 0.75, roughness: 0.34 }),
-  leather: material(0x3a2418, { metalness: 0.02, roughness: 0.9 }),
-  black: material(0x111417, { metalness: 0.04, roughness: 0.86 }),
-  bellows: material(0x171311, { metalness: 0.0, roughness: 0.96 }),
-  glass: material(0x183149, { metalness: 0.08, roughness: 0.18, transparent: true, opacity: 0.72 }),
-  link: material(0x8c9298, { metalness: 0.8, roughness: 0.3 }),
-  filmDoor: material(0x24282b, { metalness: 0.18, roughness: 0.64 }),
+  chrome: material(0xc0c4c7, { metalness: 0.78, roughness: 0.28 }),
+  chromeDark: material(0x555c62, { metalness: 0.74, roughness: 0.34 }),
+  leather: material(0x5b321f, { metalness: 0.01, roughness: 0.94 }),
+  black: material(0x111417, { metalness: 0.03, roughness: 0.86 }),
+  bellows: material(0x151313, { metalness: 0.0, roughness: 0.98, side: THREE.DoubleSide }),
+  bellowsRib: material(0x2c2927, { metalness: 0.02, roughness: 0.88 }),
+  glass: material(0x173148, { metalness: 0.08, roughness: 0.18, transparent: true, opacity: 0.74 }),
+  link: material(0x969da3, { metalness: 0.82, roughness: 0.27 }),
+  filmDoor: material(0x1f2326, { metalness: 0.12, roughness: 0.7 }),
+  red: material(0xb51f25, { metalness: 0.08, roughness: 0.48 }),
   accent: material(0xd7c7a1, { metalness: 0.35, roughness: 0.46 })
 };
 
@@ -49,39 +53,104 @@ function mark(mesh, componentKey) {
   return mesh;
 }
 
-function lerpPose(mesh, folded, open, t) {
-  mesh.position.set(
-    THREE.MathUtils.lerp(folded.position[0], open.position[0], t),
-    THREE.MathUtils.lerp(folded.position[1], open.position[1], t),
-    THREE.MathUtils.lerp(folded.position[2], open.position[2], t)
-  );
-  mesh.rotation.set(
-    THREE.MathUtils.lerp(folded.rotation[0], open.rotation[0], t),
-    THREE.MathUtils.lerp(folded.rotation[1], open.rotation[1], t),
-    THREE.MathUtils.lerp(folded.rotation[2], open.rotation[2], t)
+function smoother(t) {
+  const x = THREE.MathUtils.clamp(t, 0, 1);
+  return x * x * (3 - 2 * x);
+}
+
+function pointFromPivot(pivot, length, angleRad, x = 0) {
+  return new THREE.Vector3(
+    x,
+    pivot.y + Math.cos(angleRad) * length,
+    pivot.z + Math.sin(angleRad) * length
   );
 }
 
-function setCylinderBetween(mesh, a, b, radiusScale = 1) {
-  const start = new THREE.Vector3(...a);
-  const end = new THREE.Vector3(...b);
-  const midpoint = start.clone().add(end).multiplyScalar(0.5);
-  const direction = end.clone().sub(start);
+function orientBetween(object, a, b) {
+  const direction = b.clone().sub(a);
   const length = Math.max(0.001, direction.length());
-
-  mesh.position.copy(midpoint);
-  mesh.scale.set(radiusScale, length, radiusScale);
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+  object.position.copy(a).add(b).multiplyScalar(0.5);
+  object.quaternion.setFromUnitVectors(Y_AXIS, direction.normalize());
+  return length;
 }
 
-function makeLink(radius = 1.25) {
-  const link = cylinder(radius, 1, materials.link, 18);
-  return mark(link, 'erectingLinks');
+function makePanel(width, thickness, mat, insetMat = null) {
+  const root = new THREE.Group();
+  const body = box(width, 1, thickness, mat);
+  root.add(body);
+
+  if (insetMat) {
+    const inset = box(width - 12, 1, 1.8, insetMat);
+    inset.position.z = -(thickness / 2 + 1.0);
+    root.add(inset);
+    root.userData.inset = inset;
+  }
+
+  root.userData.body = body;
+  return root;
+}
+
+function updatePanel(panel, a, b, insetLengthFactor = 0.84) {
+  const length = orientBetween(panel, a, b);
+  panel.userData.body.scale.set(1, length, 1);
+  if (panel.userData.inset) {
+    panel.userData.inset.scale.set(1, length * insetLengthFactor, 1);
+  }
+  panel.userData.length = length;
+}
+
+function makeRod(radius = 1.3, mat = materials.link) {
+  const rod = cylinder(radius, 1, mat, 18);
+  return rod;
+}
+
+function updateRod(rod, a, b) {
+  const direction = b.clone().sub(a);
+  const length = Math.max(0.001, direction.length());
+  rod.position.copy(a).add(b).multiplyScalar(0.5);
+  rod.scale.set(1, length, 1);
+  rod.quaternion.setFromUnitVectors(Y_AXIS, direction.normalize());
+  rod.userData.length = length;
+}
+
+function makeBellowsGeometry() {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Array(18).fill(0), 3));
+  geometry.setIndex([
+    0, 1, 2,
+    3, 5, 4,
+    0, 3, 4, 0, 4, 1,
+    1, 4, 5, 1, 5, 2,
+    2, 5, 3, 2, 3, 0
+  ]);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function updateBellowsGeometry(geometry, rearLower, rearUpper, frontUpper, halfWidth) {
+  const positions = geometry.attributes.position;
+  const pts = [
+    [-halfWidth, rearLower.y, rearLower.z],
+    [-halfWidth, rearUpper.y, rearUpper.z],
+    [-halfWidth, frontUpper.y, frontUpper.z],
+    [ halfWidth, rearLower.y, rearLower.z],
+    [ halfWidth, rearUpper.y, rearUpper.z],
+    [ halfWidth, frontUpper.y, frontUpper.z]
+  ];
+  pts.forEach((p, i) => positions.setXYZ(i, p[0], p[1], p[2]));
+  positions.needsUpdate = true;
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+}
+
+function localPointOnRotatedGroup(group, local) {
+  return local.clone().applyQuaternion(group.quaternion).add(group.position);
 }
 
 export function createSX70Model() {
   const root = new THREE.Group();
-  root.name = 'Polaroid SX-70 public reconstruction';
+  root.name = 'Polaroid SX-70 articulated public reconstruction v2';
 
   const pickables = [];
   const componentRoots = new Map();
@@ -96,240 +165,368 @@ export function createSX70Model() {
     return object;
   };
 
+  const A = RECONSTRUCTION.articulation;
+  const baseTopY = RECONSTRUCTION.base.height / 2;
+
+  // --- Base / film-pack body -------------------------------------------------
   const base = new THREE.Group();
-  const baseShell = box(RECONSTRUCTION.base.width, RECONSTRUCTION.base.height, RECONSTRUCTION.base.depth, materials.chrome);
-  baseShell.position.y = 0;
+
+  const baseShell = box(
+    RECONSTRUCTION.base.width,
+    RECONSTRUCTION.base.height,
+    RECONSTRUCTION.base.depth,
+    materials.chrome
+  );
   base.add(baseShell);
 
-  const leatherTop = box(91, 2.5, 146, materials.leather);
-  leatherTop.position.set(0, RECONSTRUCTION.base.height / 2 + 1.35, -4);
-  base.add(leatherTop);
+  // Dark inner pack cavity prevents the whole base reading as one chrome brick.
+  const packCavity = box(96, 13.5, 126, materials.black);
+  packCavity.position.set(0, 2.2, -11);
+  base.add(packCavity);
 
-  const filmDoor = box(100, 12, 27, materials.filmDoor);
-  filmDoor.position.set(0, -1, 74);
+  const rearLeatherDeck = box(88, 2.2, 52, materials.leather);
+  rearLeatherDeck.position.set(0, baseTopY + 1.2, -43);
+  base.add(rearLeatherDeck);
+
+  const frontDeck = box(96, 3.0, 37, materials.chromeDark);
+  frontDeck.position.set(0, baseTopY + 1.55, 53);
+  base.add(frontDeck);
+
+  const filmDoor = box(100, 13, 23, materials.filmDoor);
+  filmDoor.position.set(0, -0.5, 77);
   base.add(filmDoor);
 
-  const rollerA = cylinder(5.1, 89, materials.chromeDark, 32);
-  rollerA.rotation.z = Math.PI / 2;
-  rollerA.position.set(0, 8.4, 63.2);
-  base.add(rollerA);
-  const rollerB = rollerA.clone();
-  rollerB.position.z = 70.4;
-  base.add(rollerB);
+  const exitLip = box(96, 4, 7, materials.black);
+  exitLip.position.set(0, 8.2, 87);
+  base.add(exitLip);
 
   register('base', base);
   mark(filmDoor, 'frontDoor');
-  mark(rollerA, 'frontDoor');
-  mark(rollerB, 'frontDoor');
+  mark(exitLip, 'frontDoor');
   root.add(base);
 
-  const rearPanel = new THREE.Group();
-  const rearFrame = box(
-    RECONSTRUCTION.body.rearPanelWidth,
-    RECONSTRUCTION.body.rearPanelHeight,
-    RECONSTRUCTION.body.rearPanelThickness,
-    materials.chrome
-  );
-  const rearLeather = box(
-    RECONSTRUCTION.body.rearPanelWidth - 12,
-    RECONSTRUCTION.body.rearPanelHeight - 13,
-    2.4,
-    materials.leather
-  );
-  rearLeather.position.z = -RECONSTRUCTION.body.rearPanelThickness / 2 - 1.25;
-  rearPanel.add(rearFrame, rearLeather);
+  // --- Rear wall -------------------------------------------------------------
+  // A rigid member rotating around one base hinge, rather than translating
+  // through the camera between arbitrary end poses.
+  const rearPanel = makePanel(98, 6.2, materials.chrome, materials.leather);
   register('rearPanel', rearPanel);
   root.add(rearPanel);
 
+  // --- Forward structural member --------------------------------------------
+  // Public P4 presentation: represented as paired side rails. Their endpoints
+  // are driven from the rear wall and lens standard, preserving a coupled
+  // visual chain without claiming exact production link lengths.
   const forwardPanel = new THREE.Group();
-  const forwardFrame = box(
-    RECONSTRUCTION.body.forwardPanelWidth,
-    RECONSTRUCTION.body.forwardPanelHeight,
-    RECONSTRUCTION.body.forwardPanelThickness,
-    materials.chrome
-  );
-  const forwardInset = box(
-    RECONSTRUCTION.body.forwardPanelWidth - 13,
-    RECONSTRUCTION.body.forwardPanelHeight - 14,
-    2.2,
-    materials.black
-  );
-  forwardInset.position.z = RECONSTRUCTION.body.forwardPanelThickness / 2 + 1.15;
-  forwardPanel.add(forwardFrame, forwardInset);
+  const forwardLeft = makeRod(1.75, materials.chrome);
+  const forwardRight = makeRod(1.75, materials.chrome);
+  forwardPanel.add(forwardLeft, forwardRight);
   register('forwardPanel', forwardPanel);
   root.add(forwardPanel);
 
+  // --- Lens / shutter standard ----------------------------------------------
   const lensHousing = new THREE.Group();
+
   const lensBody = box(
     RECONSTRUCTION.body.lensHousingWidth,
     RECONSTRUCTION.body.lensHousingHeight,
     RECONSTRUCTION.body.lensHousingDepth,
-    materials.black
+    materials.chrome
   );
+  lensBody.position.y = RECONSTRUCTION.body.lensHousingHeight / 2;
   lensHousing.add(lensBody);
 
-  const frontTrim = box(
-    RECONSTRUCTION.body.lensHousingWidth - 5,
-    RECONSTRUCTION.body.lensHousingHeight - 5,
-    2.7,
-    materials.chromeDark
+  // Thin dark control strip is visually characteristic and prevents the front
+  // standard from reading as an undifferentiated rectangular block.
+  const controlStrip = box(
+    RECONSTRUCTION.body.lensHousingWidth - 4,
+    9,
+    2.4,
+    materials.black
   );
-  frontTrim.position.z = RECONSTRUCTION.body.lensHousingDepth / 2 + 1.5;
-  lensHousing.add(frontTrim);
+  controlStrip.position.set(0, RECONSTRUCTION.body.lensHousingHeight - 10, RECONSTRUCTION.body.lensHousingDepth / 2 + 1.3);
+  lensHousing.add(controlStrip);
 
-  const lensBarrel = cylinder(17.5, 14, materials.chromeDark, 64);
+  const lensBarrel = cylinder(17.2, 14.5, materials.chromeDark, 64);
   lensBarrel.rotation.x = Math.PI / 2;
-  lensBarrel.position.set(-17, 1, RECONSTRUCTION.body.lensHousingDepth / 2 + 8);
+  lensBarrel.position.set(-6, 28, RECONSTRUCTION.body.lensHousingDepth / 2 + 8.5);
   lensHousing.add(lensBarrel);
 
-  const lensGlass = cylinder(14.1, 1.7, materials.glass, 64);
+  const lensRing = cylinder(14.8, 2.5, materials.chrome, 64);
+  lensRing.rotation.x = Math.PI / 2;
+  lensRing.position.set(-6, 28, RECONSTRUCTION.body.lensHousingDepth / 2 + 16.0);
+  lensHousing.add(lensRing);
+
+  const lensGlass = cylinder(12.8, 1.4, materials.glass, 64);
   lensGlass.rotation.x = Math.PI / 2;
-  lensGlass.position.set(-17, 1, RECONSTRUCTION.body.lensHousingDepth / 2 + 15.4);
+  lensGlass.position.set(-6, 28, RECONSTRUCTION.body.lensHousingDepth / 2 + 17.6);
   lensHousing.add(lensGlass);
 
-  const photocell = cylinder(5.8, 3.2, materials.glass, 32);
+  const photocell = cylinder(5.9, 2.2, materials.glass, 32);
   photocell.rotation.x = Math.PI / 2;
-  photocell.position.set(17, 4, RECONSTRUCTION.body.lensHousingDepth / 2 + 15);
+  photocell.position.set(25, 28, RECONSTRUCTION.body.lensHousingDepth / 2 + 16.9);
   lensHousing.add(photocell);
 
-  const shutterButton = cylinder(3.5, 5, materials.accent, 24);
-  shutterButton.rotation.z = Math.PI / 2;
-  shutterButton.position.set(37, -13, 5);
+  const shutterButton = cylinder(5.1, 2.7, materials.red, 32);
+  shutterButton.rotation.x = Math.PI / 2;
+  shutterButton.position.set(-34, 38, RECONSTRUCTION.body.lensHousingDepth / 2 + 17.0);
   lensHousing.add(shutterButton);
+
+  const lightenDarken = box(16, 4.2, 3, materials.black);
+  lightenDarken.position.set(25, 43, RECONSTRUCTION.body.lensHousingDepth / 2 + 17.2);
+  lensHousing.add(lightenDarken);
 
   register('lensHousing', lensHousing);
   mark(lensBarrel, 'takingLens');
+  mark(lensRing, 'takingLens');
   mark(lensGlass, 'takingLens');
   root.add(lensHousing);
 
+  // --- Viewfinder / top cap --------------------------------------------------
+  // The long shallow cap is one of the strongest SX-70 silhouette cues.
   const viewfinder = new THREE.Group();
-  const vfBody = box(69, 24, 24, materials.black);
-  viewfinder.add(vfBody);
-  const eyepiece = cylinder(7.6, 4, materials.glass, 32);
+
+  const capBody = box(96, 13.5, 110, materials.chrome);
+  capBody.position.set(0, 7.3, 15);
+  viewfinder.add(capBody);
+
+  const capLeather = box(84, 2.1, 88, materials.leather);
+  capLeather.position.set(0, 14.25, 15);
+  viewfinder.add(capLeather);
+
+  const capUnderside = box(88, 3.2, 93, materials.black);
+  capUnderside.position.set(0, 0.8, 15);
+  viewfinder.add(capUnderside);
+
+  const eyepiece = cylinder(7.3, 3.5, materials.glass, 32);
   eyepiece.rotation.x = Math.PI / 2;
-  eyepiece.position.set(18, 0, -14);
+  eyepiece.position.set(18, 7.0, -41.5);
   viewfinder.add(eyepiece);
+
   register('viewfinder', viewfinder);
   root.add(viewfinder);
 
+  // --- Bellows ---------------------------------------------------------------
+  // One continuous triangular prism replaces the previous stack of expanding
+  // boxes. Its three profile vertices are driven by structural anchors.
   const bellows = new THREE.Group();
-  const bellowsFolds = [];
-  for (let i = 0; i < 8; i += 1) {
-    const fold = box(80 - i * 2.8, 3.2, 52 - i * 1.4, materials.bellows);
-    bellows.add(fold);
-    bellowsFolds.push(fold);
+  const bellowsGeometry = makeBellowsGeometry();
+  const bellowsCore = new THREE.Mesh(bellowsGeometry, materials.bellows);
+  bellowsCore.castShadow = true;
+  bellowsCore.receiveShadow = true;
+  bellows.add(bellowsCore);
+
+  // Visible side folds: nested diagonal ribs converge toward the lower rear
+  // point and stay outside the bellows surface by a tiny presentation offset.
+  const bellowsRibs = [];
+  for (const side of [-1, 1]) {
+    for (let i = 1; i <= 5; i += 1) {
+      const rib = makeRod(0.62, materials.bellowsRib);
+      rib.userData.side = side;
+      rib.userData.u = i / 6;
+      bellows.add(rib);
+      bellowsRibs.push(rib);
+    }
   }
+
   register('bellows', bellows);
   root.add(bellows);
 
+  // --- Exterior erecting rails ----------------------------------------------
   const links = {
-    leftRear: makeLink(),
-    rightRear: makeLink(),
-    leftFront: makeLink(),
-    rightFront: makeLink()
+    leftRear: makeRod(1.45, materials.link),
+    rightRear: makeRod(1.45, materials.link),
+    leftFront: makeRod(1.45, materials.link),
+    rightFront: makeRod(1.45, materials.link)
   };
-  for (const link of Object.values(links)) {
-    root.add(link);
-    pickables.push(link);
-  }
-
-  const poses = {
-    rearPanel: {
-      folded: { position: [0, 17, -26], rotation: [87 * DEG, 0, 0] },
-      open: { position: [0, 58, -43], rotation: [-33 * DEG, 0, 0] }
-    },
-    forwardPanel: {
-      folded: { position: [0, 22, 4], rotation: [89 * DEG, 0, 0] },
-      open: { position: [0, 63, 15], rotation: [26 * DEG, 0, 0] }
-    },
-    lensHousing: {
-      folded: { position: [0, 24, 39], rotation: [88 * DEG, 0, 0] },
-      open: { position: [0, 59, 56], rotation: [0, 0, 0] }
-    },
-    viewfinder: {
-      folded: { position: [0, 25, -18], rotation: [88 * DEG, 0, 0] },
-      open: { position: [0, 96, -11], rotation: [-5 * DEG, 0, 0] }
-    }
-  };
+  const linksRoot = new THREE.Group();
+  Object.values(links).forEach(link => linksRoot.add(link));
+  register('erectingLinks', linksRoot);
+  root.add(linksRoot);
 
   const state = {
     deployment: 0,
     targetDeployment: 0,
     focus: RECONSTRUCTION.focus.normalizedDefault,
-    explosion: 0
+    explosion: 0,
+    geometryRevision: A.revision,
+    joints: {
+      rearBase: null,
+      rearTop: null,
+      lensBase: null,
+      lensTop: null
+    }
   };
 
-  function updateBellows(t) {
-    const rearAnchor = new THREE.Vector3(0, 25, -39).lerp(new THREE.Vector3(0, 46, -24), t);
-    const frontAnchor = new THREE.Vector3(0, 26, 34).lerp(new THREE.Vector3(0, 48, 48), t);
+  function structuralState(t) {
+    const e = smoother(t);
 
-    for (let i = 0; i < bellowsFolds.length; i += 1) {
-      const p = (i + 1) / (bellowsFolds.length + 1);
-      const fold = bellowsFolds[i];
-      const pos = rearAnchor.clone().lerp(frontAnchor, p);
-      pos.y += Math.sin(p * Math.PI) * 7 * t;
-      fold.position.copy(pos);
-      fold.rotation.x = THREE.MathUtils.lerp(88 * DEG, 3 * DEG, t);
-      const spread = THREE.MathUtils.lerp(0.2, 1, t);
-      fold.scale.set(THREE.MathUtils.lerp(0.68, 1, spread), 1, THREE.MathUtils.lerp(0.35, 1, spread));
+    const rearAngle = THREE.MathUtils.lerp(
+      A.rearFoldedAngleDeg,
+      A.rearOpenAngleDeg,
+      e
+    ) * DEG;
+
+    const lensAngle = THREE.MathUtils.lerp(
+      A.lensFoldedAngleDeg,
+      A.lensOpenAngleDeg,
+      e
+    ) * DEG;
+
+    const capAngle = THREE.MathUtils.lerp(
+      A.topCapFoldedAngleDeg,
+      A.topCapOpenAngleDeg,
+      e
+    ) * DEG;
+
+    const rearBase = new THREE.Vector3(0, baseTopY + 0.8, A.rearBasePivotZ);
+    const rearTop = pointFromPivot(rearBase, A.rearWallLength, rearAngle);
+
+    const lensBase = new THREE.Vector3(0, baseTopY + 0.8, A.frontStandardPivotZ);
+    const lensTop = pointFromPivot(lensBase, A.lensStandardHeight, lensAngle);
+
+    return { e, rearAngle, lensAngle, capAngle, rearBase, rearTop, lensBase, lensTop };
+  }
+
+  function updateBellows(s) {
+    const rearLower = new THREE.Vector3(0, baseTopY + 2.8, -57);
+    const halfWidth = A.bellowsHalfWidth;
+
+    updateBellowsGeometry(
+      bellowsGeometry,
+      rearLower,
+      s.rearTop,
+      s.lensTop,
+      halfWidth
+    );
+
+    const expansion = THREE.MathUtils.smoothstep(s.e, 0.03, 0.32);
+    bellowsCore.material.opacity = THREE.MathUtils.lerp(0.72, 1, expansion);
+    bellowsCore.material.transparent = expansion < 0.995;
+
+    for (const rib of bellowsRibs) {
+      const u = rib.userData.u;
+      const side = rib.userData.side;
+      const innerA = rearLower.clone().lerp(s.rearTop, u);
+      const innerB = rearLower.clone().lerp(s.lensTop, u);
+      innerA.x = side * (halfWidth + 0.65);
+      innerB.x = side * (halfWidth + 0.65);
+      updateRod(rib, innerA, innerB);
+      rib.visible = s.e > 0.035;
     }
   }
 
-  function updateLinks(t) {
-    const folded = {
-      leftRear: [[-42, 10, -45], [-42, 19, -20]],
-      rightRear: [[42, 10, -45], [42, 19, -20]],
-      leftFront: [[-40, 10, 18], [-40, 24, 38]],
-      rightFront: [[40, 10, 18], [40, 24, 38]]
-    };
-    const open = {
-      leftRear: [[-43, 10, -58], [-43, 78, -47]],
-      rightRear: [[43, 10, -58], [43, 78, -47]],
-      leftFront: [[-40, 11, 39], [-40, 70, 50]],
-      rightFront: [[40, 11, 39], [40, 70, 50]]
-    };
+  function updateStructure(s) {
+    updatePanel(rearPanel, s.rearBase, s.rearTop, 0.80);
 
-    for (const [name, mesh] of Object.entries(links)) {
-      const a = new THREE.Vector3(...folded[name][0]).lerp(new THREE.Vector3(...open[name][0]), t);
-      const b = new THREE.Vector3(...folded[name][1]).lerp(new THREE.Vector3(...open[name][1]), t);
-      setCylinderBetween(mesh, a.toArray(), b.toArray());
-    }
+    lensHousing.position.copy(s.lensBase);
+    lensHousing.rotation.set(s.lensAngle, 0, 0);
+
+    viewfinder.position.copy(s.rearTop);
+    viewfinder.rotation.set(s.capAngle, 0, 0);
+
+    const sideX = A.sideRailX;
+    const rearTopLeft = s.rearTop.clone(); rearTopLeft.x = -sideX;
+    const rearTopRight = s.rearTop.clone(); rearTopRight.x = sideX;
+    const lensTopLeft = s.lensTop.clone(); lensTopLeft.x = -sideX + 2.0;
+    const lensTopRight = s.lensTop.clone(); lensTopRight.x = sideX - 2.0;
+
+    // Forward structural member is represented as two exterior rails connecting
+    // the moving upper anchors. They never pass through the bellows volume.
+    updateRod(forwardLeft, rearTopLeft, lensTopLeft);
+    updateRod(forwardRight, rearTopRight, lensTopRight);
+
+    const rearBaseLeft = new THREE.Vector3(-sideX, baseTopY + 2.0, -64);
+    const rearBaseRight = new THREE.Vector3(sideX, baseTopY + 2.0, -64);
+    const frontBaseLeft = new THREE.Vector3(-sideX + 1.5, baseTopY + 2.0, 50);
+    const frontBaseRight = new THREE.Vector3(sideX - 1.5, baseTopY + 2.0, 50);
+
+    updateRod(links.leftRear, rearBaseLeft, rearTopLeft);
+    updateRod(links.rightRear, rearBaseRight, rearTopRight);
+    updateRod(links.leftFront, frontBaseLeft, lensTopLeft);
+    updateRod(links.rightFront, frontBaseRight, lensTopRight);
+
+    updateBellows(s);
+  }
+
+  function applyExplosion(value) {
+    state.explosion = THREE.MathUtils.clamp(value, 0, 1);
+    const e = state.explosion;
+
+    base.position.x = 0;
+    rearPanel.position.x += -10 * e;
+    forwardPanel.position.x = 13 * e;
+    lensHousing.position.x += 24 * e;
+    viewfinder.position.x += -20 * e;
+    bellows.position.x = -7 * e;
+    linksRoot.position.x = 0;
+
+    linksRoot.visible = e < 0.84;
+    forwardPanel.visible = e < 0.90;
+  }
+
+  function applyFocus(value) {
+    state.focus = THREE.MathUtils.clamp(value, 0, 1);
+    const travel = (state.focus - 0.5) * RECONSTRUCTION.focus.frontElementTravelMmPresentation;
+    const z0 = RECONSTRUCTION.body.lensHousingDepth / 2;
+    lensBarrel.position.z = z0 + 8.5 + travel;
+    lensRing.position.z = z0 + 16.0 + travel;
+    lensGlass.position.z = z0 + 17.6 + travel;
   }
 
   function applyDeployment(t) {
     const clamped = THREE.MathUtils.clamp(t, 0, 1);
     state.deployment = clamped;
 
-    lerpPose(rearPanel, poses.rearPanel.folded, poses.rearPanel.open, clamped);
-    lerpPose(forwardPanel, poses.forwardPanel.folded, poses.forwardPanel.open, clamped);
-    lerpPose(lensHousing, poses.lensHousing.folded, poses.lensHousing.open, clamped);
-    lerpPose(viewfinder, poses.viewfinder.folded, poses.viewfinder.open, clamped);
-    updateBellows(clamped);
-    updateLinks(clamped);
-    applyExplosion(state.explosion);
+    // Reset explosion offsets before deriving the articulated pose so repeated
+    // updates never accumulate x drift.
+    rearPanel.position.x = 0;
+    forwardPanel.position.x = 0;
+    lensHousing.position.x = 0;
+    viewfinder.position.x = 0;
+    bellows.position.x = 0;
+    linksRoot.position.x = 0;
+
+    const s = structuralState(clamped);
+    updateStructure(s);
+
+    state.joints.rearBase = s.rearBase.toArray();
+    state.joints.rearTop = s.rearTop.toArray();
+    state.joints.lensBase = s.lensBase.toArray();
+    state.joints.lensTop = s.lensTop.toArray();
+
     applyFocus(state.focus);
+    applyExplosion(state.explosion);
   }
 
-  function applyFocus(value) {
-    state.focus = THREE.MathUtils.clamp(value, 0, 1);
-    const travel = (state.focus - 0.5) * RECONSTRUCTION.focus.frontElementTravelMmPresentation;
-    lensBarrel.position.z = RECONSTRUCTION.body.lensHousingDepth / 2 + 8 + travel;
-    lensGlass.position.z = RECONSTRUCTION.body.lensHousingDepth / 2 + 15.4 + travel;
-  }
+  function geometryDiagnostics() {
+    const foldedEnvelope = RECONSTRUCTION.envelopeMm;
+    const bounds = new THREE.Box3().setFromObject(root);
+    const size = bounds.getSize(new THREE.Vector3());
 
-  function applyExplosion(value) {
-    state.explosion = THREE.MathUtils.clamp(value, 0, 1);
-    const e = state.explosion;
-    base.position.set(0, -6 * e, 0);
-    rearPanel.position.x = -11 * e;
-    forwardPanel.position.x = 11 * e;
-    lensHousing.position.x = 23 * e;
-    viewfinder.position.x = -19 * e;
-    bellows.position.x = -8 * e;
-    for (const [name, link] of Object.entries(links)) {
-      link.visible = e < 0.82;
-      link.userData.explosionName = name;
-    }
+    const s = structuralState(state.deployment);
+    const rearLength = s.rearBase.distanceTo(s.rearTop);
+    const lensHeight = s.lensBase.distanceTo(s.lensTop);
+
+    return {
+      revision: A.revision,
+      deployment: state.deployment,
+      rearMemberLength: rearLength,
+      rearMemberLengthError: rearLength - A.rearWallLength,
+      lensStandardHeight: lensHeight,
+      lensStandardHeightError: lensHeight - A.lensStandardHeight,
+      bounds: {
+        width: size.x,
+        height: size.y,
+        depth: size.z
+      },
+      foldedEnvelopeReference: foldedEnvelope,
+      finite: [
+        ...s.rearBase.toArray(),
+        ...s.rearTop.toArray(),
+        ...s.lensBase.toArray(),
+        ...s.lensTop.toArray()
+      ].every(Number.isFinite)
+    };
   }
 
   function setDeploymentTarget(value) {
@@ -337,7 +534,7 @@ export function createSX70Model() {
   }
 
   function step(dt) {
-    const speed = 2.25;
+    const speed = 2.15;
     if (Math.abs(state.deployment - state.targetDeployment) > 0.0005) {
       const next = THREE.MathUtils.damp(state.deployment, state.targetDeployment, speed, dt);
       applyDeployment(next);
@@ -362,6 +559,7 @@ export function createSX70Model() {
     setDeploymentImmediate: applyDeployment,
     setFocus: applyFocus,
     setExplode,
+    geometryDiagnostics,
     step
   };
 }
