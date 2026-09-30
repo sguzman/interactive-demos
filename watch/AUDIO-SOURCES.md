@@ -35,3 +35,26 @@ A 2026 Freesound recording titled `Antique Pocket Watch Ticking and Winding` by 
 https://freesound.org/people/apintofmild/sounds/847217/
 
 Freesound requires login for the downloadable original, so it is not bundled automatically here. It is a good candidate for a future locally vendored replacement.
+
+
+## Acoustic fidelity boundary
+
+The 6497-2 manufacturer frequency is 3 Hz / 21,600 alternations per hour, so the model schedules six lever beat events per second.
+
+The bundled running source is a **single real-watch click**, not a continuous 6497-2 recording. Replaying that identical click unchanged sounded artificially metronomic.
+
+The public implementation therefore applies a P5 acoustic reconstruction:
+
+- exact six-beat-per-second timing at 1×;
+- alternating darker/heavier and brighter/lighter tick/tock playback profiles;
+- small deterministic gain variation;
+- no timing jitter that would imply beat error;
+- no claim that the resulting timbre is a measured ETA 6497-2 acoustic signature.
+
+This is intended to be mechanically more plausible than an identical repeated click while keeping the provenance boundary explicit.
+
+A truly calibre-specific rendition requires a cleanly licensed recording of a known ETA 6497-2 under documented case/microphone conditions. Until then, the site must not label the timbre itself as calibre-exact.
+
+## Family-character references
+
+Independent owner/reviewer descriptions consistently characterize the 6497 family as unusually audible, with deliberate winding clicks and an obvious tick/tock character. Those descriptions inform presentation character only; they are not acoustic calibration data.
