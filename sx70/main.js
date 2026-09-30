@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createSX70Model } from './geometry.js';
+import { createOpticsVisualization } from './optics.js';
 import { CANONICAL, COMPONENTS, RECONSTRUCTION } from './spec.js';
 
 const canvas = document.querySelector('#scene');
@@ -64,6 +65,10 @@ scene.add(grid);
 const model = createSX70Model();
 scene.add(model.root);
 
+const optics = createOpticsVisualization();
+scene.add(optics.root);
+optics.setFocus(model.state.focus);
+
 const ui = {
   controlsPanel: document.querySelector('.controls'),
   openBtn: document.querySelector('#openBtn'),
@@ -96,6 +101,14 @@ const VIEW_PRESETS = {
   folding: {
     position: new THREE.Vector3(245, 118, 190),
     target: new THREE.Vector3(0, 42, -3)
+  },
+  viewing: {
+    position: new THREE.Vector3(198, 126, 205),
+    target: new THREE.Vector3(-12, 61, 10)
+  },
+  exposure: {
+    position: new THREE.Vector3(190, 112, 184),
+    target: new THREE.Vector3(-12, 45, 7)
   }
 };
 
@@ -109,6 +122,21 @@ function setView(name, immediate = false) {
   activeView = name;
   for (const button of viewButtons) {
     button.classList.toggle('active', button.dataset.view === name);
+  }
+
+  if (name === 'viewing' || name === 'exposure') {
+    setDeploymentTarget(1);
+    optics.setMode(name);
+    inspectComponent({
+      category: 'optical graph',
+      provenance: 'P0 function / P4-P5 presentation geometry',
+      name: name === 'viewing' ? 'Viewing optical path' : 'Exposure optical path',
+      description: name === 'viewing'
+        ? 'Conceptual ray graph through the shared taking lens, fixed viewing mirror, reflective Fresnel and off-axis relay to the eye. The path is source-grounded; the public coordinates are reconstructive.'
+        : 'Conceptual exposure graph through the shared taking lens, reverse-side taking mirror and integral-film plane. Exact production mirror angles remain unresolved.'
+    });
+  } else {
+    optics.setMode('none');
   }
 
   if (immediate) {
@@ -155,6 +183,7 @@ ui.deployment.addEventListener('input', () => {
 ui.focus.addEventListener('input', () => {
   const value = Number(ui.focus.value) / 100;
   model.setFocus(value);
+  optics.setFocus(value);
   ui.focusValue.value = `${Math.round(value * 100)}%`;
 });
 
@@ -188,6 +217,8 @@ function resetSpecimen() {
   ui.explodeValue.value = '0%';
 
   model.setFocus(RECONSTRUCTION.focus.normalizedDefault);
+  optics.setFocus(RECONSTRUCTION.focus.normalizedDefault);
+  optics.setMode('none');
   ui.focus.value = String(Math.round(RECONSTRUCTION.focus.normalizedDefault * 100));
   ui.focusValue.value = `${Math.round(RECONSTRUCTION.focus.normalizedDefault * 100)}%`;
 
@@ -276,6 +307,7 @@ const clock = new THREE.Clock();
 function animate() {
   const dt = Math.min(clock.getDelta(), 0.05);
   model.step(dt);
+  optics.setDeployment(model.state.deployment);
 
   if (cameraFlight) {
     camera.position.lerp(cameraFlight.position, 1 - Math.exp(-dt * 4.8));
@@ -307,7 +339,8 @@ window.__sx70Debug = {
       targetDeployment: model.state.targetDeployment,
       focus: model.state.focus,
       explosion: model.state.explosion,
-      activeView
+      activeView,
+      opticsMode: optics.state.mode
     };
   },
   open: () => setDeploymentTarget(1),
