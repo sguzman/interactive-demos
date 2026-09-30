@@ -27,6 +27,33 @@ test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', asyn
   await expect(page.locator('#deploymentState')).toHaveText('FOLDED');
   await expect(page.locator('#powerState')).toHaveText('S6 OPEN · DISABLED');
 
+  // Geometry-v2 regression: sweep the articulation through the full fold path.
+  // The two actual pivoted rigid members must retain their lengths at every pose,
+  // and the reconstruction must never emit invalid coordinates.
+  const geometrySweep = await page.evaluate(() => {
+    const samples = [];
+    for (const deployment of [0, 0.15, 0.3, 0.5, 0.7, 0.85, 1]) {
+      window.__sx70Debug.setDeployment(deployment);
+      samples.push(window.__sx70Debug.state.geometry);
+    }
+    window.__sx70Debug.setDeployment(0);
+    return samples;
+  });
+  for (const geometry of geometrySweep) {
+    expect(geometry.revision).toBe('articulated-v2');
+    expect(geometry.finite).toBe(true);
+    expect(Math.abs(geometry.rearMemberLengthError)).toBeLessThan(1e-6);
+    expect(Math.abs(geometry.lensStandardHeightError)).toBeLessThan(1e-6);
+    expect(geometry.bounds.width).toBeGreaterThan(90);
+    expect(geometry.bounds.height).toBeLessThan(125);
+    expect(geometry.bounds.depth).toBeLessThan(205);
+  }
+
+  await page.evaluate(() => window.__sx70Debug.setDeployment(0.5));
+  await page.waitForTimeout(150);
+  await page.screenshot({ path: 'test-results/sx70-mid-fold-articulation.png', fullPage: true });
+  await page.evaluate(() => window.__sx70Debug.setDeployment(0));
+
   await page.locator('#openBtn').click();
   await page.waitForFunction(() => window.__sx70Debug.state.deployment > 0.985);
 
