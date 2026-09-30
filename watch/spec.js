@@ -18,10 +18,10 @@ export const ETA6497_2 = {
 export const CANONICAL = {
   specimenId: 'specimen:eta-unitas-6497-2',
   projectionMilestone: 'M6e',
-  engineeringSyncDate: '2026-09-19',
-  engineeringFrontier: 'ENG-6497-008 complete · ENG-6497-009 physical validation blocked on identified specimen',
+  engineeringSyncDate: '2026-09-30',
+  engineeringFrontier: 'Core documentary/reconstruction research complete · Works guide published · physical validation optional enrichment',
   provenanceScheme: 'P0 manufacturer · P1 measurement · P2 derived · P3 audited secondary · P4 reconstruction · P5 presentation',
-  publicationBoundary: 'Public projection only; private canonical corpus is not linked.'
+  publicationBoundary: 'Public projection only; publication-safe IDs and Works expression identity are exposed, private canonical paths are not.'
 };
 
 // Part numbers follow ETA's current 6497-2 spare-parts list where available.
