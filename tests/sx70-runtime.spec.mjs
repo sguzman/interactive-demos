@@ -12,16 +12,16 @@ test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', asyn
   expect(before.deployment).toBeLessThan(0.02);
   expect(before.explosion).toBeLessThan(0.01);
 
-  await expect(page.locator('#deploymentState')).toHaveValue('FOLDED');
-  await expect(page.locator('#powerState')).toHaveValue('S6 OPEN · DISABLED');
+  await expect(page.locator('#deploymentState')).toHaveText('FOLDED');
+  await expect(page.locator('#powerState')).toHaveText('S6 OPEN · DISABLED');
 
   await page.locator('#openBtn').click();
   await page.waitForFunction(() => window.__sx70Debug.state.deployment > 0.985);
 
   const opened = await page.evaluate(() => window.__sx70Debug.state);
   expect(opened.deployment).toBeGreaterThan(0.985);
-  await expect(page.locator('#deploymentState')).toHaveValue('ERECT · LOCKED');
-  await expect(page.locator('#powerState')).toHaveValue('S6 CLOSED · ENABLED');
+  await expect(page.locator('#deploymentState')).toHaveText('ERECT · LOCKED');
+  await expect(page.locator('#powerState')).toHaveText('S6 CLOSED · ENABLED');
 
   await page.locator('#focus').fill('82');
   const focused = await page.evaluate(() => window.__sx70Debug.state);
