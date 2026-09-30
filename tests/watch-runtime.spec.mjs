@@ -19,6 +19,7 @@ test('Wind & Run advances the ETA 6497-2 simulation', async ({ page }) => {
   await page.waitForFunction(() => window.__watchDebug.snapshot().reserve >= 0.5);
 
   const after = await page.evaluate(() => window.__watchDebug.step(1 / 60, 180));
+  console.log('WATCH_RUNTIME_SNAPSHOT', JSON.stringify(after));
 
   expect(after.reserve).toBeGreaterThan(0.5);
   expect(after.power.mechanicalElapsedSeconds).toBeGreaterThan(2.5);
@@ -33,4 +34,11 @@ test('Wind & Run advances the ETA 6497-2 simulation', async ({ page }) => {
 
   await page.evaluate(() => window.__watchDebug.renderOnce());
   await page.screenshot({ path: 'test-results/watch-running.png', fullPage: true });
+
+  await page.evaluate(() => {
+    document.querySelector('[data-view="train"]')?.click();
+    window.__watchDebug.step(1 / 60, 120);
+    window.__watchDebug.renderOnce();
+  });
+  await page.screenshot({ path: 'test-results/watch-train-running.png', fullPage: true });
 });
