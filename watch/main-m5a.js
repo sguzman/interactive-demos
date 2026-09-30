@@ -375,6 +375,7 @@ renderer.domElement.addEventListener('pointerdown', event => {
   if (hits.length) inspect(hits[0].object.userData.pickRoot);
 });
 
+const TEST_MODE = new URLSearchParams(window.location.search).get('test') === '1';
 const clock = new THREE.Clock();
 let wallElapsed = 0;
 const phases = trainGeometry.phases ?? { center: 0, third: 0, seconds: 0, escape: 0 };
@@ -390,6 +391,18 @@ window.__watchDebug = {
   windAndRun() {
     runActionStage = 'scheduled-debug';
     setTimeout(establishDemoRunState, 0);
+    return true;
+  },
+  step(dt = 1 / 60, frames = 1) {
+    const count = Math.max(1, Math.min(3600, Math.floor(frames)));
+    const delta = Math.max(0, Math.min(0.05, Number(dt) || 0));
+    for (let i = 0; i < count; i++) advanceSimulationFrame(delta, false);
+    return this.snapshot();
+  },
+  renderOnce() {
+    controls.update();
+    lighting.followCamera(camera, controls.target);
+    renderer.render(scene, camera);
     return true;
   },
   snapshot() {
@@ -435,9 +448,7 @@ window.__watchDebug = {
   }
 };
 
-function animate() {
-  requestAnimationFrame(animate);
-  const dt = Math.min(clock.getDelta(), .05);
+function advanceSimulationFrame(dt, renderFrame = true) {
   wallElapsed += dt;
 
   explosionCurrent = THREE.MathUtils.damp(explosionCurrent, explosionTarget, 7.2, dt);
@@ -480,9 +491,9 @@ function animate() {
     nowMs: performance.now()
   });
 
-  // M5a makes the escapement release state the source of train progress. During
-  // lock phases releasedSeconds is flat; during unlock/impulse it advances. The
-  // fourth/third/centre wheels and hands therefore visibly wait for release.
+  // Basic mode still uses the escapement release state as the source of train
+  // progress. Advanced contact solvers can refine that release when enabled,
+  // but collapsed diagnostics no longer monopolize the ordinary run path.
   const k = movementAngles(escapeState.releasedSeconds);
   animated.fourthWheel.rotation.z = phases.seconds + k.seconds;
   animated.thirdWheel.rotation.z = phases.third + k.third;
@@ -495,9 +506,20 @@ function animate() {
   animated.hourHand.rotation.z = handPhase.hour + k.hourHand + handOffsets.hour;
 
   if (selectionHelper && selectedRoot) selectionHelper.box.setFromObject(selectedRoot);
-  controls.update();
-  lighting.followCamera(camera, controls.target);
-  renderer.render(scene, camera);
+
+  if (renderFrame) {
+    controls.update();
+    lighting.followCamera(camera, controls.target);
+    renderer.render(scene, camera);
+  }
+
+  return escapeState;
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), .05);
+  advanceSimulationFrame(dt, true);
 }
 
 window.addEventListener('resize', () => {
@@ -509,4 +531,10 @@ window.addEventListener('resize', () => {
 setExplosion(explosionTarget);
 document.querySelector('#loading').style.opacity = '0';
 setTimeout(() => document.querySelector('#loading')?.remove(), 360);
-animate();
+if (TEST_MODE) {
+  controls.update();
+  lighting.followCamera(camera, controls.target);
+  renderer.render(scene, camera);
+} else {
+  animate();
+}
