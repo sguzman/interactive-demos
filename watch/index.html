@@ -35,10 +35,12 @@
         <button id="windRunBtn">Wind &amp; Run</button>
         <button id="pauseResumeBtn" class="secondary">Pause</button>
         <button id="basicUnwindBtn" class="secondary">Fully unwind</button>
+        <button id="soundToggleBtn" class="secondary" type="button" aria-pressed="true">Sound: on</button>
       </div>
       <div class="basic-state-grid">
         <div class="mode-stat"><span>Movement</span><output id="basicMovementState">UNWOUND</output></div>
         <div class="mode-stat"><span>Reserve</span><output id="basicReserveValue">0% · 0.0 h</output></div>
+        <div class="mode-stat"><span>Audio</span><output id="soundStatusValue">REAL-WATCH AUDIO · GENERIC</output></div>
       </div>
       <progress id="basicPowerMeter" class="power-meter" max="1" value="0"></progress>
       <label class="select-row"><span>Speed</span><select id="basicTrainScale">
@@ -59,7 +61,7 @@
         <button id="basicExplodeBtn" class="secondary">Explode</button>
       </div>
       <button id="advancedToggleBtn" class="secondary wide advanced-toggle" type="button" aria-expanded="false">Advanced inspection ▾</button>
-      <div class="winding-note"><strong>Wind &amp; Run</strong> is a presentation shortcut: it raises the modeled reserve to 60% and returns the simulation to 1×. It does not replace the manual 25-stem-turn winding model.</div>
+      <div class="winding-note"><strong>Wind &amp; Run</strong> is a presentation shortcut: it raises the modeled reserve to 60% and returns the simulation to 1×. It does not replace the manual 25-stem-turn winding model. Sound uses real-watch recordings with generic—not calibre-specific—acoustic provenance.</div>
     </section>
 
     <section>
