@@ -9,6 +9,7 @@ import { createWindingSystem } from './winding-m4a.js';
 import { createKeylessSettingSystem } from './keyless-m4b.js';
 import { createPowerReleaseSystem } from './power-m4c.js';
 import { createEscapementSystem } from './escapement-m5a.js';
+import { createWatchAudio } from './audio.js';
 
 const canvas = document.querySelector('#scene');
 const scene = new THREE.Scene();
@@ -49,6 +50,7 @@ const windingSystem = createWindingSystem({ watch, animated, materials, model: {
 const keylessSystem = createKeylessSettingSystem({ watch, windingSystem, animated, materials });
 const powerSystem = createPowerReleaseSystem({ windingSystem });
 const escapementSystem = createEscapementSystem({ watch, animated, materials, powerSystem });
+const watchAudio = createWatchAudio({ root: document });
 scene.add(watch);
 const lighting = createLightingRig(scene, materials);
 
@@ -210,10 +212,12 @@ function establishDemoRunState() {
   runActionStage = 'armed';
 }
 
-windRunBtn?.addEventListener('click', () => {
+windRunBtn?.addEventListener('click', event => {
   // Return from the user event immediately. The presentation shortcut establishes
   // reserve on the next task so a powered-frame regression cannot make the button
   // itself feel dead or trap the click handler.
+  if (event.isTrusted) watchAudio.markGesture();
+  watchAudio.playWindingBurst(1800);
   runActionStage = 'scheduled';
   setTimeout(establishDemoRunState, 0);
 });
@@ -380,6 +384,7 @@ const handPhase = {
   hour: animated.hourHand.rotation.z
 };
 let lastEscapeState = null;
+let previousAcceptedCrownTurns = windingSystem.state.acceptedCrownTurns;
 
 window.__watchDebug = {
   snapshot() {
@@ -419,7 +424,8 @@ window.__watchDebug = {
         hourHand: animated.hourHand.rotation.z
       },
       timeScale: trainTimeScale,
-      runActionStage
+      runActionStage,
+      audioEnabled: watchAudio.enabled
     };
   }
 };
@@ -457,6 +463,17 @@ function animate() {
   const escapeState = escapementSystem.update(mechanicalElapsed, phases.escape, powerSystem.state.running);
   lastEscapeState = escapeState;
   syncBasicUI();
+
+  const acceptedTurnsNow = windingSystem.state.acceptedCrownTurns;
+  if (acceptedTurnsNow > previousAcceptedCrownTurns + 1e-5 && windingSystem.state.input !== 0) {
+    watchAudio.playWindingBurst(900);
+  }
+  previousAcceptedCrownTurns = acceptedTurnsNow;
+  watchAudio.update({
+    running: Boolean(powerSystem.state.running && escapementSystem.state?.status === 'running'),
+    timeScale: trainTimeScale,
+    nowMs: performance.now()
+  });
 
   // M5a makes the escapement release state the source of train progress. During
   // lock phases releasedSeconds is flat; during unlock/impulse it advances. The
