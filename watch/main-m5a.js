@@ -196,14 +196,26 @@ function syncBasicUI() {
 trainScale?.addEventListener('change', () => setTimeScale(trainScale.value));
 basicTrainScale?.addEventListener('change', () => setTimeScale(basicTrainScale.value));
 
-windRunBtn?.addEventListener('click', () => {
+let runActionStage = 'idle';
+
+function establishDemoRunState() {
+  runActionStage = 'keyless';
   keylessSystem.setMode('wind');
-  const targetReserve = 0.60;
-  const targetTurns = windingSystem.constants.fullWindStemTurns * targetReserve;
-  const remainingTurns = Math.max(0, targetTurns - windingSystem.state.acceptedCrownTurns);
-  if (remainingTurns > 0) windingSystem.nudge(1, remainingTurns);
+  runActionStage = 'reserve';
+  windingSystem.setReserveFraction?.(Math.max(0.60, windingSystem.state.energy));
+  runActionStage = 'timescale';
   setTimeScale(1);
+  runActionStage = 'ui';
   syncBasicUI();
+  runActionStage = 'armed';
+}
+
+windRunBtn?.addEventListener('click', () => {
+  // Return from the user event immediately. The presentation shortcut establishes
+  // reserve on the next task so a powered-frame regression cannot make the button
+  // itself feel dead or trap the click handler.
+  runActionStage = 'scheduled';
+  setTimeout(establishDemoRunState, 0);
 });
 
 pauseResumeBtn?.addEventListener('click', () => {
@@ -406,7 +418,8 @@ window.__watchDebug = {
         minuteHand: animated.minuteHand.rotation.z,
         hourHand: animated.hourHand.rotation.z
       },
-      timeScale: trainTimeScale
+      timeScale: trainTimeScale,
+      runActionStage
     };
   }
 };
