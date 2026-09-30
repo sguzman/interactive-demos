@@ -23,6 +23,25 @@ test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', asyn
   expect(opened.deployment).toBeGreaterThan(0.985);
   await expect(page.locator('#deploymentState')).toHaveText('ERECT · LOCKED');
   await expect(page.locator('#powerState')).toHaveText('S6 CLOSED · ENABLED');
+  await expect(page.locator('#takePhotoBtn')).toBeEnabled();
+
+  // Prove the causal exposure engine, not merely the rendering.
+  await page.locator('#takePhotoBtn').click();
+  await page.waitForFunction(() => window.__sx70Debug.state.cycle.phase !== 'idle');
+  const cycleResult = await page.evaluate(() => window.__sx70Debug.advanceCycle(1 / 120, 900));
+  expect(cycleResult.state.phase).toBe('idle');
+  expect(cycleResult.events).toContain('S4-transfer');
+  expect(cycleResult.events).toContain('reflex-unlatch');
+  expect(cycleResult.events).toContain('S5-open');
+  expect(cycleResult.events).toContain('S3-open');
+  expect(cycleResult.events).toContain('delay-complete');
+  expect(cycleResult.events).toContain('exposure-threshold');
+  expect(cycleResult.events).toContain('pick-start');
+  expect(cycleResult.events).toContain('roller-nip-capture');
+  expect(cycleResult.events).toContain('reflex-recock-phase');
+  expect(cycleResult.events).toContain('S5-terminal');
+  expect(cycleResult.events).toContain('S1-released-and-shutter-open');
+  expect((await page.evaluate(() => window.__sx70Debug.state)).violations).toEqual([]);
 
   await page.locator('#focus').evaluate(element => {
     element.value = '82';
