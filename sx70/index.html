@@ -38,15 +38,17 @@
       <div class="basic-action-grid">
         <button id="openBtn">Open camera</button>
         <button id="foldBtn" class="secondary">Fold camera</button>
-        <button id="takePhotoBtn" class="secondary" disabled title="Exposure sequence is the next implementation tranche">Take photo · queued</button>
+        <button id="takePhotoBtn" class="secondary" disabled>Take photo</button>
         <button id="resetBtn" class="secondary">Reset specimen</button>
       </div>
 
       <div class="state-grid">
         <div class="state-card"><span>Deployment</span><output id="deploymentState">FOLDED</output></div>
         <div class="state-card"><span>Electrical enable</span><output id="powerState">S6 OPEN · DISABLED</output></div>
-        <div class="state-card"><span>Model</span><output>P4 CONSTRUCTIVE</output></div>
-        <div class="state-card"><span>Specimen</span><output>MANUAL FOCUS</output></div>
+        <div class="state-card"><span>Cycle</span><output id="cycleState">IDLE</output></div>
+        <div class="state-card"><span>Optical mode</span><output id="opticalState">VIEWING</output></div>
+        <div class="state-card"><span>Motor</span><output id="motorState">STOPPED</output></div>
+        <div class="state-card"><span>Last event</span><output id="lastEventState">READY</output></div>
       </div>
 
       <label class="range-row" for="focus">
@@ -55,12 +57,24 @@
       </label>
       <input id="focus" type="range" min="0" max="100" value="55" />
 
+      <label class="range-row" for="sceneLight">
+        <span>Scene light</span>
+        <output id="sceneLightValue">85%</output>
+      </label>
+      <input id="sceneLight" type="range" min="10" max="140" value="85" />
+
+      <label class="range-row" for="exposureComp">
+        <span>Exposure compensation</span>
+        <output id="exposureCompValue">0.0 EV</output>
+      </label>
+      <input id="exposureComp" type="range" min="-10" max="10" value="0" />
+
       <div class="view-grid">
         <button class="secondary active" data-view="overview">Overview</button>
         <button class="secondary" data-view="folding">Folding</button>
         <button class="secondary" data-view="viewing">Viewing optics</button>
         <button class="secondary" data-view="exposure">Exposure optics</button>
-        <button class="secondary" data-view="sequence" disabled>Exposure sequence · queued</button>
+        <button class="secondary" data-view="sequence">Exposure sequence</button>
         <button class="secondary" data-view="transport" disabled>Film transport · queued</button>
         <button class="secondary" data-view="chemistry" disabled>Film chemistry · queued</button>
       </div>
@@ -90,6 +104,24 @@
         <button id="assembleBtn" class="secondary">Assemble</button>
         <button id="explodeBtn" class="secondary">Explode</button>
       </div>
+    </section>
+
+    <section class="advanced-section">
+      <div class="section-title">Exposure-cycle state</div>
+      <dl class="compact-facts">
+        <div><dt>S1</dt><dd id="s1State">open</dd></div>
+        <div><dt>S3</dt><dd id="s3State">closed</dd></div>
+        <div><dt>S4</dt><dd id="s4State">viewing/open-state</dd></div>
+        <div><dt>S5</dt><dd id="s5State">reset</dd></div>
+        <div><dt>Shutter</dt><dd id="shutterState">open</dd></div>
+        <div><dt>Reflex</dt><dd id="reflexState">viewing seated</dd></div>
+        <div><dt>Integrator</dt><dd id="integratorState">0%</dd></div>
+        <div><dt>Y delay</dt><dd>40 ± 5 ms · sourced</dd></div>
+      </dl>
+      <p class="note">
+        Transition order follows the canonical Engineering state machine. Unresolved motor,
+        cam, and shutter timings are slowed into P5 presentation time for inspection.
+      </p>
     </section>
 
     <section class="advanced-section">
