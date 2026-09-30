@@ -140,6 +140,10 @@ function setViewPreset(name) {
 }
 
 for (const button of viewButtons) button.addEventListener('click', () => setViewPreset(button.dataset.view));
+
+const requestedView = new URLSearchParams(window.location.search).get('view');
+if (requestedView && VIEW_PRESETS[requestedView]) setViewPreset(requestedView);
+
 controls.addEventListener('start', () => {
   cameraFlight = null;
   for (const button of viewButtons) button.classList.remove('active');
