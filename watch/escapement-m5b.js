@@ -284,6 +284,7 @@ function nextEventDelta(mechanicalSeconds) {
 }
 
 export function createEscapementSystem({ watch, animated, materials, powerSystem, root = document }) {
+  const advancedInspectionOpen = () => root.querySelector('.controls')?.classList.contains('advanced-open') === true;
   const roller = makeRollerAndJewel(animated.balance, materials);
   const forkSafety = makeForkSafetyGeometry(animated.pallet, materials);
   const palletFaces = makePalletFaceModel(animated.pallet, materials);
@@ -337,6 +338,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
   });
 
   function syncUI(sample, running) {
+    if (!advancedInspectionOpen()) return;
     const labels = {
       'lock-entry': 'LOCK · ENTRY',
       unlock: 'UNLOCK',
@@ -354,7 +356,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
   }
 
   function updateContactDiagnostics(sample) {
-    if (!diagnostics) return;
+    if (!diagnostics || !advancedInspectionOpen()) return;
 
     const entry = new THREE.Vector2(-6.22, -8.52);
     const exit = new THREE.Vector2(-6.76, -8.98);
