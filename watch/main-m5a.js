@@ -155,6 +155,8 @@ const basicReserveValue = document.querySelector('#basicReserveValue');
 const basicMovementState = document.querySelector('#basicMovementState');
 const basicAssembleBtn = document.querySelector('#basicAssembleBtn');
 const basicExplodeBtn = document.querySelector('#basicExplodeBtn');
+const advancedToggleBtn = document.querySelector('#advancedToggleBtn');
+const controlsPanel = document.querySelector('.controls');
 const endshakeScale = document.querySelector('#endshakeScale');
 let trainTimeScale = Number(trainScale?.value ?? 1);
 let lastPositiveTimeScale = trainTimeScale > 0 ? trainTimeScale : 1;
@@ -214,6 +216,21 @@ basicUnwindBtn?.addEventListener('click', () => {
 
 basicAssembleBtn?.addEventListener('click', () => setExplosion(0));
 basicExplodeBtn?.addEventListener('click', () => setExplosion(1));
+
+function setAdvancedInspection(open) {
+  const expanded = Boolean(open);
+  controlsPanel?.classList.toggle('advanced-open', expanded);
+  if (advancedToggleBtn) {
+    advancedToggleBtn.setAttribute('aria-expanded', String(expanded));
+    advancedToggleBtn.textContent = expanded ? 'Advanced inspection ▴' : 'Advanced inspection ▾';
+  }
+}
+
+advancedToggleBtn?.addEventListener('click', () => {
+  setAdvancedInspection(!controlsPanel?.classList.contains('advanced-open'));
+});
+
+setAdvancedInspection(false);
 syncTimeScaleControls();
 syncBasicUI();
 meshGuides?.addEventListener('change', () => { if (trainGeometry.guides) trainGeometry.guides.visible = meshGuides.checked; });
