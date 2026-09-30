@@ -193,6 +193,7 @@ function makeGuides(watch, faces) {
 }
 
 export function createEscapementSystem({ watch, animated, materials, powerSystem, root = document }) {
+  const advancedInspectionOpen = () => root.querySelector('.controls')?.classList.contains('advanced-open') === true;
   injectUI(root);
   const base = createM5cEscapementSystem({ watch, animated, materials, powerSystem, root });
   const amplitudeAdvance = powerSystem.advance.bind(powerSystem);
@@ -355,6 +356,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
   }
 
   function syncUI(result) {
+    if (!advancedInspectionOpen()) return;
     if (ui.event) ui.event.value = result.event;
     if (ui.constraint) ui.constraint.value = result.constraint;
     if (ui.startTravel) ui.startTravel.value = `${result.startTravel.toFixed(3)} mm`;
@@ -379,6 +381,19 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
 
   function update(mechanicalSeconds, escapeBase = 0, running = false) {
     const baseSample = base.update(mechanicalSeconds, escapeBase, running);
+
+    // Basic mode uses the upstream event-resolved Swiss-lever sample directly.
+    // M5d's stricter reconstructed contact solve is Advanced-only.
+    if (!advancedInspectionOpen()) {
+      state.geometryHealthy = true;
+      state.consecutiveInvalid = 0;
+      return {
+        ...baseSample,
+        geometryDiagnosticDeferred: true,
+        geometryHealthy: null
+      };
+    }
+
     const result = solve(baseSample, escapeBase);
 
     state.geometryEvent = result.event;
