@@ -144,11 +144,11 @@ export const PUBLIC_VIEWS = {
   },
   viewing: {
     label: 'Viewing optics',
-    ready: false
+    ready: true
   },
   exposure: {
     label: 'Exposure optics',
-    ready: false
+    ready: true
   },
   sequence: {
     label: 'Exposure sequence',
