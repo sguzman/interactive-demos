@@ -29,6 +29,13 @@ test('Wind & Run advances the ETA 6497-2 simulation', async ({ page }) => {
   expect(after.rotations.fourth).not.toBeCloseTo(before.rotations.fourth, 5);
   expect(after.rotations.balance).not.toBeCloseTo(before.rotations.balance, 5);
   expect(after.rotations.secondsHand).not.toBeCloseTo(before.rotations.secondsHand, 5);
+  expect(after.rotations.minuteHand).not.toBeCloseTo(before.rotations.minuteHand, 5);
+  expect(after.rotations.hourHand).not.toBeCloseTo(before.rotations.hourHand, 6);
+  expect(after.rotations.barrel).not.toBeCloseTo(before.rotations.barrel, 6);
+  expect(after.rotations.cannonPinion).not.toBeCloseTo(before.rotations.cannonPinion, 5);
+  expect(after.rotations.minuteWheel).not.toBeCloseTo(before.rotations.minuteWheel, 5);
+  expect(after.rotations.settingWheel).not.toBeCloseTo(before.rotations.settingWheel, 5);
+  expect(after.rotations.hourWheel).not.toBeCloseTo(before.rotations.hourWheel, 6);
   expect(pageErrors).toEqual([]);
 
   // Pause freezes the mechanism; Resume releases it again.
