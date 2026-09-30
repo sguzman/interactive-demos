@@ -50,7 +50,7 @@ function injectUI(root) {
       <div class="mode-stat"><span>Compounded mesh ceiling</span><output id="stageTransmissionValue">0.0%</output></div>
       <div class="mode-stat"><span>Total target load</span><output id="stageTotalLoadValue">0.075</output></div>
     </div>
-    <div class="winding-note">M6e decomposes the upstream reaction load into named train stages instead of leaving it as one anonymous scalar. The three wheel/pinion stages use the active reconstructed tooth-count topology (80→10, 60→8, 120→10), with separate pivot/jewel, display and escapement contributions. Stage efficiencies compound into the transmission ceiling, while running demand, rejected work, low amplitude and blocked geometry are added mainly at the escapement/load side. These remain normalized educational coefficients, not measured tooth friction or force.</div>`;
+    <div class="winding-note">M6e decomposes the upstream reaction load into named train stages instead of leaving it as one anonymous scalar. The three wheel/pinion stages use the active reconstructed tooth-count topology (80→10, 60→8, 120→10), with separate pivot/jewel, display and escapement contributions. Stage efficiencies compound into the transmission ceiling. Running demand, rejected work and low amplitude affect nominal load; reconstructed geometry faults remain visible as diagnostics without hard-stalling the basic demonstration. These remain normalized educational coefficients, not measured tooth friction or force.</div>`;
 
   if (closure?.nextSibling) controls.insertBefore(section, closure.nextSibling);
   else controls.append(section);
@@ -104,7 +104,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     state.dynamicDelivered = DYNAMIC.deliveredWorkGain * clamp01(work?.deliveredWork ?? 0);
     state.dynamicRejected = DYNAMIC.rejectedWorkGain * clamp01(work?.lostWork ?? 0);
     state.dynamicLowAmplitude = context.running ? DYNAMIC.lowAmplitudeGain * (1 - clamp01(context.amplitude ?? 0)) : 0;
-    state.dynamicGeometry = context.geometryHealthy ? 0 : DYNAMIC.geometryPenalty;
+    state.dynamicGeometry = context.geometryDiagnosticHealthy === false ? DYNAMIC.geometryPenalty : 0;
     state.dynamicStall = context.powerStatus === 'stalled' ? DYNAMIC.stalledPenalty : 0;
 
     state.centerThird = STAGES.centerThird.baseLoad;
@@ -118,7 +118,6 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
       state.dynamicDelivered +
       state.dynamicRejected +
       state.dynamicLowAmplitude +
-      state.dynamicGeometry +
       state.dynamicStall;
 
     state.totalLoad =
