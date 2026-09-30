@@ -147,6 +147,7 @@ function drawPortrait(canvas, history, theta, omega) {
 }
 
 export function createEscapementSystem({ watch, animated, materials, powerSystem, root = document }) {
+  const advancedInspectionOpen = () => root.querySelector('.controls')?.classList.contains('advanced-open') === true;
   powerSystem.externalOscillator = true;
   const base = createM5dEscapementSystem({ watch, animated, materials, powerSystem, root });
   injectUI(root);
@@ -418,6 +419,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
   }
 
   function syncUI(running) {
+    if (!advancedInspectionOpen()) return;
     if (ui.theta) ui.theta.value = `${THREE.MathUtils.radToDeg(state.theta).toFixed(2)}°`;
     if (ui.omega) ui.omega.value = `${state.omega.toFixed(3)} rad/s`;
     if (ui.amplitude) ui.amplitude.value = `${(state.amplitude * 100).toFixed(1)}%`;
