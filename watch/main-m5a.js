@@ -367,6 +367,49 @@ const handPhase = {
   minute: animated.minuteHand.rotation.z,
   hour: animated.hourHand.rotation.z
 };
+let lastEscapeState = null;
+
+window.__watchDebug = {
+  snapshot() {
+    const polygon = escapementSystem.polygonState?.lastResult;
+    const work = escapementSystem.impulseWorkState?.lastWork;
+    return {
+      reserve: windingSystem.state.energy,
+      acceptedCrownTurns: windingSystem.state.acceptedCrownTurns,
+      power: {
+        running: powerSystem.state.running,
+        status: powerSystem.state.status,
+        blockReason: powerSystem.state.blockReason || '',
+        mechanicalElapsedSeconds: powerSystem.state.mechanicalElapsedSeconds
+      },
+      oscillator: {
+        amplitude: escapementSystem.state?.amplitude ?? 0,
+        oscillatorSeconds: escapementSystem.state?.oscillatorSeconds ?? 0,
+        centerCrossings: escapementSystem.state?.centerCrossings ?? 0,
+        status: escapementSystem.state?.status ?? 'unknown',
+        geometryDiagnosticHealthy: escapementSystem.state?.geometryDiagnosticHealthy ?? true
+      },
+      escapement: {
+        releasedSeconds: lastEscapeState?.releasedSeconds ?? 0,
+        geometryHealthy: polygon?.healthy ?? null,
+        geometryEvent: polygon?.event ?? '',
+        fallbackActive: Boolean(work?.fallbackActive),
+        workReason: work?.reason ?? ''
+      },
+      rotations: {
+        center: animated.centerWheel.rotation.z,
+        third: animated.thirdWheel.rotation.z,
+        fourth: animated.fourthWheel.rotation.z,
+        escape: animated.escapeWheel.rotation.z,
+        balance: animated.balance.rotation.z,
+        secondsHand: animated.secondsHand.rotation.z,
+        minuteHand: animated.minuteHand.rotation.z,
+        hourHand: animated.hourHand.rotation.z
+      },
+      timeScale: trainTimeScale
+    };
+  }
+};
 
 function animate() {
   requestAnimationFrame(animate);
@@ -399,6 +442,7 @@ function animate() {
 
   const mechanicalElapsed = powerSystem.state.mechanicalElapsedSeconds;
   const escapeState = escapementSystem.update(mechanicalElapsed, phases.escape, powerSystem.state.running);
+  lastEscapeState = escapeState;
   syncBasicUI();
 
   // M5a makes the escapement release state the source of train progress. During
