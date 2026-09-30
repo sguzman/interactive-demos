@@ -290,6 +290,7 @@ function injectUI(root) {
 }
 
 export function createEscapementSystem({ watch, animated, materials, powerSystem, root = document }) {
+  const advancedInspectionOpen = () => root.querySelector('.controls')?.classList.contains('advanced-open') === true;
   const base = createM5fEscapementSystem({ watch, animated, materials, powerSystem, root });
   injectUI(root);
   const guides = makePolygonGuides(watch);
@@ -554,6 +555,23 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
 
   function update(mechanicalSeconds, escapeBase = 0, running = false) {
     currentEscapeBase = escapeBase;
+
+    // Strict polygon contact is an Advanced diagnostic. In Basic mode the
+    // upstream causal escapement/oscillator sample remains authoritative for
+    // nominal animation, avoiding expensive P4 polygon solves every frame.
+    if (!advancedInspectionOpen()) {
+      const sample = base.update(mechanicalSeconds, currentEscapeBase, running);
+      return {
+        ...sample,
+        polygonDiagnosticDeferred: true,
+        geometryHealthy: null,
+        polygonContact: state.lastResult,
+        polygonImpulseAdmission: state.lastAdmission,
+        polygonAdmittedImpulses: state.admittedImpulses,
+        polygonDeniedImpulses: state.deniedImpulses
+      };
+    }
+
     if (!calibrationPrimed && !base.getSolverFaces?.()) {
       base.update(base.state.oscillatorSeconds ?? 0, currentEscapeBase, false);
       calibrationPrimed = Boolean(base.getSolverFaces?.());
