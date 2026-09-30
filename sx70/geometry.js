@@ -320,12 +320,12 @@ export function createSX70Model() {
   function applyExplosion(value) {
     state.explosion = THREE.MathUtils.clamp(value, 0, 1);
     const e = state.explosion;
-    base.position.y = -6 * e;
-    rearPanel.position.x += 0;
-    forwardPanel.position.x = THREE.MathUtils.lerp(forwardPanel.position.x, 11, e);
-    lensHousing.position.x = THREE.MathUtils.lerp(lensHousing.position.x, 23, e);
-    viewfinder.position.x = THREE.MathUtils.lerp(viewfinder.position.x, -19, e);
-    bellows.position.x = THREE.MathUtils.lerp(0, -8, e);
+    base.position.set(0, -6 * e, 0);
+    rearPanel.position.x = -11 * e;
+    forwardPanel.position.x = 11 * e;
+    lensHousing.position.x = 23 * e;
+    viewfinder.position.x = -19 * e;
+    bellows.position.x = -8 * e;
     for (const [name, link] of Object.entries(links)) {
       link.visible = e < 0.82;
       link.userData.explosionName = name;
@@ -347,9 +347,8 @@ export function createSX70Model() {
   }
 
   function setExplode(value) {
-    applyDeployment(state.deployment);
     state.explosion = THREE.MathUtils.clamp(value, 0, 1);
-    applyExplosion(state.explosion);
+    applyDeployment(state.deployment);
   }
 
   applyDeployment(0);
