@@ -214,8 +214,8 @@ export function createSX70Model() {
   darkDeck.position.set(0, baseTopY + 1.1, -4);
   base.add(darkDeck);
 
-  const rearLeatherDeck = box(86, 2.2, 48, materials.leather);
-  rearLeatherDeck.position.set(0, baseTopY + 2.25, -43);
+  const rearLeatherDeck = box(88, 2.2, 122, materials.leather);
+  rearLeatherDeck.position.set(0, baseTopY + 2.25, -5);
   base.add(rearLeatherDeck);
 
   const frontDeck = box(94, 2.6, 34, materials.chromeDark);
@@ -315,20 +315,19 @@ export function createSX70Model() {
   const viewfinder = new THREE.Group();
 
   const capBody = box(94, 10.2, 104, materials.chrome);
-  capBody.position.set(0, 5.6, 17);
   viewfinder.add(capBody);
 
   const capLeather = box(84, 2.0, 88, materials.leather);
-  capLeather.position.set(0, 11.1, 17);
+  capLeather.position.set(0, 6.05, 0);
   viewfinder.add(capLeather);
 
   const capUnderside = box(88, 2.6, 91, materials.black);
-  capUnderside.position.set(0, 0.4, 17);
+  capUnderside.position.set(0, -5.55, 0);
   viewfinder.add(capUnderside);
 
   const eyepiece = cylinder(7.3, 3.5, materials.glass, 32);
   eyepiece.rotation.x = Math.PI / 2;
-  eyepiece.position.set(18, 5.6, -34.5);
+  eyepiece.position.set(18, 0, -47);
   viewfinder.add(eyepiece);
 
   register('viewfinder', viewfinder);
@@ -401,19 +400,26 @@ export function createSX70Model() {
       e
     ) * DEG;
 
-    const capAngle = THREE.MathUtils.lerp(
-      A.topCapFoldedAngleDeg,
-      A.topCapOpenAngleDeg,
-      e
-    ) * DEG;
-
     const rearBase = new THREE.Vector3(0, baseTopY + 0.8, A.rearBasePivotZ);
     const rearTop = pointFromPivot(rearBase, A.rearWallLength, rearAngle);
 
     const lensBase = new THREE.Vector3(0, baseTopY + 0.8, A.frontStandardPivotZ);
     const lensTop = pointFromPivot(lensBase, A.lensStandardHeight, lensAngle);
 
-    return { e, rearAngle, lensAngle, capAngle, rearBase, rearTop, lensBase, lensTop };
+    const upperSpan = lensTop.clone().sub(rearTop);
+    const openCapAngle = Math.atan2(-upperSpan.y, upperSpan.z);
+    const openCapCenter = rearTop.clone().add(lensTop).multiplyScalar(0.5);
+    openCapCenter.y += 8.0;
+
+    const foldedCapCenter = new THREE.Vector3(0, baseTopY + 9.2, -7);
+    const capPosition = foldedCapCenter.clone().lerp(openCapCenter, e);
+    const capAngle = THREE.MathUtils.lerp(
+      A.topCapFoldedAngleDeg * DEG,
+      openCapAngle,
+      e
+    );
+
+    return { e, rearAngle, lensAngle, capAngle, capPosition, rearBase, rearTop, lensBase, lensTop };
   }
 
   function updateBellows(s) {
@@ -450,7 +456,7 @@ export function createSX70Model() {
     lensHousing.position.copy(s.lensBase);
     lensHousing.rotation.set(s.lensAngle, 0, 0);
 
-    viewfinder.position.copy(s.rearTop);
+    viewfinder.position.copy(s.capPosition);
     viewfinder.rotation.set(s.capAngle, 0, 0);
 
     const sideX = A.sideRailX;
