@@ -13,41 +13,41 @@ must be explicitly labeled if introduced.
 
 ## Current implementation state
 
-The public implementation is being built in causal layers.
+The public implementation is integrated through the film-chemistry boundary.
 
 Currently implemented:
 
-- gallery entry;
-- public specimen shell;
-- folded default state;
-- Open camera / Fold camera;
-- constructive chassis/base geometry;
-- erecting-link visualization;
-- bellows envelope;
-- lens/shutter housing;
-- presentation focus travel;
-- front-cover / processing-roll envelope;
+- gallery entry and projection registry;
+- Works-derived public engineering guide;
+- folded default state and product-intimate Open / Fold / Focus / Take photo path;
+- constructive chassis/base geometry and linked deployment;
+- bellows and lens/shutter housing;
+- viewing and exposure optical graphs;
+- paired shutter / reflex-carrier / motor-cam presentation geometry;
+- canonical exposure-cycle transition engine;
+- persistent cycle event history;
+- sourced 40 ± 5 ms Y-delay anchor;
+- P5-normalized unresolved motor / shutter / cam timing;
+- original ten-sheet pack state;
+- flat 6 V pack-battery state;
+- fresh-pack dark-slide cycle;
+- pick-to-roller handoff;
+- exact-once sheet consumption;
+- ejected-print state;
+- normalized integral-film chemistry;
+- exposure-dependent CMY transfer sign;
+- high-pH opacification;
+- delayed neutralization and pH fall;
+- separate mechanical and chemical clocks;
+- chemistry fast-forward as explicit P5 presentation behavior;
 - component inspection;
-- P0/P3/P4/P5 provenance language;
-- Overview and Folding view presets;
-- deterministic Chromium smoke proof for fold/open/focus/explode.
+- collapsed Advanced inspection;
+- provenance / lineage diagnostics;
+- deterministic Chromium end-to-end regression and rendered screenshots.
 
-Not yet implemented:
-
-- full viewing-optics ray model;
-- exposure-optics ray model;
-- reflex/Fresnel carrier transition;
-- shutter / photocell / ECM cycle;
-- motor/cam/switch state machine;
-- film-pack consumable state;
-- dark-slide initialization;
-- film pick and roller transport;
-- integral-film chemistry;
-- complete Advanced inspection;
-- public rich-guide rendition and deep links.
-
-The UI deliberately marks those surfaces as queued rather than making decorative controls that do
-not execute a real model.
+The public model remains a causal educational reconstruction. Exact production folding coordinates,
+mirror angles, cam profiles, transport forces/speeds, and proprietary film kinetics remain
+explicitly unresolved or reconstructive.
 
 ## Authority contract
 
@@ -119,9 +119,14 @@ Mechanical process time and chemical process time remain separate clocks.
 
 ## Validation
 
-Early folding-shell runtime proof:
+Integrated browser regression:
 
 `tests/sx70-runtime.spec.mjs`
 
-Final end-to-end regression will later extend this into the full exposure, transport and chemistry
-sequence rather than replacing the early proof.
+The test exercises folded start, deployment, focus, dual optical modes, the canonical exposure
+transition order, exact-once film consumption, fresh-pack dark-slide ejection, transport and
+chemistry views, camera refolding, and continued chemical time after the camera is folded.
+
+The CI workflow is:
+
+`.github/workflows/sx70-runtime-smoke.yml`
