@@ -146,11 +146,76 @@ controls.addEventListener('start', () => {
 });
 
 const trainScale = document.querySelector('#trainScale');
+const basicTrainScale = document.querySelector('#basicTrainScale');
+const windRunBtn = document.querySelector('#windRunBtn');
+const pauseResumeBtn = document.querySelector('#pauseResumeBtn');
+const basicUnwindBtn = document.querySelector('#basicUnwindBtn');
+const basicPowerMeter = document.querySelector('#basicPowerMeter');
+const basicReserveValue = document.querySelector('#basicReserveValue');
+const basicMovementState = document.querySelector('#basicMovementState');
+const basicAssembleBtn = document.querySelector('#basicAssembleBtn');
+const basicExplodeBtn = document.querySelector('#basicExplodeBtn');
 const endshakeScale = document.querySelector('#endshakeScale');
 let trainTimeScale = Number(trainScale?.value ?? 1);
+let lastPositiveTimeScale = trainTimeScale > 0 ? trainTimeScale : 1;
 let endshakeExaggeration = Number(endshakeScale?.value ?? 0);
 
-trainScale?.addEventListener('change', () => { trainTimeScale = Number(trainScale.value); });
+function syncTimeScaleControls() {
+  if (trainScale) trainScale.value = String(trainTimeScale);
+  if (basicTrainScale && trainTimeScale > 0) {
+    const option = [...basicTrainScale.options].find(candidate => Number(candidate.value) === trainTimeScale);
+    if (option) basicTrainScale.value = option.value;
+  }
+  if (pauseResumeBtn) pauseResumeBtn.textContent = trainTimeScale > 0 ? 'Pause' : 'Resume';
+}
+
+function setTimeScale(value, remember = true) {
+  const next = Math.max(0, Number(value) || 0);
+  trainTimeScale = next;
+  if (remember && next > 0) lastPositiveTimeScale = next;
+  syncTimeScaleControls();
+}
+
+function syncBasicUI() {
+  const reserve = Math.max(0, Math.min(1, windingSystem.state.energy ?? 0));
+  const reserveHours = reserve * windingSystem.constants.maxReserveHours;
+  if (basicPowerMeter) basicPowerMeter.value = reserve;
+  if (basicReserveValue) basicReserveValue.value = `${(reserve * 100).toFixed(0)}% · ${reserveHours.toFixed(1)} h`;
+
+  const systemMode = escapementSystem.systemState?.mode;
+  const fallbackMode = powerSystem.state.status ?? 'unwound';
+  if (basicMovementState) basicMovementState.value = String(systemMode ?? fallbackMode).toUpperCase();
+}
+
+trainScale?.addEventListener('change', () => setTimeScale(trainScale.value));
+basicTrainScale?.addEventListener('change', () => setTimeScale(basicTrainScale.value));
+
+windRunBtn?.addEventListener('click', () => {
+  keylessSystem.setMode('wind');
+  const targetReserve = 0.60;
+  const targetTurns = windingSystem.constants.fullWindStemTurns * targetReserve;
+  const remainingTurns = Math.max(0, targetTurns - windingSystem.state.acceptedCrownTurns);
+  if (remainingTurns > 0) windingSystem.nudge(1, remainingTurns);
+  setTimeScale(1);
+  syncBasicUI();
+});
+
+pauseResumeBtn?.addEventListener('click', () => {
+  if (trainTimeScale > 0) setTimeScale(0, false);
+  else setTimeScale(lastPositiveTimeScale || 1);
+});
+
+basicUnwindBtn?.addEventListener('click', () => {
+  keylessSystem.setMode('wind');
+  windingSystem.reset();
+  setTimeScale(1);
+  syncBasicUI();
+});
+
+basicAssembleBtn?.addEventListener('click', () => setExplosion(0));
+basicExplodeBtn?.addEventListener('click', () => setExplosion(1));
+syncTimeScaleControls();
+syncBasicUI();
 meshGuides?.addEventListener('change', () => { if (trainGeometry.guides) trainGeometry.guides.visible = meshGuides.checked; });
 stackGuides?.addEventListener('change', () => { if (trainGeometry.stackGuides) trainGeometry.stackGuides.visible = stackGuides.checked; });
 endshakeGuides?.addEventListener('change', () => { if (trainGeometry.endshakeGuides) trainGeometry.endshakeGuides.visible = endshakeGuides.checked; });
@@ -313,6 +378,7 @@ function animate() {
 
   const mechanicalElapsed = powerSystem.state.mechanicalElapsedSeconds;
   const escapeState = escapementSystem.update(mechanicalElapsed, phases.escape, powerSystem.state.running);
+  syncBasicUI();
 
   // M5a makes the escapement release state the source of train progress. During
   // lock phases releasedSeconds is flat; during unlock/impulse it advances. The
