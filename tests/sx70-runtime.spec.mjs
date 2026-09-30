@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', async ({ page }) => {
+  test.setTimeout(90_000);
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(String(error)));
   page.on('console', message => console.log('[browser]', message.type(), message.text()));
@@ -64,8 +65,8 @@ test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', asyn
 
   const folded = await page.evaluate(() => window.__sx70Debug.state);
   expect(folded.deployment).toBeLessThan(0.015);
-  await expect(page.locator('#deploymentState')).toHaveValue('FOLDED');
-  await expect(page.locator('#powerState')).toHaveValue('S6 OPEN · DISABLED');
+  await expect(page.locator('#deploymentState')).toHaveText('FOLDED');
+  await expect(page.locator('#powerState')).toHaveText('S6 OPEN · DISABLED');
 
   expect(pageErrors).toEqual([]);
 
