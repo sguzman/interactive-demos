@@ -10,10 +10,26 @@ const WIND_URL = 'https://upload.wikimedia.org/wikipedia/commons/9/91/Rewinding_
 const BEATS_PER_SECOND = 6;
 const MAX_AUDIBLE_TIME_SCALE = 2;
 
+// The source recording is one real-watch click. Repeating the exact same sample
+// at 6 Hz sounds like a digital metronome, not a lever watch. Keep beat timing
+// exact, but alternate timbre/dynamics to represent the two acoustic sides of
+// the escapement plus small case/mechanism variation. This is P5 acoustic
+// reconstruction, not a calibre-specific recording.
+const BEAT_PROFILES = [
+  { rate: 0.972, gain: 1.00 }, // darker / heavier "tick"
+  { rate: 1.032, gain: 0.84 }  // brighter / lighter "tock"
+];
+const GAIN_VARIATION = [1.00, 0.96, 1.03, 0.98, 1.01, 0.95, 1.02, 0.99];
+
 function makeAudio(src, volume) {
   const audio = new Audio(src);
   audio.preload = 'auto';
   audio.volume = volume;
+  // We intentionally want tiny pitch/timbre differences between alternating
+  // lever events; do not preserve pitch when playbackRate changes.
+  if ('preservesPitch' in audio) audio.preservesPitch = false;
+  if ('mozPreservesPitch' in audio) audio.mozPreservesPitch = false;
+  if ('webkitPreservesPitch' in audio) audio.webkitPreservesPitch = false;
   return audio;
 }
 
@@ -27,6 +43,7 @@ export function createWatchAudio({ root = document } = {}) {
   let gestureUnlocked = false;
   let nextTickMs = 0;
   let poolIndex = 0;
+  let beatIndex = 0;
   let windingStopTimer = null;
   let lastWindingPulseMs = -Infinity;
 
@@ -45,10 +62,14 @@ export function createWatchAudio({ root = document } = {}) {
   const playTick = () => {
     if (!enabled || !gestureUnlocked) return;
     const audio = tickPool[poolIndex++ % tickPool.length];
+    const profile = BEAT_PROFILES[beatIndex % BEAT_PROFILES.length];
+    const variation = GAIN_VARIATION[beatIndex % GAIN_VARIATION.length];
+    beatIndex += 1;
     try {
       audio.pause();
       audio.currentTime = 0;
-      audio.playbackRate = 1;
+      audio.playbackRate = profile.rate;
+      audio.volume = Math.min(1, 0.16 * profile.gain * variation);
       void audio.play().catch(() => {});
     } catch {}
   };
@@ -83,7 +104,7 @@ export function createWatchAudio({ root = document } = {}) {
       return;
     }
 
-    updateUI('REAL WATCH TICK · 3 Hz CADENCE');
+    updateUI('REAL WATCH SOURCE · 3 Hz TICK/TOCK MODEL');
     const cadence = BEATS_PER_SECOND * Math.max(0.1, timeScale);
     const intervalMs = 1000 / cadence;
     if (nextTickMs <= 0 || nowMs - nextTickMs > intervalMs * 4) nextTickMs = nowMs;
