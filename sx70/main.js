@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createSX70Model } from './geometry.js';
 import { createOpticsVisualization } from './optics.js';
+import { createExposureCycle } from './cycle.js';
+import { createMechanismVisualization } from './mechanism.js';
 import { CANONICAL, COMPONENTS, RECONSTRUCTION } from './spec.js';
 
 const canvas = document.querySelector('#scene');
@@ -69,6 +71,10 @@ const optics = createOpticsVisualization();
 scene.add(optics.root);
 optics.setFocus(model.state.focus);
 
+const cycle = createExposureCycle();
+const mechanism = createMechanismVisualization();
+scene.add(mechanism.root);
+
 const ui = {
   controlsPanel: document.querySelector('.controls'),
   openBtn: document.querySelector('#openBtn'),
@@ -79,8 +85,16 @@ const ui = {
   deploymentValue: document.querySelector('#deploymentValue'),
   deploymentState: document.querySelector('#deploymentState'),
   powerState: document.querySelector('#powerState'),
+  cycleState: document.querySelector('#cycleState'),
+  opticalState: document.querySelector('#opticalState'),
+  motorState: document.querySelector('#motorState'),
+  lastEventState: document.querySelector('#lastEventState'),
   focus: document.querySelector('#focus'),
   focusValue: document.querySelector('#focusValue'),
+  sceneLight: document.querySelector('#sceneLight'),
+  sceneLightValue: document.querySelector('#sceneLightValue'),
+  exposureComp: document.querySelector('#exposureComp'),
+  exposureCompValue: document.querySelector('#exposureCompValue'),
   explode: document.querySelector('#explode'),
   explodeValue: document.querySelector('#explodeValue'),
   assembleBtn: document.querySelector('#assembleBtn'),
@@ -90,6 +104,13 @@ const ui = {
   partProvenance: document.querySelector('#partProvenance'),
   partName: document.querySelector('#partName'),
   partDescription: document.querySelector('#partDescription'),
+  s1State: document.querySelector('#s1State'),
+  s3State: document.querySelector('#s3State'),
+  s4State: document.querySelector('#s4State'),
+  s5State: document.querySelector('#s5State'),
+  shutterState: document.querySelector('#shutterState'),
+  reflexState: document.querySelector('#reflexState'),
+  integratorState: document.querySelector('#integratorState'),
   loading: document.querySelector('#loading')
 };
 
@@ -109,6 +130,10 @@ const VIEW_PRESETS = {
   exposure: {
     position: new THREE.Vector3(190, 112, 184),
     target: new THREE.Vector3(-12, 45, 7)
+  },
+  sequence: {
+    position: new THREE.Vector3(218, 120, 220),
+    target: new THREE.Vector3(0, 45, 10)
   }
 };
 
@@ -124,6 +149,8 @@ function setView(name, immediate = false) {
     button.classList.toggle('active', button.dataset.view === name);
   }
 
+  mechanism.setVisible(name === 'sequence');
+
   if (name === 'viewing' || name === 'exposure') {
     setDeploymentTarget(1);
     optics.setMode(name);
@@ -134,6 +161,15 @@ function setView(name, immediate = false) {
       description: name === 'viewing'
         ? 'Conceptual ray graph through the shared taking lens, fixed viewing mirror, reflective Fresnel and off-axis relay to the eye. The path is source-grounded; the public coordinates are reconstructive.'
         : 'Conceptual exposure graph through the shared taking lens, reverse-side taking mirror and integral-film plane. Exact production mirror angles remain unresolved.'
+    });
+  } else if (name === 'sequence') {
+    setDeploymentTarget(1);
+    optics.setMode(cycle.state.phase === 'integrating' ? 'exposure' : 'viewing');
+    inspectComponent({
+      category: 'causal sequence',
+      provenance: 'P0/P2 transition order · P5 presentation timing',
+      name: 'Exposure-cycle state machine',
+      description: 'Follow shutter closure, motor start, spring-driven reflex rise, dynamic braking, the sourced 40 ± 5 ms Y delay, metered exposure, shutter reclosure, and post-exposure recock. Transport visualization follows in the next tranche.'
     });
   } else {
     optics.setMode('none');
@@ -174,7 +210,20 @@ function setDeploymentImmediate(value) {
 }
 
 ui.openBtn.addEventListener('click', () => setDeploymentTarget(1));
-ui.foldBtn.addEventListener('click', () => setDeploymentTarget(0));
+ui.foldBtn.addEventListener('click', () => {
+  if (cycle.state.phase !== 'idle') return;
+  setDeploymentTarget(0);
+});
+
+ui.takePhotoBtn.addEventListener('click', () => {
+  const accepted = cycle.requestExposure({
+    deploymentReady: model.state.deployment >= 0.985,
+    packReady: true,
+    darkSlideAbsent: true,
+    sheetsRemaining: 10
+  });
+  if (accepted) setView('sequence');
+});
 
 ui.deployment.addEventListener('input', () => {
   setDeploymentImmediate(Number(ui.deployment.value) / 100);
@@ -185,6 +234,18 @@ ui.focus.addEventListener('input', () => {
   model.setFocus(value);
   optics.setFocus(value);
   ui.focusValue.value = `${Math.round(value * 100)}%`;
+});
+
+ui.sceneLight.addEventListener('input', () => {
+  const value = Number(ui.sceneLight.value) / 100;
+  cycle.setSceneLight(value);
+  ui.sceneLightValue.value = `${Math.round(value * 100)}%`;
+});
+
+ui.exposureComp.addEventListener('input', () => {
+  const ev = Number(ui.exposureComp.value) / 10;
+  cycle.setExposureCompensation(ev);
+  ui.exposureCompValue.value = `${ev >= 0 ? '+' : ''}${ev.toFixed(1)} EV`;
 });
 
 ui.explode.addEventListener('input', () => {
@@ -212,6 +273,8 @@ ui.advancedToggleBtn.addEventListener('click', () => {
 });
 
 function resetSpecimen() {
+  cycle.reset();
+  mechanism.setVisible(false);
   model.setExplode(0);
   ui.explode.value = '0';
   ui.explodeValue.value = '0%';
@@ -221,6 +284,13 @@ function resetSpecimen() {
   optics.setMode('none');
   ui.focus.value = String(Math.round(RECONSTRUCTION.focus.normalizedDefault * 100));
   ui.focusValue.value = `${Math.round(RECONSTRUCTION.focus.normalizedDefault * 100)}%`;
+
+  cycle.setSceneLight(0.85);
+  cycle.setExposureCompensation(0);
+  ui.sceneLight.value = '85';
+  ui.sceneLightValue.value = '85%';
+  ui.exposureComp.value = '0';
+  ui.exposureCompValue.value = '+0.0 EV';
 
   model.setDeploymentImmediate(0);
   model.setDeploymentTarget(0);
@@ -236,6 +306,7 @@ ui.resetBtn.addEventListener('click', resetSpecimen);
 function syncStateUI() {
   const t = model.state.deployment;
   const target = model.state.targetDeployment;
+  const cycleState = cycle.state;
 
   let deploymentLabel = 'FOLDED';
   if (t >= 0.985) deploymentLabel = 'ERECT · LOCKED';
@@ -246,6 +317,26 @@ function syncStateUI() {
   ui.powerState.value = t >= 0.985 ? 'S6 CLOSED · ENABLED' : 'S6 OPEN · DISABLED';
   ui.deployment.value = String(Math.round(t * 100));
   ui.deploymentValue.value = `${Math.round(t * 100)}%`;
+
+  ui.cycleState.value = cycleState.phase.toUpperCase();
+  ui.opticalState.value = cycleState.opticalMode.toUpperCase();
+  ui.motorState.value = cycleState.motorRunning ? 'RUNNING' : (cycleState.motorBraked ? 'BRAKED' : 'STOPPED');
+  ui.lastEventState.value = cycleState.lastEvent.toUpperCase();
+  ui.s1State.textContent = cycleState.S1;
+  ui.s3State.textContent = cycleState.S3;
+  ui.s4State.textContent = cycleState.S4;
+  ui.s5State.textContent = cycleState.S5;
+  ui.shutterState.textContent = cycleState.shutterPosition > 0.95 ? 'open' : cycleState.shutterPosition < 0.05 ? 'closed' : `${Math.round(cycleState.shutterPosition * 100)}% open`;
+  ui.reflexState.textContent = cycleState.reflexProgress < 0.05 ? 'viewing seated' : cycleState.reflexProgress > 0.95 ? 'exposure position' : `${Math.round(cycleState.reflexProgress * 100)}% travel`;
+  const integratorPct = cycleState.exposureThreshold > 0 ? Math.min(100, cycleState.exposureIntegrator / cycleState.exposureThreshold * 100) : 0;
+  ui.integratorState.textContent = `${Math.round(integratorPct)}%`;
+
+  const ready = t >= 0.985 && cycleState.phase === 'idle';
+  ui.takePhotoBtn.disabled = !ready;
+  ui.openBtn.disabled = t >= 0.985 || cycleState.phase !== 'idle';
+  ui.foldBtn.disabled = t <= 0.015 || cycleState.phase !== 'idle';
+  ui.deployment.disabled = cycleState.phase !== 'idle';
+  ui.focus.disabled = cycleState.phase !== 'idle';
 }
 
 const raycaster = new THREE.Raycaster();
@@ -307,7 +398,23 @@ const clock = new THREE.Clock();
 function animate() {
   const dt = Math.min(clock.getDelta(), 0.05);
   model.step(dt);
+  const cycleEvents = cycle.step(dt);
+  mechanism.update(cycle.state, dt);
   optics.setDeployment(model.state.deployment);
+
+  if (activeView === 'sequence') {
+    if (cycle.state.opticalMode === 'exposing' || cycle.state.opticalMode === 'exposure-ready') {
+      optics.setMode('exposure');
+    } else if (cycle.state.phase === 'idle') {
+      optics.setMode('viewing');
+    } else {
+      optics.setMode('none');
+    }
+  }
+
+  if (cycleEvents.length && activeView === 'sequence') {
+    ui.lastEventState.value = cycleEvents[cycleEvents.length - 1].toUpperCase();
+  }
 
   if (cameraFlight) {
     camera.position.lerp(cameraFlight.position, 1 - Math.exp(-dt * 4.8));
@@ -340,14 +447,36 @@ window.__sx70Debug = {
       focus: model.state.focus,
       explosion: model.state.explosion,
       activeView,
-      opticsMode: optics.state.mode
+      opticsMode: optics.state.mode,
+      cycle: cycle.snapshot(),
+      violations: cycle.assertInvariants({
+        deploymentReady: model.state.deployment >= 0.985,
+        filmInTransport: cycle.state.phase === 'pick-transfer' || cycle.state.phase === 'roller-processing'
+      })
     };
   },
   open: () => setDeploymentTarget(1),
   fold: () => setDeploymentTarget(0),
   setDeployment: setDeploymentImmediate,
-  setFocus: value => model.setFocus(value),
-  setExplode: value => model.setExplode(value)
+  setFocus: value => {
+    model.setFocus(value);
+    optics.setFocus(value);
+  },
+  setExplode: value => model.setExplode(value),
+  requestExposure: () => cycle.requestExposure({
+    deploymentReady: model.state.deployment >= 0.985,
+    packReady: true,
+    darkSlideAbsent: true,
+    sheetsRemaining: 10
+  }),
+  advanceCycle: (dt = 1 / 60, frames = 1) => {
+    let events = [];
+    for (let i = 0; i < frames; i += 1) {
+      events = events.concat(cycle.step(dt));
+      mechanism.update(cycle.state, dt);
+    }
+    return { state: cycle.snapshot(), events };
+  }
 };
 
 requestAnimationFrame(() => {
