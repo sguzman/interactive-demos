@@ -23,7 +23,10 @@ test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', asyn
   await expect(page.locator('#deploymentState')).toHaveText('ERECT · LOCKED');
   await expect(page.locator('#powerState')).toHaveText('S6 CLOSED · ENABLED');
 
-  await page.locator('#focus').fill('82');
+  await page.locator('#focus').evaluate(element => {
+    element.value = '82';
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+  });
   const focused = await page.evaluate(() => window.__sx70Debug.state);
   expect(focused.focus).toBeCloseTo(0.82, 2);
 
