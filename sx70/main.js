@@ -276,7 +276,6 @@ ui.foldBtn.addEventListener('click', () => {
 
 ui.takePhotoBtn.addEventListener('click', () => {
   const pack = transport.snapshot();
-  const chemical = chemistry.snapshot();
   const accepted = cycle.requestExposure({
     deploymentReady: model.state.deployment >= 0.985,
     packReady: pack.ready,
@@ -399,6 +398,7 @@ function syncStateUI() {
   const target = model.state.targetDeployment;
   const cycleState = cycle.state;
   const pack = transport.snapshot();
+  const chemical = chemistry.snapshot();
 
   let deploymentLabel = 'FOLDED';
   if (t >= 0.985) deploymentLabel = 'ERECT · LOCKED';
