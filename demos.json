@@ -26,10 +26,10 @@
   {
     "slug": "sx70",
     "title": "Polaroid SX-70 — A Camera That Changes State",
-    "summary": "Open a reconstructed folding SX-70, inspect its linked chassis and focus system, then follow the build as viewing optics, exposure sequencing, film transport, and integral-film chemistry are added from the canonical Engineering specimen.",
+    "summary": "Open the original/manual-focus SX-70, focus it, take a photograph, then follow the coupled folding structure, reflex optics, exposure sequence, film transport, processing rollers, and autonomous integral-film chemistry.",
     "kind": "Three.js · Photography · Electromechanical",
     "status": "active",
-    "maturity": "Public implementation · folding/chassis tranche",
+    "maturity": "Integrated causal specimen · public guide published",
     "path": "./sx70/",
     "tags": [
       "3D",
@@ -41,10 +41,11 @@
     ],
     "facts": {
       "Specimen": "Original manual-focus SX-70",
-      "Current": "Folding chassis · focus · component inspection",
-      "Next": "SLR optics · exposure sequence · transport · chemistry",
-      "Model": "Provenance-aware constructive reconstruction",
+      "Explore": "Folding · optics · exposure cycle · transport · chemistry",
+      "Model": "Causal educational reconstruction",
+      "Guide": "Works-derived · sourced · provenance-aware",
       "Hosting": "GitHub Pages"
-    }
+    },
+    "docs": "./docs/polaroid-sx-70.html"
   }
 ]
