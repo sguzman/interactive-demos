@@ -156,7 +156,7 @@ export const PUBLIC_VIEWS = {
   },
   transport: {
     label: 'Film transport',
-    ready: false
+    ready: true
   },
   chemistry: {
     label: 'Film chemistry',
