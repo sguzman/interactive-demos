@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "authority": "public-projection-registry",
   "canonicalEngineeringAuthority": "Taria Engineering",
   "projections": [
@@ -39,6 +39,37 @@
         "rich guide"
       ],
       "publicUx": "basic Run the watch surface + progressive Advanced inspection"
+    },
+    {
+      "demoSlug": "sx70",
+      "engineeringSpecimenId": "specimen:polaroid-sx-70",
+      "publicPath": "./sx70/",
+      "documentationPath": null,
+      "modelClass": "causal educational reconstruction / interactive constructive geometry",
+      "examinedMaturity": "folding/chassis public implementation tranche",
+      "authorityRule": "Public implementation state is authoritative here; technical claims and provenance are authoritative in Taria Engineering after explicit ingestion.",
+      "canonicalVisibility": "private",
+      "publicCanonicalIdentifier": "specimen:polaroid-sx-70",
+      "engineeringSyncDate": "2026-09-30",
+      "engineeringResearchState": "Canonical documentary/reconstruction research, integrated state machine, film-chemistry boundary, public projection contract, and Works expression complete for current scope; browser implementation in progress.",
+      "provenanceScheme": [
+        "P0 primary / authoritative",
+        "P1 measurement",
+        "P2 derived",
+        "P3 audited secondary",
+        "P4 reconstruction",
+        "P5 presentation"
+      ],
+      "publicationBoundary": "Expose publication-safe identifiers and source-backed claims only; reconstructed dimensions remain reconstruction. Internal Taria paths remain unpublished.",
+      "worksExpressionId": "expression:polaroid-sx-70-public-engineering-guide:en:v1",
+      "publicGuideStatus": "canonical Works expression complete; public rendition not yet published",
+      "readerJourney": [
+        "gallery",
+        "interactive specimen",
+        "rich guide (publication queued)"
+      ],
+      "publicUx": "product-intimate open/fold/focus shell + progressive implementation of optics, cycle, transport, chemistry, and Advanced inspection",
+      "revisionBoundary": "Original/manual-focus SX-70 is canonical. Sonar autofocus, later family revisions, Time-Zero lineage, and modern Polaroid film require explicit lineage labels."
     }
   ]
 }
