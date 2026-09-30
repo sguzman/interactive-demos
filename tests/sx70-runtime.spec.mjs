@@ -30,17 +30,39 @@ test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', asyn
   await page.waitForFunction(() => window.__sx70Debug.state.cycle.phase !== 'idle');
   const cycleResult = await page.evaluate(() => window.__sx70Debug.advanceCycle(1 / 120, 900));
   expect(cycleResult.state.phase).toBe('idle');
-  expect(cycleResult.events).toContain('S4-transfer');
-  expect(cycleResult.events).toContain('reflex-unlatch');
-  expect(cycleResult.events).toContain('S5-open');
-  expect(cycleResult.events).toContain('S3-open');
-  expect(cycleResult.events).toContain('delay-complete');
-  expect(cycleResult.events).toContain('exposure-threshold');
-  expect(cycleResult.events).toContain('pick-start');
-  expect(cycleResult.events).toContain('roller-nip-capture');
-  expect(cycleResult.events).toContain('reflex-recock-phase');
-  expect(cycleResult.events).toContain('S5-terminal');
-  expect(cycleResult.events).toContain('S1-released-and-shutter-open');
+  const history = cycleResult.state.eventHistory;
+  expect(history).toContain('S1-close');
+  expect(history).toContain('S4-transfer');
+  expect(history).toContain('reflex-unlatch');
+  expect(history).toContain('S5-open');
+  expect(history).toContain('S3-open');
+  expect(history).toContain('delay-complete');
+  expect(history).toContain('exposure-threshold');
+  expect(history).toContain('S4-transfer-post-exposure');
+  expect(history).toContain('pick-start');
+  expect(history).toContain('roller-nip-capture');
+  expect(history).toContain('reflex-recock-phase');
+  expect(history).toContain('S5-terminal');
+  expect(history).toContain('S1-released-and-shutter-open');
+
+  const ordered = [
+    'S1-close',
+    'S4-transfer',
+    'reflex-unlatch',
+    'S5-open',
+    'S3-open',
+    'delay-complete',
+    'exposure-threshold',
+    'S4-transfer-post-exposure',
+    'pick-start',
+    'roller-nip-capture',
+    'reflex-recock-phase',
+    'S5-terminal',
+    'S1-released-and-shutter-open'
+  ];
+  const indices = ordered.map(event => history.indexOf(event));
+  expect(indices.every(index => index >= 0)).toBe(true);
+  expect(indices).toEqual([...indices].sort((a, b) => a - b));
   expect(cycleResult.transport.sheetsRemaining).toBe(9);
   expect(cycleResult.transport.counter).toBe(9);
   expect(cycleResult.transport.filmInTransport).toBe(false);
