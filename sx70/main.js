@@ -4,6 +4,7 @@ import { createSX70Model } from './geometry.js';
 import { createOpticsVisualization } from './optics.js';
 import { createExposureCycle } from './cycle.js';
 import { createMechanismVisualization } from './mechanism.js';
+import { createTransportVisualization } from './transport.js';
 import { CANONICAL, COMPONENTS, RECONSTRUCTION } from './spec.js';
 
 const canvas = document.querySelector('#scene');
@@ -75,12 +76,16 @@ const cycle = createExposureCycle();
 const mechanism = createMechanismVisualization();
 scene.add(mechanism.root);
 
+const transport = createTransportVisualization();
+scene.add(transport.root);
+
 const ui = {
   controlsPanel: document.querySelector('.controls'),
   openBtn: document.querySelector('#openBtn'),
   foldBtn: document.querySelector('#foldBtn'),
   takePhotoBtn: document.querySelector('#takePhotoBtn'),
   resetBtn: document.querySelector('#resetBtn'),
+  loadPackBtn: document.querySelector('#loadPackBtn'),
   deployment: document.querySelector('#deployment'),
   deploymentValue: document.querySelector('#deploymentValue'),
   deploymentState: document.querySelector('#deploymentState'),
@@ -89,6 +94,8 @@ const ui = {
   opticalState: document.querySelector('#opticalState'),
   motorState: document.querySelector('#motorState'),
   lastEventState: document.querySelector('#lastEventState'),
+  packState: document.querySelector('#packState'),
+  sheetState: document.querySelector('#sheetState'),
   focus: document.querySelector('#focus'),
   focusValue: document.querySelector('#focusValue'),
   sceneLight: document.querySelector('#sceneLight'),
@@ -111,6 +118,12 @@ const ui = {
   shutterState: document.querySelector('#shutterState'),
   reflexState: document.querySelector('#reflexState'),
   integratorState: document.querySelector('#integratorState'),
+  batteryState: document.querySelector('#batteryState'),
+  counterState: document.querySelector('#counterState'),
+  pickState: document.querySelector('#pickState'),
+  rollerState: document.querySelector('#rollerState'),
+  darkSlideState: document.querySelector('#darkSlideState'),
+  platenState: document.querySelector('#platenState'),
   loading: document.querySelector('#loading')
 };
 
@@ -134,6 +147,10 @@ const VIEW_PRESETS = {
   sequence: {
     position: new THREE.Vector3(218, 120, 220),
     target: new THREE.Vector3(0, 45, 10)
+  },
+  transport: {
+    position: new THREE.Vector3(200, 92, 225),
+    target: new THREE.Vector3(0, 12, 40)
   }
 };
 
@@ -150,6 +167,7 @@ function setView(name, immediate = false) {
   }
 
   mechanism.setVisible(name === 'sequence');
+  transport.setVisible(name === 'sequence' || name === 'transport');
 
   if (name === 'viewing' || name === 'exposure') {
     setDeploymentTarget(1);
@@ -170,6 +188,15 @@ function setView(name, immediate = false) {
       provenance: 'P0/P2 transition order · P5 presentation timing',
       name: 'Exposure-cycle state machine',
       description: 'Follow shutter closure, motor start, spring-driven reflex rise, dynamic braking, the sourced 40 ± 5 ms Y delay, metered exposure, shutter reclosure, and post-exposure recock. Transport visualization follows in the next tranche.'
+    });
+  } else if (name === 'transport') {
+    setDeploymentTarget(1);
+    optics.setMode('none');
+    inspectComponent({
+      category: 'film pack + transport',
+      provenance: 'P0 functional architecture · P4 geometry',
+      name: 'Pack, pick, and processing rollers',
+      description: 'The original pack combines ten film units, dark slide, spring platen, and a flat 6 V battery. The pick advances one unit to the roller nip; powered rollers then take over transport and rupture/spread the processing pod.'
     });
   } else {
     optics.setMode('none');
@@ -216,13 +243,20 @@ ui.foldBtn.addEventListener('click', () => {
 });
 
 ui.takePhotoBtn.addEventListener('click', () => {
+  const pack = transport.snapshot();
   const accepted = cycle.requestExposure({
     deploymentReady: model.state.deployment >= 0.985,
-    packReady: true,
-    darkSlideAbsent: true,
-    sheetsRemaining: 10
+    packReady: pack.ready,
+    darkSlideAbsent: !pack.darkSlidePresent,
+    sheetsRemaining: pack.sheetsRemaining
   });
   if (accepted) setView('sequence');
+});
+
+ui.loadPackBtn.addEventListener('click', () => {
+  if (cycle.state.phase !== 'idle') return;
+  if (model.state.deployment < 0.985) model.setDeploymentTarget(1);
+  if (transport.loadFreshPack()) setView('transport');
 });
 
 ui.deployment.addEventListener('input', () => {
@@ -274,7 +308,9 @@ ui.advancedToggleBtn.addEventListener('click', () => {
 
 function resetSpecimen() {
   cycle.reset();
+  transport.reset();
   mechanism.setVisible(false);
+  transport.setVisible(false);
   model.setExplode(0);
   ui.explode.value = '0';
   ui.explodeValue.value = '0%';
@@ -307,6 +343,7 @@ function syncStateUI() {
   const t = model.state.deployment;
   const target = model.state.targetDeployment;
   const cycleState = cycle.state;
+  const pack = transport.snapshot();
 
   let deploymentLabel = 'FOLDED';
   if (t >= 0.985) deploymentLabel = 'ERECT · LOCKED';
@@ -322,6 +359,8 @@ function syncStateUI() {
   ui.opticalState.value = cycleState.opticalMode.toUpperCase();
   ui.motorState.value = cycleState.motorRunning ? 'RUNNING' : (cycleState.motorBraked ? 'BRAKED' : 'STOPPED');
   ui.lastEventState.value = cycleState.lastEvent.toUpperCase();
+  ui.packState.value = !pack.packPresent ? 'NO PACK' : pack.darkSlidePresent ? 'DARK SLIDE' : pack.sheetsRemaining > 0 ? 'READY' : 'EMPTY';
+  ui.sheetState.value = `${pack.sheetsRemaining} / 10`;
   ui.s1State.textContent = cycleState.S1;
   ui.s3State.textContent = cycleState.S3;
   ui.s4State.textContent = cycleState.S4;
@@ -330,13 +369,21 @@ function syncStateUI() {
   ui.reflexState.textContent = cycleState.reflexProgress < 0.05 ? 'viewing seated' : cycleState.reflexProgress > 0.95 ? 'exposure position' : `${Math.round(cycleState.reflexProgress * 100)}% travel`;
   const integratorPct = cycleState.exposureThreshold > 0 ? Math.min(100, cycleState.exposureIntegrator / cycleState.exposureThreshold * 100) : 0;
   ui.integratorState.textContent = `${Math.round(integratorPct)}%`;
+  ui.batteryState.textContent = pack.batteryState.replaceAll('-', ' ');
+  ui.counterState.textContent = pack.counter ?? '—';
+  ui.pickState.textContent = pack.filmInTransport ? `${Math.round(Math.max(pack.pickProgress, 0) * 100)}% travel` : 'home';
+  ui.rollerState.textContent = pack.darkSlideCycle === 'rollers' || cycleState.phase === 'roller-processing' ? 'driving' : 'idle';
+  ui.darkSlideState.textContent = pack.darkSlidePresent ? 'present' : 'absent';
+  ui.platenState.textContent = `${Math.round(pack.platenDeflection * 100)}%`;
 
-  const ready = t >= 0.985 && cycleState.phase === 'idle';
+  const transportBusy = pack.filmInTransport || Boolean(pack.darkSlideCycle);
+  const ready = t >= 0.985 && cycleState.phase === 'idle' && pack.ready && !transportBusy;
   ui.takePhotoBtn.disabled = !ready;
   ui.openBtn.disabled = t >= 0.985 || cycleState.phase !== 'idle';
-  ui.foldBtn.disabled = t <= 0.015 || cycleState.phase !== 'idle';
-  ui.deployment.disabled = cycleState.phase !== 'idle';
+  ui.foldBtn.disabled = t <= 0.015 || cycleState.phase !== 'idle' || transportBusy;
+  ui.deployment.disabled = cycleState.phase !== 'idle' || transportBusy;
   ui.focus.disabled = cycleState.phase !== 'idle';
+  ui.loadPackBtn.disabled = cycleState.phase !== 'idle' || transportBusy;
 }
 
 const raycaster = new THREE.Raycaster();
@@ -400,6 +447,7 @@ function animate() {
   model.step(dt);
   const cycleEvents = cycle.step(dt);
   mechanism.update(cycle.state, dt);
+  transport.step(dt, cycle.state, cycleEvents);
   optics.setDeployment(model.state.deployment);
 
   if (activeView === 'sequence') {
@@ -449,9 +497,10 @@ window.__sx70Debug = {
       activeView,
       opticsMode: optics.state.mode,
       cycle: cycle.snapshot(),
+      transport: transport.snapshot(),
       violations: cycle.assertInvariants({
         deploymentReady: model.state.deployment >= 0.985,
-        filmInTransport: cycle.state.phase === 'pick-transfer' || cycle.state.phase === 'roller-processing'
+        filmInTransport: transport.state.filmInTransport
       })
     };
   },
@@ -463,19 +512,25 @@ window.__sx70Debug = {
     optics.setFocus(value);
   },
   setExplode: value => model.setExplode(value),
-  requestExposure: () => cycle.requestExposure({
-    deploymentReady: model.state.deployment >= 0.985,
-    packReady: true,
-    darkSlideAbsent: true,
-    sheetsRemaining: 10
-  }),
+  requestExposure: () => {
+    const pack = transport.snapshot();
+    return cycle.requestExposure({
+      deploymentReady: model.state.deployment >= 0.985,
+      packReady: pack.ready,
+      darkSlideAbsent: !pack.darkSlidePresent,
+      sheetsRemaining: pack.sheetsRemaining
+    });
+  },
+  loadFreshPack: () => transport.loadFreshPack(),
   advanceCycle: (dt = 1 / 60, frames = 1) => {
     let events = [];
     for (let i = 0; i < frames; i += 1) {
-      events = events.concat(cycle.step(dt));
+      const nextEvents = cycle.step(dt);
+      events = events.concat(nextEvents);
       mechanism.update(cycle.state, dt);
+      transport.step(dt, cycle.state, nextEvents);
     }
-    return { state: cycle.snapshot(), events };
+    return { state: cycle.snapshot(), transport: transport.snapshot(), events };
   }
 };
 
