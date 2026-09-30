@@ -79,6 +79,7 @@ function contactQualityFor(result, polygonTargets) {
 }
 
 export function createEscapementSystem({ watch, animated, materials, powerSystem, root = document }) {
+  const advancedInspectionOpen = () => root.querySelector('.controls')?.classList.contains('advanced-open') === true;
   const base = createM5hEscapementSystem({ watch, animated, materials, powerSystem, root });
   injectUI(root);
   let workBudgetProvider = null;
@@ -126,6 +127,52 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
 
   function estimateImpulseWork(context) {
     const beatIndex = Math.max(0, context.crossingIndex);
+
+    // Basic mode uses a bounded nominal transfer. The 32-sample polygon-follow
+    // solver is intentionally reserved for Advanced inspection; hiding its panel
+    // must also remove its computational cost from ordinary running.
+    if (!advancedInspectionOpen()) {
+      const budget = availableWorkFor(context);
+      const availableWork = budget.availableWork;
+      const transferEfficiency = availableWork > 0 ? WORK.nominalFallbackEfficiency : 0;
+      const deliveredWork = availableWork * transferEfficiency;
+      const lostWork = Math.max(0, availableWork - deliveredWork);
+      const driveRatio = budget.legacyDrive > 1e-8
+        ? THREE.MathUtils.clamp(availableWork / budget.legacyDrive, 0, WORK.maximumExternalDriveRatio)
+        : 0;
+      const impulseScale = transferEfficiency > 0
+        ? Math.sqrt(transferEfficiency) * driveRatio
+        : 0;
+      const admitted = deliveredWork > 0 && impulseScale >= WORK.minimumUsefulScale;
+      return {
+        admitted,
+        reason: admitted ? 'DELIVERED · BASIC NOMINAL TRANSFER' : 'REJECTED · NO BASIC DRIVE',
+        beatIndex,
+        fastForward: Boolean(context.fastForward),
+        polygonGate: null,
+        availableWork,
+        deliveredWork,
+        lostWork,
+        workBudgetSource: budget.source,
+        legacyDrive: budget.legacyDrive,
+        driveRatio,
+        transferEfficiency,
+        diagnosticTransferEfficiency: null,
+        fallbackActive: true,
+        impulseScale: admitted ? impulseScale : 0,
+        followDistanceMm: 0,
+        idealHalfToothArcMm: WORK.escapeTipRadiusMm * HALF_TOOTH,
+        referenceFollowMm: WORK.escapeTipRadiusMm * HALF_TOOTH * WORK.referenceFollowFraction,
+        pathCoverage: 0,
+        contactQuality: 0,
+        impulseSamples: 0,
+        maximumDropMm: 0,
+        healthy: null,
+        bestResult: null,
+        diagnosticDeferred: true
+      };
+    }
+
     const polygonGate = base.probePolygonImpulse(beatIndex);
     const targets = base.polygonTargets;
     const idealHalfToothArcMm = WORK.escapeTipRadiusMm * HALF_TOOTH;
@@ -239,7 +286,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
   }
 
   function syncUI(work) {
-    if (!work) return;
+    if (!work || !advancedInspectionOpen()) return;
     if (ui.available) ui.available.value = `${work.availableWork.toFixed(3)} work units`;
     if (ui.delivered) ui.delivered.value = `${work.deliveredWork.toFixed(3)} work units`;
     if (ui.lost) ui.lost.value = `${work.lostWork.toFixed(3)} work units`;
