@@ -40,6 +40,7 @@
         <button id="foldBtn" class="secondary">Fold camera</button>
         <button id="takePhotoBtn" class="secondary" disabled>Take photo</button>
         <button id="resetBtn" class="secondary">Reset specimen</button>
+        <button id="loadPackBtn" class="secondary">Load fresh pack</button>
       </div>
 
       <div class="state-grid">
@@ -49,6 +50,8 @@
         <div class="state-card"><span>Optical mode</span><output id="opticalState">VIEWING</output></div>
         <div class="state-card"><span>Motor</span><output id="motorState">STOPPED</output></div>
         <div class="state-card"><span>Last event</span><output id="lastEventState">READY</output></div>
+        <div class="state-card"><span>Pack</span><output id="packState">READY</output></div>
+        <div class="state-card"><span>Sheets</span><output id="sheetState">10 / 10</output></div>
       </div>
 
       <label class="range-row" for="focus">
@@ -75,7 +78,7 @@
         <button class="secondary" data-view="viewing">Viewing optics</button>
         <button class="secondary" data-view="exposure">Exposure optics</button>
         <button class="secondary" data-view="sequence">Exposure sequence</button>
-        <button class="secondary" data-view="transport" disabled>Film transport · queued</button>
+        <button class="secondary" data-view="transport">Film transport</button>
         <button class="secondary" data-view="chemistry" disabled>Film chemistry · queued</button>
       </div>
 
@@ -121,6 +124,23 @@
       <p class="note">
         Transition order follows the canonical Engineering state machine. Unresolved motor,
         cam, and shutter timings are slowed into P5 presentation time for inspection.
+      </p>
+    </section>
+
+    <section class="advanced-section">
+      <div class="section-title">Film-pack / transport state</div>
+      <dl class="compact-facts">
+        <div><dt>Battery</dt><dd id="batteryState">healthy presentation</dd></div>
+        <div><dt>Counter</dt><dd id="counterState">10</dd></div>
+        <div><dt>Pick</dt><dd id="pickState">home</dd></div>
+        <div><dt>Rollers</dt><dd id="rollerState">idle</dd></div>
+        <div><dt>Dark slide</dt><dd id="darkSlideState">absent</dd></div>
+        <div><dt>Platen</dt><dd id="platenState">0%</dd></div>
+      </dl>
+      <p class="note">
+        The default pack is a P5 ready-state initialization. “Load fresh pack” deliberately runs
+        the dark-slide cycle through the same pick/roller path without consuming one of the ten
+        photographic sheets.
       </p>
     </section>
 
