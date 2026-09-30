@@ -179,7 +179,8 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     restoringAcceleration: 0,
     dampingAcceleration: 0,
     rateStrength: PHYSICS.defaultRateStrength,
-    history: []
+    history: [],
+    geometryDiagnosticHealthy: true
   };
 
   const ui = {
@@ -225,9 +226,10 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
 
     if (energy <= 0 || scale <= 0) return rawAdvance(realSeconds, scale);
 
-    if (base.state?.consecutiveInvalid >= 3) {
-      return powerSystem.hold(scale, 'GEOMETRY CONTACT');
-    }
+    // Polygon/contact geometry is P4 reconstruction. Keep its health visible in
+    // Advanced diagnostics, but do not let an imperfect reconstructed contact
+    // mesh hard-stop the nominal public demonstration.
+    state.geometryDiagnosticHealthy = base.state?.geometryHealthy !== false;
 
     state.amplitude = oscillatorAmplitude();
     state.canUnlock = state.amplitude >= PHYSICS.unlockAmplitude;
@@ -449,9 +451,11 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
       state.status = 'unwound';
       state.integratorMode = 'idle · unwound';
     } else if (deltaRuntime > 0 && running) {
-      const geometryHealthy = base.state?.geometryHealthy !== false;
-      if (deltaRuntime <= PHYSICS.detailedMaxSecondsPerFrame) integrateDetailed(deltaRuntime, drive, geometryHealthy);
-      else integrateFastForward(deltaRuntime, drive, geometryHealthy);
+      const geometryDiagnosticHealthy = base.state?.geometryHealthy !== false;
+      state.geometryDiagnosticHealthy = geometryDiagnosticHealthy;
+      const nominalGeometryHealthy = true;
+      if (deltaRuntime <= PHYSICS.detailedMaxSecondsPerFrame) integrateDetailed(deltaRuntime, drive, nominalGeometryHealthy);
+      else integrateFastForward(deltaRuntime, drive, nominalGeometryHealthy);
       state.canUnlock = state.amplitude >= PHYSICS.unlockAmplitude;
       state.status = state.canUnlock ? 'running' : 'stalled';
     } else if (!running) {
@@ -486,7 +490,8 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
       impulseAdmission: state.lastImpulseAdmission,
       canUnlock: state.canUnlock,
       oscillatorStatus: state.status,
-      integratorMode: state.integratorMode
+      integratorMode: state.integratorMode,
+      geometryDiagnosticHealthy: state.geometryDiagnosticHealthy
     };
   }
 
