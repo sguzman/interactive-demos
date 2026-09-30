@@ -52,6 +52,7 @@ function injectUI(root) {
 }
 
 export function createEscapementSystem({ watch, animated, materials, powerSystem, root = document }) {
+  const advancedInspectionOpen = () => root.querySelector('.controls')?.classList.contains('advanced-open') === true;
   const base = createM6cEscapementSystem({ watch, animated, materials, powerSystem, root });
   injectUI(root);
 
@@ -140,6 +141,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
   };
 
   function syncUI() {
+    if (!advancedInspectionOpen()) return;
     if (ui.mode) ui.mode.value = state.mode.toUpperCase();
     if (ui.latch) ui.latch.value = state.torqueStallLatched ? 'LATCHED · WIND / RELIEVE LOAD' : 'OPEN';
     if (ui.balanceEnergy) ui.balanceEnergy.value = `${(state.balanceEnergyProxy * 100).toFixed(1)}% normalized`;
