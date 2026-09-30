@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Interactive engineering reconstruction of the original manual-focus Polaroid SX-70 folding SLR." />
+  <title>Polaroid SX-70 — Interactive Engineering Specimen</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script type="importmap">
+  {"imports":{"three":"https://unpkg.com/three@0.180.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.180.0/examples/jsm/"}}
+  </script>
+</head>
+<body>
+<div id="app">
+  <canvas id="scene"></canvas>
+
+  <header class="topbar panel">
+    <a class="gallery-link" href="../">← Gallery</a>
+    <div class="identity">
+      <div class="eyebrow">INTERACTIVE ENGINEERING SPECIMEN · BUILDING</div>
+      <h1>Polaroid SX-70</h1>
+      <p>folding structure → SLR optics → exposure sequence → film transport → integral chemistry</p>
+    </div>
+    <div class="guide-status" title="The canonical Works guide exists; public rendition is queued after implementation binding.">
+      Guide expression complete
+    </div>
+  </header>
+
+  <aside class="controls panel" aria-label="SX-70 controls">
+    <section class="basic-controls">
+      <div class="section-title">Use the camera</div>
+      <p class="basic-intro">
+        <strong>Original/manual-focus SX-70.</strong> Start folded. Open the camera to establish
+        its operating geometry, move the focus control, inspect the linked chassis, and click
+        components to see what is sourced versus reconstructed.
+      </p>
+
+      <div class="basic-action-grid">
+        <button id="openBtn">Open camera</button>
+        <button id="foldBtn" class="secondary">Fold camera</button>
+        <button id="takePhotoBtn" class="secondary" disabled title="Exposure sequence is the next implementation tranche">Take photo · queued</button>
+        <button id="resetBtn" class="secondary">Reset specimen</button>
+      </div>
+
+      <div class="state-grid">
+        <div class="state-card"><span>Deployment</span><output id="deploymentState">FOLDED</output></div>
+        <div class="state-card"><span>Electrical enable</span><output id="powerState">S6 OPEN · DISABLED</output></div>
+        <div class="state-card"><span>Model</span><output>P4 CONSTRUCTIVE</output></div>
+        <div class="state-card"><span>Specimen</span><output>MANUAL FOCUS</output></div>
+      </div>
+
+      <label class="range-row" for="focus">
+        <span>Focus position</span>
+        <output id="focusValue">55%</output>
+      </label>
+      <input id="focus" type="range" min="0" max="100" value="55" />
+
+      <div class="view-grid">
+        <button class="secondary active" data-view="overview">Overview</button>
+        <button class="secondary" data-view="folding">Folding</button>
+        <button class="secondary" data-view="viewing" disabled>Viewing optics · queued</button>
+        <button class="secondary" data-view="exposure" disabled>Exposure optics · queued</button>
+        <button class="secondary" data-view="sequence" disabled>Exposure sequence · queued</button>
+        <button class="secondary" data-view="transport" disabled>Film transport · queued</button>
+        <button class="secondary" data-view="chemistry" disabled>Film chemistry · queued</button>
+      </div>
+
+      <button id="advancedToggleBtn" class="secondary wide" type="button" aria-expanded="false">Advanced inspection ▾</button>
+      <div class="note">
+        The base geometry is intentionally reconstructive. The surviving evidence strongly
+        grounds the folding architecture, body sections, bellows role, erecting linkage and
+        deployment-to-power relationship, but not exact production link lengths or pivots.
+      </div>
+    </section>
+
+    <section class="advanced-section">
+      <div class="section-title">Structural inspection</div>
+      <label class="range-row" for="deployment">
+        <span>Deployment state</span>
+        <output id="deploymentValue">0%</output>
+      </label>
+      <input id="deployment" type="range" min="0" max="100" value="0" />
+
+      <label class="range-row" for="explode">
+        <span>Exploded inspection</span>
+        <output id="explodeValue">0%</output>
+      </label>
+      <input id="explode" type="range" min="0" max="100" value="0" />
+      <div class="button-row">
+        <button id="assembleBtn" class="secondary">Assemble</button>
+        <button id="explodeBtn" class="secondary">Explode</button>
+      </div>
+    </section>
+
+    <section class="advanced-section">
+      <div class="section-title">Provenance boundary</div>
+      <dl class="compact-facts">
+        <div><dt>P0</dt><dd>primary / authoritative source</dd></div>
+        <div><dt>P2</dt><dd>derived result</dd></div>
+        <div><dt>P3</dt><dd>audited secondary</dd></div>
+        <div><dt>P4</dt><dd>reconstruction</dd></div>
+        <div><dt>P5</dt><dd>presentation</dd></div>
+      </dl>
+      <p class="note">
+        Visual plausibility is not measurement. The public model is allowed to be useful before
+        exact production geometry is known, but reconstructed values remain reconstructed.
+      </p>
+    </section>
+  </aside>
+
+  <aside class="inspector panel" id="inspector">
+    <div class="inspector-topline">
+      <div class="eyebrow" id="partCategory">STRUCTURE</div>
+      <span class="provenance" id="partProvenance">P4 reconstruction</span>
+    </div>
+    <h2 id="partName">Folded SX-70</h2>
+    <p id="partDescription">
+      Open the camera or click a component. The first public implementation tranche focuses on
+      folding geometry and the product-scale shell; optics, exposure sequencing, transport and
+      chemistry are deliberately not being faked ahead of their implementation tasks.
+    </p>
+  </aside>
+
+  <div class="legend panel">
+    <span><i class="dot chrome-dot"></i> structure</span>
+    <span><i class="dot leather-dot"></i> covering</span>
+    <span><i class="dot glass-dot"></i> optics</span>
+    <span><i class="dot black-dot"></i> bellows / housings</span>
+  </div>
+
+  <div id="loading">Building constructive SX-70 geometry…</div>
+</div>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>
