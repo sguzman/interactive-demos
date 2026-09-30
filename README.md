@@ -52,6 +52,21 @@ Planned/active capabilities include:
 See `docs/watch-eta-6497-2.md`.
 
 
+### `sx70/`
+
+Public Engineering projection of the **original/manual-focus Polaroid SX-70 folding SLR**.
+
+The specimen is being built in causal layers rather than as a decorative finished shell. The
+current tranche implements the product-scale folding chassis, linked erection, bellows, focus
+presentation, component inspection, provenance boundaries, and browser runtime proof.
+
+Queued layers add the dual viewing/exposure optical paths, the electromechanical exposure cycle,
+film-pack/roller transport, integral-film chemistry, Advanced inspection, and the Works-derived
+rich guide.
+
+See `sx70/README.md`.
+
+
 ## Taria Engineering projection contract
 
 For engineering showcases, this repository is a **public projection surface**, not the canonical technical knowledge base.
