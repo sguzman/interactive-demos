@@ -30,6 +30,20 @@ test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', asyn
   const focused = await page.evaluate(() => window.__sx70Debug.state);
   expect(focused.focus).toBeCloseTo(0.82, 2);
 
+  await page.locator('[data-view="viewing"]').click();
+  await page.waitForFunction(() => window.__sx70Debug.state.opticsMode === 'viewing');
+  const viewing = await page.evaluate(() => window.__sx70Debug.state);
+  expect(viewing.activeView).toBe('viewing');
+  expect(viewing.deployment).toBeGreaterThan(0.985);
+  await page.screenshot({ path: 'test-results/sx70-viewing-optics.png', fullPage: true });
+
+  await page.locator('[data-view="exposure"]').click();
+  await page.waitForFunction(() => window.__sx70Debug.state.opticsMode === 'exposure');
+  const exposure = await page.evaluate(() => window.__sx70Debug.state);
+  expect(exposure.activeView).toBe('exposure');
+  expect(exposure.deployment).toBeGreaterThan(0.985);
+  await page.screenshot({ path: 'test-results/sx70-exposure-optics.png', fullPage: true });
+
   await page.locator('#advancedToggleBtn').click();
   await expect(page.locator('.controls')).toHaveClass(/advanced-open/);
 
