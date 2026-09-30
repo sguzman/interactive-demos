@@ -47,6 +47,7 @@ function formatPercent(value, digits = 0) {
 }
 
 export function createEscapementSystem({ watch, animated, materials, powerSystem, root = document }) {
+  const advancedInspectionOpen = () => root.querySelector('.controls')?.classList.contains('advanced-open') === true;
   const base = createM5bEscapementSystem({ watch, animated, materials, powerSystem, root });
   const windingSystem = powerSystem.windingSystem;
   const originalAdvance = powerSystem.advance.bind(powerSystem);
