@@ -15,9 +15,12 @@ import {
 const TAU = Math.PI * 2;
 
 export const M3F_PLANES = {
+  // Presentation/reconstruction planes. Increase large-wheel axial separation
+  // enough that the public model does not visually read as interpenetrating
+  // solids while preserving each compound pinion at its driver's mesh plane.
   center: -0.90,
-  third: -1.23,
-  seconds: -1.55,
+  third: -1.29,
+  seconds: -1.66,
   escape: -0.92
 };
 
@@ -136,14 +139,17 @@ function truePitchToothGeometry({ pitchRadius, moduleMm, thickness }) {
   // but unlike the earlier primitive its pitch radius has exact semantic meaning.
   // The addendum/dedendum bracket that pitch line and the tooth occupies roughly
   // half a circular pitch at the pitch circle.
-  const addendum = moduleMm * .92;
-  const dedendum = moduleMm * 1.12;
+  // Deliberately leave visible backlash. This is still an educational
+  // pseudo-involute, not manufacturing tooth geometry; narrower flanks prevent
+  // adjacent reconstructed solids from appearing to cut through one another.
+  const addendum = moduleMm * .82;
+  const dedendum = moduleMm * 1.14;
   const rootRadius = Math.max(moduleMm * 1.6, pitchRadius - dedendum);
   const tipRadius = pitchRadius + addendum;
   const circularAngle = TAU / Math.max(3, Math.round((pitchRadius * 2) / moduleMm));
-  const rootHalf = circularAngle * .31;
-  const pitchHalf = circularAngle * .25;
-  const tipHalf = circularAngle * .15;
+  const rootHalf = circularAngle * .275;
+  const pitchHalf = circularAngle * .215;
+  const tipHalf = circularAngle * .095;
 
   const points = [
     polar(rootRadius, -rootHalf),
@@ -186,6 +192,7 @@ function truePitchSpurGear({
   group.userData.toothCount = teeth;
   group.userData.pitchRadiusMm = pitchRadius;
   group.userData.pitchModuleMm = moduleMm;
+  group.userData.presentationBacklash = 'intentional P4/P5 clearance';
 
   const tooth = truePitchToothGeometry({ pitchRadius, moduleMm, thickness });
   const toothTemplate = shadowed(new THREE.Mesh(tooth.geometry, material));
