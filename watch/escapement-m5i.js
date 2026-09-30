@@ -20,7 +20,8 @@ const WORK = {
   referenceFollowFraction: 0.40,
   minimumUsefulScale: 0.02,
   gapExponent: 1.35,
-  maximumExternalDriveRatio: 1.35
+  maximumExternalDriveRatio: 1.35,
+  nominalFallbackEfficiency: 0.34
 };
 
 const clamp01 = value => Math.max(0, Math.min(1, value));
@@ -172,12 +173,21 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
 
     const contactQuality = qualityDistance > 0 ? clamp01(weightedQuality / qualityDistance) : 0;
     const pathCoverage = clamp01(followDistanceMm / Math.max(1e-6, referenceFollowMm));
-    const transferEfficiency = polygonGate.admitted && healthy
+    const diagnosticTransferEfficiency = polygonGate.admitted && healthy
       ? clamp01(pathCoverage * contactQuality)
       : 0;
 
     const budget = availableWorkFor(context);
     const availableWork = budget.availableWork;
+
+    // The finite polygon solver is a P4 fidelity diagnostic. If it cannot find
+    // a healthy impulse surface, retain that failure in diagnostics but fall
+    // back to a conservative nominal escapement transfer so the reconstructed
+    // contact mesh cannot brick the public watch.
+    const fallbackActive = diagnosticTransferEfficiency <= 0 && availableWork > 0;
+    const transferEfficiency = fallbackActive
+      ? WORK.nominalFallbackEfficiency
+      : diagnosticTransferEfficiency;
     const deliveredWork = availableWork * transferEfficiency;
     const lostWork = Math.max(0, availableWork - deliveredWork);
 
@@ -190,14 +200,11 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
     const impulseScale = transferEfficiency > 0
       ? Math.sqrt(transferEfficiency) * driveRatio
       : 0;
-    const admitted =
-      polygonGate.admitted &&
-      healthy &&
-      deliveredWork > 0 &&
-      impulseScale >= WORK.minimumUsefulScale;
+    const admitted = deliveredWork > 0 && impulseScale >= WORK.minimumUsefulScale;
 
     let reason = 'DELIVERED · POLYGON WORK TRANSFER';
-    if (!polygonGate.admitted) reason = polygonGate.reason;
+    if (fallbackActive) reason = 'DELIVERED · NOMINAL ESCAPEMENT FALLBACK';
+    else if (!polygonGate.admitted) reason = polygonGate.reason;
     else if (!healthy) reason = 'REJECTED · UNHEALTHY POLYGON PATH';
     else if (followDistanceMm <= 0) reason = 'REJECTED · NO IMPULSE FOLLOWING DISTANCE';
     else if (contactQuality <= 0) reason = 'REJECTED · ZERO CONTACT QUALITY';
@@ -216,6 +223,8 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
       legacyDrive: budget.legacyDrive,
       driveRatio,
       transferEfficiency,
+      diagnosticTransferEfficiency,
+      fallbackActive,
       impulseScale: admitted ? impulseScale : 0,
       followDistanceMm,
       idealHalfToothArcMm,
