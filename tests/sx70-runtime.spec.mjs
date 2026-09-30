@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', async ({ page }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(120_000);
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(String(error)));
   page.on('console', message => console.log('[browser]', message.type(), message.text()));
@@ -67,6 +67,10 @@ test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', asyn
   expect(cycleResult.transport.counter).toBe(9);
   expect(cycleResult.transport.filmInTransport).toBe(false);
   expect(cycleResult.transport.ejectedCount).toBe(1);
+  expect(cycleResult.chemistry.active).toBe(true);
+  expect(cycleResult.chemistry.chemicalTime).toBeGreaterThan(0);
+  expect(cycleResult.chemistry.targetReceiverCmy[0]).toBeLessThan(cycleResult.chemistry.targetReceiverCmy[1]);
+  expect(cycleResult.chemistry.targetReceiverCmy[1]).toBeLessThan(cycleResult.chemistry.targetReceiverCmy[2]);
   expect((await page.evaluate(() => window.__sx70Debug.state)).violations).toEqual([]);
 
   // A fresh pack uses the same transport hardware to eject the dark slide, but does not
@@ -88,6 +92,10 @@ test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', asyn
   await page.locator('[data-view="transport"]').click();
   await page.waitForTimeout(250);
   await page.screenshot({ path: 'test-results/sx70-film-transport.png', fullPage: true });
+
+  await page.locator('[data-view="chemistry"]').click();
+  await page.waitForTimeout(250);
+  await page.screenshot({ path: 'test-results/sx70-film-chemistry.png', fullPage: true });
 
   await page.locator('[data-view="viewing"]').click();
   await page.waitForFunction(() => window.__sx70Debug.state.opticsMode === 'viewing');
@@ -125,6 +133,11 @@ test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', asyn
   expect(folded.deployment).toBeLessThan(0.015);
   await expect(page.locator('#deploymentState')).toHaveText('FOLDED');
   await expect(page.locator('#powerState')).toHaveText('S6 OPEN · DISABLED');
+
+  const chemistryBeforeFoldAdvance = await page.evaluate(() => window.__sx70Debug.state.chemistry.chemicalTime);
+  const chemistryAfterFoldAdvance = await page.evaluate(() => window.__sx70Debug.advanceChemistry(1 / 60, 120));
+  expect(chemistryAfterFoldAdvance.chemicalTime).toBeGreaterThan(chemistryBeforeFoldAdvance + 1.5);
+  expect(chemistryAfterFoldAdvance.active).toBe(true);
 
   expect(pageErrors).toEqual([]);
 
