@@ -52,6 +52,8 @@
         <div class="state-card"><span>Last event</span><output id="lastEventState">READY</output></div>
         <div class="state-card"><span>Pack</span><output id="packState">READY</output></div>
         <div class="state-card"><span>Sheets</span><output id="sheetState">10 / 10</output></div>
+        <div class="state-card"><span>Print chemistry</span><output id="chemistryState">NO PRINT</output></div>
+        <div class="state-card"><span>Chemical clock</span><output id="chemistryClock">0.0 s</output></div>
       </div>
 
       <label class="range-row" for="focus">
@@ -79,7 +81,7 @@
         <button class="secondary" data-view="exposure">Exposure optics</button>
         <button class="secondary" data-view="sequence">Exposure sequence</button>
         <button class="secondary" data-view="transport">Film transport</button>
-        <button class="secondary" data-view="chemistry" disabled>Film chemistry · queued</button>
+        <button class="secondary" data-view="chemistry">Film chemistry</button>
       </div>
 
       <button id="advancedToggleBtn" class="secondary wide" type="button" aria-expanded="false">Advanced inspection ▾</button>
@@ -141,6 +143,34 @@
         The default pack is a P5 ready-state initialization. “Load fresh pack” deliberately runs
         the dark-slide cycle through the same pick/roller path without consuming one of the ten
         photographic sheets.
+      </p>
+    </section>
+
+    <section class="advanced-section">
+      <div class="section-title">Integral-film chemistry</div>
+      <label class="range-row" for="chemistryTemperature">
+        <span>Process temperature</span>
+        <output id="chemistryTemperatureValue">22 °C</output>
+      </label>
+      <input id="chemistryTemperature" type="range" min="5" max="35" value="22" />
+      <div class="button-row">
+        <button id="chemistrySpeedBtn" class="secondary">Chemistry 1×</button>
+        <button id="chemistryViewBtn" class="secondary">Inspect chemistry</button>
+      </div>
+      <dl class="compact-facts">
+        <div><dt>pH field</dt><dd id="phState">0%</dd></div>
+        <div><dt>Opacity</dt><dd id="opacityState">0%</dd></div>
+        <div><dt>Dye transfer</dt><dd id="dyeTransferState">0%</dd></div>
+        <div><dt>Neutralization</dt><dd id="neutralizationState">0%</dd></div>
+        <div><dt>Receiver C</dt><dd id="receiverCState">0%</dd></div>
+        <div><dt>Receiver M</dt><dd id="receiverMState">0%</dd></div>
+        <div><dt>Receiver Y</dt><dd id="receiverYState">0%</dd></div>
+        <div><dt>Rates</dt><dd>P5 normalized</dd></div>
+      </dl>
+      <p class="note">
+        Chemistry has its own clock. 8× is a presentation fast-forward, not a claim that real
+        SX-70 chemistry can be uniformly time-compressed. Temperature changes several normalized
+        process rates together; it is not a calibrated physical model.
       </p>
     </section>
 
