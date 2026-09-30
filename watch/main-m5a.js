@@ -387,6 +387,11 @@ let lastEscapeState = null;
 let previousAcceptedCrownTurns = windingSystem.state.acceptedCrownTurns;
 
 window.__watchDebug = {
+  windAndRun() {
+    runActionStage = 'scheduled-debug';
+    setTimeout(establishDemoRunState, 0);
+    return true;
+  },
   snapshot() {
     const polygon = escapementSystem.polygonState?.lastResult;
     const work = escapementSystem.impulseWorkState?.lastWork;
