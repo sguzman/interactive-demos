@@ -6,6 +6,17 @@ test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', asyn
   page.on('pageerror', error => pageErrors.push(String(error)));
   page.on('console', message => console.log('[browser]', message.type(), message.text()));
 
+  const guideResponse = await page.request.get('http://127.0.0.1:4173/docs/polaroid-sx-70.html');
+  expect(guideResponse.status()).toBe(200);
+  const guideHtml = await guideResponse.text();
+  expect(guideHtml).toContain('expression:polaroid-sx-70-public-engineering-guide:en:v1');
+  expect(guideHtml).toContain('../sx70/?view=folding');
+  expect(guideHtml).toContain('../sx70/?view=viewing');
+  expect(guideHtml).toContain('../sx70/?view=exposure');
+  expect(guideHtml).toContain('../sx70/?view=sequence');
+  expect(guideHtml).toContain('../sx70/?view=transport');
+  expect(guideHtml).toContain('../sx70/?view=chemistry');
+
   await page.goto('http://127.0.0.1:4173/sx70/?test=1', { waitUntil: 'networkidle' });
   await page.waitForFunction(() => Boolean(window.__sx70Debug?.state));
 
