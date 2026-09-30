@@ -9,11 +9,17 @@ on:
     branches: [main]
     paths:
       - 'sx70/**'
+      - 'docs/polaroid-sx-70.html'
+      - 'demos.json'
+      - 'engineering-projections.json'
       - 'tests/sx70-runtime.spec.mjs'
       - '.github/workflows/sx70-runtime-smoke.yml'
   pull_request:
     paths:
       - 'sx70/**'
+      - 'docs/polaroid-sx-70.html'
+      - 'demos.json'
+      - 'engineering-projections.json'
       - 'tests/sx70-runtime.spec.mjs'
       - '.github/workflows/sx70-runtime-smoke.yml'
 
