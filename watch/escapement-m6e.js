@@ -66,6 +66,7 @@ function injectUI(root) {
 }
 
 export function createEscapementSystem({ watch, animated, materials, powerSystem, root = document }) {
+  const advancedInspectionOpen = () => root.querySelector('.controls')?.classList.contains('advanced-open') === true;
   const base = createM6dEscapementSystem({ watch, animated, materials, powerSystem, root });
   injectUI(root);
 
@@ -139,6 +140,7 @@ export function createEscapementSystem({ watch, animated, materials, powerSystem
   base.setLoadModelProvider?.(buildLoadModel);
 
   function syncUI() {
+    if (!advancedInspectionOpen()) return;
     if (ui.centerThird) ui.centerThird.value = state.centerThird.toFixed(3);
     if (ui.thirdFourth) ui.thirdFourth.value = state.thirdFourth.toFixed(3);
     if (ui.fourthEscape) ui.fourthEscape.value = state.fourthEscape.toFixed(3);
