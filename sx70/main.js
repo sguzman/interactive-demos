@@ -572,6 +572,7 @@ window.__sx70Debug = {
       cycle: cycle.snapshot(),
       transport: transport.snapshot(),
       chemistry: chemistry.snapshot(),
+      geometry: model.geometryDiagnostics(),
       violations: cycle.assertInvariants({
         deploymentReady: model.state.deployment >= 0.985,
         filmInTransport: transport.state.filmInTransport
