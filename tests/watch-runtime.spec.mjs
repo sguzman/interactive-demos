@@ -69,6 +69,12 @@ test('Wind & Run advances the ETA 6497-2 simulation', async ({ page }) => {
   await page.locator('#advancedToggleBtn').click();
   await expect(page.locator('.controls')).not.toHaveClass(/advanced-open/);
 
+  // Restore the normal public running state after destructive control tests so
+  // the rendered artifacts represent the experience a visitor is meant to see.
+  await page.locator('#windRunBtn').click();
+  await page.waitForFunction(() => window.__watchDebug.snapshot().reserve >= 0.5);
+  await page.evaluate(() => window.__watchDebug.step(1 / 60, 60));
+
   await page.evaluate(() => window.__watchDebug.renderOnce());
   await page.screenshot({ path: 'test-results/watch-running.png', fullPage: true });
 
