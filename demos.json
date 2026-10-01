@@ -26,10 +26,10 @@
   {
     "slug": "sx70",
     "title": "Polaroid SX-70 — A Camera That Changes State",
-    "summary": "Open the original/manual-focus SX-70, focus it, take a photograph, then follow the coupled folding structure, reflex optics, exposure sequence, film transport, processing rollers, and autonomous integral-film chemistry.",
+    "summary": "Open the original/manual-focus SX-70, focus it, take a photograph, or cut the shell away and watch the shutter, motor/gear train, reflex carrier, film transport, rollers, and chemistry as one causal engineering specimen.",
     "kind": "Three.js · Photography · Electromechanical",
     "status": "active",
-    "maturity": "Integrated causal specimen · public guide published",
+    "maturity": "Integrated causal specimen · live internal explode · public guide published",
     "path": "./sx70/",
     "tags": [
       "3D",
@@ -37,11 +37,13 @@
       "photography",
       "folding",
       "electromechanical",
-      "chemistry"
+      "chemistry",
+      "exploded-view",
+      "simulation"
     ],
     "facts": {
       "Specimen": "Original manual-focus SX-70",
-      "Explore": "Folding · optics · exposure cycle · transport · chemistry",
+      "Explore": "Folding · live internals · optics · exposure cycle · transport · chemistry",
       "Model": "Causal educational reconstruction",
       "Guide": "Works-derived · sourced · provenance-aware",
       "Hosting": "GitHub Pages"
