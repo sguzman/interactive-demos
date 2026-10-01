@@ -599,7 +599,7 @@ export function createSX70Model() {
     base.position.x = -112 * e;
     rearPanel.position.x += -132 * e;
     forwardPanel.position.x = 104 * e;
-    lensHousing.position.x += 138 * e;
+    lensHousing.position.x += 58 * e;
     viewfinder.position.x += -92 * e;
     viewfinder.position.y += 34 * e;
     bellows.position.x = -74 * e;
