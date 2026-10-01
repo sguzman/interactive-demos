@@ -141,14 +141,22 @@ function updateRod(rod, a, b) {
 
 function solveEqualTwoLinkElbow(a, b, segmentLength, side = 1) {
   const midpoint = a.clone().add(b).multiplyScalar(0.5);
-  const delta = b.clone().sub(a);
-  const distance = Math.max(0.001, delta.length());
-  const half = Math.min(segmentLength, distance / 2);
-  const height = Math.sqrt(Math.max(0, segmentLength * segmentLength - half * half));
+  const dxHalf = (b.x - a.x) / 2;
+  const dy = b.y - a.y;
+  const dz = b.z - a.z;
+  const planarDistance = Math.max(0.001, Math.hypot(dy, dz));
 
-  // Work in the y/z folding plane. x is inherited from the side endpoints.
-  const py = -delta.z / distance;
-  const pz = delta.y / distance;
+  // The elbow sits at midpoint x. Reserve the half-x offset from each rod's
+  // length budget, then solve the remaining equal-link triangle in y/z.
+  const planarSegmentLength = Math.sqrt(Math.max(0.001, segmentLength * segmentLength - dxHalf * dxHalf));
+  const halfPlanarDistance = Math.min(planarSegmentLength, planarDistance / 2);
+  const height = Math.sqrt(Math.max(
+    0,
+    planarSegmentLength * planarSegmentLength - halfPlanarDistance * halfPlanarDistance
+  ));
+
+  const py = -dz / planarDistance;
+  const pz = dy / planarDistance;
 
   return new THREE.Vector3(
     midpoint.x,
