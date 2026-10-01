@@ -12,6 +12,7 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
   expect(guideHtml).toContain('expression:polaroid-sx-70-public-engineering-guide:en:v1');
   expect(guideHtml).toContain('../sx70/?view=folding');
   expect(guideHtml).toContain('../sx70/?view=internals');
+  expect(guideHtml).toContain('../sx70/?view=frontStandard');
   expect(guideHtml).toContain('../sx70/?view=viewing');
   expect(guideHtml).toContain('../sx70/?view=exposure');
   expect(guideHtml).toContain('../sx70/?view=sequence');
@@ -40,6 +41,8 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
     window.__sx70Debug.setDeployment(0);
     return result;
   }, deploymentSamples);
+  expect(geometrySweep[0].bounds.height).toBeLessThan(55);
+
   for (const geometry of geometrySweep) {
     expect(geometry.revision).toBe('articulated-v4');
     expect(geometry.finite).toBe(true);
@@ -84,6 +87,19 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
   await page.locator('[data-view="overview"]').click();
   await page.waitForTimeout(250);
   await page.screenshot({ path: 'test-results/sx70-open-overview.png', fullPage: true });
+
+  // Front-standard deep inspection is a first-class view, not an opaque housing.
+  await page.locator('[data-view="frontStandard"]').click();
+  await page.waitForFunction(() =>
+    window.__sx70Debug.state.activeView === 'frontStandard' &&
+    window.__sx70Debug.state.explosion > 0.99
+  );
+  const frontStandardState = await page.evaluate(() => window.__sx70Debug.state);
+  expect(frontStandardState.geometry.frontStandardDeepExploded).toBe(true);
+  expect(frontStandardState.geometry.frontStandardInspectablePartCount).toBeGreaterThanOrEqual(6);
+  expect(frontStandardState.mechanism.deepExplosion).toBe(true);
+  expect(frontStandardState.mechanism.frontStandardInternalSpread.shutterBladeSeparation).toBeGreaterThan(20);
+  await page.screenshot({ path: 'test-results/sx70-front-standard-focused.png', fullPage: true });
 
   // The central engineering-demo requirement: expose the actual internal assembly,
   // not merely the folding shell. "Internals" deliberately combines cutaway/explosion
