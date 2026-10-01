@@ -49,5 +49,33 @@
       "Hosting": "GitHub Pages"
     },
     "docs": "./docs/polaroid-sx-70.html"
+  },
+  {
+    "slug": "game-boy-dmg-01",
+    "title": "Nintendo Game Boy DMG-01 — One Handheld, Many Machines",
+    "summary": "Press the controls, explode the original Game Boy, trace JOYP and cartridge buses, step through the PPU/LCD and APU/audio paths, run OAM DMA, and use service diagnostics across one multi-layer causal model.",
+    "kind": "Three.js · Computing · Electronics",
+    "status": "active",
+    "maturity": "Integrated multi-layer causal specimen · deterministic demo · public guide",
+    "path": "./game-boy-dmg-01/",
+    "docs": "./docs/game-boy-dmg-01.html",
+    "tags": [
+      "3D",
+      "computing",
+      "electronics",
+      "handheld",
+      "cartridge",
+      "display",
+      "audio",
+      "simulation",
+      "exploded-view"
+    ],
+    "facts": {
+      "Specimen": "Original monochrome DMG-01",
+      "Explore": "Physical · electrical · logical · temporal · service",
+      "Model": "Revision-aware causal educational reconstruction",
+      "Guide": "Works-derived · source-class aware · provenance-aware",
+      "Hosting": "GitHub Pages"
+    }
   }
 ]
