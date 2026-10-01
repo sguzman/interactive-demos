@@ -518,14 +518,26 @@ export function createSX70Model() {
     // Explosion is a P5 inspection transform, independent of deployment.
     // Spread the enclosing structure far enough to expose the live internal
     // mechanism rather than merely nudging the outer shell apart.
-    base.position.x = -46 * e;
-    rearPanel.position.x += -76 * e;
-    forwardPanel.position.x = 58 * e;
-    lensHousing.position.x += 86 * e;
-    viewfinder.position.x += -52 * e;
-    viewfinder.position.y += 18 * e;
-    bellows.position.x = -18 * e;
-    linksRoot.position.x = 20 * e;
+    // Move the enclosing product shell *away* from the mechanism core.
+    // Earlier values left the front standard and bellows sitting on top of the
+    // very internals the explode control was meant to reveal.
+    base.position.x = -112 * e;
+    rearPanel.position.x += -132 * e;
+    forwardPanel.position.x = 104 * e;
+    lensHousing.position.x += 138 * e;
+    viewfinder.position.x += -92 * e;
+    viewfinder.position.y += 34 * e;
+    bellows.position.x = -74 * e;
+    linksRoot.position.x = 72 * e;
+
+    // The bellows is an enclosure, not the subject of internal inspection.
+    // Fade it into a ghosted contextual envelope as explosion increases.
+    bellowsCore.material.opacity = THREE.MathUtils.lerp(
+      THREE.MathUtils.lerp(0.72, 1, THREE.MathUtils.smoothstep(state.deployment, 0.03, 0.32)),
+      0.16,
+      e
+    );
+    bellowsCore.material.transparent = e > 0.01 || state.deployment < 0.995;
 
     viewfinderSupports.visible = e < 0.04;
     linksRoot.visible = true;
