@@ -92,6 +92,34 @@ function pointFromPivot(pivot, length, angleRad, x = 0) {
   );
 }
 
+function solveFourBarCoupler(rearTop, lensBase, lensLength, couplerLength) {
+  const dy = rearTop.y - lensBase.y;
+  const dz = rearTop.z - lensBase.z;
+  const distance = Math.max(0.001, Math.hypot(dy, dz));
+
+  const along = (
+    lensLength * lensLength -
+    couplerLength * couplerLength +
+    distance * distance
+  ) / (2 * distance);
+
+  const height = Math.sqrt(Math.max(0, lensLength * lensLength - along * along));
+  const uy = dy / distance;
+  const uz = dz / distance;
+  const midY = lensBase.y + along * uy;
+  const midZ = lensBase.z + along * uz;
+
+  const candidates = [
+    new THREE.Vector3(0, midY - uz * height, midZ + uy * height),
+    new THREE.Vector3(0, midY + uz * height, midZ - uy * height)
+  ];
+
+  // The physical branch used by this reconstruction is the upper intersection:
+  // it moves continuously from the compact face-down front standard to the
+  // source-consistent erected lensboard pose.
+  return candidates[0].y >= candidates[1].y ? candidates[0] : candidates[1];
+}
+
 function orientBetween(object, a, b) {
   const direction = b.clone().sub(a);
   const length = Math.max(0.001, direction.length());
@@ -248,21 +276,16 @@ export function createSX70Model() {
   // --- Rear wall -------------------------------------------------------------
   // A rigid member rotating around one base hinge, rather than translating
   // through the camera between arbitrary end poses.
-  const rearPanel = makePanel(86, 3.8, materials.black, null);
+  const rearPanel = makePanel(86, 3.8, materials.chrome, materials.leather);
   register('rearPanel', rearPanel);
   root.add(rearPanel);
 
-  // --- Forward structural member --------------------------------------------
-  // v4 presents the unresolved upper linkage as a continuous guided/slotted rail:
-  // a thin moving member passes through a fixed-length sleeve. This makes the
-  // changing span mechanically legible without falsely claiming a production
-  // telescoping design or inventing an exact four-bar link length.
-  const forwardPanel = new THREE.Group();
-  const forwardLeft = makeRod(1.0, materials.chrome);
-  const forwardRight = makeRod(1.0, materials.chrome);
-  const forwardLeftSleeve = makeRod(1.75, materials.chromeDark);
-  const forwardRightSleeve = makeRod(1.75, materials.chromeDark);
-  forwardPanel.add(forwardLeft, forwardRight, forwardLeftSleeve, forwardRightSleeve);
+  // --- Top front cover / four-bar coupler -----------------------------------
+  // US4016580 describes the top front cover panel as hinged between the
+  // lensboard/shutter housing and rear top cover panel. v4 now preserves that
+  // topology as an actual fixed-length rigid coupler instead of a stretching or
+  // guided presentation rail.
+  const forwardPanel = makePanel(80, 3.4, materials.chrome, materials.leather);
   register('forwardPanel', forwardPanel);
   root.add(forwardPanel);
 
@@ -457,17 +480,20 @@ export function createSX70Model() {
       e
     ) * DEG;
 
-    const lensAngle = THREE.MathUtils.lerp(
-      A.lensFoldedAngleDeg,
-      A.lensOpenAngleDeg,
-      e
-    ) * DEG;
-
     const rearBase = new THREE.Vector3(0, baseTopY + 0.8, A.rearBasePivotZ);
     const rearTop = pointFromPivot(rearBase, A.rearWallLength, rearAngle);
 
     const lensBase = new THREE.Vector3(0, baseTopY + 0.8, A.frontStandardPivotZ);
-    const lensTop = pointFromPivot(lensBase, A.lensStandardHeight, lensAngle);
+    const lensTop = solveFourBarCoupler(
+      rearTop,
+      lensBase,
+      A.lensStandardHeight,
+      A.topFrontCoverLength
+    );
+    const lensAngle = Math.atan2(
+      lensTop.z - lensBase.z,
+      lensTop.y - lensBase.y
+    );
 
     const upperSpan = lensTop.clone().sub(rearTop);
     const openCapAngle = Math.atan2(-upperSpan.y, upperSpan.z);
@@ -540,27 +566,8 @@ export function createSX70Model() {
     const lensTopLeft = s.lensTop.clone(); lensTopLeft.x = -sideX + 2.0;
     const lensTopRight = s.lensTop.clone(); lensTopRight.x = sideX - 2.0;
 
-    // Continuous guide rails span the moving upper anchors. A fixed-length
-    // sleeve rides at the midpoint so the changing span reads as a guided/slotted
-    // mechanism rather than a rod magically stretching or popping into existence.
-    updateRod(forwardLeft, rearTopLeft, lensTopLeft);
-    updateRod(forwardRight, rearTopRight, lensTopRight);
-
-    const leftMid = rearTopLeft.clone().lerp(lensTopLeft, 0.5);
-    const rightMid = rearTopRight.clone().lerp(lensTopRight, 0.5);
-    const leftDir = lensTopLeft.clone().sub(rearTopLeft).normalize();
-    const rightDir = lensTopRight.clone().sub(rearTopRight).normalize();
-    const sleeveHalf = A.upperRailSleeveLength / 2;
-    updateRod(
-      forwardLeftSleeve,
-      leftMid.clone().addScaledVector(leftDir, -sleeveHalf),
-      leftMid.clone().addScaledVector(leftDir, sleeveHalf)
-    );
-    updateRod(
-      forwardRightSleeve,
-      rightMid.clone().addScaledVector(rightDir, -sleeveHalf),
-      rightMid.clone().addScaledVector(rightDir, sleeveHalf)
-    );
+    // Rigid top-front cover closes the four-bar between rear and lens standards.
+    updatePanel(forwardPanel, s.rearTop, s.lensTop, 0.86);
 
     // Side erecting members are anchored to the same reconstructed pivots as
     // the rigid rear wall and front standard, so they no longer telescope.
@@ -687,8 +694,7 @@ export function createSX70Model() {
     const lensHeight = s.lensBase.distanceTo(s.lensTop);
     const vfAnchor = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(0, -4.2, -20));
     const viewfinderRearSupportSpan = vfAnchor.distanceTo(s.rearTop);
-    const upperRailSpans = [forwardLeft.userData.length, forwardRight.userData.length];
-    const upperRailSleeveLengths = [forwardLeftSleeve.userData.length, forwardRightSleeve.userData.length];
+    const topFrontCoverLength = s.rearTop.distanceTo(s.lensTop);
     const rearSideLinkLengths = [links.leftRear.userData.length, links.rightRear.userData.length];
     const frontSideLinkLengths = [links.leftFront.userData.length, links.rightFront.userData.length];
     const ordinaryMeshes = [];
@@ -711,8 +717,8 @@ export function createSX70Model() {
       lensStandardHeight: lensHeight,
       lensStandardHeightError: lensHeight - A.lensStandardHeight,
       viewfinderRearSupportSpan,
-      upperRailSpans,
-      upperRailSleeveLengthErrors: upperRailSleeveLengths.map(length => length - A.upperRailSleeveLength),
+      topFrontCoverLength,
+      topFrontCoverLengthError: topFrontCoverLength - A.topFrontCoverLength,
       rearSideLinkLengthErrors: rearSideLinkLengths.map(length => length - A.rearWallLength),
       frontSideLinkLengthErrors: frontSideLinkLengths.map(length => length - A.lensStandardHeight),
       ordinaryPersistentPartCount: ordinaryMeshes.length,
