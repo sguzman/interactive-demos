@@ -109,7 +109,6 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   let during = await page.evaluate(() => window.__dmgDebug.state);
   expect(during.dma.active).toBe(true);
   expect(during.cpu.accessAllowed).toBe(false);
-  window; // no-op for source readability
   await page.evaluate(() => window.__dmgDebug.advanceDots(640));
   const afterDma = await page.evaluate(() => window.__dmgDebug.state);
   expect(afterDma.dma.active).toBe(false);
