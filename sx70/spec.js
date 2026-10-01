@@ -161,6 +161,20 @@ export const COMPONENTS = {
     provenance: 'P0 function / P4 geometry',
     description: 'Primary shutter-control electromagnet in the service sequence. Public dimensions and placement are reconstructive.'
   },
+  solenoid2: {
+    id: 'sx70-solenoid-2',
+    name: 'Solenoid #2',
+    category: 'electromechanical control',
+    provenance: 'P0 function / P4 geometry',
+    description: 'Second service-documented solenoid/actuator branch. The public model preserves its identity but does not claim exact production placement.'
+  },
+  switchBank: {
+    id: 'sx70-switch-bank',
+    name: 'Cycle switch / contact bank',
+    category: 'electromechanical control',
+    provenance: 'P0 state roles / P4-P5 geometry',
+    description: 'Schematic physical presentation of the service-sequence switch contacts that transfer control among motor, braking, exposure and recocking states.'
+  },
   motor: {
     id: 'sx70-motor',
     name: 'Cycle motor',
