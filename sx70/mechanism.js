@@ -154,6 +154,24 @@ export function createMechanismVisualization() {
   register('sequencingCam', camGroup);
   driveAssembly.add(camGroup);
 
+  // Recock / reflex transfer linkage -----------------------------------------
+  const recockAssembly = new THREE.Group();
+  recockAssembly.name = 'Recock ram and bell crank';
+  const recockBase = new THREE.Vector3(-14, 27, 18);
+  recockAssembly.position.copy(recockBase);
+
+  const recockRam = box(4.2, 4.2, 54, materials.contact);
+  recockRam.position.set(0, 0, 0);
+  const bellCrankA = box(3.2, 24, 3.2, materials.gearDark);
+  bellCrankA.position.set(0, 12, -22);
+  bellCrankA.rotation.z = -22 * Math.PI / 180;
+  const bellCrankB = box(3.2, 21, 3.2, materials.gearDark);
+  bellCrankB.position.set(8, 22, -22);
+  bellCrankB.rotation.z = 56 * Math.PI / 180;
+  recockAssembly.add(recockRam, bellCrankA, bellCrankB);
+  register('recockLinkage', recockAssembly);
+  root.add(recockAssembly);
+
   // Reflex optical carrier --------------------------------------------------
   const reflexAssembly = new THREE.Group();
   reflexAssembly.name = 'Reflex carrier and viewing surfaces';
@@ -248,6 +266,7 @@ export function createMechanismVisualization() {
     driveAssembly.position.copy(driveBase).add(new THREE.Vector3(52 * e, -2 * e, 4 * e));
     reflexAssembly.position.copy(reflexBase).add(new THREE.Vector3(0, 30 * e, -22 * e));
     controlAssembly.position.copy(controlBase).add(new THREE.Vector3(-76 * e, -1 * e, -4 * e));
+    recockAssembly.position.copy(recockBase).add(new THREE.Vector3(28 * e, 17 * e, -10 * e));
   }
 
   function setExplosion(value) {
@@ -273,6 +292,11 @@ export function createMechanismVisualization() {
       THREE.MathUtils.lerp(0, 21, r)
     );
     carrier.rotation.x = THREE.MathUtils.lerp(-18 * Math.PI / 180, -67 * Math.PI / 180, r);
+
+    const recock = THREE.MathUtils.clamp(cycleState.recockProgress || 0, 0, 1);
+    recockRam.position.z = THREE.MathUtils.lerp(0, -18, Math.max(r, recock));
+    bellCrankA.rotation.z = THREE.MathUtils.lerp(-22, 17, r) * Math.PI / 180;
+    bellCrankB.rotation.z = THREE.MathUtils.lerp(56, 28, recock) * Math.PI / 180;
 
     if (cycleState.motorRunning) {
       state.motorAngle += dt * 11.0;
