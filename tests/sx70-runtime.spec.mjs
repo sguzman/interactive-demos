@@ -94,6 +94,8 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
     window.__sx70Debug.state.explosion > 0.99
   );
   const frontStandardState = await page.evaluate(() => window.__sx70Debug.state);
+  expect(frontStandardState.geometry.inspectionFocus).toBe('frontStandard');
+  expect(frontStandardState.mechanism.inspectionFocus).toBe('frontStandard');
   expect(frontStandardState.geometry.frontStandardDeepExploded).toBe(true);
   expect(frontStandardState.geometry.frontStandardInspectablePartCount).toBeGreaterThanOrEqual(6);
   expect(frontStandardState.mechanism.deepExplosion).toBe(true);
