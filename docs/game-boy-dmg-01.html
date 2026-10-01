@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Works-derived technical guide to the original Nintendo Game Boy DMG-01.">
+<title>Nintendo Game Boy DMG-01 — Engineering Guide</title>
+<style>
+:root{color-scheme:dark;--bg:#0a0d0a;--card:#111611;--text:#e9eee4;--muted:#a7b09f;--accent:#9bbc0f;--line:#283128;--blue:#8eb8c9}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 65% 0,rgba(155,188,15,.09),transparent 28%),var(--bg);color:var(--text);font:16px/1.72 Inter,ui-sans-serif,system-ui,sans-serif}
+header{position:sticky;top:0;z-index:4;background:rgba(10,13,10,.91);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+nav{max-width:940px;margin:auto;padding:13px 22px;display:flex;justify-content:space-between;gap:15px;align-items:center}
+nav a{color:var(--accent);text-decoration:none;font-weight:800;font-size:13px}.expr{color:var(--muted);font:11px ui-monospace,monospace}
+main{max-width:820px;margin:0 auto;padding:54px 24px 90px}
+h1{font-size:46px;line-height:1.04;letter-spacing:-.04em;margin:0 0 28px}h2{font-size:28px;line-height:1.18;margin:56px 0 18px;border-top:1px solid var(--line);padding-top:28px}h3{font-size:20px;margin-top:34px}
+p,li{color:#cdd5c8}strong{color:#f0f5e7}code{font-family:ui-monospace,monospace;background:#151b15;padding:.12em .3em;border-radius:4px;color:#dfe9b3}
+pre{overflow:auto;background:#0e130e;border:1px solid var(--line);padding:16px;border-radius:12px;color:#caddb5;font-size:13px;line-height:1.55}
+blockquote{margin:26px 0;border-left:4px solid var(--accent);padding:5px 0 5px 18px;color:#e1e9d8;font-size:18px}
+ul{padding-left:25px}.lede{color:var(--muted);font-size:14px;border:1px solid var(--line);background:var(--card);padding:16px 18px;border-radius:12px;margin-bottom:35px}
+.jump{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0 38px}.jump a{border:1px solid var(--line);border-radius:999px;padding:7px 10px;color:var(--blue);text-decoration:none;font-size:12px;font-weight:800}
+footer{max-width:820px;margin:0 auto;padding:30px 24px 70px;color:var(--muted);border-top:1px solid var(--line);font-size:12px}
+@media(max-width:650px){h1{font-size:34px}main{padding-top:34px}.expr{display:none}}
+</style></head><body>
+<header><nav><a href="../">← Gallery</a><span class="expr">expression:nintendo-game-boy-dmg-01-public-engineering-guide:en:v1</span><a href="../game-boy-dmg-01/">Explore 3D ↗</a></nav></header>
+<main>
+<div class="lede"><strong>Works-derived public guide.</strong> Canonical engineering claims remain owned by Taria Engineering. This rendition keeps OEM, developer, community-reference, empirical-hardware, board-reverse-engineering, die-reverse-engineering, and community-repair evidence distinct.</div>
+<div class="jump">
+<a href="../game-boy-dmg-01/?view=product">Product</a>
+<a href="../game-boy-dmg-01/?view=exploded">Exploded</a>
+<a href="../game-boy-dmg-01/?view=power">Power</a>
+<a href="../game-boy-dmg-01/?view=cpu-memory">CPU / memory</a>
+<a href="../game-boy-dmg-01/?view=cartridge">Cartridge</a>
+<a href="../game-boy-dmg-01/?view=input">Input</a>
+<a href="../game-boy-dmg-01/?view=ppu-lcd">PPU / LCD</a>
+<a href="../game-boy-dmg-01/?view=apu-audio">APU / audio</a>
+<a href="../game-boy-dmg-01/?view=service">Service</a>
+</div>
+<h1>Nintendo Game Boy DMG-01: one handheld, many machines</h1><p>The original Game Boy looks almost aggressively simple. Put in four AA batteries, slide in a</p><p>cartridge, turn it on, press buttons, watch a greenish screen, hear a tiny speaker.</p><p>That simplicity is real at the product level. It is also deceptive.</p><p>A single button press can cross all of these layers:</p><pre><code>finger
+-&gt; plastic button
+-&gt; conductive contact
+-&gt; electrical matrix
+-&gt; JOYP register
+-&gt; game logic
+-&gt; memory
+-&gt; PPU or APU state
+-&gt; LCD pixel or speaker waveform</code></pre><p>The machine is easiest to understand when those layers stay separate long enough to see how they</p><p>connect.</p><p>This guide treats the <strong>original monochrome Nintendo Game Boy, model DMG-01</strong>, as the canonical</p><p>specimen. Game Boy Pocket, Light, Color, Advance and later descendants are related products, not</p><p>silent additions to the base machine.</p><p>There is another important boundary. The DMG-01 existed for long enough to accumulate multiple</p><p>board revisions and component substitutions. A concrete reconstruction can use one representative</p><p>configuration, but "DMG-01" does not mean one immutable internal bill of materials.</p><p>The goal here is therefore not to memorize chips. It is to follow the machine.</p><h2>1. Start with the object in your hands</h2><p>The Game Boy is first a physical product.</p><p>The front gives you:</p><ul><li>a reflective LCD;</li><li>D-pad;</li><li>A and B;</li><li>Start and Select;</li><li>speaker opening;</li><li>power indicator;</li><li>contrast and volume controls.</li></ul><p>The rear gives you:</p><ul><li>cartridge slot;</li><li>battery compartment;</li><li>battery door.</li></ul><p>Around the edges are the power, headphone and link interfaces.</p><p>Open the enclosure and the product separates into several physical assemblies rather than one</p><p>monolithic motherboard.</p><p>A useful high-level anatomy is:</p><pre><code>front shell + controls
+rear shell + battery/cartridge access
+LCD/control board
+main CPU board
+DC/DC converter board
+headphone-jack board
+speaker
+removable cartridge</code></pre><p>That already teaches an important lesson: one logical function does not necessarily live on one</p><p>physical board.</p><p>The audio system, for example, crosses the custom SoC, the mainboard analog section, a physical</p><p>volume control, the separate headphone board and the speaker mounted with the front assembly.</p><p>Likewise, the controls are physical objects in the shell, electrical contacts on the front board</p><p>and software-visible state inside the custom chip.</p><h2>2. Powering the Game Boy also participates in reset</h2><p>The DMG can take energy from four AA cells or an external DC source.</p><p>That sounds like a trivial detail until the source path is traced.</p><p>The external jack participates in source selection. Inserting external power disconnects the</p><p>battery feed. From there, the power switch does more than simply connect the battery to the circuit.</p><p>The representative electrical reconstruction shows a DPDT switch whose second pole participates in</p><p>reset sequencing.</p><p>So the actual startup story is closer to:</p><pre><code>battery or external DC
+-&gt; source-selection behavior
+-&gt; power/reset switch
+-&gt; raw VCC
+-&gt; separate DC/DC converter
+-&gt; regulated VDD + negative VEE
+-&gt; oscillator / reset release
+-&gt; running electronics</code></pre><p>The negative rail matters because the original LCD requires a bias supply quite different from the</p><p>main logic supply.</p><p>That gives us a useful distinction:</p><pre><code>energy source present
+!=
+logic rail valid
+!=
+LCD bias valid
+!=
+reset released
+!=
+system running</code></pre><p>A machine that "has power" in one sense can still be dead in another.</p><h2>3. The chip called the CPU is larger than the CPU</h2><p>On the representative mainboard, the large custom package is commonly called the Game Boy CPU.</p><p>That is convenient shorthand, but it hides an important architectural fact.</p><p>The <strong>DMG-CPU package is a custom system-on-chip</strong>. Inside it sits the instruction-executing CPU core</p><p>that reverse-engineering literature calls the <strong>SM83</strong>, but the package also contains or coordinates</p><p>much more of the console:</p><ul><li>PPU logic;</li><li>APU logic;</li><li>timers;</li><li>interrupt control;</li><li>serial/link logic;</li><li>joypad interface;</li><li>DMA;</li><li>clock/reset logic;</li><li>bus/decode logic.</li></ul><p>So:</p><pre><code>DMG-CPU package
+!=
+SM83 CPU core
+!=
+instruction set</code></pre><p>This is not pedantry. It determines how we interpret every later diagram.</p><p>When software writes the LCD-control register, for example, it is not talking across the board to a</p><p>separate graphics chip. It is addressing logic integrated into the same custom system.</p><p>The representative board uses a <strong>4.194304 MHz</strong> crystal. Internal logic derives other timing</p><p>domains and phases from that master clock.</p><p>Again:</p><pre><code>master oscillator
+!=
+derived clock
+!=
+machine cycle
+!=
+instruction duration</code></pre><p>The machine contains many notions of time even though it begins from one physical oscillator.</p><h2>4. A memory map is not a wiring diagram</h2><p>The SM83 sees a 16-bit address space.</p><p>It includes familiar-looking regions for cartridge ROM, video RAM, work RAM, I/O registers and</p><p>other state.</p><p>It is tempting to draw that as one big rectangle and imagine that the hardware is physically laid</p><p>out in the same way.</p><p>It is not.</p><p>The representative DMG board already proves this.</p><p>Work RAM is one external SRAM on the system bus.</p><p>Video RAM is another external SRAM connected through a separate video-memory interface.</p><p>OAM and HRAM belong to integrated SoC state.</p><p>Cartridge ROM is not even part of the console. It arrives through a removable module.</p><p>And E000-FDFF is an alias of work RAM rather than another memory chip.</p><p>So one CPU-visible map overlays several physical realities:</p><pre><code>CPU address
+-&gt; decode
+-&gt; subsystem / bus
+-&gt; physical storage or register</code></pre><p>Two address ranges can point to the same storage.</p><p>One address range can point to different physical cartridge banks depending on mapper state.</p><p>And an address can remain logically valid while the CPU is temporarily forbidden from accessing</p><p>the underlying resource.</p><p>That last case becomes crucial in the graphics system.</p><h2>5. The cartridge becomes part of the computer</h2><p>The cartridge is a particularly rich boundary because it is simultaneously:</p><ul><li>a physical object;</li><li>a PCB;</li><li>an electrical bus participant;</li><li>a ROM/RAM container;</li><li>sometimes a stateful memory controller;</li><li>sometimes a battery-backed device;</li><li>sometimes a clocked peripheral;</li><li>the carrier of the program.</li></ul><p>The console owns the 32-contact slot and its signals.</p><p>The cartridge owns whatever hardware is behind that interface.</p><p>A simple cartridge can map a small ROM almost directly into the CPU-visible cartridge windows.</p><p>A larger cartridge introduces a memory bank controller, or <strong>MBC</strong>.</p><p>Now a write into an address range normally described as "ROM" may not be an attempt to modify ROM</p><p>at all. It may instead change the mapper's internal state.</p><p>The effective physical ROM address becomes something like:</p><pre><code>CPU address
++ mapper registers
++ cartridge wiring
++ ROM geometry
+-&gt; physical ROM location</code></pre><p>Different MBC families change the rules.</p><p>MBC1 combines bank registers and operating modes.</p><p>MBC2 contains its own small 4-bit RAM.</p><p>MBC3 adds a real-time clock that can continue running from a cartridge battery while the Game Boy</p><p>itself is switched off.</p><p>MBC5 extends the ROM-bank number and can appear in rumble-capable variants.</p><p>That produces one of the most interesting system-boundary facts in the machine:</p><blockquote>A removable cartridge can contain state and time that outlive the host's own powered state.</blockquote><p>The "software" is therefore not cleanly separable from cartridge hardware.</p><h2>6. What really happens when you press A</h2><p>The Game Boy has eight obvious gameplay controls, but software does not receive eight independent</p><p>button bits.</p><p>The buttons form a <strong>2×4 active-low matrix</strong>.</p><p>Two groups share four result lines:</p><ul><li>action buttons;</li><li>D-pad directions.</li></ul><p>Software selects which group it wants to observe and then reads the lower four bits of the JOYP</p><p>register.</p><p>A complete input trace is:</p><pre><code>finger presses A
+-&gt; plastic A button moves
+-&gt; contact closes
+-&gt; electrical matrix changes
+-&gt; software selects action-button group
+-&gt; JOYP lower bit goes low
+-&gt; software observes input</code></pre><p>"Active-low" simply means that the electrically asserted state is represented by zero rather than</p><p>one.</p><p>The important engineering point is that observation depends on selection and timing.</p><p>A physical button can be held while software selects the other matrix group and therefore does not</p><p>currently observe that control through the lower nibble.</p><p>The joypad interrupt is also based on a transition of the electrical/register lines, not on an</p><p>abstract semantic event called "button pressed."</p><p>This gives us a clean separation:</p><pre><code>physical press
+!=
+contact state
+!=
+electrical line
+!=
+register state
+!=
+game action</code></pre><h2>7. A pixel is produced over time</h2><p>The original Game Boy is not best understood as a machine with a finished framebuffer that is sent</p><p>to the display all at once.</p><p>Its PPU constructs the visible image progressively.</p><p>Each frame contains 154 scanlines. The first 144 are visible; the remaining ten form VBlank.</p><p>A visible line cycles through several PPU modes.</p><h3>Mode 2: object search</h3><p>The PPU searches OAM for objects relevant to the current scanline.</p><p>CPU access to OAM is blocked.</p><h3>Mode 3: pixel transfer</h3><p>The PPU fetches the graphics data required to produce pixels.</p><p>CPU access to both VRAM and OAM is blocked.</p><p>Mode 3 is not one rigid duration. It can be lengthened by conditions such as horizontal scroll,</p><p>window startup and object fetches.</p><h3>Mode 0: HBlank</h3><p>The remaining time in the fixed 456-dot scanline becomes HBlank.</p><h3>Mode 1: VBlank</h3><p>After the 144 visible lines, the PPU enters VBlank.</p><p>The important idea is this:</p><pre><code>scanline duration fixed
+while
+pixel-transfer duration variable
+therefore
+HBlank absorbs the difference</code></pre><p>Inside pixel transfer, the PPU does not simply look up "the final pixel."</p><p>Background/window data and object data pass through separate fetch/FIFO machinery before final</p><p>composition.</p><p>A useful causal chain is:</p><pre><code>VRAM + OAM + PPU registers
+-&gt; tile/object fetch
+-&gt; background FIFO + object FIFO
+-&gt; priority/transparency
+-&gt; DMG palette mapping
+-&gt; LCD output signals
+-&gt; front-board driver electronics
+-&gt; physical LCD pixel</code></pre><p>That is why a strong interactive model should let you follow one pixel, not merely show a running</p><p>emulator screen.</p><h2>8. Mapped memory can still be unavailable</h2><p>The PPU introduces a distinction that ordinary memory diagrams hide.</p><p>VRAM still has addresses during mode 3.</p><p>OAM still has addresses during modes 2 and 3.</p><p>But the CPU cannot use them as ordinary memory during those intervals.</p><p>So:</p><pre><code>mapped
+!=
+accessible now</code></pre><p>This becomes even more dramatic with OAM DMA.</p><p>Writing FF46 starts a hardware-assisted transfer of 160 bytes into OAM.</p><p>On the original DMG, the CPU loses ordinary access to the wider memory system during that transfer;</p><p>HRAM remains the practical region from which software can execute the waiting routine.</p><p>DMA is therefore not just "copy 160 bytes faster."</p><p>It is a temporary reorganization of who owns the relevant transfer path.</p><pre><code>CPU writes DMA request
+-&gt; DMA engine becomes active
+-&gt; source reads + OAM writes
+-&gt; CPU ordinary access restricted
+-&gt; PPU may contend for OAM
+-&gt; transfer completes</code></pre><p>This is a good place to stop thinking of the Game Boy as a collection of memory addresses and start</p><p>thinking of it as a timed resource-sharing machine.</p><h2>9. A sound crosses digital and analog worlds</h2><p>The DMG has four integrated sound channels:</p><p>1. pulse with sweep;</p><p>2. pulse;</p><p>3. programmable wave;</p><p>4. noise.</p><p>Each begins as digital state.</p><p>Counters, duty patterns, envelopes, a wave table or an LFSR generate discrete channel amplitudes.</p><p>Those amplitudes then cross a boundary into analog electronics through per-channel DAC behavior.</p><p>From there:</p><pre><code>digital channel
+-&gt; DAC
+-&gt; left/right routing
+-&gt; electronic APU output level
+-&gt; analog filtering
+-&gt; board-level audio path
+-&gt; physical volume wheel
+-&gt; amplifier
+-&gt; speaker or headphones</code></pre><p>Two controls that are easy to conflate are actually different.</p><p><strong>NR50</strong> changes electronic output scaling inside the APU path.</p><p>The <strong>physical volume wheel</strong> is a separate analog control farther downstream.</p><p>Likewise, the Game Boy has stereo-capable internal/headphone routing, but the built-in speaker is</p><p>one mono transducer.</p><p>So:</p><pre><code>stereo-capable audio system
+!=
+stereo built-in speaker</code></pre><p>A cartridge can even feed an analog VIN signal into the console audio path, another case where the</p><p>removable module crosses what looks like a clean host/peripheral boundary.</p><h2>10. Interrupts, timers and the link cable</h2><p>The same clocked machine also has several smaller control systems.</p><p>An interrupt requires at least three distinct concepts:</p><ul><li>source requested;</li><li>source enabled;</li><li>global CPU interrupt permission.</li></ul><p>A pending request is not the same thing as a serviced interrupt.</p><p>The programmable timer likewise derives slower events from the machine's timing system rather than</p><p>owning a separate oscillator.</p><p>The serial link adds an especially interesting distributed-system problem.</p><p>One Game Boy can provide the serial clock.</p><p>The other can wait for externally supplied clock edges.</p><p>So two otherwise similar peers can temporarily have different timing roles:</p><pre><code>link participant
+!=
+clock owner</code></pre><p>This is a tiny but genuine example of synchronization between machines.</p><h2>11. There is no single immutable Game Boy inside</h2><p>A retail model number is not a bill of materials.</p><p>Real DMG-01 units have been observed with different mainboard revisions, LCD-board revisions,</p><p>converter boards, jack boards, CPU markings, SRAM parts and supplier combinations.</p><p>That means these are different identities:</p><pre><code>Game Boy DMG-01
+board revision
+component role
+component part number
+component instance
+supplier
+date code
+observed console configuration</code></pre><p>For a public reconstruction, we therefore need a declared representative internal profile.</p><p>The current Engineering model favors DMG-CPU-06 and DMG-LCD-06 because high-quality</p><p>revision-specific board reconstructions exist for them.</p><p>That does <strong>not</strong> mean launch units looked exactly like that inside.</p><p>A visual model becomes more honest, not less useful, when it says which physical revision it is</p><p>showing.</p><h2>12. Failure reveals the architecture</h2><p>Repair documentation is valuable because a failed machine forces subsystem boundaries into the</p><p>open.</p><p>Take "does not power on."</p><p>That symptom could originate in:</p><ul><li>batteries;</li><li>corroded contacts;</li><li>source-selection path;</li><li>power/reset switch;</li><li>DC/DC converter;</li><li>downstream electronics.</li></ul><p>A useful diagnosis therefore walks the path and gathers discriminating evidence rather than</p><p>immediately replacing the most dramatic chip.</p><p>Cartridge failures have the same structure.</p><p>A known-good cartridge helps separate console-side and cartridge-side hypotheses.</p><p>Display lines can point toward the screen/interconnect path.</p><p>Speaker failure should be separated from headphone failure because those outputs share some</p><p>upstream audio state but diverge in physical hardware.</p><p>Nintendo's historical service system also included formal bulletins for revision- or</p><p>serial-number-specific issues and required post-repair verification.</p><p>One preserved procedure specifies extended burn-in after repair before the unit is returned to the</p><p>customer.</p><p>That gives us a final service distinction:</p><pre><code>repair action completed
+!=
+repair verified</code></pre><p>Modern restorers may choose techniques that Nintendo service centers did not use. Those can be</p><p>excellent methods, but historical OEM repair and modern restoration should remain separate evidence</p><p>classes.</p><h2>13. One action crosses the whole machine</h2><p>Now the layers can be reassembled.</p><p>Press A in a running game:</p><pre><code>finger
+-&gt; button
+-&gt; contact
+-&gt; matrix
+-&gt; JOYP
+-&gt; software
+-&gt; graphics/audio state
+-&gt; PPU/APU
+-&gt; electrical output
+-&gt; LCD/speaker
+-&gt; human perception</code></pre><p>Insert a cartridge:</p><pre><code>physical module
+-&gt; connector
+-&gt; bus
+-&gt; mapper state
+-&gt; memory window
+-&gt; CPU instruction/data</code></pre><p>Turn the system on:</p><pre><code>energy
+-&gt; source selection
+-&gt; switch/reset
+-&gt; converter rails
+-&gt; oscillator
+-&gt; SoC
+-&gt; cartridge/software
+-&gt; pixels + sound</code></pre><p>None of these chains belongs to one engineering domain.</p><p>That is what makes the DMG-01 such a useful specimen.</p><p>The product is simple to use because the layers are tightly coordinated.</p><p>It is interesting to study because understanding it requires keeping those layers distinct.</p><h2>14. What the interactive specimen should let you do</h2><p>The eventual interactive model should begin as a recognizable assembled Game Boy, not as a</p><p>schematic.</p><p>From there, the reader should be able to switch among several semantic views:</p><ul><li>Product;</li><li>Exploded;</li><li>Power;</li><li>CPU / memory;</li><li>Cartridge;</li><li>Input;</li><li>PPU / LCD;</li><li>APU / audio;</li><li>Service.</li></ul><p>The most important interactions should be causal traces.</p><p>A visitor should be able to press A and watch the control move, the contact close, JOYP change and</p><p>a deterministic demo react.</p><p>They should be able to follow a CPU address into the cartridge and watch an MBC select a physical</p><p>bank.</p><p>They should be able to pause the PPU, inspect a fetcher/FIFO state and watch a pixel arrive at the</p><p>LCD.</p><p>They should be able to start OAM DMA and see why the CPU's access rights change.</p><p>And they should be able to enter a service scenario in which tests narrow a fault hypothesis rather</p><p>than turning repair into a guessing game.</p><p>The browser visualization will necessarily simplify some geometry and timing for readability.</p><p>Those simplifications remain presentation or reconstruction state. They do not become new facts</p><p>about Nintendo's production hardware.</p><h2>15. What is known, reverse-engineered and reconstructed</h2><p>The Game Boy has an unusually rich evidence surface.</p><p>The canonical corpus separates:</p><ul><li>Nintendo OEM service/electrical material;</li><li>Nintendo developer documentation;</li><li>maintained community technical references;</li><li>photographed hardware populations;</li><li>board reverse engineering;</li><li>die reverse engineering;</li><li>modern community repair guidance;</li><li>Engineering synthesis.</li></ul><p>That hierarchy matters.</p><p>A transistor-level reverse engineering result may be extremely precise and still not be a Nintendo</p><p>manufacturing document.</p><p>A Nintendo programming manual may be authoritative about a software-visible interface while still</p><p>being later than the 1989 launch hardware.</p><p>A photographed 1992 unit proves that one board combination existed. It does not prove that all</p><p>1992 units used it.</p><p>And a beautifully rendered 3D mainboard remains a reconstruction unless its dimensions were</p><p>actually established.</p><p>The useful rule is simple:</p><blockquote>Precision in presentation must never be mistaken for stronger provenance.</blockquote><h2>16. The integrated machine</h2><p>The Game Boy's elegance does not come from having only a few parts.</p><p>It comes from making many distinct layers cooperate so reliably that the player barely notices the</p><p>handoffs.</p><p>The button feels immediate even though it crosses mechanics, contacts, matrix selection, registers</p><p>and software.</p><p>The image feels continuous even though the machine constructs it one timed line at a time while</p><p>ownership of VRAM and OAM changes beneath the CPU.</p><p>The cartridge feels like "the game" even though it may contain its own RAM, controller, battery,</p><p>clock and peripherals.</p><p>The sound feels like one output even though it crosses counters, DACs, analog mixing, physical</p><p>volume control and a speaker.</p><p>That is the right way to read the DMG-01:</p><pre><code>one intimate product
+made from several coupled machines</code></pre><h2>Sources and evidence</h2><p>The frozen Engineering substrate draws from Nintendo technical/service material, Nintendo</p><p>programming documentation, Pan Docs and related gbdev references, Gekkio's hardware database and</p><p>board-level reverse engineering, DMG-CPU/SM83 die reverse engineering, and modern repair material</p><p>where explicitly labeled.</p><p>The canonical Engineering specimen retains the detailed source ledger, revision scopes, open</p><p>questions and provenance classes. This public guide is a derivative explanation of that frozen</p><p>substrate rather than an independent authority.</p>
+</main>
+<footer>Base specimen: original monochrome Nintendo Game Boy DMG-01. Representative public physical profile uses revision-aware reconstruction rather than claiming one universal DMG-01 internal BOM.</footer>
+</body></html>
