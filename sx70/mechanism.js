@@ -92,7 +92,8 @@ export function createMechanismVisualization() {
   // Front standard internals -------------------------------------------------
   const frontAssembly = new THREE.Group();
   frontAssembly.name = 'Front standard internals';
-  const frontBase = new THREE.Vector3(-17, 58, 69);
+  // Align the live shutter/actuator reconstruction with the erected front-standard cavity.
+  const frontBase = new THREE.Vector3(-5, 37, 68);
   frontAssembly.position.copy(frontBase);
 
   const shutter = new THREE.Group();
@@ -265,7 +266,7 @@ export function createMechanismVisualization() {
     // Keep functional internals in one readable central constellation while
     // the exterior shell travels farther away. Individual subassemblies get
     // enough spacing to read as separate parts without destroying adjacency.
-    frontAssembly.position.copy(frontBase).add(new THREE.Vector3(-18 * e, 8 * e, 26 * e));
+    frontAssembly.position.copy(frontBase).add(new THREE.Vector3(-14 * e, 5 * e, 12 * e));
     driveAssembly.position.copy(driveBase).add(new THREE.Vector3(10 * e, 5 * e, 34 * e));
     reflexAssembly.position.copy(reflexBase).add(new THREE.Vector3(0, 24 * e, -15 * e));
     controlAssembly.position.copy(controlBase).add(new THREE.Vector3(-28 * e, 3 * e, 22 * e));
@@ -353,7 +354,8 @@ export function createMechanismVisualization() {
       motorAngle: state.motorAngle,
       camAngle: state.camAngle,
       gearAngles: [...state.gearAngles],
-      inspectableMeshCount: pickables.length
+      inspectableMeshCount: pickables.length,
+      frontAssemblyPosition: frontAssembly.position.toArray()
     };
   }
 
