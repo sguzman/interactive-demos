@@ -191,13 +191,27 @@ export function createMechanismVisualization() {
   const controlAssembly = new THREE.Group();
   const controlBase = new THREE.Vector3(-33, 34, 34);
   controlAssembly.position.copy(controlBase);
-  for (let i = 0; i < 4; i += 1) {
+
+  const switchBank = new THREE.Group();
+  for (let i = 0; i < 5; i += 1) {
     const contact = box(9, 1.1, 2.4, materials.contact);
     contact.position.set(0, i * 5.2, i % 2 ? 4 : 0);
     contact.rotation.z = (i % 2 ? -8 : 8) * Math.PI / 180;
-    controlAssembly.add(contact);
+    switchBank.add(contact);
   }
-  register('sequencingCam', controlAssembly);
+  register('switchBank', switchBank);
+  controlAssembly.add(switchBank);
+
+  const solenoid2 = new THREE.Group();
+  const solenoid2Can = cyl(4.2, 14, materials.solenoid, 26);
+  solenoid2Can.rotation.z = Math.PI / 2;
+  const solenoid2Plunger = cyl(1.4, 9, materials.contact, 18);
+  solenoid2Plunger.rotation.z = Math.PI / 2;
+  solenoid2Plunger.position.x = 8;
+  solenoid2.add(solenoid2Can, solenoid2Plunger);
+  solenoid2.position.set(0, 30, -7);
+  register('solenoid2', solenoid2);
+  controlAssembly.add(solenoid2);
 
   root.add(frontAssembly, driveAssembly, reflexAssembly, controlAssembly);
 
@@ -284,6 +298,19 @@ export function createMechanismVisualization() {
     const energized = cycleState.phase !== 'idle' && cycleState.phase !== 'terminal-brake';
     solenoidCan.material = energized ? materials.active : materials.solenoid;
     plunger.position.x = energized ? 13 : 10;
+    const secondaryEnergized =
+      cycleState.phase === 'post-exposure-motor-run' ||
+      cycleState.phase === 'pick-transfer' ||
+      cycleState.phase === 'roller-processing' ||
+      cycleState.phase === 'reflex-recock';
+    solenoid2Can.material = secondaryEnergized ? materials.active : materials.solenoid;
+    solenoid2Plunger.position.x = secondaryEnergized ? 11 : 8;
+
+    // Switch contacts move only as a legibility cue; exact production contact
+    // travel/placement is not asserted by this P4/P5 physicalization.
+    switchBank.children.forEach((contact, index) => {
+      contact.rotation.z = ((index % 2 ? -8 : 8) + (state.camAngle * 4 + index * 7) % 5) * Math.PI / 180;
+    });
 
     applyExplosion();
   }
