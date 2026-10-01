@@ -314,20 +314,20 @@ export function createSX70Model() {
   // The long shallow cap is one of the strongest SX-70 silhouette cues.
   const viewfinder = new THREE.Group();
 
-  const capBody = box(94, 10.2, 104, materials.chrome);
+  const capBody = box(76, 8.2, 58, materials.chrome);
   viewfinder.add(capBody);
 
-  const capLeather = box(84, 2.0, 88, materials.leather);
-  capLeather.position.set(0, 6.05, 0);
+  const capLeather = box(68, 1.8, 49, materials.leather);
+  capLeather.position.set(0, 4.95, 0);
   viewfinder.add(capLeather);
 
-  const capUnderside = box(88, 2.6, 91, materials.black);
-  capUnderside.position.set(0, -5.55, 0);
+  const capUnderside = box(72, 2.2, 53, materials.black);
+  capUnderside.position.set(0, -4.55, 0);
   viewfinder.add(capUnderside);
 
   const eyepiece = cylinder(7.3, 3.5, materials.glass, 32);
   eyepiece.rotation.x = Math.PI / 2;
-  eyepiece.position.set(18, 0, -47);
+  eyepiece.position.set(18, 0, -28);
   viewfinder.add(eyepiece);
 
   register('viewfinder', viewfinder);
@@ -408,8 +408,11 @@ export function createSX70Model() {
 
     const upperSpan = lensTop.clone().sub(rearTop);
     const openCapAngle = Math.atan2(-upperSpan.y, upperSpan.z);
-    const openCapCenter = rearTop.clone().add(lensTop).multiplyScalar(0.5);
-    openCapCenter.y += 8.0;
+    // Keep the viewing relay physically associated with the rear optical structure.
+    // The earlier midpoint + large lift made it read as an unexplained floating cube.
+    const openCapCenter = rearTop.clone().lerp(lensTop, 0.34);
+    openCapCenter.y += 2.6;
+    openCapCenter.z -= 4.0;
 
     const foldedCapCenter = new THREE.Vector3(0, baseTopY + 9.2, -7);
     const capPosition = foldedCapCenter.clone().lerp(openCapCenter, e);
@@ -495,16 +498,20 @@ export function createSX70Model() {
     state.explosion = THREE.MathUtils.clamp(value, 0, 1);
     const e = state.explosion;
 
-    base.position.x = 0;
-    rearPanel.position.x += -10 * e;
-    forwardPanel.position.x = 13 * e;
-    lensHousing.position.x += 24 * e;
-    viewfinder.position.x += -20 * e;
-    bellows.position.x = -7 * e;
-    linksRoot.position.x = 0;
+    // Explosion is a P5 inspection transform, independent of deployment.
+    // Spread the enclosing structure far enough to expose the live internal
+    // mechanism rather than merely nudging the outer shell apart.
+    base.position.x = -46 * e;
+    rearPanel.position.x += -76 * e;
+    forwardPanel.position.x = 58 * e;
+    lensHousing.position.x += 86 * e;
+    viewfinder.position.x += -52 * e;
+    viewfinder.position.y += 18 * e;
+    bellows.position.x = -18 * e;
+    linksRoot.position.x = 20 * e;
 
-    linksRoot.visible = e < 0.84;
-    forwardPanel.visible = e < 0.90;
+    linksRoot.visible = true;
+    forwardPanel.visible = true;
   }
 
   function applyFocus(value) {
@@ -522,10 +529,12 @@ export function createSX70Model() {
 
     // Reset explosion offsets before deriving the articulated pose so repeated
     // updates never accumulate x drift.
+    base.position.x = 0;
     rearPanel.position.x = 0;
     forwardPanel.position.x = 0;
     lensHousing.position.x = 0;
     viewfinder.position.x = 0;
+    viewfinder.position.y = 0;
     bellows.position.x = 0;
     linksRoot.position.x = 0;
 
