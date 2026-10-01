@@ -1,0 +1,51 @@
+name: game boy dmg runtime smoke
+
+concurrency:
+  group: game-boy-dmg-runtime-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'game-boy-dmg-01/**'
+      - 'docs/game-boy-dmg-01.html'
+      - 'demos.json'
+      - 'engineering-projections.json'
+      - 'tests/game-boy-dmg-runtime.spec.mjs'
+      - '.github/workflows/game-boy-dmg-runtime-smoke.yml'
+  pull_request:
+    paths:
+      - 'game-boy-dmg-01/**'
+      - 'docs/game-boy-dmg-01.html'
+      - 'demos.json'
+      - 'engineering-projections.json'
+      - 'tests/game-boy-dmg-runtime.spec.mjs'
+      - '.github/workflows/game-boy-dmg-runtime-smoke.yml'
+
+jobs:
+  dmg-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: |
+          npm install --no-save @playwright/test
+          npx playwright install --with-deps chromium
+      - name: Serve site
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/dmg-http.log 2>&1 &
+          echo $! > /tmp/dmg-http.pid
+      - name: Run DMG-01 causal specimen in Chromium
+        run: npx playwright test tests/game-boy-dmg-runtime.spec.mjs --reporter=line
+      - name: Upload runtime screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-boy-dmg-runtime-smoke
+          path: test-results/
+          if-no-files-found: ignore
