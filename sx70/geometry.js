@@ -139,32 +139,6 @@ function updateRod(rod, a, b) {
   rod.userData.length = length;
 }
 
-function solveEqualTwoLinkElbow(a, b, segmentLength, side = 1) {
-  const midpoint = a.clone().add(b).multiplyScalar(0.5);
-  const dxHalf = (b.x - a.x) / 2;
-  const dy = b.y - a.y;
-  const dz = b.z - a.z;
-  const planarDistance = Math.max(0.001, Math.hypot(dy, dz));
-
-  // The elbow sits at midpoint x. Reserve the half-x offset from each rod's
-  // length budget, then solve the remaining equal-link triangle in y/z.
-  const planarSegmentLength = Math.sqrt(Math.max(0.001, segmentLength * segmentLength - dxHalf * dxHalf));
-  const halfPlanarDistance = Math.min(planarSegmentLength, planarDistance / 2);
-  const height = Math.sqrt(Math.max(
-    0,
-    planarSegmentLength * planarSegmentLength - halfPlanarDistance * halfPlanarDistance
-  ));
-
-  const py = -dz / planarDistance;
-  const pz = dy / planarDistance;
-
-  return new THREE.Vector3(
-    midpoint.x,
-    midpoint.y + side * py * height,
-    midpoint.z + side * pz * height
-  );
-}
-
 function makeBellowsGeometry() {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Array(18).fill(0), 3));
@@ -279,23 +253,16 @@ export function createSX70Model() {
   root.add(rearPanel);
 
   // --- Forward structural member --------------------------------------------
-  // v4 uses paired two-segment rails with fixed segment length instead of one
-  // rod that silently stretched from ~8 mm folded to ~78 mm erect.
+  // v4 presents the unresolved upper linkage as a continuous guided/slotted rail:
+  // a thin moving member passes through a fixed-length sleeve. This makes the
+  // changing span mechanically legible without falsely claiming a production
+  // telescoping design or inventing an exact four-bar link length.
   const forwardPanel = new THREE.Group();
-  const forwardLeftRear = makeRod(1.15, materials.chrome);
-  const forwardLeftFront = makeRod(1.15, materials.chrome);
-  const forwardRightRear = makeRod(1.15, materials.chrome);
-  const forwardRightFront = makeRod(1.15, materials.chrome);
-  const forwardLeftJoint = new THREE.Mesh(new THREE.SphereGeometry(2.0, 18, 12), materials.chromeDark);
-  const forwardRightJoint = new THREE.Mesh(new THREE.SphereGeometry(2.0, 18, 12), materials.chromeDark);
-  forwardPanel.add(
-    forwardLeftRear,
-    forwardLeftFront,
-    forwardRightRear,
-    forwardRightFront,
-    forwardLeftJoint,
-    forwardRightJoint
-  );
+  const forwardLeft = makeRod(1.0, materials.chrome);
+  const forwardRight = makeRod(1.0, materials.chrome);
+  const forwardLeftSleeve = makeRod(1.75, materials.chromeDark);
+  const forwardRightSleeve = makeRod(1.75, materials.chromeDark);
+  forwardPanel.add(forwardLeft, forwardRight, forwardLeftSleeve, forwardRightSleeve);
   register('forwardPanel', forwardPanel);
   root.add(forwardPanel);
 
@@ -573,18 +540,27 @@ export function createSX70Model() {
     const lensTopLeft = s.lensTop.clone(); lensTopLeft.x = -sideX + 2.0;
     const lensTopRight = s.lensTop.clone(); lensTopRight.x = sideX - 2.0;
 
-    // Fixed-length two-segment upper rails make compact folding possible without
-    // changing rod length. The elbow is a P4 presentation joint driven by the
-    // same deployment generalized coordinate as the rigid panels.
-    const upperSegment = A.upperRailSegmentLength;
-    const leftElbow = solveEqualTwoLinkElbow(rearTopLeft, lensTopLeft, upperSegment, 1);
-    const rightElbow = solveEqualTwoLinkElbow(rearTopRight, lensTopRight, upperSegment, 1);
-    updateRod(forwardLeftRear, rearTopLeft, leftElbow);
-    updateRod(forwardLeftFront, leftElbow, lensTopLeft);
-    updateRod(forwardRightRear, rearTopRight, rightElbow);
-    updateRod(forwardRightFront, rightElbow, lensTopRight);
-    forwardLeftJoint.position.copy(leftElbow);
-    forwardRightJoint.position.copy(rightElbow);
+    // Continuous guide rails span the moving upper anchors. A fixed-length
+    // sleeve rides at the midpoint so the changing span reads as a guided/slotted
+    // mechanism rather than a rod magically stretching or popping into existence.
+    updateRod(forwardLeft, rearTopLeft, lensTopLeft);
+    updateRod(forwardRight, rearTopRight, lensTopRight);
+
+    const leftMid = rearTopLeft.clone().lerp(lensTopLeft, 0.5);
+    const rightMid = rearTopRight.clone().lerp(lensTopRight, 0.5);
+    const leftDir = lensTopLeft.clone().sub(rearTopLeft).normalize();
+    const rightDir = lensTopRight.clone().sub(rearTopRight).normalize();
+    const sleeveHalf = A.upperRailSleeveLength / 2;
+    updateRod(
+      forwardLeftSleeve,
+      leftMid.clone().addScaledVector(leftDir, -sleeveHalf),
+      leftMid.clone().addScaledVector(leftDir, sleeveHalf)
+    );
+    updateRod(
+      forwardRightSleeve,
+      rightMid.clone().addScaledVector(rightDir, -sleeveHalf),
+      rightMid.clone().addScaledVector(rightDir, sleeveHalf)
+    );
 
     // Side erecting members are anchored to the same reconstructed pivots as
     // the rigid rear wall and front standard, so they no longer telescope.
@@ -711,12 +687,8 @@ export function createSX70Model() {
     const lensHeight = s.lensBase.distanceTo(s.lensTop);
     const vfAnchor = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(0, -4.2, -20));
     const viewfinderRearSupportSpan = vfAnchor.distanceTo(s.rearTop);
-    const upperRailLengths = [
-      forwardLeftRear.userData.length,
-      forwardLeftFront.userData.length,
-      forwardRightRear.userData.length,
-      forwardRightFront.userData.length
-    ];
+    const upperRailSpans = [forwardLeft.userData.length, forwardRight.userData.length];
+    const upperRailSleeveLengths = [forwardLeftSleeve.userData.length, forwardRightSleeve.userData.length];
     const rearSideLinkLengths = [links.leftRear.userData.length, links.rightRear.userData.length];
     const frontSideLinkLengths = [links.leftFront.userData.length, links.rightFront.userData.length];
     const ordinaryMeshes = [];
@@ -739,7 +711,8 @@ export function createSX70Model() {
       lensStandardHeight: lensHeight,
       lensStandardHeightError: lensHeight - A.lensStandardHeight,
       viewfinderRearSupportSpan,
-      upperRailSegmentLengthErrors: upperRailLengths.map(length => length - A.upperRailSegmentLength),
+      upperRailSpans,
+      upperRailSleeveLengthErrors: upperRailSleeveLengths.map(length => length - A.upperRailSleeveLength),
       rearSideLinkLengthErrors: rearSideLinkLengths.map(length => length - A.rearWallLength),
       frontSideLinkLengthErrors: frontSideLinkLengths.map(length => length - A.lensStandardHeight),
       ordinaryPersistentPartCount: ordinaryMeshes.length,
