@@ -51,15 +51,27 @@ let lastTime=performance.now();
 let audioCtx=null;
 
 const presets={
- product:[[190,105,245],[0,0,0]],
- exploded:[[220,120,285],[0,0,0]],
- power:[[180,80,215],[-25,-30,-5]],
- 'cpu-memory':[[190,70,205],[0,-3,-6]],
- cartridge:[[160,100,-215],[0,25,-30]],
- input:[[155,75,205],[-10,-25,12]],
- 'ppu-lcd':[[145,80,190],[0,28,10]],
- 'apu-audio':[[175,55,205],[28,-50,-3]],
- service:[[205,115,260],[0,-5,0]]
+ product:[[205,115,290],[0,0,0]],
+ exploded:[[320,175,405],[5,0,0]],
+ power:[[285,135,350],[-10,-15,0]],
+ 'cpu-memory':[[285,120,335],[10,-3,-3]],
+ cartridge:[[285,145,-340],[20,20,-25]],
+ input:[[270,125,335],[-5,-18,8]],
+ 'ppu-lcd':[[270,135,330],[0,25,8]],
+ 'apu-audio':[[285,120,345],[20,-35,-2]],
+ service:[[300,150,375],[5,-5,0]]
+};
+
+const viewExplosion={
+ product:0,
+ exploded:1,
+ power:.72,
+ 'cpu-memory':.68,
+ cartridge:.72,
+ input:.48,
+ 'ppu-lcd':.58,
+ 'apu-audio':.68,
+ service:.58
 };
 
 function inspect(data){
@@ -72,9 +84,7 @@ function inspect(data){
 function setView(name){
  activeView=name;
  viewButtons.forEach(b=>b.classList.toggle('active',b.dataset.view===name));
- if(name==='exploded') setExplosion(1);
- else if(name==='product') setExplosion(0);
- else if(explosion<.42) setExplosion(.42);
+ setExplosion(viewExplosion[name] ?? explosion);
  const p=presets[name]||presets.product;
  camera.position.set(...p[0]); controls.target.set(...p[1]); controls.update();
 
