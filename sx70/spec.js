@@ -70,7 +70,7 @@ export const RECONSTRUCTION = {
     lensStandardHeight: 48,
     rearFoldedAngleDeg: 86,
     rearOpenAngleDeg: 32,
-    lensFoldedAngleDeg: -88,
+    lensFoldedAngleDeg: 88,
     lensOpenAngleDeg: -8,
     topCapFoldedAngleDeg: 0,
     topCapOpenAngleDeg: -7,
@@ -332,6 +332,10 @@ export const PUBLIC_VIEWS = {
   },
   internals: {
     label: 'Internals',
+    ready: true
+  },
+  frontStandard: {
+    label: 'Front standard',
     ready: true
   },
   viewing: {
