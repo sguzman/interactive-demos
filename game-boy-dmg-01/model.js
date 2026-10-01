@@ -94,14 +94,14 @@ export function createDMGModel() {
   const start=box(15,3.5,3,materials.dark); start.position.set(9,-58,14); start.rotation.z=-.25; body.add(start);
   const select=box(15,3.5,3,materials.dark); select.position.set(-9,-55,14); select.rotation.z=-.25; body.add(select);
 
-  const speaker = new THREE.Group();
+  const speakerGrille = new THREE.Group();
   for(let i=0;i<6;i++){
     const slot=box(2,15+i*.4,1.2,materials.dark);
     slot.position.set(28+i*3.4,-57+i*.6,13.1);
     slot.rotation.z=-.45;
-    speaker.add(slot); mark(slot,'speaker');
+    speakerGrille.add(slot);
   }
-  groups.speaker=speaker; body.add(speaker);
+  groups.speakerGrille=speakerGrille; body.add(speakerGrille);
 
   // Cartridge.
   const cartridge=box(64,70,10,materials.dark);
@@ -118,6 +118,21 @@ export function createDMGModel() {
   const wram=box(18,9,3,materials.chip); wram.position.set(-23,-20,3); mark(wram,'wram'); mainboard.add(wram);
   const vram=box(18,9,3,materials.chip); vram.position.set(23,-20,3); mark(vram,'vram'); mainboard.add(vram);
 
+  const cartConnector = box(62, 7, 5.4, materials.dark);
+  cartConnector.position.set(0, 49, 4);
+  mark(cartConnector, 'cartridgeConnector');
+  mainboard.add(cartConnector);
+  for(let i=0;i<16;i++){
+    const contact=box(2.4,1.6,.7,materials.gold);
+    contact.position.set(-28+i*3.75,45.4,7.1);
+    mainboard.add(contact);
+  }
+
+  const crystal=box(18,6,4,materials.metal);
+  crystal.position.set(-23,30,3.6);
+  mark(crystal,'crystal');
+  mainboard.add(crystal);
+
   // Bus traces as visual causal affordances.
   const traceMat = new THREE.LineBasicMaterial({color:0x8bc5d7,transparent:true,opacity:.3});
   for(let i=-3;i<=3;i++){
@@ -128,7 +143,26 @@ export function createDMGModel() {
 
   const lcdBoard = new THREE.Group();
   const lcdPcb=box(78,70,2.2,materials.pcb); mark(lcdPcb,'lcdBoard'); lcdBoard.add(lcdPcb);
-  lcdBoard.position.set(0,29,1); groups.lcdBoard=lcdBoard; root.add(lcdBoard);
+
+  const driver1=box(26,7,2.8,materials.chip); driver1.position.set(-17,24,2.5); mark(driver1,'lcdDrivers'); lcdBoard.add(driver1);
+  const driver2=box(26,7,2.8,materials.chip); driver2.position.set(17,24,2.5); mark(driver2,'lcdDrivers'); lcdBoard.add(driver2);
+  const driver3=box(14,10,2.8,materials.chip); driver3.position.set(0,11,2.5); mark(driver3,'lcdDrivers'); lcdBoard.add(driver3);
+
+  const contactPositions=[
+    [-25,-4],[-12,-11],[18,-10],[30,-3],
+    [-14,-27],[-2,-27],[18,-26],[30,-26]
+  ];
+  for(const [x,y] of contactPositions){
+    const pad=cyl(4.2,.7,materials.gold,28); pad.rotation.x=Math.PI/2; pad.position.set(x,y,2.2); mark(pad,'inputContacts'); lcdBoard.add(pad);
+  }
+
+  const speakerDisc=cyl(13,3.2,materials.dark,48);
+  speakerDisc.rotation.x=Math.PI/2;
+  speakerDisc.position.set(27,-23,3.2);
+  mark(speakerDisc,'speaker');
+  lcdBoard.add(speakerDisc);
+
+  lcdBoard.position.set(0,29,1); groups.lcdBoard=lcdBoard; groups.speaker=speakerDisc; root.add(lcdBoard);
 
   const powerBoard=box(22,42,3,materials.pcb2); powerBoard.position.set(-45,-35,-5); mark(powerBoard,'powerBoard'); groups.powerBoard=powerBoard; root.add(powerBoard);
   const jackBoard=box(35,18,2.5,materials.pcb); jackBoard.position.set(34,-65,-6); mark(jackBoard,'jackBoard'); groups.jackBoard=jackBoard; root.add(jackBoard);
@@ -158,7 +192,12 @@ export function createDMGModel() {
     b.position.x=12-42*e;
     start.position.x=9-42*e;
     select.position.x=-9-42*e;
-    speaker.position.x=-42*e;
+    speakerGrille.position.set(-42*e,0,62*e);
+    dpad.position.z=14+62*e;
+    a.position.z=15+62*e;
+    b.position.z=15+62*e;
+    start.position.z=14+62*e;
+    select.position.z=14+62*e;
 
     rearShell.position.set(48*e,0,-17-58*e);
     mainboard.position.set(23*e,-4,-6+4*e);
