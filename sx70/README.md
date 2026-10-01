@@ -20,13 +20,14 @@ Currently implemented:
 - gallery entry and projection registry;
 - Works-derived public engineering guide;
 - folded default state and product-intimate Open / Fold / Focus / Take photo path;
-- constructive chassis/base geometry with persistent linked deployment;
+- constructive chassis/base geometry with a source-topology four-bar deployment reconstruction;
 - ordinary fold/unfold continuity without threshold pop-in of product parts;
 - bellows and lens/shutter housing;
 - viewing and exposure optical graphs;
 - integrated live internal mechanism with shutter blades, solenoid, motor, reduction gears, sequencing cam, reflex/Fresnel carrier, fixed viewing mirror and relay optics;
 - true hierarchical cutaway/exploded inspection independent of folding deployment;
 - decomposed front-standard frame / faceplate / lens / shutter-chamber / metering / control presentation;
+- dedicated deep front-standard inspection view with component-level explosion;
 - clickable internal parts with provenance-aware inspector;
 - live mechanism motion preserved while the shell is exploded;
 - canonical exposure-cycle transition engine;
@@ -75,15 +76,17 @@ The surviving source corpus strongly grounds:
 
 - folding architecture;
 - thin base / upper linked structure;
+- top front cover panel hinged between the lensboard/shutter housing and rear top cover;
+- rear top cover hinged to the main housing;
+- erecting-link concept;
 - bellows role;
-- erecting linkage concept;
 - lens/shutter housing identity;
 - viewfinder relation;
 - deployment-to-electrical-enable relation.
 
 It does not currently ground exact production:
 
-- linkage lengths;
+- four-bar link lengths;
 - pivot coordinates;
 - deployment spring constants;
 - latch forces;
@@ -155,3 +158,19 @@ after the camera is folded.
 The CI workflow is:
 
 `.github/workflows/sx70-runtime-smoke.yml`
+
+
+## v4 folding-shell contract
+
+The current shell no longer interpolates the rear and front structures independently.
+
+It treats the source-described rear cover → top front cover → lensboard chain as a closed four-bar
+reconstruction. One deployment coordinate drives the rear link; the front-standard upper joint is
+solved from fixed reconstructed link lengths.
+
+Those link lengths are P4 presentation geometry, not production measurements.
+
+This removes two previous failure modes:
+
+- rigid-looking members silently changing length;
+- folded/open endpoints looking plausible while intermediate geometry is mechanically impossible.
