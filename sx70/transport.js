@@ -90,6 +90,12 @@ export function createTransportVisualization() {
   root.add(pick);
   register('filmPick', pick);
 
+  const pickLatch = box(7,4,5,M.metal);
+  pickLatch.position.set(-31,13,38);
+  pickLatch.rotation.x = 10*Math.PI/180;
+  root.add(pickLatch);
+  register('pickLatch', pickLatch);
+
   const rollers = new THREE.Group();
   const rollerA = cyl(5.2,88,M.roller,36);
   const rollerB = cyl(5.2,88,M.roller,36);
@@ -97,7 +103,10 @@ export function createTransportVisualization() {
   rollerB.rotation.z = Math.PI/2;
   rollerA.position.set(0,9,63);
   rollerB.position.set(0,9,72);
-  rollers.add(rollerA,rollerB);
+  const rollerDriveGear = cyl(8.2,3.2,M.metal,24);
+  rollerDriveGear.rotation.z = Math.PI/2;
+  rollerDriveGear.position.set(45,9,63);
+  rollers.add(rollerA,rollerB,rollerDriveGear);
   root.add(rollers);
   register('processingRollers', rollers);
 
@@ -162,6 +171,7 @@ export function createTransportVisualization() {
     platen.position.x = 22 * e;
     filmStack.position.x = 8 * e;
     pick.position.x = -35 + 12 * e;
+    pickLatch.position.x = -31 + 18 * e;
     rollers.position.x = 42 * e;
     movingSheet.position.x = 58 * e;
     darkSlide.position.x = 58 * e;
@@ -306,6 +316,13 @@ export function createTransportVisualization() {
     if(rollersActive) state.rollerAngle+=delta*12;
     rollerA.rotation.x=state.rollerAngle;
     rollerB.rotation.x=-state.rollerAngle;
+    rollerDriveGear.rotation.x=state.rollerAngle*0.72;
+
+    const latchTravel=Math.max(
+      state.darkSlideCycle==='pick' ? clamp01(state.darkSlideElapsed/0.34) : 0,
+      cycleState.phase==='pick-transfer' ? cycleState.pickProgress : 0
+    );
+    pickLatch.rotation.x=THREE.MathUtils.lerp(10,-24,latchTravel)*Math.PI/180;
 
     pick.position.x=-35+12*state.explosion;
     pick.position.z=19+Math.max(
@@ -338,6 +355,8 @@ export function createTransportVisualization() {
     darkSlide.visible=false;
     pick.position.x=-35+12*state.explosion;
     pick.position.z=19;
+    pickLatch.position.x=-31+18*state.explosion;
+    pickLatch.rotation.x=10*Math.PI/180;
     for(const print of ejected) root.remove(print);
     ejected.length=0;
     syncPackVisuals();
