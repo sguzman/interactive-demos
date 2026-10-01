@@ -177,7 +177,8 @@ export function createDMGModel() {
   function setButtonPressed(key,pressed){
     const obj=groups[key];
     if(!obj) return;
-    obj.position.z = pressed ? -1.2 : 0;
+    if(obj.userData.baseLocalZ === undefined) obj.userData.baseLocalZ = obj.position.z;
+    obj.position.z = obj.userData.baseLocalZ + (pressed ? -1.2 : 0);
   }
 
   function updateScreen(systemState){
