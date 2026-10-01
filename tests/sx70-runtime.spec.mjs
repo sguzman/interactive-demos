@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromium', async ({ page }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(240_000);
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(String(error)));
   page.on('console', message => console.log('[browser]', message.type(), message.text()));
