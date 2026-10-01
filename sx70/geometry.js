@@ -333,6 +333,16 @@ export function createSX70Model() {
   register('viewfinder', viewfinder);
   root.add(viewfinder);
 
+  // Two small P4 support links keep the relay housing visually tied to the rear
+  // optical structure in the ordinary erect state. The prior unsupported cap
+  // read as a random floating cube during direct user QA.
+  const viewfinderSupports = new THREE.Group();
+  const viewfinderSupportLeft = makeRod(0.9, materials.chromeDark);
+  const viewfinderSupportRight = makeRod(0.9, materials.chromeDark);
+  viewfinderSupports.add(viewfinderSupportLeft, viewfinderSupportRight);
+  register('viewfinder', viewfinderSupports);
+  root.add(viewfinderSupports);
+
   // --- Bellows ---------------------------------------------------------------
   // One continuous triangular prism replaces the previous stack of expanding
   // boxes. Its three profile vertices are driven by structural anchors.
@@ -462,6 +472,13 @@ export function createSX70Model() {
     viewfinder.position.copy(s.capPosition);
     viewfinder.rotation.set(s.capAngle, 0, 0);
 
+    const vfRearLeft = s.rearTop.clone(); vfRearLeft.x = -31;
+    const vfRearRight = s.rearTop.clone(); vfRearRight.x = 31;
+    const vfCapLeft = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(-31, -4.2, -20));
+    const vfCapRight = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(31, -4.2, -20));
+    updateRod(viewfinderSupportLeft, vfRearLeft, vfCapLeft);
+    updateRod(viewfinderSupportRight, vfRearRight, vfCapRight);
+
     const sideX = A.sideRailX;
     const rearTopLeft = s.rearTop.clone(); rearTopLeft.x = -sideX;
     const rearTopRight = s.rearTop.clone(); rearTopRight.x = sideX;
@@ -510,6 +527,7 @@ export function createSX70Model() {
     bellows.position.x = -18 * e;
     linksRoot.position.x = 20 * e;
 
+    viewfinderSupports.visible = e < 0.04;
     linksRoot.visible = true;
     forwardPanel.visible = true;
   }
@@ -537,6 +555,7 @@ export function createSX70Model() {
     viewfinder.position.y = 0;
     bellows.position.x = 0;
     linksRoot.position.x = 0;
+    viewfinderSupports.visible = state.explosion < 0.04;
 
     const s = structuralState(clamped);
     updateStructure(s);
