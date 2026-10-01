@@ -158,6 +158,10 @@ const VIEW_PRESETS = {
     position: new THREE.Vector3(292, 152, 302),
     target: new THREE.Vector3(0, 40, 18)
   },
+  frontStandard: {
+    position: new THREE.Vector3(150, 94, 190),
+    target: new THREE.Vector3(28, 43, 69)
+  },
   viewing: {
     position: new THREE.Vector3(198, 126, 205),
     target: new THREE.Vector3(-12, 61, 10)
@@ -193,8 +197,8 @@ function setView(name, immediate = false) {
   }
 
   const exploded = model.state.explosion > 0.02;
-  mechanism.setVisible(name !== 'chemistry' && (exploded || name === 'sequence' || name === 'internals'));
-  transport.setVisible(name !== 'chemistry' && (exploded || name === 'sequence' || name === 'transport' || name === 'internals'));
+  mechanism.setVisible(name !== 'chemistry' && (exploded || name === 'sequence' || name === 'internals' || name === 'frontStandard'));
+  transport.setVisible(name !== 'chemistry' && (exploded || name === 'sequence' || name === 'transport' || name === 'internals' || name === 'frontStandard'));
   chemistry.setVisible(name === 'chemistry');
   model.root.visible = name !== 'chemistry';
 
@@ -218,6 +222,16 @@ function setView(name, immediate = false) {
       provenance: 'P0 causal identity / P4 placement / P5 explosion spacing',
       name: 'Live internal mechanism',
       description: 'Cut away the shell and inspect the shutter, solenoid, motor, reduction train, sequencing cam, reflex carrier, viewing mirrors, film pack, battery, platen, pick, and processing rollers while the camera cycle remains live.'
+    });
+  } else if (name === 'frontStandard') {
+    setDeploymentTarget(1);
+    optics.setMode('none');
+    setInspectionExplosion(1);
+    inspectComponent({
+      category: 'front-standard engineering model',
+      provenance: 'P0 functional containment / P4 placement / P5 explosion spacing',
+      name: 'Front standard / lens-shutter assembly',
+      description: 'Deep inspection of the front-standard frame, separable faceplate, taking-lens layers, shutter chamber, metering aperture, controls and actuator region. The live shutter and solenoid remain coupled to the exposure-cycle state machine.'
     });
   } else if (name === 'sequence') {
     setDeploymentTarget(1);
@@ -293,8 +307,8 @@ function setInspectionExplosion(value) {
   ui.explodeValue.value = `${Math.round(normalized * 100)}%`;
 
   const showInternals = normalized > 0.02;
-  mechanism.setVisible(activeView !== 'chemistry' && (showInternals || activeView === 'sequence' || activeView === 'internals'));
-  transport.setVisible(activeView !== 'chemistry' && (showInternals || activeView === 'sequence' || activeView === 'transport' || activeView === 'internals'));
+  mechanism.setVisible(activeView !== 'chemistry' && (showInternals || activeView === 'sequence' || activeView === 'internals' || activeView === 'frontStandard'));
+  transport.setVisible(activeView !== 'chemistry' && (showInternals || activeView === 'sequence' || activeView === 'transport' || activeView === 'internals' || activeView === 'frontStandard'));
 }
 
 ui.openBtn.addEventListener('click', () => setDeploymentTarget(1));
