@@ -162,6 +162,8 @@ export function createTransportVisualization() {
 
   function applyExplosion() {
     const e = state.explosion;
+    const deep = THREE.MathUtils.smoothstep(e, 0.68, 1);
+
     // Leave the functional pack near the camera center while the outer base shell
     // moves away in geometry.js, then separate the pack's own layers so battery,
     // platen and film stack are visible rather than trapped inside another black box.
@@ -175,6 +177,11 @@ export function createTransportVisualization() {
     rollers.position.x = 42 * e;
     movingSheet.position.x = 58 * e;
     darkSlide.position.x = 58 * e;
+
+    // Deep inspection also opens the roller pair and its drive presentation.
+    rollerA.position.set(-9 * deep, 9, 63 - 5 * deep);
+    rollerB.position.set(9 * deep, 9, 72 + 5 * deep);
+    rollerDriveGear.position.set(45 + 16 * deep, 9 + 4 * deep, 63);
   }
 
   function setExplosion(value) {
