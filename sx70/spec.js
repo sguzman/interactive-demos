@@ -76,6 +76,7 @@ export const RECONSTRUCTION = {
     topCapOpenAngleDeg: -7,
     bellowsHalfWidth: 42,
     sideRailX: 46,
+    upperRailSegmentLength: 45,
     clearanceMmPresentation: 2.2
   },
   inspection: {
