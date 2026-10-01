@@ -577,6 +577,8 @@ export function createSX70Model() {
     const s = structuralState(state.deployment);
     const rearLength = s.rearBase.distanceTo(s.rearTop);
     const lensHeight = s.lensBase.distanceTo(s.lensTop);
+    const vfAnchor = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(0, -4.2, -20));
+    const viewfinderRearSupportSpan = vfAnchor.distanceTo(s.rearTop);
 
     return {
       revision: A.revision,
@@ -585,6 +587,7 @@ export function createSX70Model() {
       rearMemberLengthError: rearLength - A.rearWallLength,
       lensStandardHeight: lensHeight,
       lensStandardHeightError: lensHeight - A.lensStandardHeight,
+      viewfinderRearSupportSpan,
       bounds: {
         width: size.x,
         height: size.y,
