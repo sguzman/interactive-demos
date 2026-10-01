@@ -14,7 +14,7 @@ function mat(color, opts = {}) {
 }
 
 const materials = {
-  shutter: mat(0x22262b, { metalness: 0.55, roughness: 0.32 }),
+  shutter: mat(0x56616a, { metalness: 0.58, roughness: 0.30 }),
   reflex: mat(0x9fc4d6, { metalness: 0.52, roughness: 0.28, transparent: true, opacity: 0.5, depthWrite: false }),
   mirror: mat(0xbdd6e2, { metalness: 0.72, roughness: 0.18, transparent: true, opacity: 0.72, depthWrite: false }),
   motor: mat(0x59656f, { metalness: 0.72, roughness: 0.35 }),
@@ -93,7 +93,7 @@ export function createMechanismVisualization() {
   const frontAssembly = new THREE.Group();
   frontAssembly.name = 'Front standard internals';
   // Align the live shutter/actuator reconstruction with the erected front-standard cavity.
-  const frontBase = new THREE.Vector3(-5, 37, 68);
+  const frontBase = new THREE.Vector3(18, 37, 68);
   frontAssembly.position.copy(frontBase);
 
   const shutter = new THREE.Group();
@@ -280,7 +280,7 @@ export function createMechanismVisualization() {
     // Keep functional internals in one readable central constellation while
     // the exterior shell travels farther away. Deep inspection then separates
     // modeled causal parts inside each assembly rather than stopping at a box.
-    frontAssembly.position.copy(frontBase).add(new THREE.Vector3(-14 * e, 5 * e, 12 * e));
+    frontAssembly.position.copy(frontBase).add(new THREE.Vector3(-6 * e, 5 * e, 12 * e));
     driveAssembly.position.copy(driveBase).add(new THREE.Vector3(10 * e, 5 * e, 34 * e));
     reflexAssembly.position.copy(reflexBase).add(new THREE.Vector3(0, 24 * e, -15 * e));
     controlAssembly.position.copy(controlBase).add(new THREE.Vector3(-28 * e, 3 * e, 22 * e));
