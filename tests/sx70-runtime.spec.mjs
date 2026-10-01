@@ -11,6 +11,7 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
   const guideHtml = await guideResponse.text();
   expect(guideHtml).toContain('expression:polaroid-sx-70-public-engineering-guide:en:v1');
   expect(guideHtml).toContain('../sx70/?view=folding');
+  expect(guideHtml).toContain('../sx70/?view=internals');
   expect(guideHtml).toContain('../sx70/?view=viewing');
   expect(guideHtml).toContain('../sx70/?view=exposure');
   expect(guideHtml).toContain('../sx70/?view=sequence');
