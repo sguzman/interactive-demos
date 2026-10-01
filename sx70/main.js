@@ -433,6 +433,12 @@ function syncStateUI() {
   ui.deployment.value = String(Math.round(t * 100));
   ui.deploymentValue.value = `${Math.round(t * 100)}%`;
 
+  // Keep the neutral overview inspector synchronized with deployment without
+  // overwriting a deliberate component selection.
+  if (ui.partName.textContent === 'Folded SX-70' || ui.partName.textContent === 'Erect SX-70') {
+    inspectComponent(null);
+  }
+
   ui.cycleState.value = cycleState.phase.toUpperCase();
   ui.opticalState.value = cycleState.opticalMode.toUpperCase();
   ui.motorState.value = cycleState.motorRunning ? 'RUNNING' : (cycleState.motorBraked ? 'BRAKED' : 'STOPPED');
@@ -480,9 +486,11 @@ function inspectComponent(component) {
   if (!component) {
     ui.partCategory.textContent = 'STRUCTURE';
     ui.partProvenance.textContent = 'P4 reconstruction';
-    ui.partName.textContent = 'Folded SX-70';
-    ui.partDescription.textContent =
-      'Open the camera or click a component. This tranche models the folding shell honestly: functional identities are source-grounded while public geometry remains reconstructive.';
+    const erect = model.state.deployment > 0.985;
+    ui.partName.textContent = erect ? 'Erect SX-70' : 'Folded SX-70';
+    ui.partDescription.textContent = erect
+      ? 'The camera is unfolded and operational. Choose Internals to cut away the shell, or click a visible component to inspect its identity and provenance.'
+      : 'Open the camera or click a component. Functional identities are source-grounded while public geometry remains reconstructive.';
     return;
   }
 
