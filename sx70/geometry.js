@@ -607,7 +607,7 @@ export function createSX70Model() {
     base.position.x = -112 * e;
     rearPanel.position.x += -132 * e;
     forwardPanel.position.x = 104 * e;
-    lensHousing.position.x += 58 * e;
+    lensHousing.position.x += 32 * e;
     viewfinder.position.x += -92 * e;
     viewfinder.position.y += 34 * e;
     bellows.position.x = -74 * e;
@@ -633,15 +633,15 @@ export function createSX70Model() {
 
     // Hierarchical front-standard explosion. Keep the frame as spatial memory,
     // then peel faceplate, controls and optics away to expose the live shutter.
-    faceplateAssembly.position.set(22 * deep, 0, 18 * assembly + 26 * deep);
-    frontControls.position.set(34 * deep, 5 * deep, 22 * assembly + 32 * deep);
-    shutterChamber.position.set(-10 * deep, 0, 7 * assembly + 8 * deep);
+    faceplateAssembly.position.set(72 * deep, 0, 24 * assembly + 44 * deep);
+    frontControls.position.set(88 * deep, 8 * deep, 28 * assembly + 54 * deep);
+    shutterChamber.position.set(4 * deep, 0, 9 * assembly + 12 * deep);
 
     const focusTravel = (state.focus - 0.5) * RECONSTRUCTION.focus.frontElementTravelMmPresentation;
     const z0 = housingD / 2;
-    lensBarrel.position.set(-5 - 24 * deep, 24, z0 + 8.5 + focusTravel + 10 * assembly + 14 * deep);
-    lensRing.position.set(-5 - 34 * deep, 24, z0 + 16.0 + focusTravel + 14 * assembly + 20 * deep);
-    lensGlass.position.set(-5 - 44 * deep, 24, z0 + 17.6 + focusTravel + 18 * assembly + 26 * deep);
+    lensBarrel.position.set(-5 - 28 * deep, 24, z0 + 8.5 + focusTravel + 10 * assembly + 16 * deep);
+    lensRing.position.set(-5 - 44 * deep, 24, z0 + 16.0 + focusTravel + 15 * assembly + 24 * deep);
+    lensGlass.position.set(-5 - 60 * deep, 24, z0 + 17.6 + focusTravel + 20 * assembly + 32 * deep);
 
     syncInspectionVisibility();
   }
