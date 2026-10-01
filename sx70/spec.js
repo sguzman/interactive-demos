@@ -14,7 +14,7 @@ export const CANONICAL = {
   specimenId: 'specimen:polaroid-sx-70',
   worksExpressionId: 'expression:polaroid-sx-70-public-engineering-guide:en:v1',
   engineeringSyncDate: '2026-09-30',
-  projectionState: 'published integrated specimen; true internal exploded model active',
+  projectionState: 'published integrated specimen; deployment-continuity + deep front-standard repair active',
   provenanceScheme: 'P0 primary · P1 measurement · P2 derived · P3 audited secondary · P4 reconstruction · P5 presentation',
   publicationBoundary: 'Public projection only. Geometry and animation tuned here do not become canonical Engineering facts.'
 };
@@ -62,7 +62,7 @@ export const RECONSTRUCTION = {
     viewfinderLiftMm: 0
   },
   articulation: {
-    revision: 'articulated-v3',
+    revision: 'articulated-v4',
     provenance: 'P4/P5 visual reconstruction; not measured production pivot geometry',
     rearBasePivotZ: -67,
     frontStandardPivotZ: 58,
@@ -82,7 +82,10 @@ export const RECONSTRUCTION = {
     provenance: 'P5 explosion spacing over P4 component placement',
     shellSpreadMm: 62,
     mechanismSpreadMm: 48,
-    transportSpreadMm: 44
+    transportSpreadMm: 44,
+    shellCutawayEnd: 0.35,
+    assemblySeparationEnd: 0.70,
+    deepExplosionStart: 0.70
   },
   focus: {
     normalizedDefault: 0.55,
@@ -114,10 +117,45 @@ export const COMPONENTS = {
   },
   lensHousing: {
     id: 'sx70-lens-shutter-housing',
-    name: 'Lens / shutter housing',
+    name: 'Front standard / lens-shutter assembly',
     category: 'optics + control',
     provenance: 'mixed P0/P4',
-    description: 'Contains the taking lens and shutter/exposure-control assembly. Functional identity is sourced; visible dimensions are reconstructed.'
+    description: 'Parent assembly containing the taking lens and shutter/exposure-control system. Functional identity is sourced; hidden placement and visible dimensions are reconstructed.'
+  },
+  frontStandardFrame: {
+    id: 'sx70-front-standard-frame',
+    name: 'Front-standard structural frame',
+    category: 'folding structure',
+    provenance: 'P0 assembly role / P4 geometry',
+    description: 'Reconstructed frame/side-cheek structure carrying the lens/shutter assembly. Exact production wall geometry is not claimed.'
+  },
+  frontStandardFaceplate: {
+    id: 'sx70-front-standard-faceplate',
+    name: 'Front-standard faceplate',
+    category: 'enclosure',
+    provenance: 'P4 geometry / P5 inspection transform',
+    description: 'Outer front closure of the reconstructed front standard. It separates in deep inspection so the shutter chamber is no longer hidden behind an opaque monolith.'
+  },
+  shutterChamber: {
+    id: 'sx70-shutter-chamber',
+    name: 'Shutter chamber',
+    category: 'exposure mechanism enclosure',
+    provenance: 'P0 functional containment / P4 geometry',
+    description: 'Reconstructed internal chamber locating the shutter region behind the taking lens. Exact production dimensions and wall shape remain unresolved.'
+  },
+  photocellAperture: {
+    id: 'sx70-photocell-aperture',
+    name: 'Photocell / metering aperture',
+    category: 'exposure metering',
+    provenance: 'P0 coupled function / P4 geometry',
+    description: 'Presentation of the mechanically related metering aperture governed by the shutter blade system. Exact slot geometry is not claimed.'
+  },
+  frontControls: {
+    id: 'sx70-front-controls',
+    name: 'Front controls / photocell exterior',
+    category: 'user interface + exposure control',
+    provenance: 'P0 identity / P4 geometry',
+    description: 'Exterior shutter button, photocell window, trim/control strip and related front-standard controls. Placement is reconstructive.'
   },
   takingLens: {
     id: 'sx70-taking-lens',
