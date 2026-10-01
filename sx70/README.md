@@ -20,11 +20,13 @@ Currently implemented:
 - gallery entry and projection registry;
 - Works-derived public engineering guide;
 - folded default state and product-intimate Open / Fold / Focus / Take photo path;
-- constructive chassis/base geometry and linked deployment;
+- constructive chassis/base geometry with persistent linked deployment;
+- ordinary fold/unfold continuity without threshold pop-in of product parts;
 - bellows and lens/shutter housing;
 - viewing and exposure optical graphs;
 - integrated live internal mechanism with shutter blades, solenoid, motor, reduction gears, sequencing cam, reflex/Fresnel carrier, fixed viewing mirror and relay optics;
-- true cutaway/exploded inspection independent of folding deployment;
+- true hierarchical cutaway/exploded inspection independent of folding deployment;
+- decomposed front-standard frame / faceplate / lens / shutter-chamber / metering / control presentation;
 - clickable internal parts with provenance-aware inspector;
 - live mechanism motion preserved while the shell is exploded;
 - canonical exposure-cycle transition engine;
@@ -117,6 +119,10 @@ open
 
 Folding deployment and engineering explosion are independent state axes.
 
+Ordinary product geometry follows a continuity rule: persistent physical parts remain persistent
+through deployment. Occlusion and continuous articulation, rather than deployment-threshold
+visibility toggles, explain what the user can see.
+
 Internal switch labels, motor/cam phase, chemical fields and provenance diagnostics belong behind
 progressive disclosure.
 
@@ -140,9 +146,11 @@ Integrated browser regression:
 
 `tests/sx70-runtime.spec.mjs`
 
-The test exercises folded start, deployment, focus, dual optical modes, the canonical exposure
-transition order, exact-once film consumption, fresh-pack dark-slide ejection, transport and
-chemistry views, camera refolding, and continued chemical time after the camera is folded.
+The test exercises folded start, a multi-sample deployment-continuity sweep, persistent-part
+visibility, deep front-standard decomposition, focus, dual optical modes, the canonical exposure
+transition order, live mechanism motion while exploded, exact-once film consumption, fresh-pack
+dark-slide ejection, transport and chemistry views, camera refolding, and continued chemical time
+after the camera is folded.
 
 The CI workflow is:
 
