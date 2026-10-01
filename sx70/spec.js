@@ -66,17 +66,17 @@ export const RECONSTRUCTION = {
     provenance: 'P4/P5 visual reconstruction; not measured production pivot geometry',
     rearBasePivotZ: -67,
     frontStandardPivotZ: 58,
-    rearWallLength: 84,
-    lensStandardHeight: 48,
-    rearFoldedAngleDeg: 86,
+    rearWallLength: 86.75,
+    lensStandardHeight: 41.75,
+    rearFoldedAngleDeg: 90,
     rearOpenAngleDeg: 32,
-    lensFoldedAngleDeg: 88,
+    lensFoldedAngleDeg: 90,
     lensOpenAngleDeg: -8,
     topCapFoldedAngleDeg: 0,
     topCapOpenAngleDeg: -7,
     bellowsHalfWidth: 42,
     sideRailX: 46,
-    upperRailSleeveLength: 18,
+    topFrontCoverLength: 80,
     clearanceMmPresentation: 2.2
   },
   inspection: {
@@ -110,11 +110,11 @@ export const COMPONENTS = {
     description: 'Hinged structural member participating in erection and optical registration.'
   },
   forwardPanel: {
-    id: 'sx70-forward-panel',
-    name: 'Forward structural panel',
+    id: 'sx70-top-front-cover-panel',
+    name: 'Top front cover panel / coupler',
     category: 'folding structure',
-    provenance: 'P4 reconstruction',
-    description: 'Linked forward member supporting the front optical/shutter housing.'
+    provenance: 'P0 topology / P4 dimensions',
+    description: 'Rigid coupler panel hinged between the lensboard/shutter housing and rear top cover. The hinge topology is source-grounded; public dimensions and pivots are reconstructed.'
   },
   lensHousing: {
     id: 'sx70-lens-shutter-housing',
