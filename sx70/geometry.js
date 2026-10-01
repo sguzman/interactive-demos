@@ -176,7 +176,7 @@ function localPointOnRotatedGroup(group, local) {
 
 export function createSX70Model() {
   const root = new THREE.Group();
-  root.name = 'Polaroid SX-70 articulated public reconstruction v2';
+  root.name = 'Polaroid SX-70 articulated public reconstruction v4';
 
   const pickables = [];
   const componentRoots = new Map();
@@ -187,6 +187,16 @@ export function createSX70Model() {
         mark(child, key);
         pickables.push(child);
       }
+    });
+    return object;
+  };
+
+  // Reclassify a nested subassembly without duplicating its mesh in pickables.
+  // This lets one public assembly contain individually inspectable engineering parts.
+  const reclassify = (key, object) => {
+    componentRoots.set(key, object);
+    object.traverse(child => {
+      if (child.isMesh) mark(child, key);
     });
     return object;
   };
@@ -253,58 +263,98 @@ export function createSX70Model() {
   register('forwardPanel', forwardPanel);
   root.add(forwardPanel);
 
-  // --- Lens / shutter standard ----------------------------------------------
+  // --- Lens / shutter front standard ----------------------------------------
+  // v4: model the front standard as a containment hierarchy rather than one
+  // opaque terminal block. Exact hidden wall geometry remains P4 reconstruction.
   const lensHousing = new THREE.Group();
+  const housingW = RECONSTRUCTION.body.lensHousingWidth;
+  const housingH = RECONSTRUCTION.body.lensHousingHeight;
+  const housingD = RECONSTRUCTION.body.lensHousingDepth;
 
-  const lensBody = chamferedFrontStandard(
-    RECONSTRUCTION.body.lensHousingWidth,
-    RECONSTRUCTION.body.lensHousingHeight,
-    RECONSTRUCTION.body.lensHousingDepth,
+  const frontStandardFrame = new THREE.Group();
+  const cheekW = 6.0;
+  const frameLeft = box(cheekW, housingH, housingD, materials.chrome);
+  const frameRight = box(cheekW, housingH, housingD, materials.chrome);
+  frameLeft.position.set(-housingW / 2 + cheekW / 2, housingH / 2, 0);
+  frameRight.position.set(housingW / 2 - cheekW / 2, housingH / 2, 0);
+
+  const frameTop = box(housingW - 2 * cheekW, 6.0, housingD, materials.chrome);
+  const frameBottom = box(housingW - 2 * cheekW, 6.0, housingD, materials.chrome);
+  frameTop.position.set(0, housingH - 3.0, 0);
+  frameBottom.position.set(0, 3.0, 0);
+
+  const rearWeb = box(housingW - 12, housingH - 12, 2.2, materials.black);
+  rearWeb.position.set(0, housingH / 2, -housingD / 2 + 1.15);
+  frontStandardFrame.add(frameLeft, frameRight, frameTop, frameBottom, rearWeb);
+  lensHousing.add(frontStandardFrame);
+
+  const faceplateAssembly = new THREE.Group();
+  const faceplate = chamferedFrontStandard(
+    housingW - 4,
+    housingH - 4,
+    2.8,
     materials.chrome
   );
-  lensHousing.add(lensBody);
+  faceplate.position.set(0, 2, housingD / 2 - 1.4);
+  faceplateAssembly.add(faceplate);
+  lensHousing.add(faceplateAssembly);
 
-  // Thin dark control strip is visually characteristic and prevents the front
-  // standard from reading as an undifferentiated rectangular block.
-  const controlStrip = box(
-    RECONSTRUCTION.body.lensHousingWidth - 4,
-    9,
-    2.4,
+  const frontControls = new THREE.Group();
+  const controlStrip = box(housingW - 8, 8.0, 2.2, materials.black);
+  controlStrip.position.set(0, housingH - 8.0, housingD / 2 + 1.2);
+  frontControls.add(controlStrip);
+
+  // Controls are seated against the faceplate. Previous +17 mm presentation
+  // offsets made the red release and metering window read as floating objects.
+  const photocell = cylinder(5.9, 2.2, materials.glass, 32);
+  photocell.rotation.x = Math.PI / 2;
+  photocell.position.set(24, 24, housingD / 2 + 1.35);
+  frontControls.add(photocell);
+
+  const shutterButton = cylinder(5.1, 2.7, materials.red, 32);
+  shutterButton.rotation.x = Math.PI / 2;
+  shutterButton.position.set(-32, 34, housingD / 2 + 1.55);
+  frontControls.add(shutterButton);
+
+  const lightenDarken = box(16, 4.2, 2.8, materials.black);
+  lightenDarken.position.set(23, 38, housingD / 2 + 1.55);
+  frontControls.add(lightenDarken);
+  lensHousing.add(frontControls);
+
+  const shutterChamber = new THREE.Group();
+  const chamberRing = new THREE.Mesh(
+    new THREE.RingGeometry(14.0, 20.5, 48),
     materials.black
   );
-  controlStrip.position.set(0, RECONSTRUCTION.body.lensHousingHeight - 8.5, RECONSTRUCTION.body.lensHousingDepth / 2 + 1.3);
-  lensHousing.add(controlStrip);
+  chamberRing.position.set(-5, 24, housingD / 2 - 3.8);
+  shutterChamber.add(chamberRing);
+
+  const meteringAperture = new THREE.Mesh(
+    new THREE.RingGeometry(3.2, 6.6, 32),
+    materials.black
+  );
+  meteringAperture.position.set(23, 24, housingD / 2 - 3.6);
+  shutterChamber.add(meteringAperture);
+  lensHousing.add(shutterChamber);
 
   const lensBarrel = cylinder(17.2, 14.5, materials.chromeDark, 64);
   lensBarrel.rotation.x = Math.PI / 2;
-  lensBarrel.position.set(-5, 24, RECONSTRUCTION.body.lensHousingDepth / 2 + 8.5);
   lensHousing.add(lensBarrel);
 
   const lensRing = cylinder(14.8, 2.5, materials.chrome, 64);
   lensRing.rotation.x = Math.PI / 2;
-  lensRing.position.set(-5, 24, RECONSTRUCTION.body.lensHousingDepth / 2 + 16.0);
   lensHousing.add(lensRing);
 
   const lensGlass = cylinder(12.8, 1.4, materials.glass, 64);
   lensGlass.rotation.x = Math.PI / 2;
-  lensGlass.position.set(-5, 24, RECONSTRUCTION.body.lensHousingDepth / 2 + 17.6);
   lensHousing.add(lensGlass);
 
-  const photocell = cylinder(5.9, 2.2, materials.glass, 32);
-  photocell.rotation.x = Math.PI / 2;
-  photocell.position.set(24, 24, RECONSTRUCTION.body.lensHousingDepth / 2 + 16.9);
-  lensHousing.add(photocell);
-
-  const shutterButton = cylinder(5.1, 2.7, materials.red, 32);
-  shutterButton.rotation.x = Math.PI / 2;
-  shutterButton.position.set(-32, 34, RECONSTRUCTION.body.lensHousingDepth / 2 + 17.0);
-  lensHousing.add(shutterButton);
-
-  const lightenDarken = box(16, 4.2, 3, materials.black);
-  lightenDarken.position.set(23, 38, RECONSTRUCTION.body.lensHousingDepth / 2 + 17.2);
-  lensHousing.add(lightenDarken);
-
   register('lensHousing', lensHousing);
+  reclassify('frontStandardFrame', frontStandardFrame);
+  reclassify('frontStandardFaceplate', faceplateAssembly);
+  reclassify('frontControls', frontControls);
+  reclassify('shutterChamber', shutterChamber);
+  mark(meteringAperture, 'photocellAperture');
   mark(lensBarrel, 'takingLens');
   mark(lensRing, 'takingLens');
   mark(lensGlass, 'takingLens');
@@ -447,8 +497,10 @@ export function createSX70Model() {
       halfWidth
     );
 
-    const expansion = THREE.MathUtils.smoothstep(s.e, 0.03, 0.32);
-    bellowsCore.material.opacity = THREE.MathUtils.lerp(0.72, 1, expansion);
+    // Ordinary deployment keeps one persistent bellows topology. Opacity may
+    // vary continuously for readability, but the bellows never appears/disappears.
+    const expansion = THREE.MathUtils.smoothstep(s.e, 0.0, 0.32);
+    bellowsCore.material.opacity = THREE.MathUtils.lerp(0.82, 1, expansion);
     bellowsCore.material.transparent = expansion < 0.995;
 
     for (const rib of bellowsRibs) {
@@ -459,7 +511,7 @@ export function createSX70Model() {
       innerA.x = side * (halfWidth + 0.65);
       innerB.x = side * (halfWidth + 0.65);
       updateRod(rib, innerA, innerB);
-      rib.visible = s.e > 0.035;
+      rib.visible = true;
     }
   }
 
@@ -502,13 +554,14 @@ export function createSX70Model() {
 
     updateBellows(s);
 
-    const frontFaceVisible = s.e > 0.07;
-    lensBarrel.visible = frontFaceVisible;
-    lensRing.visible = frontFaceVisible;
-    lensGlass.visible = frontFaceVisible;
-    photocell.visible = frontFaceVisible;
-    shutterButton.visible = frontFaceVisible;
-    lightenDarken.visible = frontFaceVisible;
+    // All ordinary front-standard parts persist through deployment. Occlusion
+    // and articulation, not threshold visibility, explain why folded parts are hidden.
+    lensBarrel.visible = true;
+    lensRing.visible = true;
+    lensGlass.visible = true;
+    photocell.visible = true;
+    shutterButton.visible = true;
+    lightenDarken.visible = true;
   }
 
   function applyExplosion(value) {
@@ -539,18 +592,35 @@ export function createSX70Model() {
     );
     bellowsCore.material.transparent = e > 0.01 || state.deployment < 0.995;
 
-    viewfinderSupports.visible = e < 0.04;
+    // Supports remain real parts during inspection; spread them instead of
+    // deleting them so explosion never becomes another pop-in/out trick.
+    viewfinderSupports.position.x = -42 * e;
     linksRoot.visible = true;
     forwardPanel.visible = true;
+
+    const assembly = THREE.MathUtils.smoothstep(e, 0.25, 0.72);
+    const deep = THREE.MathUtils.smoothstep(e, RECONSTRUCTION.inspection.deepExplosionStart, 1);
+
+    // Hierarchical front-standard explosion. Keep the frame as spatial memory,
+    // then peel faceplate, controls and optics away to expose the live shutter.
+    faceplateAssembly.position.set(22 * deep, 0, 18 * assembly + 26 * deep);
+    frontControls.position.set(34 * deep, 5 * deep, 22 * assembly + 32 * deep);
+    shutterChamber.position.set(-10 * deep, 0, 7 * assembly + 8 * deep);
+
+    const focusTravel = (state.focus - 0.5) * RECONSTRUCTION.focus.frontElementTravelMmPresentation;
+    const z0 = housingD / 2;
+    lensBarrel.position.set(-5 - 24 * deep, 24, z0 + 8.5 + focusTravel + 10 * assembly + 14 * deep);
+    lensRing.position.set(-5 - 34 * deep, 24, z0 + 16.0 + focusTravel + 14 * assembly + 20 * deep);
+    lensGlass.position.set(-5 - 44 * deep, 24, z0 + 17.6 + focusTravel + 18 * assembly + 26 * deep);
   }
 
   function applyFocus(value) {
     state.focus = THREE.MathUtils.clamp(value, 0, 1);
     const travel = (state.focus - 0.5) * RECONSTRUCTION.focus.frontElementTravelMmPresentation;
     const z0 = RECONSTRUCTION.body.lensHousingDepth / 2;
-    lensBarrel.position.z = z0 + 8.5 + travel;
-    lensRing.position.z = z0 + 16.0 + travel;
-    lensGlass.position.z = z0 + 17.6 + travel;
+    lensBarrel.position.set(-5, 24, z0 + 8.5 + travel);
+    lensRing.position.set(-5, 24, z0 + 16.0 + travel);
+    lensGlass.position.set(-5, 24, z0 + 17.6 + travel);
   }
 
   function applyDeployment(t) {
@@ -567,7 +637,11 @@ export function createSX70Model() {
     viewfinder.position.y = 0;
     bellows.position.x = 0;
     linksRoot.position.x = 0;
-    viewfinderSupports.visible = state.explosion < 0.04;
+    viewfinderSupports.position.x = 0;
+    viewfinderSupports.visible = true;
+    faceplateAssembly.position.set(0, 0, 0);
+    frontControls.position.set(0, 0, 0);
+    shutterChamber.position.set(0, 0, 0);
 
     const s = structuralState(clamped);
     updateStructure(s);
@@ -591,6 +665,17 @@ export function createSX70Model() {
     const lensHeight = s.lensBase.distanceTo(s.lensTop);
     const vfAnchor = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(0, -4.2, -20));
     const viewfinderRearSupportSpan = vfAnchor.distanceTo(s.rearTop);
+    const ordinaryMeshes = [];
+    root.traverse(child => {
+      if (child.isMesh) ordinaryMeshes.push(child);
+    });
+    const ordinaryHiddenPersistentPartCount = ordinaryMeshes.filter(mesh => mesh.visible === false).length;
+    const frontStandardInspectableKeys = new Set();
+    lensHousing.traverse(child => {
+      if (child.isMesh && child.userData?.componentKey) {
+        frontStandardInspectableKeys.add(child.userData.componentKey);
+      }
+    });
 
     return {
       revision: A.revision,
@@ -600,6 +685,11 @@ export function createSX70Model() {
       lensStandardHeight: lensHeight,
       lensStandardHeightError: lensHeight - A.lensStandardHeight,
       viewfinderRearSupportSpan,
+      ordinaryPersistentPartCount: ordinaryMeshes.length,
+      ordinaryHiddenPersistentPartCount,
+      bellowsPersistentRibCount: bellowsRibs.length,
+      frontStandardInspectablePartCount: frontStandardInspectableKeys.size,
+      frontStandardDeepExploded: state.explosion >= RECONSTRUCTION.inspection.deepExplosionStart,
       bounds: {
         width: size.x,
         height: size.y,
