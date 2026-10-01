@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Interactive engineering reconstruction of the original Nintendo Game Boy DMG-01." />
+  <title>Nintendo Game Boy DMG-01 — Interactive Engineering Specimen</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script type="importmap">
+  {"imports":{"three":"https://unpkg.com/three@0.180.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.180.0/examples/jsm/"}}
+  </script>
+</head>
+<body>
+<div id="app">
+  <canvas id="scene"></canvas>
+
+  <header class="topbar panel">
+    <a class="gallery-link" href="../">← Gallery</a>
+    <div class="identity">
+      <div class="eyebrow">INTERACTIVE ENGINEERING SPECIMEN · MULTI-LAYER CAUSAL MODEL</div>
+      <h1>Nintendo Game Boy DMG-01</h1>
+      <p>physical product → electrical system → buses/registers → pixels + sound</p>
+    </div>
+    <a class="guide-status" href="../docs/game-boy-dmg-01.html">Read engineering guide ↗</a>
+  </header>
+
+  <aside class="controls panel" aria-label="Game Boy controls">
+    <section class="basic-controls">
+      <div class="section-title">Use the handheld</div>
+      <p class="basic-intro">
+        <strong>Original monochrome DMG-01.</strong> Press A, change engineering layers, inspect the
+        cartridge and boards, run DMA, or enter a service scenario. The same running state persists
+        while you change how the machine is explained.
+      </p>
+
+      <div class="action-grid">
+        <button id="powerBtn">Power off</button>
+        <button id="cartridgeBtn" class="secondary">Eject cartridge</button>
+        <button id="explodeBtn" class="secondary">Explode</button>
+        <button id="resetBtn" class="secondary">Reset specimen</button>
+      </div>
+
+      <div class="product-controls" aria-label="Game Boy face controls">
+        <div class="dpad-grid">
+          <span></span><button class="pad secondary" data-button="Up">▲</button><span></span>
+          <button class="pad secondary" data-button="Left">◀</button><span class="dpad-center"></span><button class="pad secondary" data-button="Right">▶</button>
+          <span></span><button class="pad secondary" data-button="Down">▼</button><span></span>
+        </div>
+        <div class="ab-grid">
+          <button class="round b" data-button="B">B</button>
+          <button class="round a" data-button="A">A</button>
+        </div>
+      </div>
+      <div class="small-buttons">
+        <button class="secondary" data-button="Select">SELECT</button>
+        <button class="secondary" data-button="Start">START</button>
+      </div>
+
+      <div class="state-grid">
+        <div class="state-card"><span>Power</span><output id="powerState">RUNNING</output></div>
+        <div class="state-card"><span>Cartridge</span><output id="cartridgeState">NO MBC</output></div>
+        <div class="state-card"><span>JOYP</span><output id="joypState">1111</output></div>
+        <div class="state-card"><span>PPU</span><output id="ppuState">LY 0 · MODE 2</output></div>
+        <div class="state-card"><span>CPU access</span><output id="accessState">NORMAL</output></div>
+        <div class="state-card"><span>DMA</span><output id="dmaState">IDLE</output></div>
+        <div class="state-card"><span>Audio</span><output id="audioState">IDLE</output></div>
+        <div class="state-card"><span>Last action</span><output id="actionState">idle</output></div>
+      </div>
+
+      <div class="section-title sub">Engineering view</div>
+      <div class="view-grid">
+        <button class="secondary active" data-view="product">Product</button>
+        <button class="secondary" data-view="exploded">Exploded</button>
+        <button class="secondary" data-view="power">Power</button>
+        <button class="secondary" data-view="cpu-memory">CPU / memory</button>
+        <button class="secondary" data-view="cartridge">Cartridge</button>
+        <button class="secondary" data-view="input">Input</button>
+        <button class="secondary" data-view="ppu-lcd">PPU / LCD</button>
+        <button class="secondary" data-view="apu-audio">APU / audio</button>
+        <button class="secondary" data-view="service">Service</button>
+      </div>
+
+      <div class="section-title sub">Layer</div>
+      <div class="layer-grid">
+        <button class="secondary active" data-layer="physical">Physical</button>
+        <button class="secondary" data-layer="electrical">Electrical</button>
+        <button class="secondary" data-layer="logical">Logical</button>
+        <button class="secondary" data-layer="temporal">Temporal</button>
+        <button class="secondary" data-layer="service">Service</button>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">Causal controls</div>
+      <label class="select-row">JOYP group
+        <select id="joypSelect">
+          <option value="action">Action</option>
+          <option value="dpad">D-pad</option>
+          <option value="both">Both</option>
+        </select>
+      </label>
+
+      <label class="select-row">Cartridge mapper
+        <select id="mapperSelect">
+          <option value="no-mbc">No MBC</option>
+          <option value="mbc1">MBC1</option>
+          <option value="mbc2">MBC2</option>
+          <option value="mbc3">MBC3</option>
+          <option value="mbc5">MBC5</option>
+        </select>
+      </label>
+
+      <div class="button-row">
+        <button id="mapperWriteBtn" class="secondary">Bank write</button>
+        <button id="dmaBtn" class="secondary">Run OAM DMA</button>
+      </div>
+
+      <label class="range-row" for="ppuDot"><span>PPU line position</span><output id="ppuDotValue">0</output></label>
+      <input id="ppuDot" type="range" min="0" max="455" value="0" />
+
+      <label class="range-row" for="nr50"><span>NR50 electronic level</span><output id="nr50Value">75%</output></label>
+      <input id="nr50" type="range" min="0" max="100" value="75" />
+
+      <label class="range-row" for="physicalVolume"><span>Physical volume wheel</span><output id="physicalVolumeValue">70%</output></label>
+      <input id="physicalVolume" type="range" min="0" max="100" value="70" />
+
+      <p class="note">NR50 and the physical volume wheel are deliberately independent state.</p>
+    </section>
+
+    <section>
+      <div class="section-title">Service diagnosis</div>
+      <label class="select-row">Scenario
+        <select id="serviceScenario">
+          <option value="none">None</option>
+          <option value="no-power">No power</option>
+          <option value="cartridge-boot">Cartridge will not boot</option>
+          <option value="vertical-lines">Vertical display lines</option>
+          <option value="buttons">Buttons not responding</option>
+          <option value="speaker-silent">Speaker silent</option>
+        </select>
+      </label>
+      <div class="button-row">
+        <button id="serviceTestBtn" class="secondary">Run diagnostic test</button>
+        <button id="burnInBtn" class="secondary">Verify repair</button>
+      </div>
+      <p class="note" id="serviceText">Choose a symptom to expose candidate fault domains. OEM service and modern restoration remain separate provenance classes.</p>
+    </section>
+
+    <section>
+      <div class="section-title">Representative hardware profile</div>
+      <dl class="compact-facts">
+        <div><dt>Mainboard</dt><dd>DMG-CPU-06</dd></div>
+        <div><dt>Front board</dt><dd>DMG-LCD-06</dd></div>
+        <div><dt>Geometry</dt><dd>P4 representative reconstruction</dd></div>
+        <div><dt>Important</dt><dd>not a universal DMG-01 BOM</dd></div>
+      </dl>
+    </section>
+  </aside>
+
+  <aside class="inspector panel">
+    <div class="inspector-topline">
+      <div class="eyebrow" id="partCategory">PRODUCT</div>
+      <span class="provenance" id="partProvenance">P4 representative geometry</span>
+    </div>
+    <h2 id="partName">Game Boy DMG-01</h2>
+    <p id="partDescription">Click a component or choose an engineering view. The same entity can be followed across physical, electrical, logical, temporal, and service layers.</p>
+  </aside>
+
+  <div class="legend panel">
+    <span><i class="dot shell-dot"></i> enclosure</span>
+    <span><i class="dot board-dot"></i> PCB</span>
+    <span><i class="dot chip-dot"></i> IC</span>
+    <span><i class="dot signal-dot"></i> active layer</span>
+  </div>
+
+  <div id="loading">Building DMG-01 causal model…</div>
+</div>
+<script type="module" src="./main.js"></script>
+</body>
+</html>
