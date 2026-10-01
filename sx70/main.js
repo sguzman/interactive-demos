@@ -193,8 +193,8 @@ function setView(name, immediate = false) {
   }
 
   const exploded = model.state.explosion > 0.02;
-  mechanism.setVisible(exploded || name === 'sequence' || name === 'internals');
-  transport.setVisible(exploded || name === 'sequence' || name === 'transport' || name === 'internals');
+  mechanism.setVisible(name !== 'chemistry' && (exploded || name === 'sequence' || name === 'internals'));
+  transport.setVisible(name !== 'chemistry' && (exploded || name === 'sequence' || name === 'transport' || name === 'internals'));
   chemistry.setVisible(name === 'chemistry');
   model.root.visible = name !== 'chemistry';
 
@@ -293,8 +293,8 @@ function setInspectionExplosion(value) {
   ui.explodeValue.value = `${Math.round(normalized * 100)}%`;
 
   const showInternals = normalized > 0.02;
-  mechanism.setVisible(showInternals || activeView === 'sequence' || activeView === 'internals');
-  transport.setVisible(showInternals || activeView === 'sequence' || activeView === 'transport' || activeView === 'internals');
+  mechanism.setVisible(activeView !== 'chemistry' && (showInternals || activeView === 'sequence' || activeView === 'internals'));
+  transport.setVisible(activeView !== 'chemistry' && (showInternals || activeView === 'sequence' || activeView === 'transport' || activeView === 'internals'));
 }
 
 ui.openBtn.addEventListener('click', () => setDeploymentTarget(1));
