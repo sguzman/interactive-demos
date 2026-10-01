@@ -244,11 +244,18 @@ export function createMechanismVisualization() {
     motorBraked: false,
     motorAngle: 0,
     camAngle: 0,
-    gearAngles: [0, 0, 0, 0]
+    gearAngles: [0, 0, 0, 0],
+    inspectionFocus: 'all'
   };
 
   function syncVisibility() {
     root.visible = state.visible && state.deployment > 0.08;
+    const frontOnly = state.inspectionFocus === 'frontStandard';
+    frontAssembly.visible = true;
+    driveAssembly.visible = !frontOnly;
+    reflexAssembly.visible = !frontOnly;
+    controlAssembly.visible = !frontOnly;
+    recockAssembly.visible = !frontOnly;
   }
 
   function setVisible(value) {
@@ -258,6 +265,11 @@ export function createMechanismVisualization() {
 
   function setDeployment(value) {
     state.deployment = THREE.MathUtils.clamp(value, 0, 1);
+    syncVisibility();
+  }
+
+  function setInspectionFocus(value) {
+    state.inspectionFocus = value === 'frontStandard' ? 'frontStandard' : 'all';
     syncVisibility();
   }
 
@@ -383,6 +395,7 @@ export function createMechanismVisualization() {
     return {
       visible: root.visible,
       deployment: state.deployment,
+      inspectionFocus: state.inspectionFocus,
       explosion: state.explosion,
       shutterPosition: state.shutterPosition,
       reflexProgress: state.reflexProgress,
@@ -411,6 +424,7 @@ export function createMechanismVisualization() {
     setVisible,
     setDeployment,
     setExplosion,
+    setInspectionFocus,
     update,
     snapshot
   };
