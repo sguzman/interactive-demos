@@ -119,6 +119,30 @@ export const COMPONENTS = {
     category: 'human input',
     provenance: 'product-obvious / board-grounded matrix',
     description: 'Physical button mapped to the action-button matrix and software-visible through JOYP.'
+  },
+  inputContacts: {
+    name: 'Front-board input contacts',
+    category: 'human input / electrical',
+    provenance: 'DMG-LCD-06 board reconstruction / P4 pad geometry',
+    description: 'Representative conductive contact regions that bridge mechanical button motion to the P10..P15 matrix.'
+  },
+  lcdDrivers: {
+    name: 'LCD driver/support devices',
+    category: 'display electronics',
+    provenance: 'DMG-LCD-06 board reconstruction',
+    description: 'Representative LH5076/LH5077/IR3E02 package group on the front-board display path.'
+  },
+  cartridgeConnector: {
+    name: '32-contact cartridge connector',
+    category: 'module interface',
+    provenance: 'DMG-CPU-06 board reconstruction',
+    description: 'Console-side cartridge interface carrying address, data, control, power/reference, PHI, reset, and VIN.'
+  },
+  crystal: {
+    name: '4.194304 MHz crystal',
+    category: 'clock source',
+    provenance: 'DMG-CPU-06 board reconstruction',
+    description: 'Physical master oscillator source. Derived machine/peripheral clocks are not separate crystals.'
   }
 };
 
