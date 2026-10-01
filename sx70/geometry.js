@@ -463,6 +463,7 @@ export function createSX70Model() {
     focus: RECONSTRUCTION.focus.normalizedDefault,
     explosion: 0,
     geometryRevision: A.revision,
+    inspectionFocus: 'all',
     joints: {
       rearBase: null,
       rearTop: null,
@@ -641,6 +642,24 @@ export function createSX70Model() {
     lensBarrel.position.set(-5 - 24 * deep, 24, z0 + 8.5 + focusTravel + 10 * assembly + 14 * deep);
     lensRing.position.set(-5 - 34 * deep, 24, z0 + 16.0 + focusTravel + 14 * assembly + 20 * deep);
     lensGlass.position.set(-5 - 44 * deep, 24, z0 + 17.6 + focusTravel + 18 * assembly + 26 * deep);
+
+    syncInspectionVisibility();
+  }
+
+  function syncInspectionVisibility() {
+    const frontOnly = state.inspectionFocus === 'frontStandard';
+
+    // Inspection-only isolation is deliberately separate from deployment.
+    // It never changes physical state; it merely removes unrelated shell
+    // context so the front-standard containment tree can be read clearly.
+    base.visible = !frontOnly;
+    rearPanel.visible = !frontOnly;
+    forwardPanel.visible = !frontOnly;
+    viewfinder.visible = !frontOnly;
+    viewfinderSupports.visible = !frontOnly;
+    bellows.visible = !frontOnly;
+    linksRoot.visible = !frontOnly;
+    lensHousing.visible = true;
   }
 
   function applyFocus(value) {
@@ -682,6 +701,7 @@ export function createSX70Model() {
 
     applyFocus(state.focus);
     applyExplosion(state.explosion);
+    syncInspectionVisibility();
   }
 
   function geometryDiagnostics() {
@@ -712,6 +732,7 @@ export function createSX70Model() {
     return {
       revision: A.revision,
       deployment: state.deployment,
+      inspectionFocus: state.inspectionFocus,
       rearMemberLength: rearLength,
       rearMemberLengthError: rearLength - A.rearWallLength,
       lensStandardHeight: lensHeight,
@@ -760,6 +781,11 @@ export function createSX70Model() {
     applyDeployment(state.deployment);
   }
 
+  function setInspectionFocus(value) {
+    state.inspectionFocus = value === 'frontStandard' ? 'frontStandard' : 'all';
+    applyDeployment(state.deployment);
+  }
+
   applyDeployment(0);
 
   return {
@@ -771,6 +797,7 @@ export function createSX70Model() {
     setDeploymentImmediate: applyDeployment,
     setFocus: applyFocus,
     setExplode,
+    setInspectionFocus,
     geometryDiagnostics,
     step
   };
