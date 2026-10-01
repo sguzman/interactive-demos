@@ -54,9 +54,19 @@ export function createDMGModel() {
   groups.shellRear = rearShell;
   body.add(rearShell);
 
-  const bezel = box(76,58,2.5,materials.screenBezel);
-  bezel.position.set(0,31,12.3);
-  frontShell.add(bezel);
+  // The bezel is a frame, not an opaque plate: the first QA render caught the
+  // earlier solid rectangle hiding the actual LCD texture.
+  const bezel = new THREE.Group();
+  const bezelTop = box(76, 7, 2.5, materials.screenBezel);
+  const bezelBottom = box(76, 7, 2.5, materials.screenBezel);
+  const bezelLeft = box(8, 50, 2.5, materials.screenBezel);
+  const bezelRight = box(8, 50, 2.5, materials.screenBezel);
+  bezelTop.position.set(0, 56, 13.0);
+  bezelBottom.position.set(0, 6, 13.0);
+  bezelLeft.position.set(-34, 31, 13.0);
+  bezelRight.position.set(34, 31, 13.0);
+  bezel.add(bezelTop, bezelBottom, bezelLeft, bezelRight);
+  body.add(bezel);
 
   const screenCanvas = document.createElement('canvas');
   screenCanvas.width = 160; screenCanvas.height = 144;
@@ -65,7 +75,7 @@ export function createDMGModel() {
   texture.colorSpace = THREE.SRGBColorSpace;
   const screenMat = new THREE.MeshBasicMaterial({ map:texture });
   const lcd = box(60,43,1.2,screenMat);
-  lcd.position.set(0,31,14.2);
+  lcd.position.set(0,31,14.4);
   mark(lcd,'lcd');
   groups.lcd = lcd;
   body.add(lcd);
@@ -138,16 +148,25 @@ export function createDMGModel() {
   function setExplosion(value){
     state.explosion=Math.max(0,Math.min(1,value));
     const e=state.explosion;
-    frontShell.position.z=5+42*e;
-    rearShell.position.z=-17-42*e;
-    mainboard.position.z=-6+10*e;
-    mainboard.position.x=30*e;
-    lcdBoard.position.z=1+24*e;
-    lcdBoard.position.x=-28*e;
-    powerBoard.position.set(-45-32*e,-35,-5+12*e);
-    jackBoard.position.set(34+34*e,-65,-6+8*e);
-    cartridge.position.set(0,26,-31-55*e);
-    batteries.position.x=-28*e;
+    // Explosion is presentation-only. Spread assemblies laterally as well as in
+    // depth so each board remains legible instead of stacking behind the shells.
+    frontShell.position.set(-42*e,0,5+62*e);
+    bezel.position.set(-42*e,0,62*e);
+    lcd.position.set(-42*e,31,14.4+62*e);
+    dpad.position.x=-26-42*e;
+    a.position.x=27-42*e;
+    b.position.x=12-42*e;
+    start.position.x=9-42*e;
+    select.position.x=-9-42*e;
+    speaker.position.x=-42*e;
+
+    rearShell.position.set(48*e,0,-17-58*e);
+    mainboard.position.set(23*e,-4,-6+4*e);
+    lcdBoard.position.set(-24*e,29,1+24*e);
+    powerBoard.position.set(-45-54*e,-35,-5+8*e);
+    jackBoard.position.set(34+54*e,-65,-6+6*e);
+    cartridge.position.set(48*e,26,-31-72*e);
+    batteries.position.x=70*e;
   }
 
   function setLayer(layer){
