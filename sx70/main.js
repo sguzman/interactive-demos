@@ -155,8 +155,8 @@ const VIEW_PRESETS = {
     target: new THREE.Vector3(0, 43, -2)
   },
   internals: {
-    position: new THREE.Vector3(260, 128, 258),
-    target: new THREE.Vector3(0, 38, 10)
+    position: new THREE.Vector3(292, 152, 302),
+    target: new THREE.Vector3(0, 40, 18)
   },
   viewing: {
     position: new THREE.Vector3(198, 126, 205),
@@ -212,7 +212,7 @@ function setView(name, immediate = false) {
   } else if (name === 'internals') {
     setDeploymentTarget(1);
     optics.setMode('none');
-    if (model.state.explosion < 0.48) setInspectionExplosion(0.62);
+    if (model.state.explosion < 0.58) setInspectionExplosion(0.74);
     inspectComponent({
       category: 'internal engineering model',
       provenance: 'P0 causal identity / P4 placement / P5 explosion spacing',
