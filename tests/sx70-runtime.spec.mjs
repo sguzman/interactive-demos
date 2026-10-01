@@ -45,6 +45,7 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
     expect(geometry.finite).toBe(true);
     expect(Math.abs(geometry.rearMemberLengthError)).toBeLessThan(1e-6);
     expect(Math.abs(geometry.lensStandardHeightError)).toBeLessThan(1e-6);
+    expect(geometry.viewfinderRearSupportSpan).toBeLessThan(55);
     expect(geometry.bounds.width).toBeGreaterThan(90);
     expect(geometry.bounds.height).toBeLessThan(125);
     expect(geometry.bounds.depth).toBeLessThan(205);
