@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', async ({ page }) => {
+test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromium', async ({ page }) => {
   test.setTimeout(120_000);
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(String(error)));
@@ -40,7 +40,7 @@ test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', asyn
     return samples;
   });
   for (const geometry of geometrySweep) {
-    expect(geometry.revision).toBe('articulated-v2');
+    expect(geometry.revision).toBe('articulated-v3');
     expect(geometry.finite).toBe(true);
     expect(Math.abs(geometry.rearMemberLengthError)).toBeLessThan(1e-6);
     expect(Math.abs(geometry.lensStandardHeightError)).toBeLessThan(1e-6);
@@ -63,9 +63,37 @@ test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', asyn
   await expect(page.locator('#powerState')).toHaveText('S6 CLOSED · ENABLED');
   await expect(page.locator('#takePhotoBtn')).toBeEnabled();
 
-  // Prove the causal exposure engine, not merely the rendering.
+  // The central engineering-demo requirement: expose the actual internal assembly,
+  // not merely the folding shell. "Internals" deliberately combines cutaway/explosion
+  // with the same live mechanism that will execute the exposure cycle.
+  await page.locator('[data-view="internals"]').click();
+  await page.waitForFunction(() =>
+    window.__sx70Debug.state.deployment > 0.985 &&
+    window.__sx70Debug.state.explosion > 0.55
+  );
+  const internalState = await page.evaluate(() => window.__sx70Debug.state);
+  expect(internalState.activeView).toBe('internals');
+  expect(internalState.mechanism.visible).toBe(true);
+  expect(internalState.mechanism.inspectableMeshCount).toBeGreaterThan(20);
+  expect(internalState.explosion).toBeGreaterThan(0.55);
+  await page.screenshot({ path: 'test-results/sx70-internals-cutaway.png', fullPage: true });
+
+  const mechanismBeforeCycle = internalState.mechanism;
   await page.locator('#takePhotoBtn').click();
   await page.waitForFunction(() => window.__sx70Debug.state.cycle.phase !== 'idle');
+  await page.evaluate(() => window.__sx70Debug.advanceCycle(1 / 240, 36));
+  const mechanismMidCycle = await page.evaluate(() => window.__sx70Debug.state);
+  expect(mechanismMidCycle.explosion).toBeGreaterThan(0.55);
+  expect(mechanismMidCycle.mechanism.visible).toBe(true);
+  expect(mechanismMidCycle.mechanism.motorAngle).not.toBeCloseTo(mechanismBeforeCycle.motorAngle, 5);
+  expect(
+    mechanismMidCycle.mechanism.gearAngles.some(
+      (angle, index) => Math.abs(angle - mechanismBeforeCycle.gearAngles[index]) > 0.001
+    )
+  ).toBe(true);
+  await page.screenshot({ path: 'test-results/sx70-internals-mid-cycle.png', fullPage: true });
+
+  // Prove the full causal exposure engine, not merely the rendering.
   const cycleResult = await page.evaluate(() => window.__sx70Debug.advanceCycle(1 / 120, 900));
   expect(cycleResult.state.phase).toBe('idle');
   const history = cycleResult.state.eventHistory;
@@ -152,12 +180,18 @@ test('SX-70 folding shell opens, focuses, explodes, and folds in Chromium', asyn
   await page.locator('#advancedToggleBtn').click();
   await expect(page.locator('.controls')).toHaveClass(/advanced-open/);
 
+  // Explosion is independent of deployment and is safe to move between assembled,
+  // cutaway, and full separation states without corrupting mechanism state.
   await page.locator('#explodeBtn').click();
   const exploded = await page.evaluate(() => window.__sx70Debug.state);
+  expect(exploded.deployment).toBeGreaterThan(0.985);
   expect(exploded.explosion).toBeCloseTo(1, 6);
+  expect(exploded.mechanism.visible).toBe(true);
+  await page.screenshot({ path: 'test-results/sx70-internals-fully-exploded.png', fullPage: true });
 
   await page.locator('#assembleBtn').click();
   const assembled = await page.evaluate(() => window.__sx70Debug.state);
+  expect(assembled.deployment).toBeGreaterThan(0.985);
   expect(assembled.explosion).toBeCloseTo(0, 6);
 
   await page.locator('[data-view="folding"]').click();
