@@ -263,14 +263,41 @@ export function createMechanismVisualization() {
 
   function applyExplosion() {
     const e = state.explosion;
+    const deep = THREE.MathUtils.smoothstep(e, 0.68, 1);
+
     // Keep functional internals in one readable central constellation while
-    // the exterior shell travels farther away. Individual subassemblies get
-    // enough spacing to read as separate parts without destroying adjacency.
+    // the exterior shell travels farther away. Deep inspection then separates
+    // modeled causal parts inside each assembly rather than stopping at a box.
     frontAssembly.position.copy(frontBase).add(new THREE.Vector3(-14 * e, 5 * e, 12 * e));
     driveAssembly.position.copy(driveBase).add(new THREE.Vector3(10 * e, 5 * e, 34 * e));
     reflexAssembly.position.copy(reflexBase).add(new THREE.Vector3(0, 24 * e, -15 * e));
     controlAssembly.position.copy(controlBase).add(new THREE.Vector3(-28 * e, 3 * e, 22 * e));
     recockAssembly.position.copy(recockBase).add(new THREE.Vector3(24 * e, 15 * e, 10 * e));
+
+    // Front-standard internals.
+    solenoid.position.set(29 + 16 * deep, -10 - 4 * deep, -6 + 14 * deep);
+
+    // Motor / reduction train / sequencing cam.
+    motorGroup.position.set(0, 0, -16 * deep);
+    gears.forEach((item, index) => {
+      item.mesh.position.set(
+        item.p[0],
+        item.p[1] + (index - 1.5) * 2.5 * deep,
+        item.p[2] + index * 8 * deep
+      );
+    });
+    camGroup.position.set(-85 - 10 * deep, 1 + 3 * deep, 4 + 34 * deep);
+
+    // Reflex stack and viewing relay.
+    fresnelFace.position.y = 2.15 + 11 * deep;
+    fixedMirrorGroup.position.set(0, 21 + 8 * deep, 38 + 17 * deep);
+    relay.position.set(0, 49 + 15 * deep, -28 - 18 * deep);
+
+    // Control bank and second actuator.
+    switchBank.children.forEach((contact, index) => {
+      contact.position.z = (index - 2) * 4.5 * deep;
+    });
+    solenoid2.position.set(14 * deep, 30 + 8 * deep, -7 + 14 * deep);
   }
 
   function setExplosion(value) {
@@ -286,8 +313,17 @@ export function createMechanismVisualization() {
     state.motorBraked = cycleState.motorBraked;
 
     const open = THREE.MathUtils.clamp(cycleState.shutterPosition, 0, 1);
-    leftBlade.position.x = THREE.MathUtils.lerp(-2.8, -14, open);
-    rightBlade.position.x = THREE.MathUtils.lerp(2.8, 14, open);
+    const deep = THREE.MathUtils.smoothstep(state.explosion, 0.68, 1);
+    leftBlade.position.set(
+      THREE.MathUtils.lerp(-2.8, -14, open) - 8 * deep,
+      0,
+      -5 * deep
+    );
+    rightBlade.position.set(
+      THREE.MathUtils.lerp(2.8, 14, open) + 8 * deep,
+      0,
+      5 * deep
+    );
 
     const r = THREE.MathUtils.clamp(cycleState.reflexProgress, 0, 1);
     carrier.position.set(
@@ -355,7 +391,12 @@ export function createMechanismVisualization() {
       camAngle: state.camAngle,
       gearAngles: [...state.gearAngles],
       inspectableMeshCount: pickables.length,
-      frontAssemblyPosition: frontAssembly.position.toArray()
+      frontAssemblyPosition: frontAssembly.position.toArray(),
+      deepExplosion: state.explosion >= 0.68,
+      frontStandardInternalSpread: {
+        shutterBladeSeparation: Math.abs(rightBlade.position.x - leftBlade.position.x),
+        solenoidOffset: solenoid.position.toArray()
+      }
     };
   }
 
