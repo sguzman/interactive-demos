@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "authority": "public-projection-registry",
   "canonicalEngineeringAuthority": "Taria Engineering",
   "projections": [
@@ -70,6 +70,40 @@
       ],
       "publicUx": "product-intimate open/focus/take-photo path + primary Internals cutaway + subsystem views + collapsed Advanced diagnostics",
       "revisionBoundary": "Original/manual-focus SX-70 is canonical. Sonar autofocus, later family revisions, Time-Zero lineage, and modern Polaroid film require explicit lineage labels."
+    },
+    {
+      "demoSlug": "game-boy-dmg-01",
+      "engineeringSpecimenId": "specimen:nintendo-game-boy-dmg-01",
+      "publicPath": "./game-boy-dmg-01/",
+      "documentationPath": "./docs/game-boy-dmg-01.html",
+      "modelClass": "multi-layer causal educational reconstruction / representative DMG-CPU-06 + DMG-LCD-06 physical profile",
+      "examinedMaturity": "integrated physical + electrical + logical + temporal + cartridge + PPU + APU + input + service specimen",
+      "authorityRule": "Public implementation state is authoritative here; technical claims and provenance remain authoritative in Taria Engineering after explicit ingestion.",
+      "canonicalVisibility": "private",
+      "publicCanonicalIdentifier": "specimen:nintendo-game-boy-dmg-01",
+      "engineeringSyncDate": "2026-10-01",
+      "engineeringResearchState": "Canonical DMG-01 documentary/reconstruction research, integrated causal model, public projection specification, and Works expression complete for current scope; browser implementation active.",
+      "provenanceScheme": [
+        "OEM manufacturer/service",
+        "official developer documentation",
+        "community technical reference",
+        "empirical hardware observation",
+        "board reverse engineering",
+        "die reverse engineering",
+        "community repair",
+        "Engineering derivation",
+        "P4/P5 reconstruction/presentation"
+      ],
+      "publicationBoundary": "Original monochrome DMG-01 is canonical. Representative DMG-CPU-06 / DMG-LCD-06 geometry is not a universal production BOM. Private Taria paths remain unpublished.",
+      "worksExpressionId": "expression:nintendo-game-boy-dmg-01-public-engineering-guide:en:v1",
+      "publicGuideStatus": "published",
+      "readerJourney": [
+        "gallery",
+        "interactive specimen",
+        "rich guide"
+      ],
+      "publicUx": "product-first handheld controls + layer switching + cross-layer causal traces + exploded boards + PPU/APU/DMA/cartridge/service inspection",
+      "revisionBoundary": "DMG-01 retail identity spans multiple board and component revisions; later Game Boy family models require explicit lineage labels."
     }
   ]
 }
