@@ -77,12 +77,12 @@
       "publicPath": "./game-boy-dmg-01/",
       "documentationPath": "./docs/game-boy-dmg-01.html",
       "modelClass": "multi-layer causal educational reconstruction / representative DMG-CPU-06 + DMG-LCD-06 physical profile",
-      "examinedMaturity": "integrated physical + electrical + logical + temporal + cartridge + PPU + APU + input + service specimen",
+      "examinedMaturity": "browser-proven integrated physical + electrical + logical + temporal + cartridge + PPU + APU + input + service specimen",
       "authorityRule": "Public implementation state is authoritative here; technical claims and provenance remain authoritative in Taria Engineering after explicit ingestion.",
       "canonicalVisibility": "private",
       "publicCanonicalIdentifier": "specimen:nintendo-game-boy-dmg-01",
       "engineeringSyncDate": "2026-10-01",
-      "engineeringResearchState": "Canonical DMG-01 documentary/reconstruction research, integrated causal model, public projection specification, and Works expression complete for current scope; browser implementation active.",
+      "engineeringResearchState": "Canonical DMG-01 research, integrated causal model, public projection specification, Works expression, browser implementation, deterministic Chromium QA, and rendered visual QA complete for current scope.",
       "provenanceScheme": [
         "OEM manufacturer/service",
         "official developer documentation",
@@ -102,7 +102,7 @@
         "interactive specimen",
         "rich guide"
       ],
-      "publicUx": "product-first handheld controls + layer switching + cross-layer causal traces + exploded boards + PPU/APU/DMA/cartridge/service inspection",
+      "publicUx": "product-first handheld controls + persistent exploded boards + physical/electrical/logical/temporal/service layers + JOYP + cartridge mapper + PPU access + OAM DMA + APU/audio + diagnostic service scenarios",
       "revisionBoundary": "DMG-01 retail identity spans multiple board and component revisions; later Game Boy family models require explicit lineage labels."
     }
   ]
