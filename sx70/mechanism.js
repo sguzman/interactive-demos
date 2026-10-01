@@ -262,11 +262,14 @@ export function createMechanismVisualization() {
 
   function applyExplosion() {
     const e = state.explosion;
-    frontAssembly.position.copy(frontBase).add(new THREE.Vector3(-54 * e, 6 * e, 18 * e));
-    driveAssembly.position.copy(driveBase).add(new THREE.Vector3(52 * e, -2 * e, 4 * e));
-    reflexAssembly.position.copy(reflexBase).add(new THREE.Vector3(0, 30 * e, -22 * e));
-    controlAssembly.position.copy(controlBase).add(new THREE.Vector3(-76 * e, -1 * e, -4 * e));
-    recockAssembly.position.copy(recockBase).add(new THREE.Vector3(28 * e, 17 * e, -10 * e));
+    // Keep functional internals in one readable central constellation while
+    // the exterior shell travels farther away. Individual subassemblies get
+    // enough spacing to read as separate parts without destroying adjacency.
+    frontAssembly.position.copy(frontBase).add(new THREE.Vector3(-18 * e, 8 * e, 26 * e));
+    driveAssembly.position.copy(driveBase).add(new THREE.Vector3(10 * e, 5 * e, 34 * e));
+    reflexAssembly.position.copy(reflexBase).add(new THREE.Vector3(0, 24 * e, -15 * e));
+    controlAssembly.position.copy(controlBase).add(new THREE.Vector3(-28 * e, 3 * e, 22 * e));
+    recockAssembly.position.copy(recockBase).add(new THREE.Vector3(24 * e, 15 * e, 10 * e));
   }
 
   function setExplosion(value) {
