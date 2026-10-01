@@ -139,6 +139,24 @@ function updateRod(rod, a, b) {
   rod.userData.length = length;
 }
 
+function solveEqualTwoLinkElbow(a, b, segmentLength, side = 1) {
+  const midpoint = a.clone().add(b).multiplyScalar(0.5);
+  const delta = b.clone().sub(a);
+  const distance = Math.max(0.001, delta.length());
+  const half = Math.min(segmentLength, distance / 2);
+  const height = Math.sqrt(Math.max(0, segmentLength * segmentLength - half * half));
+
+  // Work in the y/z folding plane. x is inherited from the side endpoints.
+  const py = -delta.z / distance;
+  const pz = delta.y / distance;
+
+  return new THREE.Vector3(
+    midpoint.x,
+    midpoint.y + side * py * height,
+    midpoint.z + side * pz * height
+  );
+}
+
 function makeBellowsGeometry() {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Array(18).fill(0), 3));
@@ -253,13 +271,23 @@ export function createSX70Model() {
   root.add(rearPanel);
 
   // --- Forward structural member --------------------------------------------
-  // Public P4 presentation: represented as paired side rails. Their endpoints
-  // are driven from the rear wall and lens standard, preserving a coupled
-  // visual chain without claiming exact production link lengths.
+  // v4 uses paired two-segment rails with fixed segment length instead of one
+  // rod that silently stretched from ~8 mm folded to ~78 mm erect.
   const forwardPanel = new THREE.Group();
-  const forwardLeft = makeRod(1.15, materials.chrome);
-  const forwardRight = makeRod(1.15, materials.chrome);
-  forwardPanel.add(forwardLeft, forwardRight);
+  const forwardLeftRear = makeRod(1.15, materials.chrome);
+  const forwardLeftFront = makeRod(1.15, materials.chrome);
+  const forwardRightRear = makeRod(1.15, materials.chrome);
+  const forwardRightFront = makeRod(1.15, materials.chrome);
+  const forwardLeftJoint = new THREE.Mesh(new THREE.SphereGeometry(2.0, 18, 12), materials.chromeDark);
+  const forwardRightJoint = new THREE.Mesh(new THREE.SphereGeometry(2.0, 18, 12), materials.chromeDark);
+  forwardPanel.add(
+    forwardLeftRear,
+    forwardLeftFront,
+    forwardRightRear,
+    forwardRightFront,
+    forwardLeftJoint,
+    forwardRightJoint
+  );
   register('forwardPanel', forwardPanel);
   root.add(forwardPanel);
 
@@ -537,15 +565,25 @@ export function createSX70Model() {
     const lensTopLeft = s.lensTop.clone(); lensTopLeft.x = -sideX + 2.0;
     const lensTopRight = s.lensTop.clone(); lensTopRight.x = sideX - 2.0;
 
-    // Forward structural member is represented as two exterior rails connecting
-    // the moving upper anchors. They never pass through the bellows volume.
-    updateRod(forwardLeft, rearTopLeft, lensTopLeft);
-    updateRod(forwardRight, rearTopRight, lensTopRight);
+    // Fixed-length two-segment upper rails make compact folding possible without
+    // changing rod length. The elbow is a P4 presentation joint driven by the
+    // same deployment generalized coordinate as the rigid panels.
+    const upperSegment = A.upperRailSegmentLength;
+    const leftElbow = solveEqualTwoLinkElbow(rearTopLeft, lensTopLeft, upperSegment, 1);
+    const rightElbow = solveEqualTwoLinkElbow(rearTopRight, lensTopRight, upperSegment, 1);
+    updateRod(forwardLeftRear, rearTopLeft, leftElbow);
+    updateRod(forwardLeftFront, leftElbow, lensTopLeft);
+    updateRod(forwardRightRear, rearTopRight, rightElbow);
+    updateRod(forwardRightFront, rightElbow, lensTopRight);
+    forwardLeftJoint.position.copy(leftElbow);
+    forwardRightJoint.position.copy(rightElbow);
 
-    const rearBaseLeft = new THREE.Vector3(-sideX, baseTopY + 2.0, -64);
-    const rearBaseRight = new THREE.Vector3(sideX, baseTopY + 2.0, -64);
-    const frontBaseLeft = new THREE.Vector3(-sideX + 1.5, baseTopY + 2.0, 50);
-    const frontBaseRight = new THREE.Vector3(sideX - 1.5, baseTopY + 2.0, 50);
+    // Side erecting members are anchored to the same reconstructed pivots as
+    // the rigid rear wall and front standard, so they no longer telescope.
+    const rearBaseLeft = s.rearBase.clone(); rearBaseLeft.x = -sideX;
+    const rearBaseRight = s.rearBase.clone(); rearBaseRight.x = sideX;
+    const frontBaseLeft = s.lensBase.clone(); frontBaseLeft.x = -sideX + 2.0;
+    const frontBaseRight = s.lensBase.clone(); frontBaseRight.x = sideX - 2.0;
 
     updateRod(links.leftRear, rearBaseLeft, rearTopLeft);
     updateRod(links.rightRear, rearBaseRight, rearTopRight);
@@ -665,6 +703,14 @@ export function createSX70Model() {
     const lensHeight = s.lensBase.distanceTo(s.lensTop);
     const vfAnchor = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(0, -4.2, -20));
     const viewfinderRearSupportSpan = vfAnchor.distanceTo(s.rearTop);
+    const upperRailLengths = [
+      forwardLeftRear.userData.length,
+      forwardLeftFront.userData.length,
+      forwardRightRear.userData.length,
+      forwardRightFront.userData.length
+    ];
+    const rearSideLinkLengths = [links.leftRear.userData.length, links.rightRear.userData.length];
+    const frontSideLinkLengths = [links.leftFront.userData.length, links.rightFront.userData.length];
     const ordinaryMeshes = [];
     root.traverse(child => {
       if (child.isMesh) ordinaryMeshes.push(child);
@@ -685,6 +731,9 @@ export function createSX70Model() {
       lensStandardHeight: lensHeight,
       lensStandardHeightError: lensHeight - A.lensStandardHeight,
       viewfinderRearSupportSpan,
+      upperRailSegmentLengthErrors: upperRailLengths.map(length => length - A.upperRailSegmentLength),
+      rearSideLinkLengthErrors: rearSideLinkLengths.map(length => length - A.rearWallLength),
+      frontSideLinkLengthErrors: frontSideLinkLengths.map(length => length - A.lensStandardHeight),
       ordinaryPersistentPartCount: ordinaryMeshes.length,
       ordinaryHiddenPersistentPartCount,
       bellowsPersistentRibCount: bellowsRibs.length,
