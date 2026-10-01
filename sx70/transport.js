@@ -153,7 +153,14 @@ export function createTransportVisualization() {
 
   function applyExplosion() {
     const e = state.explosion;
-    packGroup.position.set(-38 * e, -1 - 3 * e, -10 - 8 * e);
+    // Leave the functional pack near the camera center while the outer base shell
+    // moves away in geometry.js, then separate the pack's own layers so battery,
+    // platen and film stack are visible rather than trapped inside another black box.
+    packGroup.position.set(0, -1 - 2 * e, -10 - 5 * e);
+    packShell.position.x = -26 * e;
+    battery.position.x = -6 * e;
+    platen.position.x = 22 * e;
+    filmStack.position.x = 8 * e;
     pick.position.x = -35 + 12 * e;
     rollers.position.x = 42 * e;
     movingSheet.position.x = 58 * e;
