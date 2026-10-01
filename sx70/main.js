@@ -159,8 +159,8 @@ const VIEW_PRESETS = {
     target: new THREE.Vector3(0, 40, 18)
   },
   frontStandard: {
-    position: new THREE.Vector3(150, 94, 190),
-    target: new THREE.Vector3(28, 43, 69)
+    position: new THREE.Vector3(260, 128, 300),
+    target: new THREE.Vector3(24, 40, 68)
   },
   viewing: {
     position: new THREE.Vector3(198, 126, 205),
@@ -195,6 +195,10 @@ function setView(name, immediate = false) {
   for (const button of viewButtons) {
     button.classList.toggle('active', button.dataset.view === name);
   }
+
+  const frontStandardFocus = name === 'frontStandard';
+  model.setInspectionFocus(frontStandardFocus ? 'frontStandard' : 'all');
+  mechanism.setInspectionFocus(frontStandardFocus ? 'frontStandard' : 'all');
 
   const exploded = model.state.explosion > 0.02;
   mechanism.setVisible(name !== 'chemistry' && (exploded || name === 'sequence' || name === 'internals' || name === 'frontStandard'));
