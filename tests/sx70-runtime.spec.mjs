@@ -65,6 +65,13 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
   await expect(page.locator('#powerState')).toHaveText('S6 CLOSED · ENABLED');
   await expect(page.locator('#takePhotoBtn')).toBeEnabled();
 
+  // Direct regression for the user-reported ordinary UNFOLDED-state defect:
+  // this is not explosion. Capture the normal erect camera before any cutaway
+  // so detached/floating shell geometry cannot hide behind exploded spacing.
+  await page.locator('[data-view="overview"]').click();
+  await page.waitForTimeout(250);
+  await page.screenshot({ path: 'test-results/sx70-open-overview.png', fullPage: true });
+
   // The central engineering-demo requirement: expose the actual internal assembly,
   // not merely the folding shell. "Internals" deliberately combines cutaway/explosion
   // with the same live mechanism that will execute the exposure cycle.
