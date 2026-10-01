@@ -23,7 +23,10 @@ Currently implemented:
 - constructive chassis/base geometry and linked deployment;
 - bellows and lens/shutter housing;
 - viewing and exposure optical graphs;
-- paired shutter / reflex-carrier / motor-cam presentation geometry;
+- integrated live internal mechanism with shutter blades, solenoid, motor, reduction gears, sequencing cam, reflex/Fresnel carrier, fixed viewing mirror and relay optics;
+- true cutaway/exploded inspection independent of folding deployment;
+- clickable internal parts with provenance-aware inspector;
+- live mechanism motion preserved while the shell is exploded;
 - canonical exposure-cycle transition engine;
 - persistent cycle event history;
 - sourced 40 ± 5 ms Y-delay anchor;
@@ -40,14 +43,15 @@ Currently implemented:
 - delayed neutralization and pH fall;
 - separate mechanical and chemical clocks;
 - chemistry fast-forward as explicit P5 presentation behavior;
-- component inspection;
+- component inspection across shell, mechanism, optics, film pack, battery, platen, pick and rollers;
 - collapsed Advanced inspection;
 - provenance / lineage diagnostics;
 - deterministic Chromium end-to-end regression and rendered screenshots.
 
 The public model remains a causal educational reconstruction. Exact production folding coordinates,
-mirror angles, cam profiles, transport forces/speeds, and proprietary film kinetics remain
-explicitly unresolved or reconstructive.
+hidden-part placement, gear tooth counts, mirror angles, cam profiles, transport forces/speeds,
+and proprietary film kinetics remain explicitly unresolved or reconstructive. The internal explode
+uses P4 placement and P5 separation spacing where factory coordinates are unavailable.
 
 ## Authority contract
 
@@ -99,6 +103,19 @@ open
 -> receive print
 -> watch it develop
 ~~~
+
+The engineering-inspection experience is equally first-class:
+
+~~~text
+open
+-> Internals
+-> cut away / explode shell
+-> inspect named internal subassemblies
+-> run the same live exposure / reflex / transport cycle
+-> watch the mechanism operate while separated
+~~~
+
+Folding deployment and engineering explosion are independent state axes.
 
 Internal switch labels, motor/cam phase, chemical fields and provenance diagnostics belong behind
 progressive disclosure.
