@@ -28,32 +28,41 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
   await expect(page.locator('#deploymentState')).toHaveText('FOLDED');
   await expect(page.locator('#powerState')).toHaveText('S6 OPEN · DISABLED');
 
-  // Geometry-v2 regression: sweep the articulation through the full fold path.
-  // The two actual pivoted rigid members must retain their lengths at every pose,
-  // and the reconstruction must never emit invalid coordinates.
-  const geometrySweep = await page.evaluate(() => {
-    const samples = [];
-    for (const deployment of [0, 0.15, 0.3, 0.5, 0.7, 0.85, 1]) {
+  // Geometry-v4 continuity regression: sample the entire physical deployment path.
+  // Persistent product geometry must remain present; endpoints alone are not enough.
+  const deploymentSamples = [0, 0.10, 0.25, 0.50, 0.75, 0.90, 1];
+  const geometrySweep = await page.evaluate(samples => {
+    const result = [];
+    for (const deployment of samples) {
       window.__sx70Debug.setDeployment(deployment);
-      samples.push(window.__sx70Debug.state.geometry);
+      result.push(window.__sx70Debug.state.geometry);
     }
     window.__sx70Debug.setDeployment(0);
-    return samples;
-  });
+    return result;
+  }, deploymentSamples);
   for (const geometry of geometrySweep) {
-    expect(geometry.revision).toBe('articulated-v3');
+    expect(geometry.revision).toBe('articulated-v4');
     expect(geometry.finite).toBe(true);
     expect(Math.abs(geometry.rearMemberLengthError)).toBeLessThan(1e-6);
     expect(Math.abs(geometry.lensStandardHeightError)).toBeLessThan(1e-6);
     expect(geometry.viewfinderRearSupportSpan).toBeLessThan(55);
+    expect(geometry.ordinaryPersistentPartCount).toBeGreaterThan(20);
+    expect(geometry.ordinaryHiddenPersistentPartCount).toBe(0);
+    expect(geometry.bellowsPersistentRibCount).toBe(10);
+    expect(geometry.frontStandardInspectablePartCount).toBeGreaterThanOrEqual(6);
     expect(geometry.bounds.width).toBeGreaterThan(90);
-    expect(geometry.bounds.height).toBeLessThan(125);
-    expect(geometry.bounds.depth).toBeLessThan(205);
+    expect(geometry.bounds.height).toBeLessThan(150);
+    expect(geometry.bounds.depth).toBeLessThan(235);
   }
 
-  await page.evaluate(() => window.__sx70Debug.setDeployment(0.5));
-  await page.waitForTimeout(150);
-  await page.screenshot({ path: 'test-results/sx70-mid-fold-articulation.png', fullPage: true });
+  // Render the state space so mechanical continuity gets human-visible QA, not
+  // merely endpoint screenshots or numeric invariants.
+  for (const deployment of [0.10, 0.25, 0.50, 0.75, 0.90]) {
+    await page.evaluate(value => window.__sx70Debug.setDeployment(value), deployment);
+    await page.waitForTimeout(120);
+    const label = String(Math.round(deployment * 100)).padStart(2, '0');
+    await page.screenshot({ path: `test-results/sx70-deployment-${label}.png`, fullPage: true });
+  }
   await page.evaluate(() => window.__sx70Debug.setDeployment(0));
 
   await page.locator('#openBtn').click();
@@ -196,7 +205,10 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
   expect(exploded.deployment).toBeGreaterThan(0.985);
   expect(exploded.explosion).toBeCloseTo(1, 6);
   expect(exploded.mechanism.visible).toBe(true);
+  expect(exploded.geometry.frontStandardDeepExploded).toBe(true);
+  expect(exploded.geometry.frontStandardInspectablePartCount).toBeGreaterThanOrEqual(6);
   await page.screenshot({ path: 'test-results/sx70-internals-fully-exploded.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/sx70-front-standard-deep-explode.png', fullPage: true });
 
   await page.locator('#assembleBtn').click();
   const assembled = await page.evaluate(() => window.__sx70Debug.state);
