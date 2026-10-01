@@ -154,6 +154,10 @@ const VIEW_PRESETS = {
     position: new THREE.Vector3(305, 102, 52),
     target: new THREE.Vector3(0, 43, -2)
   },
+  internals: {
+    position: new THREE.Vector3(260, 128, 258),
+    target: new THREE.Vector3(0, 38, 10)
+  },
   viewing: {
     position: new THREE.Vector3(198, 126, 205),
     target: new THREE.Vector3(-12, 61, 10)
@@ -188,8 +192,9 @@ function setView(name, immediate = false) {
     button.classList.toggle('active', button.dataset.view === name);
   }
 
-  mechanism.setVisible(name === 'sequence');
-  transport.setVisible(name === 'sequence' || name === 'transport');
+  const exploded = model.state.explosion > 0.02;
+  mechanism.setVisible(exploded || name === 'sequence' || name === 'internals');
+  transport.setVisible(exploded || name === 'sequence' || name === 'transport' || name === 'internals');
   chemistry.setVisible(name === 'chemistry');
   model.root.visible = name !== 'chemistry';
 
@@ -204,6 +209,16 @@ function setView(name, immediate = false) {
         ? 'Conceptual ray graph through the shared taking lens, fixed viewing mirror, reflective Fresnel and off-axis relay to the eye. The path is source-grounded; the public coordinates are reconstructive.'
         : 'Conceptual exposure graph through the shared taking lens, reverse-side taking mirror and integral-film plane. Exact production mirror angles remain unresolved.'
     });
+  } else if (name === 'internals') {
+    setDeploymentTarget(1);
+    optics.setMode('none');
+    if (model.state.explosion < 0.48) setInspectionExplosion(0.62);
+    inspectComponent({
+      category: 'internal engineering model',
+      provenance: 'P0 causal identity / P4 placement / P5 explosion spacing',
+      name: 'Live internal mechanism',
+      description: 'Cut away the shell and inspect the shutter, solenoid, motor, reduction train, sequencing cam, reflex carrier, viewing mirrors, film pack, battery, platen, pick, and processing rollers while the camera cycle remains live.'
+    });
   } else if (name === 'sequence') {
     setDeploymentTarget(1);
     optics.setMode(cycle.state.phase === 'integrating' ? 'exposure' : 'viewing');
@@ -211,7 +226,7 @@ function setView(name, immediate = false) {
       category: 'causal sequence',
       provenance: 'P0/P2 transition order · P5 presentation timing',
       name: 'Exposure-cycle state machine',
-      description: 'Follow shutter closure, motor start, spring-driven reflex rise, dynamic braking, the sourced 40 ± 5 ms Y delay, metered exposure, shutter reclosure, and post-exposure recock. Transport visualization follows in the next tranche.'
+      description: 'Follow shutter closure, motor start, spring-driven reflex rise, dynamic braking, the sourced 40 ± 5 ms Y delay, metered exposure, shutter reclosure, transport, and post-exposure recock. If the camera is cut away, the same live internals remain visible.'
     });
   } else if (name === 'transport') {
     setDeploymentTarget(1);
@@ -265,7 +280,21 @@ function setDeploymentImmediate(value) {
   const normalized = THREE.MathUtils.clamp(value, 0, 1);
   model.setDeploymentImmediate(normalized);
   model.setDeploymentTarget(normalized);
+  mechanism.setDeployment(normalized);
   syncStateUI();
+}
+
+function setInspectionExplosion(value) {
+  const normalized = THREE.MathUtils.clamp(value, 0, 1);
+  model.setExplode(normalized);
+  mechanism.setExplosion(normalized);
+  transport.setExplosion(normalized);
+  ui.explode.value = String(Math.round(normalized * 100));
+  ui.explodeValue.value = `${Math.round(normalized * 100)}%`;
+
+  const showInternals = normalized > 0.02;
+  mechanism.setVisible(showInternals || activeView === 'sequence' || activeView === 'internals');
+  transport.setVisible(showInternals || activeView === 'sequence' || activeView === 'transport' || activeView === 'internals');
 }
 
 ui.openBtn.addEventListener('click', () => setDeploymentTarget(1));
@@ -328,21 +357,17 @@ ui.exposureComp.addEventListener('input', () => {
 });
 
 ui.explode.addEventListener('input', () => {
-  const value = Number(ui.explode.value) / 100;
-  model.setExplode(value);
-  ui.explodeValue.value = `${Math.round(value * 100)}%`;
+  setInspectionExplosion(Number(ui.explode.value) / 100);
 });
 
 ui.assembleBtn.addEventListener('click', () => {
-  ui.explode.value = '0';
-  ui.explodeValue.value = '0%';
-  model.setExplode(0);
+  setInspectionExplosion(0);
 });
 
 ui.explodeBtn.addEventListener('click', () => {
-  ui.explode.value = '100';
-  ui.explodeValue.value = '100%';
-  model.setExplode(1);
+  if (model.state.deployment < 0.985) setDeploymentTarget(1);
+  setInspectionExplosion(1);
+  setView('internals');
 });
 
 ui.advancedToggleBtn.addEventListener('click', () => {
@@ -360,9 +385,7 @@ function resetSpecimen() {
   transport.setVisible(false);
   chemistry.setVisible(false);
   model.root.visible = true;
-  model.setExplode(0);
-  ui.explode.value = '0';
-  ui.explodeValue.value = '0%';
+  setInspectionExplosion(0);
 
   model.setFocus(RECONSTRUCTION.focus.normalizedDefault);
   optics.setFocus(RECONSTRUCTION.focus.normalizedDefault);
@@ -485,7 +508,11 @@ renderer.domElement.addEventListener('pointerup', event => {
   pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
 
-  const hits = raycaster.intersectObjects(model.pickables, true);
+  const hits = raycaster.intersectObjects([
+    ...model.pickables,
+    ...mechanism.pickables,
+    ...transport.pickables
+  ], true);
   const component = hits.length ? findInspectable(hits[0].object) : null;
   if (component) inspectComponent(component);
 });
@@ -510,6 +537,7 @@ function animate() {
   const dt = Math.min(clock.getDelta(), 0.05);
   model.step(dt);
   const cycleEvents = cycle.step(dt);
+  mechanism.setDeployment(model.state.deployment);
   mechanism.update(cycle.state, dt);
   transport.step(dt, cycle.state, cycleEvents);
   const packAfterStep = transport.snapshot();
@@ -573,6 +601,7 @@ window.__sx70Debug = {
       transport: transport.snapshot(),
       chemistry: chemistry.snapshot(),
       geometry: model.geometryDiagnostics(),
+      mechanism: mechanism.snapshot(),
       violations: cycle.assertInvariants({
         deploymentReady: model.state.deployment >= 0.985,
         filmInTransport: transport.state.filmInTransport
@@ -586,7 +615,7 @@ window.__sx70Debug = {
     model.setFocus(value);
     optics.setFocus(value);
   },
-  setExplode: value => model.setExplode(value),
+  setExplode: value => setInspectionExplosion(value),
   requestExposure: () => {
     const pack = transport.snapshot();
     return cycle.requestExposure({
