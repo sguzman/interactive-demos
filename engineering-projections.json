@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "authority": "public-projection-registry",
   "canonicalEngineeringAuthority": "Taria Engineering",
   "projections": [
@@ -45,13 +45,13 @@
       "engineeringSpecimenId": "specimen:polaroid-sx-70",
       "publicPath": "./sx70/",
       "documentationPath": "./docs/polaroid-sx-70.html",
-      "modelClass": "causal educational reconstruction / interactive constructive geometry",
-      "examinedMaturity": "integrated folding + optics + exposure-cycle + transport + chemistry public specimen",
+      "modelClass": "causal educational reconstruction / articulated constructive geometry / live exploded internal mechanism",
+      "examinedMaturity": "integrated folding + live internal exploded mechanism + optics + exposure-cycle + transport + chemistry public specimen",
       "authorityRule": "Public implementation state is authoritative here; technical claims and provenance are authoritative in Taria Engineering after explicit ingestion.",
       "canonicalVisibility": "private",
       "publicCanonicalIdentifier": "specimen:polaroid-sx-70",
-      "engineeringSyncDate": "2026-09-30",
-      "engineeringResearchState": "Canonical documentary/reconstruction research, integrated state machine, film-chemistry boundary, public projection contract, and Works expression complete for current scope; integrated browser specimen implemented and under final QA.",
+      "engineeringSyncDate": "2026-10-01",
+      "engineeringResearchState": "Canonical documentary/reconstruction research and Works expression complete for current scope; public projection includes a browser-proven true internal cutaway/exploded model with live exposure/reflex/transport mechanics.",
       "provenanceScheme": [
         "P0 primary / authoritative",
         "P1 measurement",
@@ -68,7 +68,7 @@
         "interactive specimen",
         "rich guide"
       ],
-      "publicUx": "product-intimate open/focus/take-photo path + subsystem views + collapsed Advanced inspection",
+      "publicUx": "product-intimate open/focus/take-photo path + primary Internals cutaway + subsystem views + collapsed Advanced diagnostics",
       "revisionBoundary": "Original/manual-focus SX-70 is canonical. Sonar autofocus, later family revisions, Time-Zero lineage, and modern Polaroid film require explicit lineage labels."
     }
   ]
