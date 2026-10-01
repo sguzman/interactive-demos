@@ -216,7 +216,7 @@ export function createDMGSystem() {
         }
 
         if (state.apu.channels.CH1.active) {
-          state.apu.channels.CH1.phase = (state.apu.channels.CH1.phase + 1) % 32;
+          state.apu.channels.CH1.phase = (state.apu.channels.CH1.phase + 1) % 2048;
           if (state.apu.channels.CH1.phase === 0) {
             state.apu.channels.CH1.active = false;
             state.apu.channels.CH1.amplitude = 0;
