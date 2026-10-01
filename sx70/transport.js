@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { COMPONENTS } from './spec.js';
 
 function mat(color, opts = {}) {
   return new THREE.MeshStandardMaterial({
@@ -42,6 +43,20 @@ export function createTransportVisualization() {
   const root = new THREE.Group();
   root.name = 'SX-70 film pack and transport';
 
+  const pickables = [];
+  const register = (key, object) => {
+    const meta = COMPONENTS[key];
+    if (!meta) return object;
+    object.traverse(child => {
+      if (!child.isMesh) return;
+      child.userData.inspectable = true;
+      child.userData.componentKey = key;
+      child.userData.component = meta;
+      pickables.push(child);
+    });
+    return object;
+  };
+
   const packGroup = new THREE.Group();
   packGroup.position.set(0,-1,-10);
   root.add(packGroup);
@@ -49,14 +64,17 @@ export function createTransportVisualization() {
   const packShell = box(86,11,112,M.pack);
   packShell.position.y = 0;
   packGroup.add(packShell);
+  register('filmPack', packShell);
 
   const battery = box(78,2.8,88,M.battery);
   battery.position.set(0,-7,-4);
   packGroup.add(battery);
+  register('packBattery', battery);
 
   const platen = box(76,2.1,82,M.platen);
   platen.position.set(0,7,-4);
   packGroup.add(platen);
+  register('platen', platen);
 
   const filmStack = new THREE.Group();
   filmStack.position.set(0,8,-4);
@@ -70,6 +88,7 @@ export function createTransportVisualization() {
   const pick = box(4,3,33,M.metal);
   pick.position.set(-35,12,19);
   root.add(pick);
+  register('filmPick', pick);
 
   const rollers = new THREE.Group();
   const rollerA = cyl(5.2,88,M.roller,36);
@@ -80,6 +99,7 @@ export function createTransportVisualization() {
   rollerB.position.set(0,9,72);
   rollers.add(rollerA,rollerB);
   root.add(rollers);
+  register('processingRollers', rollers);
 
   const movingSheet = new THREE.Group();
   const sheetBase = box(75,1.2,82,M.film);
@@ -87,6 +107,7 @@ export function createTransportVisualization() {
   imageArea.position.set(0,0.82,-6);
   movingSheet.add(sheetBase,imageArea);
   root.add(movingSheet);
+  register('movingFilm', movingSheet);
   movingSheet.visible=false;
 
   const darkSlide = box(76,1.35,84,M.darkSlide);
@@ -111,7 +132,8 @@ export function createTransportVisualization() {
     darkSlideElapsed:0,
     lastTransportId:0,
     consumedCycleCount:0,
-    rollerAngle:0
+    rollerAngle:0,
+    explosion:0
   };
 
   function syncPackVisuals() {
@@ -127,6 +149,20 @@ export function createTransportVisualization() {
   function setVisible(value) {
     state.visible=Boolean(value);
     root.visible=state.visible;
+  }
+
+  function applyExplosion() {
+    const e = state.explosion;
+    packGroup.position.set(-38 * e, -1 - 3 * e, -10 - 8 * e);
+    pick.position.x = -35 + 12 * e;
+    rollers.position.x = 42 * e;
+    movingSheet.position.x = 58 * e;
+    darkSlide.position.x = 58 * e;
+  }
+
+  function setExplosion(value) {
+    state.explosion=clamp01(value);
+    applyExplosion();
   }
 
   function ready() {
@@ -145,7 +181,7 @@ export function createTransportVisualization() {
     const rollerLeg=clamp01((p-0.30)/0.70);
 
     obj.position.set(
-      0,
+      58 * state.explosion,
       THREE.MathUtils.lerp(13,14,rollerLeg),
       p<0.30
         ? THREE.MathUtils.lerp(0,57,pickLeg)
@@ -264,6 +300,7 @@ export function createTransportVisualization() {
     rollerA.rotation.x=state.rollerAngle;
     rollerB.rotation.x=-state.rollerAngle;
 
+    pick.position.x=-35+12*state.explosion;
     pick.position.z=19+Math.max(
       state.darkSlideCycle==='pick'
         ? clamp01(state.darkSlideElapsed/0.34)*31
@@ -292,6 +329,7 @@ export function createTransportVisualization() {
     state.consumedCycleCount=0;
     movingSheet.visible=false;
     darkSlide.visible=false;
+    pick.position.x=-35+12*state.explosion;
     pick.position.z=19;
     for(const print of ejected) root.remove(print);
     ejected.length=0;
@@ -307,12 +345,15 @@ export function createTransportVisualization() {
   }
 
   syncPackVisuals();
+  setExplosion(0);
   setVisible(false);
 
   return {
     root,
+    pickables,
     state,
     setVisible,
+    setExplosion,
     ready,
     loadFreshPack,
     step,
