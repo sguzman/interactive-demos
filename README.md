@@ -110,3 +110,16 @@ Engineering-linked demos should preserve distinctions among manufacturer specifi
 The current watch documentation already follows this direction by distinguishing official ETA values from normalized educational reconstruction parameters.
 
 This repository remains authoritative for **public implementation state**. Taria Engineering is authoritative for technical claims after explicit ingestion and provenance classification.
+
+
+## Nintendo Game Boy DMG-01
+
+Third Engineering reference specimen: a revision-aware, multi-layer causal reconstruction of the
+original monochrome Game Boy.
+
+- interactive specimen: `game-boy-dmg-01/`
+- Works-derived guide: `docs/game-boy-dmg-01.html`
+- layers: physical / electrical / logical / temporal / service
+- deterministic causal demonstrations: JOYP, cartridge mapping, PPU access, OAM DMA, APU/audio,
+  and service diagnosis
+- no commercial ROM dependency
