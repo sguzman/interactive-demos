@@ -196,6 +196,20 @@ export const COMPONENTS = {
     provenance: 'P0 function / P4-P5 geometry',
     description: 'Cam-like sequencing member representing the mechanically timed handoffs documented in the service sequence. Exact production cam profile is unresolved.'
   },
+  recockLinkage: {
+    id: 'sx70-recock-linkage',
+    name: 'Recock ram + bell crank',
+    category: 'mechanical sequencing',
+    provenance: 'P0 function / P4-P5 geometry',
+    description: 'Service-documented linkage that returns the Fresnel/reflex carrier and participates in terminal switch handoff. Public link geometry is schematic.'
+  },
+  pickLatch: {
+    id: 'sx70-pick-latch',
+    name: 'Film-pick latch',
+    category: 'film transport control',
+    provenance: 'P0 function / P4 geometry',
+    description: 'Latch that holds and releases the film pick during the post-exposure transport sequence.'
+  },
   reflexCarrier: {
     id: 'sx70-reflex-carrier',
     name: 'Reflex / Fresnel carrier',
