@@ -14,7 +14,7 @@ export const CANONICAL = {
   specimenId: 'specimen:polaroid-sx-70',
   worksExpressionId: 'expression:polaroid-sx-70-public-engineering-guide:en:v1',
   engineeringSyncDate: '2026-09-30',
-  projectionState: 'published integrated specimen; geometry fidelity repair active',
+  projectionState: 'published integrated specimen; true internal exploded model active',
   provenanceScheme: 'P0 primary · P1 measurement · P2 derived · P3 audited secondary · P4 reconstruction · P5 presentation',
   publicationBoundary: 'Public projection only. Geometry and animation tuned here do not become canonical Engineering facts.'
 };
@@ -62,7 +62,7 @@ export const RECONSTRUCTION = {
     viewfinderLiftMm: 0
   },
   articulation: {
-    revision: 'articulated-v2',
+    revision: 'articulated-v3',
     provenance: 'P4/P5 visual reconstruction; not measured production pivot geometry',
     rearBasePivotZ: -67,
     frontStandardPivotZ: 58,
@@ -77,6 +77,12 @@ export const RECONSTRUCTION = {
     bellowsHalfWidth: 42,
     sideRailX: 46,
     clearanceMmPresentation: 2.2
+  },
+  inspection: {
+    provenance: 'P5 explosion spacing over P4 component placement',
+    shellSpreadMm: 62,
+    mechanismSpreadMm: 48,
+    transportSpreadMm: 44
   },
   focus: {
     normalizedDefault: 0.55,
@@ -139,7 +145,105 @@ export const COMPONENTS = {
     name: 'Viewfinder / optical relay housing',
     category: 'optics',
     provenance: 'P0 function / P4 geometry',
-    description: 'Presentation envelope for the off-axis viewing relay; internal optical visualization is a later implementation task.'
+    description: 'Housing for the off-axis viewing relay. Its public pose and envelope are reconstructive; the relay components are separately inspectable in the internal model.'
+  },
+  shutterBlades: {
+    id: 'sx70-shutter-blades',
+    name: 'Shutter blade pair',
+    category: 'exposure mechanism',
+    provenance: 'P0 function / P4 geometry',
+    description: 'Coupled shutter blades controlling the taking aperture and a related photocell aperture. Exact production blade profile is not claimed.'
+  },
+  solenoid1: {
+    id: 'sx70-solenoid-1',
+    name: 'Solenoid #1',
+    category: 'electromechanical control',
+    provenance: 'P0 function / P4 geometry',
+    description: 'Primary shutter-control electromagnet in the service sequence. Public dimensions and placement are reconstructive.'
+  },
+  motor: {
+    id: 'sx70-motor',
+    name: 'Cycle motor',
+    category: 'electromechanical drive',
+    provenance: 'P0 function / P4 geometry',
+    description: 'DC motor driving the camera cycle through reduction gearing. Exact motor dimensions and speed remain unresolved.'
+  },
+  driveGearTrain: {
+    id: 'sx70-drive-gear-train',
+    name: 'Reduction / sequencing gear train',
+    category: 'power transmission',
+    provenance: 'P0 architecture / P4-P5 geometry',
+    description: 'Presentation reconstruction of the reduction and sequencing train coupling the motor to the reflex, transport and recocking functions. Tooth counts are not production claims.'
+  },
+  sequencingCam: {
+    id: 'sx70-sequencing-cam',
+    name: 'Sequencing cam / timing member',
+    category: 'mechanical control',
+    provenance: 'P0 function / P4-P5 geometry',
+    description: 'Cam-like sequencing member representing the mechanically timed handoffs documented in the service sequence. Exact production cam profile is unresolved.'
+  },
+  reflexCarrier: {
+    id: 'sx70-reflex-carrier',
+    name: 'Reflex / Fresnel carrier',
+    category: 'optics + mechanism',
+    provenance: 'P0 function / P4 geometry',
+    description: 'Moving carrier that changes the camera between viewing and exposure optical states. Public pose geometry is reconstructive.'
+  },
+  fixedViewingMirror: {
+    id: 'sx70-fixed-viewing-mirror',
+    name: 'Fixed viewing mirror',
+    category: 'optics',
+    provenance: 'P0 function / P4 pose',
+    description: 'Fixed mirror participating in the folded SLR viewing path. Exact production angle and coordinates remain reconstructive.'
+  },
+  relayOptics: {
+    id: 'sx70-relay-optics',
+    name: 'Viewfinder relay optics',
+    category: 'optics',
+    provenance: 'P0 function / P4 pose',
+    description: 'Physical presentation of the unusual off-axis relay elements described in Polaroid optical literature.'
+  },
+  filmPack: {
+    id: 'sx70-film-pack',
+    name: 'Integral-film pack',
+    category: 'film + power module',
+    provenance: 'P0 function / P4 geometry',
+    description: 'Ten-sheet pack serving simultaneously as media magazine, spring-loaded positioning system, battery carrier and processing-material input.'
+  },
+  packBattery: {
+    id: 'sx70-pack-battery',
+    name: 'Film-pack battery',
+    category: 'electrical power',
+    provenance: 'P0 function / P4 geometry',
+    description: 'Flat nominal 6 V disposable battery carried by the original film pack and used to power the camera cycle.'
+  },
+  platen: {
+    id: 'sx70-spring-platen',
+    name: 'Spring platen',
+    category: 'film positioning',
+    provenance: 'P0 function / P4 geometry',
+    description: 'Spring-loaded member biasing the film stack into the required presentation position.'
+  },
+  filmPick: {
+    id: 'sx70-film-pick',
+    name: 'Film pick',
+    category: 'film transport',
+    provenance: 'P0 function / P4 geometry',
+    description: 'Mechanical pick that advances the top film unit toward the processing rollers.'
+  },
+  processingRollers: {
+    id: 'sx70-processing-rollers',
+    name: 'Processing roller pair',
+    category: 'film transport + chemistry',
+    provenance: 'P0 function / P4 geometry',
+    description: 'Driven roller pair that captures and ejects the sheet while rupturing the reagent pod and metering the processing layer.'
+  },
+  movingFilm: {
+    id: 'sx70-moving-film-unit',
+    name: 'Film unit in transport',
+    category: 'film transport',
+    provenance: 'P0 function / P5 presentation geometry',
+    description: 'Presentation of a film unit moving from pack to roller nip and out of the camera.'
   },
   frontDoor: {
     id: 'sx70-front-cover',
@@ -157,6 +261,10 @@ export const PUBLIC_VIEWS = {
   },
   folding: {
     label: 'Folding',
+    ready: true
+  },
+  internals: {
+    label: 'Internals',
     ready: true
   },
   viewing: {
