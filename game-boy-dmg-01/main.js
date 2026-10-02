@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createDMGReferenceModel } from './reference-model.js';
+import { createDMGReferenceModel, fetchDMGReferenceAssets } from './reference-model.js';
 import { createDMGModel } from './model.js';
 import { createDMGSystem } from './system.js';
 import { COMPONENTS, CANONICAL } from './spec.js';
@@ -43,6 +43,11 @@ const loadingEl=document.querySelector('#loading');
 const system=createDMGSystem();
 let model;
 let referenceGeometryReady=false;
+let referenceAssetsPromise=null;
+let referenceUpgradeTimer=0;
+let referenceUpgradeStarted=false;
+let lastInteractionAt=performance.now();
+const REFERENCE_IDLE_MS=1800;
 
 // Production must never block on the large external reference assets. Start from the local,
 // self-contained fallback immediately, then replace it in place when the high-fidelity reference
@@ -52,6 +57,14 @@ if(testMode&&!forceFallback){
  referenceGeometryReady=true;
 }else{
  model=createDMGModel();
+ if(!forceFallback){
+  // Download can proceed in the background, but expensive GLB parsing is deferred until the user
+  // has been idle. This keeps a late CAD parse from freezing an active drag/button animation.
+  referenceAssetsPromise=fetchDMGReferenceAssets().catch(error=>{
+   console.warn('High-fidelity DMG assets unavailable; local model remains active.',error);
+   return null;
+  });
+ }
 }
 model.root.rotation.x=-.02;
 scene.add(model.root);
@@ -82,10 +95,11 @@ let sliderDragging=false;
 let explosionAnimationFrame=0;
 let explosionAnimationToken=0;
 
-async function upgradeReferenceGeometry(){
- if(testMode||forceFallback||referenceGeometryReady)return;
+async function upgradeReferenceGeometry(preparedAssets){
+ if(testMode||forceFallback||referenceGeometryReady||referenceUpgradeStarted||!preparedAssets)return;
+ referenceUpgradeStarted=true;
  try{
-  const reference=await createDMGReferenceModel();
+  const reference=await createDMGReferenceModel(preparedAssets);
   reference.root.rotation.x=-.02;
   scene.remove(model.root);
   model=reference;
@@ -98,16 +112,38 @@ async function upgradeReferenceGeometry(){
   if(ui.geometryProfileState)ui.geometryProfileState.textContent='Hybrid reference-grounded P4 reconstruction';
   if(activeView==='product')inspect(productInspection());
  }catch(error){
-  // Keep the local interactive model alive. A reference-asset/network failure must never blank the app.
   console.warn('High-fidelity DMG geometry unavailable; continuing with local fallback.',error);
   if(ui.geometryProfileState)ui.geometryProfileState.textContent='Local startup model · reference unavailable';
   if(activeView==='product')inspect({
    category:'product',
    provenance:'local startup geometry · reference unavailable',
    name:'Game Boy DMG-01',
-   description:'The interactive local model remains active, but the high-fidelity reference geometry could not be fetched. Reload later to retry the reference upgrade.'
+   description:'The interactive local model remains active, but the high-fidelity reference geometry could not be prepared. Reload later to retry the reference upgrade.'
   });
+ }finally{
+  referenceUpgradeStarted=false;
  }
+}
+
+function scheduleReferenceUpgrade(delay=REFERENCE_IDLE_MS){
+ if(testMode||forceFallback||referenceGeometryReady||referenceUpgradeStarted||!referenceAssetsPromise)return;
+ if(referenceUpgradeTimer)clearTimeout(referenceUpgradeTimer);
+ referenceUpgradeTimer=setTimeout(async()=>{
+  referenceUpgradeTimer=0;
+  const preparedAssets=await referenceAssetsPromise;
+  if(!preparedAssets)return;
+  const idleFor=performance.now()-lastInteractionAt;
+  if(idleFor<REFERENCE_IDLE_MS||sliderDragging||explosionAnimationFrame){
+   scheduleReferenceUpgrade(Math.max(180,REFERENCE_IDLE_MS-idleFor+120));
+   return;
+  }
+  await upgradeReferenceGeometry(preparedAssets);
+ },Math.max(0,delay));
+}
+
+function noteUserInteraction(){
+ lastInteractionAt=performance.now();
+ if(!testMode&&!forceFallback&&!referenceGeometryReady)scheduleReferenceUpgrade();
 }
 
 const presets={
@@ -408,7 +444,10 @@ function debugState(){
    explosionAnimating:explosionAnimationFrame!==0,
    audioFeedbackCount,
    lastAudioFeedback,
-   floorReceivesShadow:floor.receiveShadow
+   floorReceivesShadow:floor.receiveShadow,
+   referenceUpgradeStarted,
+   referenceUpgradeScheduled:referenceUpgradeTimer!==0,
+   idleForMs:Math.round(performance.now()-lastInteractionAt)
   },
   geometry:model.geometryDiagnostics(),
   referenceGeometryReady,
@@ -440,7 +479,12 @@ else setView('product');
 if(params.get('layer')) setLayer(params.get('layer'));
 updateUi();
 ui.loading.style.opacity='0';setTimeout(()=>{ if(ui.loading)ui.loading.hidden=true; },350);
-if(!testMode&&!forceFallback)upgradeReferenceGeometry();
+if(!testMode&&!forceFallback){
+ for(const eventName of ['pointerdown','input','keydown']){
+  document.addEventListener(eventName,noteUserInteraction,{capture:true,passive:true});
+ }
+ scheduleReferenceUpgrade();
+}
 
 function animate(now){
  const dt=Math.min(.05,(now-lastTime)/1000);lastTime=now;
