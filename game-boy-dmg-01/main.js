@@ -192,6 +192,14 @@ canvas.addEventListener('pointerdown',event=>{
  if(hit?.object?.userData?.component) inspect(hit.object.userData.component);
 });
 
+function setQaCamera(position,target=[0,0,0],up=[0,1,0]){
+ camera.up.set(...up);
+ camera.position.set(...position);
+ controls.target.set(...target);
+ camera.lookAt(...target);
+ controls.update();
+}
+
 function resize(){
  const w=canvas.clientWidth,h=canvas.clientHeight;
  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
@@ -221,6 +229,7 @@ window.__dmgDebug={
  advanceDots:system.advanceDots,
  setServiceScenario:system.setServiceScenario,
  runServiceTest:system.runServiceTest,
+ setQaCamera,
  updateUi
 };
 
