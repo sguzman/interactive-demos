@@ -26,7 +26,7 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.cartridge.mapper).toBe('no-mbc');
   expect(initial.activeView).toBe('product');
   expect(initial.activeLayer).toBe('physical');
-  expect(initial.geometry.revision).toBe('dmg-reference-cad-v11');
+  expect(initial.geometry.revision).toBe('dmg-reference-cad-v12');
   expect(initial.geometry.geometryMaturity).toBe('G4-render-reviewed-hybrid-reference; user-acceptance-pending');
   expect(initial.geometry.finite).toBe(true);
   expect(initial.geometry.pickableCount).toBeGreaterThan(350);
@@ -73,6 +73,8 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.geometry.presentation.legacySpeakerMeshRetired).toBe(true);
   expect(initial.geometry.presentation.speakerGrilleBackingPresent).toBe(true);
   expect(initial.geometry.presentation.assembledOcclusionLimit).toBeCloseTo(.08, 4);
+  expect(initial.geometry.presentation.internalRevealTravel).toBeCloseTo(.18, 4);
+  expect(initial.geometry.presentation.currentInternalExplosionTravel).toBeCloseTo(0, 4);
   expect(initial.geometry.presentation.assembledOcclusionActive).toBe(true);
   expect(initial.geometry.presentation.dpadMembraneVisible).toBe(false);
   expect(initial.geometry.presentation.actionMembraneVisible).toBe(false);
@@ -225,6 +227,7 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   });
   const clearedTravel = await page.evaluate(() => window.__dmgDebug.state.geometry.presentation);
   expect(clearedTravel.assembledOcclusionActive).toBe(false);
+  expect(clearedTravel.currentInternalExplosionTravel).toBeGreaterThan(.20);
   await page.screenshot({ path: 'test-results/dmg-reference-unfold-cleared.png', fullPage: true });
 
   await page.evaluate(() => window.__dmgDebug.setExplosion(0));
