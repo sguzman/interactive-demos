@@ -40,6 +40,10 @@
         <button id="resetBtn" class="secondary">Reset specimen</button>
       </div>
 
+      <label class="range-row explode-range" for="explodeRange"><span>Explode / dissect</span><output id="explodeValue">0%</output></label>
+      <input id="explodeRange" type="range" min="0" max="100" step="1" value="0"
+             aria-label="Gradually dissect the Game Boy from assembled to fully exploded" />
+
       <div class="product-controls" aria-label="Game Boy face controls">
         <div class="dpad-grid">
           <span></span><button class="pad secondary" data-button="Up">▲</button><span></span>
