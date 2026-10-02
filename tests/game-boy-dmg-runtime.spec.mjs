@@ -299,5 +299,20 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   await page.evaluate(() => window.__dmgDebug.setProductionShadowQa());
   await page.screenshot({ path: 'test-results/dmg-product-production-shadow.png', fullPage: true });
 
+  // Startup regression: the live app must become interactive without waiting on the external
+  // high-fidelity CAD assets. fallback=1 deterministically exercises that production-safe path.
+  await page.goto('http://127.0.0.1:4173/game-boy-dmg-01/?test=1&fallback=1', { waitUntil: 'domcontentloaded', timeout: 30_000 });
+  await page.waitForFunction(() => Boolean(window.__dmgDebug?.state), null, { timeout: 5_000 });
+  const fallbackState = await page.evaluate(() => window.__dmgDebug.state);
+  expect(fallbackState.geometry.revision).toBe('dmg-public-v1');
+  expect(fallbackState.referenceGeometryReady).toBe(false);
+  expect(fallbackState.running).toBe(true);
+  await page.locator('#explodeRange').evaluate(el => {
+    el.value = '25';
+    el.dispatchEvent(new Event('input', { bubbles:true }));
+  });
+  expect((await page.evaluate(() => window.__dmgDebug.state)).explosion).toBeCloseTo(.25, 4);
+  await page.screenshot({ path: 'test-results/dmg-fallback-startup.png', fullPage: true });
+
   expect(pageErrors).toEqual([]);
 });
