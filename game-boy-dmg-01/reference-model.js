@@ -63,6 +63,7 @@ const SPECIAL={
 };
 
 const CONTROL={dpad:['DPad'],buttonA:['ButtonA'],buttonB:['ButtonB'],Start:['StartKey'],Select:['SelectKey']};
+const ASSEMBLED_OCCLUSION_LIMIT=.08;
 const ASSEMBLED_OCCLUDED_IDS=new Set(['DPadMembrane','ActionMembrane','DPadCarrier']);
 const ASSEMBLED_HIDDEN_ASSEMBLIES=new Set(['ControlsInternal','Mainboard','Power','Audio','Flex','Battery','Internal']);
 const REAR_INFO_IDS=new Set(['RearModel','RearNintendo','RearRating','RearStudy']);
@@ -322,7 +323,7 @@ export async function createDMGReferenceModel(){
   };
 
   function syncVisibility(){
-    const assembled=state.explosion<=.04;
+    const assembled=state.explosion<=ASSEMBLED_OCCLUSION_LIMIT;
     for(const n of nodes){
       const id=n.userData?.partId||'';
       if(accessoryNodes.has(n)){
@@ -362,11 +363,11 @@ export async function createDMGReferenceModel(){
   }
   function assembledControlVisibility(){
     const ids=nodes.filter(n=>isAssembledHidden(n)).map(n=>n.userData.partId).filter(Boolean);
-    return {count:ids.length,allHidden:state.explosion>.04 ? true : ids.every(id=>nodesByPartId.get(id)?.visible===false)};
+    return {count:ids.length,allHidden:state.explosion>ASSEMBLED_OCCLUSION_LIMIT ? true : ids.every(id=>nodesByPartId.get(id)?.visible===false)};
   }
   function assembledCartridgeVisibility(){
     const ids=accessories.filter(n=>isCartridgeInternal(n.userData?.partId)).map(n=>n.userData.partId);
-    return {count:ids.length,allHidden:state.explosion>.04 || !state.cartridgePresent ? true : ids.every(id=>nodesByPartId.get(id)?.visible===false)};
+    return {count:ids.length,allHidden:state.explosion>ASSEMBLED_OCCLUSION_LIMIT || !state.cartridgePresent ? true : ids.every(id=>nodesByPartId.get(id)?.visible===false)};
   }
   function geometryDiagnostics(){
     const landmarkIds=['DisplayGlass','DPad','ButtonA','ButtonB','SelectKey','StartKey','BatteryLED','Mainboard','FrontPCB','CartridgeSocket'];
@@ -422,7 +423,7 @@ export async function createDMGReferenceModel(){
       sourceCoordinateGate:Object.values(landmarkChecks).every(x=>x.withinSourceCoordinateTolerance)
     };
     return {
-      revision:'dmg-reference-cad-v10',
+      revision:'dmg-reference-cad-v11',
       geometryMaturity:'G4-render-reviewed-hybrid-reference; user-acceptance-pending',
       source:{
         assembly:{
@@ -445,12 +446,13 @@ export async function createDMGReferenceModel(){
       presentation:{
         legacySpeakerMeshRetired:legacySpeakerMesh ? legacySpeakerMesh.visible===false : true,
         speakerGrilleBackingPresent:nodesByPartId.has('SpeakerGrilleBacking'),
-        assembledOcclusionActive:state.explosion<=.04,
+        assembledOcclusionLimit:ASSEMBLED_OCCLUSION_LIMIT,
+        assembledOcclusionActive:state.explosion<=ASSEMBLED_OCCLUSION_LIMIT,
         dpadMembraneVisible:!!nodesByPartId.get('DPadMembrane')?.visible,
         actionMembraneVisible:!!nodesByPartId.get('ActionMembrane')?.visible,
         controlInternalBleedGuard:assembledControlVisibility(),
         cartridgeInternalBleedGuard:assembledCartridgeVisibility(),
-        rearMarkingsRemainVisibleWithInsertedCartridge:state.cartridgePresent && state.explosion<=.04
+        rearMarkingsRemainVisibleWithInsertedCartridge:state.cartridgePresent && state.explosion<=ASSEMBLED_OCCLUSION_LIMIT
           ? [...REAR_INFO_IDS].every(id=>nodesByPartId.get(id)?.visible!==false)
           : true,
         cartridgeRearInsetMm:CARTRIDGE_REAR_INSET_MM,
