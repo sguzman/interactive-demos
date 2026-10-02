@@ -8,8 +8,8 @@ export const CANONICAL = {
     converter: 'representative type-D presentation',
     jackBoard: 'representative DMG-JACK-03 presentation',
     universalBomClaim: false,
-    geometrySource: 'open-console-cad@55081da3b4864aba36082644f9a3c5cedf1061c8',
-    geometrySourceClass: 'P4 external CAD reconstruction'
+    geometrySource: 'hybrid: open-console-cad@55081da3b4864aba36082644f9a3c5cedf1061c8 + guighub/DMG-01-Shell@758e2841dc163b472815c39c651df641966e58eb front',
+    geometrySourceClass: 'hybrid P4 external assembly reconstruction + independent printable-replica front enclosure'
   },
   masterClockHz: 4194304,
   display: { width: 160, height: 144, scanlines: 154, visibleScanlines: 144, dotsPerLine: 456 },
@@ -35,8 +35,8 @@ export const COMPONENTS = {
   shellFront: {
     name: 'Front enclosure',
     category: 'physical assembly',
-    provenance: 'reference-grounded P4 external CAD reconstruction',
-    description: 'Representative front shell carrying the controls, display window, and front-board stack.'
+    provenance: 'P4 independent printable replica · guighub/DMG-01-Shell@758e2841 · registered to assembly envelope',
+    description: 'Front enclosure replaced by an independently authored printable replica documented as original-part compatible; upstream notes that some screw holes may be slightly offset.'
   },
   shellRear: {
     name: 'Rear enclosure',
