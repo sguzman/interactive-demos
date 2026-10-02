@@ -8,7 +8,10 @@ const SRC={
   commit:'55081da3b4864aba36082644f9a3c5cedf1061c8',
   sha256:'9aed0c26e836442ffce065f3607316df7f6d55742b708b9db2394e09e8d99beb',
   sourceModelSha256:'a8c3adf2c8ede383d21c6863a61415319c32aa56cde5caf3cd3b27a827e0b21c',
-  url:'https://raw.githubusercontent.com/tiansongyu/open-console-cad/55081da3b4864aba36082644f9a3c5cedf1061c8/site/public/models/gameboy.glb',
+  urls:[
+    'https://cdn.jsdelivr.net/gh/tiansongyu/open-console-cad@55081da3b4864aba36082644f9a3c5cedf1061c8/site/public/models/gameboy.glb',
+    'https://raw.githubusercontent.com/tiansongyu/open-console-cad/55081da3b4864aba36082644f9a3c5cedf1061c8/site/public/models/gameboy.glb'
+  ],
   modelBytes:19581512,
   components:410,
   solids:768,
@@ -29,7 +32,10 @@ const FRONT_SHELL_SRC={
   repository:'guighub/DMG-01-Shell',
   commit:'758e2841dc163b472815c39c651df641966e58eb',
   blob:'312893a8b6cb58eb97665c2dcb9be3b24b99ad3b',
-  url:'https://raw.githubusercontent.com/guighub/DMG-01-Shell/758e2841dc163b472815c39c651df641966e58eb/STL/DMG-01_Front_v38.stl',
+  urls:[
+    'https://cdn.jsdelivr.net/gh/guighub/DMG-01-Shell@758e2841dc163b472815c39c651df641966e58eb/STL/DMG-01_Front_v38.stl',
+    'https://raw.githubusercontent.com/guighub/DMG-01-Shell/758e2841dc163b472815c39c651df641966e58eb/STL/DMG-01_Front_v38.stl'
+  ],
   license:'MIT',
   scope:'front shell only',
   upstreamStatus:'front mostly complete; original-part compatible; some screw holes may be slightly offset'
@@ -155,12 +161,33 @@ function visibleMeshBox(root){
   });
   return box;
 }
+async function fetchPinnedBinary(urls,label){
+  const failures=[];
+  for(const url of urls){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),60_000);
+    try{
+      const response=await fetch(url,{signal:controller.signal,cache:'force-cache',mode:'cors'});
+      if(!response.ok)throw new Error('HTTP '+response.status);
+      const buffer=await response.arrayBuffer();
+      if(!buffer.byteLength)throw new Error('empty response');
+      clearTimeout(timer);
+      return {buffer,url};
+    }catch(error){
+      clearTimeout(timer);
+      failures.push(url+' -> '+(error?.name==='AbortError'?'timeout':(error?.message||String(error))));
+    }
+  }
+  throw new Error(label+' failed from every pinned mirror: '+failures.join(' | '));
+}
 
 export async function createDMGReferenceModel(){
-  const [gltf,frontShellGeometry]=await Promise.all([
-    new GLTFLoader().loadAsync(SRC.url),
-    new STLLoader().loadAsync(FRONT_SHELL_SRC.url)
+  const [assemblyAsset,frontShellAsset]=await Promise.all([
+    fetchPinnedBinary(SRC.urls,'DMG assembly GLB'),
+    fetchPinnedBinary(FRONT_SHELL_SRC.urls,'DMG front-shell STL')
   ]);
+  const gltf=await new GLTFLoader().parseAsync(assemblyAsset.buffer,'');
+  const frontShellGeometry=new STLLoader().parse(frontShellAsset.buffer);
   orientPrintableFrontShell(frontShellGeometry);
   const root=new THREE.Group();
   root.name='Nintendo Game Boy DMG-01 — reference-grounded reconstruction';
@@ -457,7 +484,7 @@ export async function createDMGReferenceModel(){
       geometryMaturity:'G4-render-review-in-progress; user-acceptance-open',
       source:{
         assembly:{
-          repository:SRC.repo,commit:SRC.commit,sha256:SRC.sha256,
+          repository:SRC.repo,commit:SRC.commit,sha256:SRC.sha256,resolvedUrl:assemblyAsset.url,
           sourceModelSha256:SRC.sourceModelSha256,
           modelBytes:SRC.modelBytes,components:SRC.components,solids:SRC.solids,
           triangles:SRC.triangles,iterations:SRC.iterations,
