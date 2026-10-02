@@ -4,13 +4,16 @@ import { createDMGReferenceModel } from './reference-model.js';
 import { createDMGSystem } from './system.js';
 import { COMPONENTS, CANONICAL } from './spec.js';
 
+const params=new URLSearchParams(location.search);
+const testMode=params.get('test')==='1';
+
 const canvas=document.querySelector('#scene');
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(testMode?1:Math.min(devicePixelRatio||1,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.18;
-renderer.shadowMap.enabled=true;
+renderer.shadowMap.enabled=!testMode;
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x080b0a);
@@ -22,10 +25,10 @@ const controls=new OrbitControls(camera,renderer.domElement);
 controls.enableDamping=true; controls.target.set(0,0,0); controls.minDistance=120; controls.maxDistance=950;
 
 scene.add(new THREE.HemisphereLight(0xdce6d5,0x172018,1.5));
-const key=new THREE.DirectionalLight(0xffffff,3.0); key.position.set(150,220,180); key.castShadow=true; scene.add(key);
+const key=new THREE.DirectionalLight(0xffffff,3.0); key.position.set(150,220,180); key.castShadow=!testMode; scene.add(key);
 const rim=new THREE.DirectionalLight(0xa6cbe0,1.2); rim.position.set(-160,80,-180); scene.add(rim);
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.MeshStandardMaterial({color:0x0b0d0b,roughness:.95}));
-floor.rotation.x=-Math.PI/2; floor.position.y=-88; floor.receiveShadow=true; scene.add(floor);
+floor.rotation.x=-Math.PI/2; floor.position.y=-88; floor.receiveShadow=!testMode; scene.add(floor);
 
 const model=await createDMGReferenceModel();
 model.root.rotation.x=-.02;
@@ -233,7 +236,6 @@ window.__dmgDebug={
  updateUi
 };
 
-const params=new URLSearchParams(location.search);
 if(params.get('view')) setView(params.get('view'));
 else setView('product');
 if(params.get('layer')) setLayer(params.get('layer'));
