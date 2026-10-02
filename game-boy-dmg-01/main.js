@@ -44,6 +44,7 @@ const system=createDMGSystem();
 
 const ui={
  powerBtn:document.querySelector('#powerBtn'),cartridgeBtn:document.querySelector('#cartridgeBtn'),explodeBtn:document.querySelector('#explodeBtn'),resetBtn:document.querySelector('#resetBtn'),
+ explodeRange:document.querySelector('#explodeRange'),explodeValue:document.querySelector('#explodeValue'),
  powerState:document.querySelector('#powerState'),cartridgeState:document.querySelector('#cartridgeState'),joypState:document.querySelector('#joypState'),ppuState:document.querySelector('#ppuState'),accessState:document.querySelector('#accessState'),dmaState:document.querySelector('#dmaState'),audioState:document.querySelector('#audioState'),actionState:document.querySelector('#actionState'),
  joypSelect:document.querySelector('#joypSelect'),mapperSelect:document.querySelector('#mapperSelect'),mapperWriteBtn:document.querySelector('#mapperWriteBtn'),dmaBtn:document.querySelector('#dmaBtn'),ppuDot:document.querySelector('#ppuDot'),ppuDotValue:document.querySelector('#ppuDotValue'),
  nr50:document.querySelector('#nr50'),nr50Value:document.querySelector('#nr50Value'),physicalVolume:document.querySelector('#physicalVolume'),physicalVolumeValue:document.querySelector('#physicalVolumeValue'),
@@ -168,7 +169,15 @@ for(const button of document.querySelectorAll('[data-button]')){
 
 ui.powerBtn.addEventListener('click',()=>{system.setPower(!system.state.power);updateUi();});
 ui.cartridgeBtn.addEventListener('click',()=>{system.setCartridgePresent(!system.state.cartridge.present);updateUi();});
-ui.explodeBtn.addEventListener('click',()=>{setExplosion(explosion>.5?0:1);if(explosion>0)setView('exploded');else setView('product');});
+ui.explodeBtn.addEventListener('click',()=>{
+ const target=explosion>.5?0:1;
+ if(target===1)setView('exploded');else setView('product');
+});
+ui.explodeRange?.addEventListener('input',()=>{
+ const value=Number(ui.explodeRange.value)/100;
+ setExplosion(value);
+ // Slider is a dissection control, not a camera preset: keep the user's current viewpoint.
+});
 ui.resetBtn.addEventListener('click',()=>{system.reset();setExplosion(0);setLayer('physical');setView('product');ui.mapperSelect.value='no-mbc';ui.joypSelect.value='action';updateUi();});
 ui.joypSelect.addEventListener('change',()=>{system.selectJoyp(ui.joypSelect.value);updateUi();});
 ui.mapperSelect.addEventListener('change',()=>{system.setMapper(ui.mapperSelect.value);updateUi();});
