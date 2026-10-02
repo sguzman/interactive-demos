@@ -33,3 +33,7 @@ button{cursor:pointer}button:hover{filter:brightness(1.1)}button.active{border-c
 #loading{position:absolute;z-index:30;left:50%;top:50%;transform:translate(-50%,-50%);color:#d2d9cf;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.14em;transition:opacity .3s}
 @media(max-width:900px){.topbar{grid-template-columns:auto 1fr}.guide-status{display:none}.controls{width:305px}.inspector{width:330px}}
 @media(max-width:680px){.topbar{left:8px;right:8px;top:8px;min-height:68px}.identity h1{font-size:17px}.identity p{display:none}.controls{top:84px;left:8px;width:min(304px,calc(100vw - 16px));max-height:48vh}.inspector{left:8px;right:8px;bottom:8px;width:auto;min-height:130px}.legend{display:none}}
+
+
+.qa-render .panel,
+.qa-render #loading{display:none!important}
