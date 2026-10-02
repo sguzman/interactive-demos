@@ -204,6 +204,9 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
 
   await page.evaluate(() => window.__dmgDebug.setQaCamera([0,0,-330],[0,0,0],[0,1,0],200));
   await page.screenshot({ path: 'test-results/dmg-reference-rear.png', fullPage: true });
+  await page.evaluate(() => window.__dmgDebug.setCartridgePresent(false));
+  await page.screenshot({ path: 'test-results/dmg-reference-rear-ejected.png', fullPage: true });
+  await page.evaluate(() => window.__dmgDebug.setCartridgePresent(true));
 
   await page.evaluate(() => window.__dmgDebug.setQaCamera([-330,0,0],[0,0,0],[0,1,0],200));
   await page.screenshot({ path: 'test-results/dmg-reference-left.png', fullPage: true });
