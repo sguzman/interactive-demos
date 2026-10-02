@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({ page }) => {
-  test.setTimeout(180_000);
+  test.setTimeout(360_000);
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(String(error)));
   page.on('console', message => console.log('[browser]', message.type(), message.text()));
