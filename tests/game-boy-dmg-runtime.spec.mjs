@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { mkdir, writeFile } from 'node:fs/promises';
 
 test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({ page }) => {
   test.setTimeout(360_000);
@@ -18,6 +19,8 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   await page.waitForFunction(() => Boolean(window.__dmgDebug?.state), null, { timeout: 180_000 });
 
   const initial = await page.evaluate(() => window.__dmgDebug.state);
+  await mkdir('test-results', { recursive:true });
+  await writeFile('test-results/dmg-geometry-diagnostics.json', JSON.stringify(initial.geometry, null, 2));
   expect(initial.running).toBe(true);
   expect(initial.cartridge.present).toBe(true);
   expect(initial.cartridge.mapper).toBe('no-mbc');
