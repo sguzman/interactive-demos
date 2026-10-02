@@ -41,7 +41,9 @@ jobs:
             try {
               const r = await fetch(base + 'main.js?probe=' + Date.now(), { cache:'no-store' });
               last = r.ok ? await r.text() : 'HTTP ' + r.status;
-              if (r.ok && last.includes('referenceGeometryReady') && last.includes('upgradeReferenceGeometry')) {
+              if (r.ok && last.includes('referenceGeometryReady') && last.includes('upgradeReferenceGeometry') &&
+                  last.includes('animateExplosion') && last.includes('audioFeedbackCount') &&
+                  last.includes('floor.receiveShadow=false')) {
                 console.log('deployed runtime marker found');
                 process.exit(0);
               }
@@ -78,13 +80,58 @@ jobs:
             throw new Error('Unexpected public title: ' + JSON.stringify(heading));
           }
 
-          await page.locator('#explodeRange').evaluate(el => {
-            el.value = '25';
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-          });
-          const quarter = await page.evaluate(() => window.__dmgDebug.state);
-          if (Math.abs(quarter.explosion - 0.25) > 1e-6) {
-            throw new Error('Deployed dissection control failed: ' + quarter.explosion);
+          const initial = await page.evaluate(() => window.__dmgDebug.state);
+          if (initial.interaction?.floorReceivesShadow !== false) {
+            throw new Error('Product floor still receives detached shadows');
+          }
+
+          // Exercise the actual native range drag for >0.8 s; synthetic input was insufficient for
+          // the user's reported "stops after half a second" regression.
+          const slider = page.locator('#explodeRange');
+          const box = await slider.boundingBox();
+          if (!box) throw new Error('Dissection slider has no layout box');
+          await page.mouse.move(box.x + 4, box.y + box.height / 2);
+          await page.mouse.down();
+          for (let i = 1; i <= 8; i++) {
+            await page.mouse.move(box.x + 4 + (box.width - 8) * (i / 8), box.y + box.height / 2);
+            await page.waitForTimeout(110);
+          }
+          const dragging = await page.evaluate(() => window.__dmgDebug.state);
+          if (!dragging.interaction?.sliderDragging || dragging.explosion < 0.80) {
+            throw new Error('Sustained deployed slider drag failed: ' + JSON.stringify({
+              sliderDragging: dragging.interaction?.sliderDragging,
+              explosion: dragging.explosion
+            }));
+          }
+          await page.mouse.up();
+
+          // Explode button must animate through intermediate values rather than jump to the endpoint.
+          await page.evaluate(() => window.__dmgDebug.setExplosion(0));
+          await page.locator('#explodeBtn').click();
+          await page.waitForTimeout(260);
+          const midExplode = await page.evaluate(() => window.__dmgDebug.state);
+          if (!midExplode.interaction?.explosionAnimating || midExplode.explosion <= 0.01 || midExplode.explosion >= 0.95) {
+            throw new Error('Explode button did not animate gradually: ' + JSON.stringify(midExplode.interaction));
+          }
+          await page.waitForFunction(() => window.__dmgDebug.state.explosion > 0.995 && !window.__dmgDebug.state.interaction.explosionAnimating);
+
+          // Power off must be visible in the rendered LCD state, not only in a text status field.
+          await page.locator('#powerBtn').click();
+          const off = await page.evaluate(() => window.__dmgDebug.state);
+          if (off.running !== false || off.geometry?.screenPowered !== false) {
+            throw new Error('Power-off LCD did not blank: ' + JSON.stringify({ running:off.running, screenPowered:off.geometry?.screenPowered }));
+          }
+          await page.locator('#powerBtn').click();
+
+          // All eight physical HUD controls must emit feedback, not only A.
+          const audioBefore = (await page.evaluate(() => window.__dmgDebug.state)).interaction.audioFeedbackCount;
+          for (const name of ['Up','Down','Left','Right','B','A','Select','Start']) {
+            await page.locator('[data-button="' + name + '"]').dispatchEvent('pointerdown');
+            await page.locator('[data-button="' + name + '"]').dispatchEvent('pointerup');
+          }
+          const audioAfter = await page.evaluate(() => window.__dmgDebug.state);
+          if (audioAfter.interaction.audioFeedbackCount !== audioBefore + 8) {
+            throw new Error('Not every physical HUD button emitted audio feedback');
           }
 
           // High-fidelity reference geometry remains an acceptance requirement, not merely a background bonus.
@@ -93,16 +140,16 @@ jobs:
           if (!String(reference.geometry?.revision || '').startsWith('dmg-reference-cad-')) {
             throw new Error('Reference geometry did not replace fallback: ' + JSON.stringify(reference.geometry?.revision));
           }
+          if (reference.geometry?.screenPowered !== true) {
+            throw new Error('Reference LCD did not restore after power-on');
+          }
 
-          await page.locator('#explodeRange').evaluate(el => {
-            el.value = '0';
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-          });
+          await page.evaluate(() => window.__dmgDebug.setExplosion(0));
           await page.screenshot({ path: 'dmg-deployed.png', fullPage: true });
 
           if (errors.length) throw new Error('Browser errors: ' + errors.join(' | '));
           await browser.close();
-          console.log('deployed DMG startup + reference upgrade + dissection control passed:', url);
+          console.log('deployed DMG startup + reference upgrade + sustained drag + animated explode + power LCD + audio feedback passed:', url);
           EOF
 
       - name: Upload deployed screenshot
