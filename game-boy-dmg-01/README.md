@@ -128,6 +128,6 @@ Those are **upstream reconstruction QA facts**, not claims that the geometry is 
 CAD or manufacturing-tolerance accurate. Local contours, wall thicknesses, hole positions,
 packages, contacts, wiring, and fit clearances remain explicitly approximate in the pinned source.
 
-The projection is now a G3 hybrid reference import with deterministic front/rear/side/top and
-exploded renders. Automated geometry, runtime, and registration gates pass; final G4 closure still
-requires the separate rendered comparison/user-acceptance review.
+The projection has now passed the rendered G4 review using deterministic front/rear/side/top,
+three-quarter, and exploded renders. Automated geometry, runtime, registration, and rendered
+comparison gates pass. ENG-DMG-022 remains open only for direct user visual acceptance.
