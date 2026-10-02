@@ -26,8 +26,9 @@ let activeRenderCamera=camera;
 const controls=new OrbitControls(camera,renderer.domElement);
 controls.enableDamping=true; controls.target.set(0,0,0); controls.minDistance=120; controls.maxDistance=950;
 
-scene.add(new THREE.HemisphereLight(0xdce6d5,0x172018,1.5));
-scene.add(new THREE.AmbientLight(0xffffff,testMode?.9:.35));
+const hemi=new THREE.HemisphereLight(0xdce6d5,0x172018,1.5);scene.add(hemi);
+const ambientBase=testMode?.9:.35;
+const ambient=new THREE.AmbientLight(0xffffff,ambientBase);scene.add(ambient);
 const key=new THREE.DirectionalLight(0xffffff,3.0); key.position.set(150,220,180); key.castShadow=!testMode; scene.add(key);
 const rim=new THREE.DirectionalLight(0xa6cbe0,testMode?2.1:1.2); rim.position.set(-160,80,-180); scene.add(rim); scene.add(rim.target);
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.MeshStandardMaterial({color:0x0b0d0b,roughness:.95}));
@@ -113,7 +114,14 @@ function setLayer(layer){
  layerButtons.forEach(b=>b.classList.toggle('active',b.dataset.layer===layer));
 }
 
-function setExplosion(value){ explosion=Math.max(0,Math.min(1,value)); model.setExplosion(explosion); ui.explodeBtn.textContent=explosion>.5?'Assemble':'Explode'; }
+function setExplosion(value){
+ explosion=Math.max(0,Math.min(1,value));
+ model.setExplosion(explosion);
+ // Keep the closed product contrasty, but lift deep internal layers as the stack separates.
+ hemi.intensity=1.5+.8*explosion;
+ ambient.intensity=ambientBase+(testMode?.45:.55)*explosion;
+ ui.explodeBtn.textContent=explosion>.5?'Assemble':'Explode';
+}
 
 function updateUi(){
  const s=system.state;
