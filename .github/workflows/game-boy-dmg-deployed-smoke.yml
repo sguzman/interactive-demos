@@ -43,7 +43,8 @@ jobs:
               last = r.ok ? await r.text() : 'HTTP ' + r.status;
               if (r.ok && last.includes('referenceGeometryReady') && last.includes('upgradeReferenceGeometry') &&
                   last.includes('animateExplosion') && last.includes('audioFeedbackCount') &&
-                  last.includes('floor.receiveShadow=false')) {
+                  last.includes('floor.receiveShadow=false') && last.includes('REFERENCE_IDLE_MS') &&
+                  last.includes('scheduleReferenceUpgrade')) {
                 console.log('deployed runtime marker found');
                 process.exit(0);
               }
@@ -111,7 +112,7 @@ jobs:
           await page.waitForTimeout(260);
           const midExplode = await page.evaluate(() => window.__dmgDebug.state);
           if (!midExplode.interaction?.explosionAnimating || midExplode.explosion <= 0.01 || midExplode.explosion >= 0.95) {
-            throw new Error('Explode button did not animate gradually: ' + JSON.stringify(midExplode.interaction));
+            throw new Error('Explode button did not animate gradually: ' + JSON.stringify({ explosion:midExplode.explosion, interaction:midExplode.interaction }));
           }
           await page.waitForFunction(() => window.__dmgDebug.state.explosion > 0.995 && !window.__dmgDebug.state.interaction.explosionAnimating);
 
