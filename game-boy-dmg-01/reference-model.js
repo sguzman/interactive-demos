@@ -305,7 +305,7 @@ export async function createDMGReferenceModel(){
     };
     return {
       revision:'dmg-reference-cad-v4',
-      geometryMaturity:'G3-hybrid-reference-import; rendered-G4-review-pending',
+      geometryMaturity:'G4-render-reviewed-hybrid-reference; user-acceptance-pending',
       source:{
         assembly:{
           repository:SRC.repo,commit:SRC.commit,sha256:SRC.sha256,
