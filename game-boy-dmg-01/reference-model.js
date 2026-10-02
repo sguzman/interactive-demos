@@ -368,11 +368,13 @@ export async function createDMGReferenceModel(){
   }
   function assembledControlVisibility(){
     const ids=nodes.filter(n=>isAssembledHidden(n)).map(n=>n.userData.partId).filter(Boolean);
-    return {count:ids.length,allHidden:state.explosion>ASSEMBLED_CLOSED_EPS ? true : ids.every(id=>nodesByPartId.get(id)?.visible===false)};
+    const hiddenCount=ids.filter(id=>nodesByPartId.get(id)?.visible===false).length;
+    return {count:ids.length,hiddenCount,allHidden:hiddenCount===ids.length};
   }
   function assembledCartridgeVisibility(){
     const ids=accessories.filter(n=>isCartridgeInternal(n.userData?.partId)).map(n=>n.userData.partId);
-    return {count:ids.length,allHidden:state.explosion>ASSEMBLED_CLOSED_EPS || !state.cartridgePresent ? true : ids.every(id=>nodesByPartId.get(id)?.visible===false)};
+    const hiddenCount=ids.filter(id=>nodesByPartId.get(id)?.visible===false).length;
+    return {count:ids.length,hiddenCount,allHidden:hiddenCount===ids.length};
   }
   function geometryDiagnostics(){
     const landmarkIds=['DisplayGlass','DPad','ButtonA','ButtonB','SelectKey','StartKey','BatteryLED','Mainboard','FrontPCB','CartridgeSocket'];
