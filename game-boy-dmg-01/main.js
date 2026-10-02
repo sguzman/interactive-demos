@@ -37,7 +37,7 @@ const key=new THREE.DirectionalLight(0xffffff,3.0); key.position.set(150,220,180
 const rim=new THREE.DirectionalLight(0xa6cbe0,testMode?2.1:1.2); rim.position.set(-160,80,-180); scene.add(rim); scene.add(rim.target);
 const qaFill=new THREE.DirectionalLight(0xffffff,testMode?.45:0); qaFill.position.set(0,-120,160); scene.add(qaFill); scene.add(qaFill.target);
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.MeshStandardMaterial({color:0x0b0d0b,roughness:.95}));
-floor.rotation.x=-Math.PI/2; floor.position.y=-88; floor.receiveShadow=!testMode; scene.add(floor);
+floor.rotation.x=-Math.PI/2; floor.position.y=-88; floor.receiveShadow=false; scene.add(floor);
 
 const loadingEl=document.querySelector('#loading');
 const system=createDMGSystem();
@@ -76,6 +76,11 @@ let explosion=0;
 let autoRun=true;
 let lastTime=performance.now();
 let audioCtx=null;
+let audioFeedbackCount=0;
+let lastAudioFeedback='none';
+let sliderDragging=false;
+let explosionAnimationFrame=0;
+let explosionAnimationToken=0;
 
 async function upgradeReferenceGeometry(){
  if(testMode||forceFallback||referenceGeometryReady)return;
@@ -188,7 +193,7 @@ function setExplosion(value){
  ambient.intensity=ambientBase+(testMode?1.15:.55)*explosion;
  if(testMode)qaFill.intensity=.45+1.45*explosion;
  ui.explodeBtn.textContent=explosion>.5?'Assemble':'Explode';
- if(ui.explodeRange)ui.explodeRange.value=String(Math.round(explosion*100));
+ if(ui.explodeRange&&!sliderDragging)ui.explodeRange.value=String(Math.round(explosion*100));
  if(ui.explodeValue)ui.explodeValue.textContent=Math.round(explosion*100)+'%';
 }
 
@@ -212,38 +217,84 @@ function updateUi(){
  model.setCartridgePresent(s.cartridge.present);
 }
 
-function chirp(){
+function chirp(label='control'){
+ audioFeedbackCount+=1;
+ lastAudioFeedback=label;
  try{
   if(!audioCtx) audioCtx=new AudioContext();
+  if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
   const osc=audioCtx.createOscillator(), gain=audioCtx.createGain();
-  const s=system.state.apu; const level=s.nr50*s.physicalVolume*.07;
-  osc.type='square'; osc.frequency.value=440;
+  const s=system.state.apu; const level=Math.max(.012,s.nr50*s.physicalVolume*.07);
+  const pitches={A:520,B:420,Start:360,Select:330,Up:460,Down:390,Left:410,Right:440,power:290,cartridge:310,explode:350,reset:260};
+  osc.type='square'; osc.frequency.value=pitches[label]||380;
   gain.gain.setValueAtTime(level,audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.12);
-  osc.connect(gain).connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime+.13);
+  gain.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.075);
+  osc.connect(gain).connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime+.085);
  }catch{}
+}
+
+function cancelExplosionAnimation(){
+ explosionAnimationToken+=1;
+ if(explosionAnimationFrame)cancelAnimationFrame(explosionAnimationFrame);
+ explosionAnimationFrame=0;
+}
+
+function animateExplosion(target,duration=1250){
+ cancelExplosionAnimation();
+ const token=explosionAnimationToken;
+ const from=explosion;
+ const to=Math.max(0,Math.min(1,target));
+ if(Math.abs(to-from)<1e-6){setExplosion(to);return;}
+ const started=performance.now();
+ const step=now=>{
+  if(token!==explosionAnimationToken)return;
+  const t=Math.min(1,(now-started)/duration);
+  // Smoothstep keeps the endpoints calm while every intermediate geometry position remains continuous.
+  const eased=t*t*(3-2*t);
+  setExplosion(from+(to-from)*eased);
+  if(t<1)explosionAnimationFrame=requestAnimationFrame(step);
+  else explosionAnimationFrame=0;
+ };
+ explosionAnimationFrame=requestAnimationFrame(step);
 }
 
 for(const button of document.querySelectorAll('[data-button]')){
  const name=button.dataset.button;
  const key=name==='A'?'buttonA':name==='B'?'buttonB':name==='Start'?'Start':name==='Select'?'Select':name==='Up'||name==='Down'||name==='Left'||name==='Right'?'dpad':null;
- const down=ev=>{ev.preventDefault();system.pressButton(name,true);if(key)model.setButtonPressed(key,true);if(name==='A')chirp();updateUi();};
+ const down=ev=>{ev.preventDefault();system.pressButton(name,true);if(key)model.setButtonPressed(key,true);chirp(name);updateUi();};
  const up=ev=>{ev.preventDefault();system.pressButton(name,false);if(key)model.setButtonPressed(key,false);updateUi();};
  button.addEventListener('pointerdown',down); button.addEventListener('pointerup',up); button.addEventListener('pointerleave',up);
 }
 
-ui.powerBtn.addEventListener('click',()=>{system.setPower(!system.state.power);updateUi();});
-ui.cartridgeBtn.addEventListener('click',()=>{system.setCartridgePresent(!system.state.cartridge.present);updateUi();});
+ui.powerBtn.addEventListener('click',()=>{chirp('power');system.setPower(!system.state.power);updateUi();});
+ui.cartridgeBtn.addEventListener('click',()=>{chirp('cartridge');system.setCartridgePresent(!system.state.cartridge.present);updateUi();});
 ui.explodeBtn.addEventListener('click',()=>{
- const target=explosion>.5?0:1;
- if(target===1)setView('exploded');else setView('product');
+ chirp('explode');
+ animateExplosion(explosion>.5?0:1);
 });
-ui.explodeRange?.addEventListener('input',()=>{
- const value=Number(ui.explodeRange.value)/100;
- setExplosion(value);
- // Slider is a dissection control, not a camera preset: keep the user's current viewpoint.
-});
-ui.resetBtn.addEventListener('click',()=>{system.reset();setExplosion(0);setLayer('physical');setView('product');ui.mapperSelect.value='no-mbc';ui.joypSelect.value='action';updateUi();});
+if(ui.explodeRange){
+ const beginDrag=ev=>{
+  sliderDragging=true;
+  cancelExplosionAnimation();
+  ev.stopPropagation();
+ };
+ const endDrag=ev=>{
+  sliderDragging=false;
+  ui.explodeRange.value=String(Math.round(explosion*100));
+  ev.stopPropagation();
+ };
+ ui.explodeRange.addEventListener('pointerdown',beginDrag);
+ ui.explodeRange.addEventListener('pointerup',endDrag);
+ ui.explodeRange.addEventListener('pointercancel',endDrag);
+ ui.explodeRange.addEventListener('lostpointercapture',endDrag);
+ ui.explodeRange.addEventListener('input',ev=>{
+  const value=Number(ui.explodeRange.value)/100;
+  setExplosion(value);
+  ev.stopPropagation();
+  // Slider is a dissection control, not a camera preset: keep the user's current viewpoint.
+ });
+}
+ui.resetBtn.addEventListener('click',()=>{chirp('reset');cancelExplosionAnimation();system.reset();setExplosion(0);setLayer('physical');setView('product');ui.mapperSelect.value='no-mbc';ui.joypSelect.value='action';updateUi();});
 ui.joypSelect.addEventListener('change',()=>{system.selectJoyp(ui.joypSelect.value);updateUi();});
 ui.mapperSelect.addEventListener('change',()=>{system.setMapper(ui.mapperSelect.value);updateUi();});
 ui.mapperWriteBtn.addEventListener('click',()=>{system.writeMapper(0x2000,(system.state.cartridge.romBank+1)&0xff);updateUi();});
@@ -345,6 +396,13 @@ function debugState(){
  return {
   ...system.snapshot(),
   activeView,activeLayer,explosion,
+  interaction:{
+   sliderDragging,
+   explosionAnimating:explosionAnimationFrame!==0,
+   audioFeedbackCount,
+   lastAudioFeedback,
+   floorReceivesShadow:floor.receiveShadow
+  },
   geometry:model.geometryDiagnostics(),
   referenceGeometryReady,
   canonical:CANONICAL
@@ -352,7 +410,7 @@ function debugState(){
 }
 window.__dmgDebug={
  get state(){return debugState();},
- setView,setLayer,setExplosion,
+ setView,setLayer,setExplosion,animateExplosion,cancelExplosionAnimation,
  setPower:system.setPower,
  pressButton:system.pressButton,
  selectJoyp:system.selectJoyp,
