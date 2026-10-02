@@ -33,6 +33,8 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.activeView).toBe('product');
   expect(initial.activeLayer).toBe('physical');
   expect(initial.referenceGeometryReady).toBe(true);
+  expect(initial.interaction.floorReceivesShadow).toBe(false);
+  expect(initial.geometry.screenPowered).toBe(true);
   expect(await page.locator('#geometryProfileState').textContent()).toContain('Hybrid reference-grounded');
   expect(await page.locator('#partProvenance').textContent()).toContain('hybrid reference-grounded');
   expect(initial.geometry.revision).toBe('dmg-reference-cad-v14');
@@ -108,31 +110,70 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
 
   await page.screenshot({ path: 'test-results/dmg-product.png', fullPage: true });
 
-  // Primary dissection control is continuous, visible, and leaves the camera viewpoint alone.
-  await page.locator('#explodeRange').evaluate(el => {
-    el.value = '37';
-    el.dispatchEvent(new Event('input', { bubbles:true }));
-  });
+  // Primary dissection control must survive a real sustained pointer drag, not only synthetic input.
+  const slider = page.locator('#explodeRange');
+  const sliderBox = await slider.boundingBox();
+  expect(sliderBox).not.toBeNull();
+  await page.mouse.move(sliderBox.x + 4, sliderBox.y + sliderBox.height/2);
+  await page.mouse.down();
+  for(let i=1;i<=8;i++){
+    await page.mouse.move(sliderBox.x + 4 + (sliderBox.width-8)*(i/8), sliderBox.y + sliderBox.height/2);
+    await page.waitForTimeout(110);
+  }
+  const duringDrag = await page.evaluate(() => window.__dmgDebug.state);
+  expect(duringDrag.interaction.sliderDragging).toBe(true);
+  expect(duringDrag.explosion).toBeGreaterThan(.80);
+  await page.mouse.up();
   let dissectionState = await page.evaluate(() => window.__dmgDebug.state);
-  expect(dissectionState.explosion).toBeCloseTo(.37, 4);
-  expect(await page.locator('#explodeValue').textContent()).toBe('37%');
-  await page.locator('#explodeRange').evaluate(el => {
-    el.value = '0';
-    el.dispatchEvent(new Event('input', { bubbles:true }));
-  });
+  expect(dissectionState.interaction.sliderDragging).toBe(false);
+  expect(dissectionState.explosion).toBeGreaterThan(.80);
+
+  // Reset to assembled, then verify the Explode button animates through intermediate states.
+  await page.evaluate(() => window.__dmgDebug.setExplosion(0));
+  await page.locator('#explodeBtn').click();
+  await page.waitForTimeout(260);
+  const explodeMid = await page.evaluate(() => window.__dmgDebug.state);
+  expect(explodeMid.interaction.explosionAnimating).toBe(true);
+  expect(explodeMid.explosion).toBeGreaterThan(.01);
+  expect(explodeMid.explosion).toBeLessThan(.95);
+  await page.waitForFunction(() => window.__dmgDebug.state.explosion > .995 && !window.__dmgDebug.state.interaction.explosionAnimating);
+  expect(await page.locator('#explodeValue').textContent()).toBe('100%');
+
+  await page.locator('#explodeBtn').click();
+  await page.waitForTimeout(260);
+  const assembleMid = await page.evaluate(() => window.__dmgDebug.state);
+  expect(assembleMid.interaction.explosionAnimating).toBe(true);
+  expect(assembleMid.explosion).toBeGreaterThan(.05);
+  expect(assembleMid.explosion).toBeLessThan(.99);
+  await page.waitForFunction(() => window.__dmgDebug.state.explosion < .005 && !window.__dmgDebug.state.interaction.explosionAnimating);
   dissectionState = await page.evaluate(() => window.__dmgDebug.state);
-  expect(dissectionState.explosion).toBeCloseTo(0, 4);
+  expect(dissectionState.explosion).toBeCloseTo(0, 3);
 
-  // Power state is actual runtime state, not a cosmetic control.
+  // Power state is visual as well as logical: off must blank the LCD.
   await page.locator('#powerBtn').click();
-  expect((await page.evaluate(() => window.__dmgDebug.state)).running).toBe(false);
+  let powered = await page.evaluate(() => window.__dmgDebug.state);
+  expect(powered.running).toBe(false);
+  expect(powered.geometry.screenPowered).toBe(false);
+  await page.screenshot({ path: 'test-results/dmg-power-off.png', fullPage: true });
   await page.locator('#powerBtn').click();
-  expect((await page.evaluate(() => window.__dmgDebug.state)).running).toBe(true);
+  powered = await page.evaluate(() => window.__dmgDebug.state);
+  expect(powered.running).toBe(true);
+  expect(powered.geometry.screenPowered).toBe(true);
 
-  // Physical A press -> active-low JOYP -> deterministic visual/audio response.
+  // Every physical HUD control emits feedback; A additionally drives the demo/APU state.
+  const audioBefore = (await page.evaluate(() => window.__dmgDebug.state)).interaction.audioFeedbackCount;
+  for(const name of ['Up','Down','Left','Right','B','Select','Start']){
+    await page.locator('[data-button="'+name+'"]').dispatchEvent('pointerdown');
+    await page.locator('[data-button="'+name+'"]').dispatchEvent('pointerup');
+  }
+  let audioAfter = await page.evaluate(() => window.__dmgDebug.state);
+  expect(audioAfter.interaction.audioFeedbackCount).toBe(audioBefore + 7);
+
   const beforeA = await page.evaluate(() => window.__dmgDebug.state);
   await page.locator('[data-button="A"]').dispatchEvent('pointerdown');
   const pressed = await page.evaluate(() => window.__dmgDebug.state);
+  expect(pressed.interaction.audioFeedbackCount).toBe(beforeA.interaction.audioFeedbackCount + 1);
+  expect(pressed.interaction.lastAudioFeedback).toBe('A');
   expect(pressed.joypad.buttons.A).toBe(true);
   expect(pressed.joypad.lowNibble & 1).toBe(0);
   expect(pressed.demo.tilePhase).not.toBe(beforeA.demo.tilePhase);
@@ -316,6 +357,7 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(fallbackState.geometry.revision).toBe('dmg-public-v1');
   expect(fallbackState.referenceGeometryReady).toBe(false);
   expect(fallbackState.running).toBe(true);
+  expect(fallbackState.geometry.screenPowered).toBe(true);
   expect(await page.locator('#geometryProfileState').textContent()).toContain('Local startup model');
   expect(await page.locator('#partProvenance').textContent()).toContain('local startup geometry');
   await page.locator('#explodeRange').evaluate(el => {
