@@ -146,5 +146,34 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   await page.locator('[data-view="service"]').click();
   await page.screenshot({ path: 'test-results/dmg-service-diagnosis.png', fullPage: true });
 
+  // Reference-grounded geometry views. These are clean, deterministic inspection renders used for
+  // human comparison against the frozen DMG reference pack.
+  await page.evaluate(() => {
+    document.body.classList.add('qa-render');
+    window.__dmgDebug.setView('product');
+    window.__dmgDebug.setExplosion(0);
+  });
+
+  await page.evaluate(() => window.__dmgDebug.setQaCamera([0,0,330],[0,0,0],[0,1,0]));
+  await page.screenshot({ path: 'test-results/dmg-reference-front.png', fullPage: true });
+
+  await page.evaluate(() => window.__dmgDebug.setQaCamera([0,0,-330],[0,0,0],[0,1,0]));
+  await page.screenshot({ path: 'test-results/dmg-reference-rear.png', fullPage: true });
+
+  await page.evaluate(() => window.__dmgDebug.setQaCamera([-330,0,0],[0,0,0],[0,1,0]));
+  await page.screenshot({ path: 'test-results/dmg-reference-left.png', fullPage: true });
+
+  await page.evaluate(() => window.__dmgDebug.setQaCamera([330,0,0],[0,0,0],[0,1,0]));
+  await page.screenshot({ path: 'test-results/dmg-reference-right.png', fullPage: true });
+
+  await page.evaluate(() => window.__dmgDebug.setQaCamera([0,330,0],[0,0,0],[0,0,-1]));
+  await page.screenshot({ path: 'test-results/dmg-reference-top.png', fullPage: true });
+
+  await page.evaluate(() => {
+    window.__dmgDebug.setExplosion(1);
+    window.__dmgDebug.setQaCamera([470,250,700],[0,0,-30],[0,1,0]);
+  });
+  await page.screenshot({ path: 'test-results/dmg-reference-exploded.png', fullPage: true });
+
   expect(pageErrors).toEqual([]);
 });
