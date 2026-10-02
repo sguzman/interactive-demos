@@ -63,8 +63,7 @@ const SPECIAL={
 };
 
 const CONTROL={dpad:['DPad'],buttonA:['ButtonA'],buttonB:['ButtonB'],Start:['StartKey'],Select:['SelectKey']};
-const ASSEMBLED_OCCLUSION_LIMIT=.08;
-const INTERNAL_REVEAL_TRAVEL=.18;
+const ASSEMBLED_CLOSED_EPS=1e-6;
 const ASSEMBLED_OCCLUDED_IDS=new Set(['DPadMembrane','ActionMembrane','DPadCarrier']);
 const ASSEMBLED_HIDDEN_ASSEMBLIES=new Set(['ControlsInternal','Mainboard','Power','Audio','Flex','Battery','Internal']);
 const REAR_INFO_IDS=new Set(['RearModel','RearNintendo','RearRating','RearStudy']);
@@ -88,14 +87,6 @@ function isAssembledHidden(node){
 }
 function isCartridgeInternal(id=''){
   return CARTRIDGE_INTERNAL_IDS.has(id) || /^GamePakPad\d+$/.test(id);
-}
-function explosionTravelFor(node,v){
-  const id=node.userData?.partId||'';
-  const staged=isAssembledHidden(node) || (node.userData?.assembly==='Accessories' && isCartridgeInternal(id));
-  if(!staged)return v;
-  if(v<=ASSEMBLED_OCCLUSION_LIMIT)return 0;
-  const t=(v-ASSEMBLED_OCCLUSION_LIMIT)/(1-ASSEMBLED_OCCLUSION_LIMIT);
-  return INTERNAL_REVEAL_TRAVEL+(1-INTERNAL_REVEAL_TRAVEL)*t;
 }
 
 function labelOf(n){
@@ -205,6 +196,9 @@ export async function createDMGReferenceModel(){
     }
     if(node.isMesh){
       cloneMat(node);node.castShadow=true;node.receiveShadow=true;
+      // Flush artwork/glass should not cast isolated rectangular floor shadows.
+      if(['DisplayGlass','LCD','LCDPolarizer','CartridgeLabel'].includes(id) ||
+         /(?:Mark|Word|Title|Caption|Notice)$/.test(id||'')) node.castShadow=false;
       const key=SPECIAL[id],meta=key&&COMPONENTS[key];
       node.userData.component=meta||{
         name:labelOf(node),category:node.userData?.assembly||'CAD component',
@@ -332,7 +326,7 @@ export async function createDMGReferenceModel(){
   };
 
   function syncVisibility(){
-    const assembled=state.explosion<=ASSEMBLED_OCCLUSION_LIMIT;
+    const assembled=state.explosion<=ASSEMBLED_CLOSED_EPS;
     for(const n of nodes){
       const id=n.userData?.partId||'';
       if(accessoryNodes.has(n)){
@@ -346,7 +340,9 @@ export async function createDMGReferenceModel(){
   function apply(){
     for(const n of nodes){
       const b=n.userData.basePosition;if(!b)continue;
-      n.position.copy(b).addScaledVector(n.userData.explodeVector||new THREE.Vector3(),explosionTravelFor(n,state.explosion));
+      // Continuous dissection: every part moves linearly from its exact assembled origin.
+      // Intermediate clipping is intentional because it preserves provenance of motion.
+      n.position.copy(b).addScaledVector(n.userData.explodeVector||new THREE.Vector3(),state.explosion);
     }
     syncVisibility();
     for(const key of state.pressed)for(const id of CONTROL[key]||[]){
@@ -372,11 +368,11 @@ export async function createDMGReferenceModel(){
   }
   function assembledControlVisibility(){
     const ids=nodes.filter(n=>isAssembledHidden(n)).map(n=>n.userData.partId).filter(Boolean);
-    return {count:ids.length,allHidden:state.explosion>ASSEMBLED_OCCLUSION_LIMIT ? true : ids.every(id=>nodesByPartId.get(id)?.visible===false)};
+    return {count:ids.length,allHidden:state.explosion>ASSEMBLED_CLOSED_EPS ? true : ids.every(id=>nodesByPartId.get(id)?.visible===false)};
   }
   function assembledCartridgeVisibility(){
     const ids=accessories.filter(n=>isCartridgeInternal(n.userData?.partId)).map(n=>n.userData.partId);
-    return {count:ids.length,allHidden:state.explosion>ASSEMBLED_OCCLUSION_LIMIT || !state.cartridgePresent ? true : ids.every(id=>nodesByPartId.get(id)?.visible===false)};
+    return {count:ids.length,allHidden:state.explosion>ASSEMBLED_CLOSED_EPS || !state.cartridgePresent ? true : ids.every(id=>nodesByPartId.get(id)?.visible===false)};
   }
   function geometryDiagnostics(){
     const landmarkIds=['DisplayGlass','DPad','ButtonA','ButtonB','SelectKey','StartKey','BatteryLED','Mainboard','FrontPCB','CartridgeSocket'];
@@ -432,7 +428,7 @@ export async function createDMGReferenceModel(){
       sourceCoordinateGate:Object.values(landmarkChecks).every(x=>x.withinSourceCoordinateTolerance)
     };
     return {
-      revision:'dmg-reference-cad-v12',
+      revision:'dmg-reference-cad-v13',
       geometryMaturity:'G4-render-reviewed-hybrid-reference; user-acceptance-pending',
       source:{
         assembly:{
@@ -455,15 +451,16 @@ export async function createDMGReferenceModel(){
       presentation:{
         legacySpeakerMeshRetired:legacySpeakerMesh ? legacySpeakerMesh.visible===false : true,
         speakerGrilleBackingPresent:nodesByPartId.has('SpeakerGrilleBacking'),
-        assembledOcclusionLimit:ASSEMBLED_OCCLUSION_LIMIT,
-        internalRevealTravel:INTERNAL_REVEAL_TRAVEL,
-        currentInternalExplosionTravel:explosionTravelFor(nodesByPartId.get('Mainboard')||{userData:{}},state.explosion),
-        assembledOcclusionActive:state.explosion<=ASSEMBLED_OCCLUSION_LIMIT,
+        assembledClosedEpsilon:ASSEMBLED_CLOSED_EPS,
+        explodeMode:'continuous-linear-dissection',
+        currentInternalExplosionTravel:state.explosion,
+        intermediateClippingAllowed:true,
+        assembledOcclusionActive:state.explosion<=ASSEMBLED_CLOSED_EPS,
         dpadMembraneVisible:!!nodesByPartId.get('DPadMembrane')?.visible,
         actionMembraneVisible:!!nodesByPartId.get('ActionMembrane')?.visible,
         controlInternalBleedGuard:assembledControlVisibility(),
         cartridgeInternalBleedGuard:assembledCartridgeVisibility(),
-        rearMarkingsRemainVisibleWithInsertedCartridge:state.cartridgePresent && state.explosion<=ASSEMBLED_OCCLUSION_LIMIT
+        rearMarkingsRemainVisibleWithInsertedCartridge:state.cartridgePresent && state.explosion<=ASSEMBLED_CLOSED_EPS
           ? [...REAR_INFO_IDS].every(id=>nodesByPartId.get(id)?.visible!==false)
           : true,
         cartridgeRearInsetMm:CARTRIDGE_REAR_INSET_MM,
