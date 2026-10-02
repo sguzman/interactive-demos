@@ -82,7 +82,7 @@
       "canonicalVisibility": "private",
       "publicCanonicalIdentifier": "specimen:nintendo-game-boy-dmg-01",
       "engineeringSyncDate": "2026-10-02",
-      "engineeringResearchState": "Canonical DMG-01 research, integrated causal model, Works guide, and browser runtime are complete for current scope. ENG-DMG-022 uses a hybrid geometry stack: pinned full-assembly CAD plus an independently authored printable-replica front shell. Automated registration/runtime QA and deterministic rendered comparison are complete; only direct user visual acceptance remains open.",
+      "engineeringResearchState": "Canonical DMG-01 research, integrated causal model, Works guide, and browser runtime are established. ENG-DMG-022 remains open: hybrid geometry, startup reliability, dissection behavior, visible cleanup, and direct user visual acceptance are still under active review.",
       "provenanceScheme": [
         "OEM manufacturer/service",
         "official developer documentation",
@@ -102,9 +102,9 @@
         "interactive specimen",
         "rich guide"
       ],
-      "publicUx": "multi-layer causal runtime published; hybrid reference-grounded geometry is G4 render-reviewed",
+      "publicUx": "multi-layer causal runtime published; hybrid reference-grounded geometry remains in active G4 review",
       "revisionBoundary": "DMG-01 retail identity spans multiple board and component revisions; later Game Boy family models require explicit lineage labels.",
-      "geometryStatus": "g4-render-reviewed-awaiting-user-qa",
+      "geometryStatus": "g4-review-in-progress-user-qa-open",
       "geometryTask": "ENG-DMG-022"
     }
   ]
