@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createDMGReferenceModel } from './reference-model.js';
+import { createDMGModel } from './model.js';
 import { createDMGSystem } from './system.js';
 import { COMPONENTS, CANONICAL } from './spec.js';
 
 const params=new URLSearchParams(location.search);
 const testMode=params.get('test')==='1';
+const forceFallback=params.get('fallback')==='1';
 
 const canvas=document.querySelector('#scene');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
@@ -38,22 +40,21 @@ const floor=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.MeshStanda
 floor.rotation.x=-Math.PI/2; floor.position.y=-88; floor.receiveShadow=!testMode; scene.add(floor);
 
 const loadingEl=document.querySelector('#loading');
+const system=createDMGSystem();
 let model;
-try{
+let referenceGeometryReady=false;
+
+// Production must never block on the large external reference assets. Start from the local,
+// self-contained fallback immediately, then replace it in place when the high-fidelity reference
+// model finishes loading. Deterministic QA still waits for the reference model unless fallback=1.
+if(testMode&&!forceFallback){
  model=await createDMGReferenceModel();
-}catch(error){
- console.error('DMG model load failed',error);
- if(loadingEl){
-  loadingEl.textContent='Model load failed. Reload to retry. '+(error?.message||String(error));
-  loadingEl.classList.add('load-error');
-  loadingEl.addEventListener('click',()=>location.reload(),{once:true});
-  loadingEl.title='Click to reload';
- }
- throw error;
+ referenceGeometryReady=true;
+}else{
+ model=createDMGModel();
 }
 model.root.rotation.x=-.02;
 scene.add(model.root);
-const system=createDMGSystem();
 
 const ui={
  powerBtn:document.querySelector('#powerBtn'),cartridgeBtn:document.querySelector('#cartridgeBtn'),explodeBtn:document.querySelector('#explodeBtn'),resetBtn:document.querySelector('#resetBtn'),
@@ -73,6 +74,33 @@ let explosion=0;
 let autoRun=true;
 let lastTime=performance.now();
 let audioCtx=null;
+
+async function upgradeReferenceGeometry(){
+ if(testMode||forceFallback||referenceGeometryReady)return;
+ try{
+  const reference=await createDMGReferenceModel();
+  reference.root.rotation.x=-.02;
+  scene.remove(model.root);
+  model=reference;
+  scene.add(model.root);
+  referenceGeometryReady=true;
+  model.setLayer(activeLayer);
+  model.setExplosion(explosion);
+  model.setCartridgePresent(system.state.cartridge.present);
+  model.updateScreen(system.state);
+  if(activeView==='product'){
+   inspect({
+    category:'product',
+    provenance:'hybrid reference-grounded P4 reconstruction',
+    name:'Game Boy DMG-01',
+    description:'High-fidelity reference geometry loaded. Use the dissection slider to move continuously from the assembled product to the source-authored exploded layout.'
+   });
+  }
+ }catch(error){
+  // Keep the local interactive model alive. A reference-asset/network failure must never blank the app.
+  console.warn('High-fidelity DMG geometry unavailable; continuing with local fallback.',error);
+ }
+}
 
 const presets={
  product:[[205,115,290],[0,0,0]],
@@ -297,6 +325,7 @@ function debugState(){
   ...system.snapshot(),
   activeView,activeLayer,explosion,
   geometry:model.geometryDiagnostics(),
+  referenceGeometryReady,
   canonical:CANONICAL
  };
 }
@@ -324,7 +353,8 @@ if(params.get('view')) setView(params.get('view'));
 else setView('product');
 if(params.get('layer')) setLayer(params.get('layer'));
 updateUi();
-ui.loading.style.opacity='0';setTimeout(()=>ui.loading.remove(),350);
+ui.loading.style.opacity='0';setTimeout(()=>{ if(ui.loading)ui.loading.hidden=true; },350);
+if(!testMode&&!forceFallback)upgradeReferenceGeometry();
 
 function animate(now){
  const dt=Math.min(.05,(now-lastTime)/1000);lastTime=now;
