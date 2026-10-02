@@ -121,6 +121,23 @@ function unionWorldBoxes(objects){
   return box;
 }
 
+function isEffectivelyVisible(node){
+  for(let n=node;n;n=n.parent)if(n.visible===false)return false;
+  return true;
+}
+
+function visibleMeshBox(root){
+  root.updateMatrixWorld(true);
+  const box=new THREE.Box3();box.makeEmpty();
+  root.traverse(node=>{
+    if(!node.isMesh||!node.geometry||!isEffectivelyVisible(node))return;
+    if(!node.geometry.boundingBox)node.geometry.computeBoundingBox();
+    if(!node.geometry.boundingBox)return;
+    box.union(node.geometry.boundingBox.clone().applyMatrix4(node.matrixWorld));
+  });
+  return box;
+}
+
 export async function createDMGReferenceModel(){
   const [gltf,frontShellGeometry]=await Promise.all([
     new GLTFLoader().loadAsync(SRC.url),
@@ -344,9 +361,9 @@ export async function createDMGReferenceModel(){
     // The 90 × 148 × 32 mm published envelope is the handheld body, not the removable Game Pak.
     // Measure the body with the accessory removed, then record the inserted assembly separately.
     setCartridgePresent(false);
-    const bodyBox=new THREE.Box3().setFromObject(cad),size=new THREE.Vector3();bodyBox.getSize(size);
+    const bodyBox=visibleMeshBox(cad),size=new THREE.Vector3();bodyBox.getSize(size);
     setCartridgePresent(true);
-    const insertedBox=new THREE.Box3().setFromObject(cad),insertedSize=new THREE.Vector3();insertedBox.getSize(insertedSize);
+    const insertedBox=visibleMeshBox(cad),insertedSize=new THREE.Vector3();insertedBox.getSize(insertedSize);
     setCartridgePresent(p);setExplosion(e);
     const bounds={width:size.x,height:size.y,depth:size.z};
     const insertedBounds={width:insertedSize.x,height:insertedSize.y,depth:insertedSize.z};
