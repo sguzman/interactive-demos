@@ -62,3 +62,25 @@ The page exposes `window.__dmgDebug` for deterministic browser tests.
 The runtime smoke test checks power, JOYP, cartridge mapping, PPU access permissions, OAM DMA,
 volume-state independence, service diagnosis, layer/explosion state independence, and guide
 deep-links.
+
+
+## Reference-grounded geometry
+
+The visible DMG product geometry no longer uses the original hand-built primitive blockout.
+
+The runtime loads a pinned GLB from the documented `tiansongyu/open-console-cad` reconstruction:
+
+- upstream commit: `55081da3b4864aba36082644f9a3c5cedf1061c8`;
+- Game Boy GLB SHA-256: `9aed0c26e836442ffce065f3607316df7f6d55742b708b9db2394e09e8d99beb`;
+- 410 documented components;
+- 660,428 triangles;
+- 90 × 148 × 32 mm nominal product envelope;
+- embedded part IDs, part numbers, assembly groups, material roles, and explosion offsets.
+
+The upstream project explicitly describes the model as unofficial and locally approximate. It is
+therefore treated as a strong P4 reconstruction source, **not** Nintendo factory CAD.
+
+Engineering closure additionally compares the rendered public specimen against Nintendo envelope
+data, teardown photography, revision-specific board references, and a frozen landmark ledger.
+
+The deterministic causal runtime remains separate from geometry provenance.
