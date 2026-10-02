@@ -68,7 +68,10 @@ deep-links.
 
 The visible DMG product geometry no longer uses the original hand-built primitive blockout.
 
-The runtime loads a pinned GLB from the documented `tiansongyu/open-console-cad` reconstruction:
+The runtime uses a **hybrid reference stack** rather than trusting one reconstruction for every geometric layer.
+
+The full assembly, internals, rear enclosure, component identities, and explosion hierarchy come from
+the pinned `tiansongyu/open-console-cad` GLB:
 
 - upstream commit: `55081da3b4864aba36082644f9a3c5cedf1061c8`;
 - Game Boy GLB SHA-256: `9aed0c26e836442ffce065f3607316df7f6d55742b708b9db2394e09e8d99beb`;
@@ -77,11 +80,30 @@ The runtime loads a pinned GLB from the documented `tiansongyu/open-console-cad`
 - 90 × 148 × 32 mm nominal product envelope;
 - embedded part IDs, part numbers, assembly groups, material roles, and explosion offsets.
 
-The upstream project explicitly describes the model as unofficial and locally approximate. It is
+The assembly project explicitly describes the model as unofficial and locally approximate. It is
 therefore treated as a strong P4 reconstruction source, **not** Nintendo factory CAD.
 
+For the visible **front enclosure**, the runtime now replaces the assembly-model shell with the pinned
+`guighub/DMG-01-Shell` v38 front STL:
+
+- upstream commit: `758e2841dc163b472815c39c651df641966e58eb`;
+- pinned front-shell blob: `312893a8b6cb58eb97665c2dcb9be3b24b99ad3b`;
+- license: MIT;
+- upstream scope statement: front shell mostly complete and compatible with original Game Boy parts;
+- upstream caveat: some screw holes may be slightly offset;
+- the upstream rear shell is explicitly incomplete, so it is **not** substituted into this specimen.
+
+The independent shell is automatically oriented and uniformly registered to the assembly-model front
+envelope. Runtime diagnostics record the raw STL bounds, registration scale, fitted bounds, and
+front-plane residual so the replacement cannot silently drift away from the canonical assembly.
+
+As an additional visual cross-check, exterior proportions and shell construction are reviewed against
+Wesk's BitBuilt DMG scan renders (front, rear, and battery cover; approximately 2.5 million triangles
+per source mesh). Those scans are used as visual reference only and are not redistributed here.
+
 Engineering closure additionally compares the rendered public specimen against Nintendo envelope
-data, teardown photography, revision-specific board references, and a frozen landmark ledger.
+data, teardown photography, revision-specific board references, the printable-replica shell, scan
+renders, and the frozen landmark ledger.
 
 The deterministic causal runtime remains separate from geometry provenance.
 
@@ -106,5 +128,6 @@ Those are **upstream reconstruction QA facts**, not claims that the geometry is 
 CAD or manufacturing-tolerance accurate. Local contours, wall thicknesses, hole positions,
 packages, contacts, wiring, and fit clearances remain explicitly approximate in the pinned source.
 
-The projection stays at G3/reference-import status until its deterministic front/rear/side/top and
-exploded renders receive the separate rendered G4 comparison review.
+The projection is now a G3 hybrid reference import with deterministic front/rear/side/top and
+exploded renders. Automated geometry, runtime, and registration gates pass; final G4 closure still
+requires the separate rendered comparison/user-acceptance review.
