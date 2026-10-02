@@ -47,7 +47,7 @@ let referenceAssetsPromise=null;
 let referenceUpgradeTimer=0;
 let referenceUpgradeStarted=false;
 let lastInteractionAt=performance.now();
-const REFERENCE_IDLE_MS=1800;
+const REFERENCE_IDLE_MS=5000;
 
 // Production must never block on the large external reference assets. Start from the local,
 // self-contained fallback immediately, then replace it in place when the high-fidelity reference
@@ -281,14 +281,18 @@ function animateExplosion(target,duration=1250){
  const from=explosion;
  const to=Math.max(0,Math.min(1,target));
  if(Math.abs(to-from)<1e-6){setExplosion(to);return;}
- const started=performance.now();
+ let progress=0;
+ let previous=performance.now();
  const step=now=>{
   if(token!==explosionAnimationToken)return;
-  const t=Math.min(1,(now-started)/duration);
-  // Smoothstep keeps the endpoints calm while every intermediate geometry position remains continuous.
-  const eased=t*t*(3-2*t);
+  // Advance by rendered time, not wall-clock time. A slow CAD parse or suspended tab must never
+  // teleport the dissection to its endpoint when frames resume.
+  const frameMs=Math.min(50,Math.max(0,now-previous));
+  previous=now;
+  progress=Math.min(1,progress+frameMs/duration);
+  const eased=progress*progress*(3-2*progress);
   setExplosion(from+(to-from)*eased);
-  if(t<1)explosionAnimationFrame=requestAnimationFrame(step);
+  if(progress<1)explosionAnimationFrame=requestAnimationFrame(step);
   else explosionAnimationFrame=0;
  };
  explosionAnimationFrame=requestAnimationFrame(step);
@@ -480,7 +484,7 @@ if(params.get('layer')) setLayer(params.get('layer'));
 updateUi();
 ui.loading.style.opacity='0';setTimeout(()=>{ if(ui.loading)ui.loading.hidden=true; },350);
 if(!testMode&&!forceFallback){
- for(const eventName of ['pointerdown','input','keydown']){
+ for(const eventName of ['pointerdown','pointermove','input','keydown','wheel','focusin']){
   document.addEventListener(eventName,noteUserInteraction,{capture:true,passive:true});
  }
  scheduleReferenceUpgrade();
