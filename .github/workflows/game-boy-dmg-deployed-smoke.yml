@@ -1,0 +1,85 @@
+name: game boy dmg deployed smoke
+
+on:
+  deployment_status:
+
+concurrency:
+  group: game-boy-dmg-deployed-${{ github.event.deployment.id }}
+  cancel-in-progress: true
+
+jobs:
+  live-dmg:
+    if: github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'github-pages'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/game-boy-dmg-01/
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Chromium probe
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Probe deployed DMG-01
+        run: |
+          node --input-type=module <<'EOF'
+          import { chromium } from 'playwright';
+
+          const url = process.env.SITE_URL;
+          const browser = await chromium.launch({ headless: true });
+          const page = await browser.newPage({ viewport: { width: 1365, height: 768 } });
+          const errors = [];
+          page.on('pageerror', error => errors.push(String(error)));
+          page.on('console', message => {
+            if (message.type() === 'error') errors.push('console: ' + message.text());
+          });
+
+          const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+          if (!response?.ok()) throw new Error('DMG page HTTP failure: ' + response?.status());
+
+          // Hard startup gate: the deployed page must become interactive without waiting for remote CAD.
+          await page.waitForFunction(() => Boolean(window.__dmgDebug?.state?.running), null, { timeout: 7_500 });
+
+          const heading = await page.locator('h1').first().textContent();
+          if (heading?.trim() !== 'Nintendo Game Boy DMG-01') {
+            throw new Error('Unexpected public title: ' + JSON.stringify(heading));
+          }
+
+          await page.locator('#explodeRange').evaluate(el => {
+            el.value = '25';
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+          });
+          const quarter = await page.evaluate(() => window.__dmgDebug.state);
+          if (Math.abs(quarter.explosion - 0.25) > 1e-6) {
+            throw new Error('Deployed dissection control failed: ' + quarter.explosion);
+          }
+
+          // High-fidelity reference geometry remains an acceptance requirement, not merely a background bonus.
+          await page.waitForFunction(() => window.__dmgDebug?.state?.referenceGeometryReady === true, null, { timeout: 90_000 });
+          const reference = await page.evaluate(() => window.__dmgDebug.state);
+          if (!String(reference.geometry?.revision || '').startsWith('dmg-reference-cad-')) {
+            throw new Error('Reference geometry did not replace fallback: ' + JSON.stringify(reference.geometry?.revision));
+          }
+
+          await page.locator('#explodeRange').evaluate(el => {
+            el.value = '0';
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+          });
+          await page.screenshot({ path: 'dmg-deployed.png', fullPage: true });
+
+          if (errors.length) throw new Error('Browser errors: ' + errors.join(' | '));
+          await browser.close();
+          console.log('deployed DMG startup + reference upgrade + dissection control passed:', url);
+          EOF
+
+      - name: Upload deployed screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-boy-dmg-deployed-smoke
+          path: dmg-deployed.png
+          if-no-files-found: ignore
