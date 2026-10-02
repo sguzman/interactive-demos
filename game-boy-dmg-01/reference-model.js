@@ -25,16 +25,20 @@ const SRC={
 };
 
 const NOMINAL_ENVELOPE_MM={width:90,height:148,depth:32};
+// GLB node translations preserve useful authored X/Y placement anchors, while some Z placement is
+// baked into mesh vertices by the FreeCAD -> glTF export. Gate only axes that the export actually
+// preserves as node transforms; do not pretend node-local Z is a physical-centre measurement.
 const LANDMARKS_MM={
-  DisplayGlass:[0,35.8,30.60],
-  DPad:[-26,-26,30.95],
-  ButtonA:[33,-20,30.85],
-  ButtonB:[18,-27,30.85],
-  SelectKey:[-12,-48,30.65],
-  StartKey:[4,-48,30.65],
-  BatteryLED:[-32,40.0,30.60]
+  DisplayGlass:{y:35.8},
+  DPad:{x:-26,y:-26},
+  ButtonA:{x:33,y:-20},
+  ButtonB:{x:18,y:-27},
+  SelectKey:{x:-12,y:-48},
+  StartKey:{x:4,y:-48},
+  BatteryLED:{x:-32,y:40.0}
 };
 const LANDMARK_TOLERANCE_MM=.02;
+const AXIS_INDEX={x:0,y:1,z:2};
 
 const SPECIAL={
   BackCover:'shellRear',RearShell:'shellRear',MainFrame:'shellFront',FrontFace:'shellFront',
@@ -180,11 +184,18 @@ export async function createDMGReferenceModel(){
     for(const [id,expected] of Object.entries(LANDMARKS_MM)){
       const actual=landmarkCenters[id];
       if(!actual)continue;
-      const delta=actual.map((v,i)=>v-expected[i]);
+      const delta={};
+      for(const [axis,value] of Object.entries(expected)){
+        delta[axis]=actual[AXIS_INDEX[axis]]-value;
+      }
+      const absoluteDeltas=Object.values(delta).map(Math.abs);
       landmarkChecks[id]={
-        expected,actual,delta,
-        maxAbsDeltaMm:Math.max(...delta.map(Math.abs)),
-        withinSourceCoordinateTolerance:delta.every(v=>Math.abs(v)<=LANDMARK_TOLERANCE_MM)
+        expected,
+        actual:{x:actual[0],y:actual[1],z:actual[2]},
+        delta,
+        checkedAxes:Object.keys(expected),
+        maxAbsDeltaMm:Math.max(...absoluteDeltas),
+        withinSourceCoordinateTolerance:absoluteDeltas.every(v=>v<=LANDMARK_TOLERANCE_MM)
       };
     }
     const referenceConformance={
