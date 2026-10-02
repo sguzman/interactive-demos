@@ -64,6 +64,7 @@ const SPECIAL={
 
 const CONTROL={dpad:['DPad'],buttonA:['ButtonA'],buttonB:['ButtonB'],Start:['StartKey'],Select:['SelectKey']};
 const ASSEMBLED_OCCLUDED_IDS=new Set(['DPadMembrane','ActionMembrane','DPadCarrier']);
+const ASSEMBLED_HIDDEN_ASSEMBLIES=new Set(['ControlsInternal','Mainboard','Power','Audio','Flex','Battery','Internal']);
 const REAR_CARTRIDGE_COVERED_IDS=new Set(['RearModel','RearNintendo','RearRating','RearStudy']);
 const CARTRIDGE_INTERNAL_IDS=new Set(['CartridgePCB','CartridgeROM','CartridgeROMLeads']);
 const INSERT=new THREE.Vector3(-.106,.020,0);
@@ -78,6 +79,9 @@ function isControlInternalOccluded(id=''){
     /^ButtonStem/.test(id) ||
     /^Key(?:Contact|Pill|Boss)\d+$/.test(id) ||
     /^System(?:Contact|Pill|Rubber|Stem)\d+$/.test(id);
+}
+function isAssembledHidden(node){
+  return ASSEMBLED_HIDDEN_ASSEMBLIES.has(node.userData?.assembly) || isControlInternalOccluded(node.userData?.partId||'');
 }
 function isCartridgeInternal(id=''){
   return CARTRIDGE_INTERNAL_IDS.has(id) || /^GamePakPad\d+$/.test(id);
@@ -306,7 +310,7 @@ export async function createDMGReferenceModel(){
         n.visible=state.cartridgePresent && !(assembled && isCartridgeInternal(id));
       }else if(REAR_CARTRIDGE_COVERED_IDS.has(id)){
         n.visible=!(assembled && state.cartridgePresent);
-      }else if(isControlInternalOccluded(id)){
+      }else if(isAssembledHidden(n)){
         n.visible=!assembled;
       }
     }
@@ -340,7 +344,7 @@ export async function createDMGReferenceModel(){
     for(let x=0;x<160;x+=8)ctx.fillRect(x,s.ppu.ly%144,4,1);tex.needsUpdate=true;
   }
   function assembledControlVisibility(){
-    const ids=nodes.filter(n=>isControlInternalOccluded(n.userData?.partId)).map(n=>n.userData.partId);
+    const ids=nodes.filter(n=>isAssembledHidden(n)).map(n=>n.userData.partId).filter(Boolean);
     return {count:ids.length,allHidden:state.explosion>.04 ? true : ids.every(id=>nodesByPartId.get(id)?.visible===false)};
   }
   function assembledCartridgeVisibility(){
@@ -401,7 +405,7 @@ export async function createDMGReferenceModel(){
       sourceCoordinateGate:Object.values(landmarkChecks).every(x=>x.withinSourceCoordinateTolerance)
     };
     return {
-      revision:'dmg-reference-cad-v7',
+      revision:'dmg-reference-cad-v8',
       geometryMaturity:'G4-render-reviewed-hybrid-reference; user-acceptance-pending',
       source:{
         assembly:{
