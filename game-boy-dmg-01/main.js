@@ -21,6 +21,8 @@ scene.fog=new THREE.Fog(0x080b0a,350,1200);
 
 const camera=new THREE.PerspectiveCamera(34,1,.1,1200);
 camera.position.set(190,105,245);
+const qaCamera=new THREE.OrthographicCamera(-100,100,100,-100,.1,2000);
+let activeRenderCamera=camera;
 const controls=new OrbitControls(camera,renderer.domElement);
 controls.enableDamping=true; controls.target.set(0,0,0); controls.minDistance=120; controls.maxDistance=950;
 
@@ -195,17 +197,32 @@ canvas.addEventListener('pointerdown',event=>{
  if(hit?.object?.userData?.component) inspect(hit.object.userData.component);
 });
 
-function setQaCamera(position,target=[0,0,0],up=[0,1,0]){
+function setQaCamera(position,target=[0,0,0],up=[0,1,0],orthoHeight=200){
+ if(testMode){
+  const aspect=Math.max(.01,canvas.clientWidth/Math.max(1,canvas.clientHeight));
+  const halfH=orthoHeight/2,halfW=halfH*aspect;
+  qaCamera.left=-halfW;qaCamera.right=halfW;qaCamera.top=halfH;qaCamera.bottom=-halfH;
+  qaCamera.up.set(...up);qaCamera.position.set(...position);qaCamera.lookAt(...target);
+  qaCamera.updateProjectionMatrix();
+  activeRenderCamera=qaCamera;
+  floor.visible=false;
+  return;
+ }
  camera.up.set(...up);
  camera.position.set(...position);
  controls.target.set(...target);
  camera.lookAt(...target);
  controls.update();
+ activeRenderCamera=camera;
 }
 
 function resize(){
  const w=canvas.clientWidth,h=canvas.clientHeight;
  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+ if(testMode&&activeRenderCamera===qaCamera){
+  const aspect=Math.max(.01,w/Math.max(1,h)),halfH=(qaCamera.top-qaCamera.bottom)/2,halfW=halfH*aspect;
+  qaCamera.left=-halfW;qaCamera.right=halfW;qaCamera.updateProjectionMatrix();
+ }
 }
 window.addEventListener('resize',resize);resize();
 
@@ -245,6 +262,6 @@ ui.loading.style.opacity='0';setTimeout(()=>ui.loading.remove(),350);
 function animate(now){
  const dt=Math.min(.05,(now-lastTime)/1000);lastTime=now;
  if(autoRun&&system.state.running) system.advanceDots(Math.max(1,Math.floor(dt*900)));
- controls.update();updateUi();renderer.render(scene,camera);requestAnimationFrame(animate);
+ controls.update();updateUi();renderer.render(scene,activeRenderCamera);requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
