@@ -63,9 +63,11 @@ const ui={
  joypSelect:document.querySelector('#joypSelect'),mapperSelect:document.querySelector('#mapperSelect'),mapperWriteBtn:document.querySelector('#mapperWriteBtn'),dmaBtn:document.querySelector('#dmaBtn'),ppuDot:document.querySelector('#ppuDot'),ppuDotValue:document.querySelector('#ppuDotValue'),
  nr50:document.querySelector('#nr50'),nr50Value:document.querySelector('#nr50Value'),physicalVolume:document.querySelector('#physicalVolume'),physicalVolumeValue:document.querySelector('#physicalVolumeValue'),
  serviceScenario:document.querySelector('#serviceScenario'),serviceTestBtn:document.querySelector('#serviceTestBtn'),burnInBtn:document.querySelector('#burnInBtn'),serviceText:document.querySelector('#serviceText'),
+ geometryProfileState:document.querySelector('#geometryProfileState'),
  partCategory:document.querySelector('#partCategory'),partProvenance:document.querySelector('#partProvenance'),partName:document.querySelector('#partName'),partDescription:document.querySelector('#partDescription'),loading:loadingEl
 };
 
+if(ui.geometryProfileState)ui.geometryProfileState.textContent=referenceGeometryReady?'Hybrid reference-grounded P4 reconstruction':'Local startup model · reference loading';
 const viewButtons=[...document.querySelectorAll('[data-view]')];
 const layerButtons=[...document.querySelectorAll('[data-layer]')];
 let activeView='product';
@@ -88,17 +90,18 @@ async function upgradeReferenceGeometry(){
   model.setExplosion(explosion);
   model.setCartridgePresent(system.state.cartridge.present);
   model.updateScreen(system.state);
-  if(activeView==='product'){
-   inspect({
-    category:'product',
-    provenance:'hybrid reference-grounded P4 reconstruction',
-    name:'Game Boy DMG-01',
-    description:'High-fidelity reference geometry loaded. Use the dissection slider to move continuously from the assembled product to the source-authored exploded layout.'
-   });
-  }
+  if(ui.geometryProfileState)ui.geometryProfileState.textContent='Hybrid reference-grounded P4 reconstruction';
+  if(activeView==='product')inspect(productInspection());
  }catch(error){
   // Keep the local interactive model alive. A reference-asset/network failure must never blank the app.
   console.warn('High-fidelity DMG geometry unavailable; continuing with local fallback.',error);
+  if(ui.geometryProfileState)ui.geometryProfileState.textContent='Local startup model · reference unavailable';
+  if(activeView==='product')inspect({
+   category:'product',
+   provenance:'local startup geometry · reference unavailable',
+   name:'Game Boy DMG-01',
+   description:'The interactive local model remains active, but the high-fidelity reference geometry could not be fetched. Reload later to retry the reference upgrade.'
+  });
  }
 }
 
@@ -132,6 +135,23 @@ function inspect(data){
  ui.partName.textContent=data.name||'Component';
  ui.partDescription.textContent=data.description||'';
 }
+function productInspection(){
+ if(referenceGeometryReady){
+  return {
+   category:'product',
+   provenance:'hybrid reference-grounded P4 reconstruction',
+   name:'Game Boy DMG-01',
+   description:'High-fidelity reference geometry loaded. Use the dissection slider to move continuously from the assembled product to the source-authored exploded layout.'
+  };
+ }
+ return {
+  category:'product',
+  provenance:'local startup geometry · reference upgrade pending',
+  name:'Game Boy DMG-01',
+  description:'Interactive local geometry is active immediately while the high-fidelity reference model loads in the background. The app remains usable if that network upgrade is unavailable.'
+ };
+}
+
 
 function setView(name){
  activeView=name;
@@ -141,7 +161,7 @@ function setView(name){
  camera.position.set(...p[0]); controls.target.set(...p[1]); controls.update();
 
  const messages={
-  product:['product','hybrid reference-grounded P4 reconstruction','Game Boy DMG-01','The full assembly/internals come from a pinned CAD reconstruction; the visible front enclosure is replaced by an independently authored printable-replica shell registered to the same envelope.'],
+  product:null,
   exploded:['physical assembly','hybrid exterior reference + board-revision-aware assembly reconstruction','Exploded product stack','The higher-fidelity front enclosure remains a distinct exploded part while the rear shell, front LCD/control board, mainboard, converter, jack board, batteries, speaker, and cartridge retain the assembly source hierarchy.'],
   power:['power architecture','board reverse engineering + Engineering integration','Power and reset','Four AA cells or external DC feed source selection, the DPDT power/reset switch, VCC, the converter, then VDD and VEE.'],
   'cpu-memory':['logical + electrical','community behavior + board/die reverse engineering','CPU, buses, memory, and ownership','DMG-CPU is the physical SoC; SM83 is its CPU core. CPU-visible addresses map onto different physical buses, memories, and register owners.'],
@@ -151,6 +171,7 @@ function setView(name){
   'apu-audio':['audio pipeline','behavioral + board/die reverse engineering','APU → analog path → sound','Four digital generators cross DAC, mixer, filter, physical volume/amplifier, then speaker/headphone transduction.'],
   service:['diagnostic graph','OEM service + community repair kept distinct','Failure reveals architecture','A symptom branches into hypotheses, tests, observations, interventions, and verification rather than directly naming one failed part.']
  };
+ if(name==='product'){ inspect(productInspection()); return; }
  const m=messages[name]; inspect({category:m[0],provenance:m[1],name:m[2],description:m[3]});
 }
 
