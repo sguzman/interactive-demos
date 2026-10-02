@@ -205,7 +205,11 @@ function setQaCamera(position,target=[0,0,0],up=[0,1,0],orthoHeight=200){
   qaCamera.left=-halfW;qaCamera.right=halfW;qaCamera.top=halfH;qaCamera.bottom=-halfH;
   qaCamera.up.set(...up);qaCamera.position.set(...position);qaCamera.lookAt(...target);
   qaCamera.updateProjectionMatrix();
-  rim.position.set(...position);rim.target.position.set(...target);
+  const eye=new THREE.Vector3(...position),look=new THREE.Vector3(...target),upv=new THREE.Vector3(...up).normalize();
+  const view=eye.clone().sub(look).normalize();
+  const right=new THREE.Vector3().crossVectors(view,upv).normalize();
+  rim.position.copy(eye).addScaledVector(right,90).addScaledVector(upv,70);
+  rim.target.position.copy(look);
   rim.target.updateMatrixWorld();
   activeRenderCamera=qaCamera;
   floor.visible=false;
