@@ -160,7 +160,15 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(powered.running).toBe(true);
   expect(powered.geometry.screenPowered).toBe(true);
 
-  // Every physical HUD control emits feedback; A additionally drives the demo/APU state.
+  // Explode/assemble, power, reset, views, layers, and diagnostic HUD controls are UI operations,
+  // not physical Game Boy button presses. They must remain silent.
+  expect((await page.evaluate(() => window.__dmgDebug.state)).interaction.audioFeedbackCount).toBe(0);
+  await page.locator('[data-view="power"]').click();
+  await page.locator('[data-layer="electrical"]').click();
+  expect((await page.evaluate(() => window.__dmgDebug.state)).interaction.audioFeedbackCount).toBe(0);
+  await page.evaluate(() => { window.__dmgDebug.setView('product'); window.__dmgDebug.setLayer('physical'); });
+
+  // Every physical Game Boy HUD control emits feedback; A additionally drives the demo/APU state.
   const audioBefore = (await page.evaluate(() => window.__dmgDebug.state)).interaction.audioFeedbackCount;
   for(const name of ['Up','Down','Left','Right','B','Select','Start']){
     await page.locator('[data-button="'+name+'"]').dispatchEvent('pointerdown');
