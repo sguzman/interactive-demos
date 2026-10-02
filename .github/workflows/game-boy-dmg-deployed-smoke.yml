@@ -43,7 +43,10 @@ jobs:
               last = r.ok ? await r.text() : 'HTTP ' + r.status;
               if (r.ok && last.includes('referenceGeometryReady') && last.includes('upgradeReferenceGeometry') &&
                   last.includes('animateExplosion') && last.includes('audioFeedbackCount') &&
-                  last.includes('floor.receiveShadow=false') && last.includes('REFERENCE_IDLE_MS') &&
+                  last.includes('floor.receiveShadow=false') &&
+                  last.includes('const REFERENCE_IDLE_MS=650') &&
+                  last.includes('sceneManipulating') &&
+                  !last.includes("button:not([data-button])") &&
                   last.includes('scheduleReferenceUpgrade')) {
                 console.log('deployed runtime marker found');
                 process.exit(0);
