@@ -23,12 +23,27 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.cartridge.mapper).toBe('no-mbc');
   expect(initial.activeView).toBe('product');
   expect(initial.activeLayer).toBe('physical');
-  expect(initial.geometry.revision).toBe('dmg-reference-cad-v2');
+  expect(initial.geometry.revision).toBe('dmg-reference-cad-v3');
   expect(initial.geometry.finite).toBe(true);
   expect(initial.geometry.pickableCount).toBeGreaterThan(350);
   expect(initial.geometry.importedPartCount).toBeGreaterThanOrEqual(400);
   expect(initial.geometry.source.repository).toBe('tiansongyu/open-console-cad');
   expect(initial.geometry.source.commit).toBe('55081da3b4864aba36082644f9a3c5cedf1061c8');
+  expect(initial.geometry.source.sha256).toBe('9aed0c26e836442ffce065f3607316df7f6d55742b708b9db2394e09e8d99beb');
+  expect(initial.geometry.source.sourceModelSha256).toBe('a8c3adf2c8ede383d21c6863a61415319c32aa56cde5caf3cd3b27a827e0b21c');
+  expect(initial.geometry.source.modelBytes).toBe(19581512);
+  expect(initial.geometry.source.components).toBe(410);
+  expect(initial.geometry.source.solids).toBe(768);
+  expect(initial.geometry.source.triangles).toBe(660428);
+  expect(initial.geometry.source.iterations).toBe(15);
+  expect(initial.geometry.source.tessellation.linearDeflectionMm).toBeCloseTo(.10, 5);
+  expect(initial.geometry.source.tessellation.angularDeflectionRad).toBeCloseTo(.15, 5);
+  expect(initial.geometry.source.upstreamAudit.candidatePairs).toBe(627);
+  expect(initial.geometry.source.upstreamAudit.clashes).toBe(0);
+  expect(initial.geometry.source.upstreamAudit.modelMeasurements).toBe(26);
+  expect(initial.geometry.source.upstreamAudit.nativeDrawingDimensions).toBe(14);
+  expect(initial.geometry.source.upstreamAudit.sourceRebuild).toBe(true);
+  expect(initial.geometry.source.upstreamAudit.stepRoundtrip).toBe(true);
   expect(initial.geometry.bounds.width).toBeGreaterThan(89);
   expect(initial.geometry.bounds.width).toBeLessThan(92);
   expect(initial.geometry.bounds.height).toBeGreaterThan(147);
@@ -42,6 +57,12 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.geometry.landmarkCenters.ButtonB[0]).toBeCloseTo(18, 3);
   expect(initial.geometry.landmarkCenters.SelectKey[0]).toBeCloseTo(-12, 3);
   expect(initial.geometry.landmarkCenters.StartKey[0]).toBeCloseTo(4, 3);
+  expect(initial.geometry.referenceConformance.envelopeWithinReviewGate).toBe(true);
+  expect(initial.geometry.referenceConformance.sourceCoordinateGate).toBe(true);
+  for (const check of Object.values(initial.geometry.referenceConformance.landmarks)) {
+    expect(check.withinSourceCoordinateTolerance).toBe(true);
+    expect(check.maxAbsDeltaMm).toBeLessThanOrEqual(initial.geometry.referenceConformance.landmarkToleranceMm);
+  }
   expect(initial.geometry.representativeProfile.mainboard).toBe('DMG-CPU-06');
   expect(initial.geometry.representativeProfile.universalBomClaim).toBe(false);
 
