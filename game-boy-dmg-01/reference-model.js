@@ -6,8 +6,35 @@ const SRC={
   repo:'tiansongyu/open-console-cad',
   commit:'55081da3b4864aba36082644f9a3c5cedf1061c8',
   sha256:'9aed0c26e836442ffce065f3607316df7f6d55742b708b9db2394e09e8d99beb',
-  url:'https://raw.githubusercontent.com/tiansongyu/open-console-cad/55081da3b4864aba36082644f9a3c5cedf1061c8/site/public/models/gameboy.glb'
+  sourceModelSha256:'a8c3adf2c8ede383d21c6863a61415319c32aa56cde5caf3cd3b27a827e0b21c',
+  url:'https://raw.githubusercontent.com/tiansongyu/open-console-cad/55081da3b4864aba36082644f9a3c5cedf1061c8/site/public/models/gameboy.glb',
+  modelBytes:19581512,
+  components:410,
+  solids:768,
+  triangles:660428,
+  iterations:15,
+  tessellation:{linearDeflectionMm:.10,angularDeflectionRad:.15},
+  upstreamAudit:{
+    candidatePairs:627,
+    clashes:0,
+    modelMeasurements:26,
+    nativeDrawingDimensions:14,
+    sourceRebuild:true,
+    stepRoundtrip:true
+  }
 };
+
+const NOMINAL_ENVELOPE_MM={width:90,height:148,depth:32};
+const LANDMARKS_MM={
+  DisplayGlass:[0,35.8,30.60],
+  DPad:[-26,-26,30.95],
+  ButtonA:[33,-20,30.85],
+  ButtonB:[18,-27,30.85],
+  SelectKey:[-12,-48,30.65],
+  StartKey:[4,-48,30.65],
+  BatteryLED:[-32,40.0,30.60]
+};
+const LANDMARK_TOLERANCE_MM=.02;
 
 const SPECIAL={
   BackCover:'shellRear',RearShell:'shellRear',MainFrame:'shellFront',FrontFace:'shellFront',
@@ -143,15 +170,49 @@ export async function createDMGReferenceModel(){
     const e=state.explosion,p=state.cartridgePresent;setExplosion(0);setCartridgePresent(true);
     const b=new THREE.Box3().setFromObject(cad),size=new THREE.Vector3();b.getSize(size);
     setCartridgePresent(p);setExplosion(e);
+    const bounds={width:size.x,height:size.y,depth:size.z};
+    const envelopeDeltaMm={
+      width:bounds.width-NOMINAL_ENVELOPE_MM.width,
+      height:bounds.height-NOMINAL_ENVELOPE_MM.height,
+      depth:bounds.depth-NOMINAL_ENVELOPE_MM.depth
+    };
+    const landmarkChecks={};
+    for(const [id,expected] of Object.entries(LANDMARKS_MM)){
+      const actual=landmarkCenters[id];
+      if(!actual)continue;
+      const delta=actual.map((v,i)=>v-expected[i]);
+      landmarkChecks[id]={
+        expected,actual,delta,
+        maxAbsDeltaMm:Math.max(...delta.map(Math.abs)),
+        withinSourceCoordinateTolerance:delta.every(v=>Math.abs(v)<=LANDMARK_TOLERANCE_MM)
+      };
+    }
+    const referenceConformance={
+      envelopeDeltaMm,
+      envelopeWithinReviewGate:
+        Math.abs(envelopeDeltaMm.width)<=2 &&
+        Math.abs(envelopeDeltaMm.height)<=3 &&
+        Math.abs(envelopeDeltaMm.depth)<=3,
+      landmarkToleranceMm:LANDMARK_TOLERANCE_MM,
+      landmarks:landmarkChecks,
+      sourceCoordinateGate:Object.values(landmarkChecks).every(x=>x.withinSourceCoordinateTolerance)
+    };
     return {
-      revision:'dmg-reference-cad-v2',
-      geometryMaturity:'G3-implementation-pending-rendered-G4-review',
-      source:{repository:SRC.repo,commit:SRC.commit,sha256:SRC.sha256},
+      revision:'dmg-reference-cad-v3',
+      geometryMaturity:'G3-reference-import; rendered-G4-review-pending',
+      source:{
+        repository:SRC.repo,commit:SRC.commit,sha256:SRC.sha256,
+        sourceModelSha256:SRC.sourceModelSha256,
+        modelBytes:SRC.modelBytes,components:SRC.components,solids:SRC.solids,
+        triangles:SRC.triangles,iterations:SRC.iterations,
+        tessellation:SRC.tessellation,upstreamAudit:SRC.upstreamAudit
+      },
       finite:[size.x,size.y,size.z].every(Number.isFinite),
-      bounds:{width:size.x,height:size.y,depth:size.z},
-      nominalEnvelope:{width:90,height:148,depth:32},
+      bounds,
+      nominalEnvelope:NOMINAL_ENVELOPE_MM,
       importedPartCount:nodesByPartId.size,pickableCount:pickables.length,
       landmarkCenters,
+      referenceConformance,
       explosion:state.explosion,representativeProfile:CANONICAL.representativeProfile
     };
   }
