@@ -82,7 +82,7 @@
       "canonicalVisibility": "private",
       "publicCanonicalIdentifier": "specimen:nintendo-game-boy-dmg-01",
       "engineeringSyncDate": "2026-10-01",
-      "engineeringResearchState": "Canonical DMG-01 research, integrated causal model, public projection specification, Works expression, browser implementation, deterministic Chromium QA, and rendered visual QA complete for current scope.",
+      "engineeringResearchState": "Canonical DMG-01 research, integrated causal model, Works guide, and browser runtime are complete for current scope. Public 3D geometry acceptance was reopened on 2026-10-02 after direct user visual QA; ENG-DMG-022 is active.",
       "provenanceScheme": [
         "OEM manufacturer/service",
         "official developer documentation",
@@ -102,8 +102,10 @@
         "interactive specimen",
         "rich guide"
       ],
-      "publicUx": "product-first handheld controls + persistent exploded boards + physical/electrical/logical/temporal/service layers + JOYP + cartridge mapper + PPU access + OAM DMA + APU/audio + diagnostic service scenarios",
-      "revisionBoundary": "DMG-01 retail identity spans multiple board and component revisions; later Game Boy family models require explicit lineage labels."
+      "publicUx": "multi-layer causal runtime published; reference-grounded 3D geometry repair active",
+      "revisionBoundary": "DMG-01 retail identity spans multiple board and component revisions; later Game Boy family models require explicit lineage labels.",
+      "geometryStatus": "reopened-by-user-qa",
+      "geometryTask": "ENG-DMG-022"
     }
   ]
 }
