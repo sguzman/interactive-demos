@@ -84,3 +84,27 @@ Engineering closure additionally compares the rendered public specimen against N
 data, teardown photography, revision-specific board references, and a frozen landmark ledger.
 
 The deterministic causal runtime remains separate from geometry provenance.
+
+### Reference-conformance gate
+
+The public runtime now exposes a machine-checkable geometry audit in
+`window.__dmgDebug.state.geometry.referenceConformance`. It checks the imported product envelope
+against the 90 × 148 × 32 mm nominal DMG envelope and checks source-authored landmark coordinates
+for the LCD window, D-pad, A/B, START/SELECT, and battery LED.
+
+The pinned upstream source itself records:
+
+- 15 staged reconstruction passes;
+- 410 component entries / 768 solids;
+- 660,428 web-preview triangles;
+- 0.10 mm linear and 0.15 rad angular GLB tessellation settings;
+- 26 direct model measurements and 14 native drawing dimensions checked;
+- 627 candidate interference pairs checked with zero clashes above the source audit threshold;
+- source rebuild and STEP round-trip checks passing.
+
+Those are **upstream reconstruction QA facts**, not claims that the geometry is Nintendo production
+CAD or manufacturing-tolerance accurate. Local contours, wall thicknesses, hole positions,
+packages, contacts, wiring, and fit clearances remain explicitly approximate in the pinned source.
+
+The projection stays at G3/reference-import status until its deterministic front/rear/side/top and
+exploded renders receive the separate rendered G4 comparison review.
