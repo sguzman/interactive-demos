@@ -28,7 +28,7 @@ controls.enableDamping=true; controls.target.set(0,0,0); controls.minDistance=12
 
 scene.add(new THREE.HemisphereLight(0xdce6d5,0x172018,1.5));
 const key=new THREE.DirectionalLight(0xffffff,3.0); key.position.set(150,220,180); key.castShadow=!testMode; scene.add(key);
-const rim=new THREE.DirectionalLight(0xa6cbe0,1.2); rim.position.set(-160,80,-180); scene.add(rim);
+const rim=new THREE.DirectionalLight(0xa6cbe0,testMode?2.1:1.2); rim.position.set(-160,80,-180); scene.add(rim); scene.add(rim.target);
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.MeshStandardMaterial({color:0x0b0d0b,roughness:.95}));
 floor.rotation.x=-Math.PI/2; floor.position.y=-88; floor.receiveShadow=!testMode; scene.add(floor);
 
@@ -204,8 +204,8 @@ function setQaCamera(position,target=[0,0,0],up=[0,1,0],orthoHeight=200){
   qaCamera.left=-halfW;qaCamera.right=halfW;qaCamera.top=halfH;qaCamera.bottom=-halfH;
   qaCamera.up.set(...up);qaCamera.position.set(...position);qaCamera.lookAt(...target);
   qaCamera.updateProjectionMatrix();
-  qaHeadlight.position.set(...position);qaHeadlight.target.position.set(...target);
-  qaHeadlight.target.updateMatrixWorld();
+  rim.position.set(...position);rim.target.position.set(...target);
+  rim.target.updateMatrixWorld();
   activeRenderCamera=qaCamera;
   floor.visible=false;
   return;
