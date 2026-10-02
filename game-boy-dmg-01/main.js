@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createDMGModel } from './model.js';
+import { createDMGReferenceModel } from './reference-model.js';
 import { createDMGSystem } from './system.js';
 import { COMPONENTS, CANONICAL } from './spec.js';
 
@@ -14,12 +14,12 @@ renderer.shadowMap.enabled=true;
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x080b0a);
-scene.fog=new THREE.Fog(0x080b0a,280,700);
+scene.fog=new THREE.Fog(0x080b0a,350,1200);
 
 const camera=new THREE.PerspectiveCamera(34,1,.1,1200);
 camera.position.set(190,105,245);
 const controls=new OrbitControls(camera,renderer.domElement);
-controls.enableDamping=true; controls.target.set(0,0,0); controls.minDistance=120; controls.maxDistance=500;
+controls.enableDamping=true; controls.target.set(0,0,0); controls.minDistance=120; controls.maxDistance=950;
 
 scene.add(new THREE.HemisphereLight(0xdce6d5,0x172018,1.5));
 const key=new THREE.DirectionalLight(0xffffff,3.0); key.position.set(150,220,180); key.castShadow=true; scene.add(key);
@@ -27,7 +27,7 @@ const rim=new THREE.DirectionalLight(0xa6cbe0,1.2); rim.position.set(-160,80,-18
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.MeshStandardMaterial({color:0x0b0d0b,roughness:.95}));
 floor.rotation.x=-Math.PI/2; floor.position.y=-88; floor.receiveShadow=true; scene.add(floor);
 
-const model=createDMGModel();
+const model=await createDMGReferenceModel();
 model.root.rotation.x=-.02;
 scene.add(model.root);
 const system=createDMGSystem();
@@ -52,26 +52,26 @@ let audioCtx=null;
 
 const presets={
  product:[[205,115,290],[0,0,0]],
- exploded:[[320,175,405],[5,0,0]],
- power:[[285,135,350],[-10,-15,0]],
- 'cpu-memory':[[285,120,335],[10,-3,-3]],
- cartridge:[[285,145,-340],[20,20,-25]],
- input:[[270,125,335],[-5,-18,8]],
- 'ppu-lcd':[[270,135,330],[0,25,8]],
- 'apu-audio':[[285,120,345],[20,-35,-2]],
- service:[[300,150,375],[5,-5,0]]
+ exploded:[[470,250,700],[0,0,-30]],
+ power:[[300,135,375],[-12,-18,0]],
+ 'cpu-memory':[[300,125,360],[5,10,-4]],
+ cartridge:[[300,160,-375],[0,28,-5]],
+ input:[[275,125,340],[-8,-24,8]],
+ 'ppu-lcd':[[280,145,345],[0,34,8]],
+ 'apu-audio':[[300,125,365],[20,-40,-2]],
+ service:[[315,155,390],[5,-5,0]]
 };
 
 const viewExplosion={
  product:0,
  exploded:1,
- power:.72,
- 'cpu-memory':.68,
- cartridge:.72,
- input:.48,
- 'ppu-lcd':.58,
- 'apu-audio':.68,
- service:.58
+ power:.28,
+ 'cpu-memory':.24,
+ cartridge:.30,
+ input:.12,
+ 'ppu-lcd':.18,
+ 'apu-audio':.24,
+ service:.20
 };
 
 function inspect(data){
@@ -89,8 +89,8 @@ function setView(name){
  camera.position.set(...p[0]); controls.target.set(...p[1]); controls.update();
 
  const messages={
-  product:['product','P4 representative geometry','Game Boy DMG-01','Use the familiar handheld first. The running system state remains live while you move into deeper engineering views.'],
-  exploded:['physical assembly','board-revision-aware reconstruction','Exploded product stack','Front/rear shell, front LCD/control board, mainboard, converter, jack board, batteries, speaker, and cartridge remain distinct assemblies.'],
+  product:['product','reference-grounded P4 CAD reconstruction','Game Boy DMG-01','Use the familiar handheld first. The running system state remains live while you move into deeper engineering views.'],
+  exploded:['physical assembly','reference-grounded external CAD + board-revision-aware reconstruction','Exploded product stack','Front/rear shell, front LCD/control board, mainboard, converter, jack board, batteries, speaker, and cartridge remain distinct assemblies.'],
   power:['power architecture','board reverse engineering + Engineering integration','Power and reset','Four AA cells or external DC feed source selection, the DPDT power/reset switch, VCC, the converter, then VDD and VEE.'],
   'cpu-memory':['logical + electrical','community behavior + board/die reverse engineering','CPU, buses, memory, and ownership','DMG-CPU is the physical SoC; SM83 is its CPU core. CPU-visible addresses map onto different physical buses, memories, and register owners.'],
   cartridge:['removable module','interface source-grounded / module presentation','Cartridge hardware/software boundary','The cartridge is a removable electrical and logical module. Mapper state translates CPU windows into cartridge-local storage or peripherals.'],
@@ -143,7 +143,7 @@ function chirp(){
 
 for(const button of document.querySelectorAll('[data-button]')){
  const name=button.dataset.button;
- const key=name==='A'?'buttonA':name==='B'?'buttonB':name==='Up'||name==='Down'||name==='Left'||name==='Right'?'dpad':null;
+ const key=name==='A'?'buttonA':name==='B'?'buttonB':name==='Start'?'Start':name==='Select'?'Select':name==='Up'||name==='Down'||name==='Left'||name==='Right'?'dpad':null;
  const down=ev=>{ev.preventDefault();system.pressButton(name,true);if(key)model.setButtonPressed(key,true);if(name==='A')chirp();updateUi();};
  const up=ev=>{ev.preventDefault();system.pressButton(name,false);if(key)model.setButtonPressed(key,false);updateUi();};
  button.addEventListener('pointerdown',down); button.addEventListener('pointerup',up); button.addEventListener('pointerleave',up);
