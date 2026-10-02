@@ -237,6 +237,11 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   await page.screenshot({ path: 'test-results/dmg-reference-rear-ejected.png', fullPage: true });
   await page.evaluate(() => window.__dmgDebug.setCartridgePresent(true));
 
+  // Rear three-quarter view catches cartridge seating, rear-cover/battery-door relief, side grooves,
+  // and shell seam relationships that a straight rear elevation can hide.
+  await page.evaluate(() => window.__dmgDebug.setQaCamera([260,180,-320],[0,0,0],[0,1,0],205));
+  await page.screenshot({ path: 'test-results/dmg-reference-rear-three-quarter.png', fullPage: true });
+
   await page.evaluate(() => window.__dmgDebug.setQaCamera([-330,0,0],[0,0,0],[0,1,0],200));
   await page.screenshot({ path: 'test-results/dmg-reference-left.png', fullPage: true });
 
