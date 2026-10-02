@@ -64,6 +64,7 @@ const SPECIAL={
 
 const CONTROL={dpad:['DPad'],buttonA:['ButtonA'],buttonB:['ButtonB'],Start:['StartKey'],Select:['SelectKey']};
 const ASSEMBLED_OCCLUSION_LIMIT=.08;
+const INTERNAL_REVEAL_TRAVEL=.18;
 const ASSEMBLED_OCCLUDED_IDS=new Set(['DPadMembrane','ActionMembrane','DPadCarrier']);
 const ASSEMBLED_HIDDEN_ASSEMBLIES=new Set(['ControlsInternal','Mainboard','Power','Audio','Flex','Battery','Internal']);
 const REAR_INFO_IDS=new Set(['RearModel','RearNintendo','RearRating','RearStudy']);
@@ -87,6 +88,14 @@ function isAssembledHidden(node){
 }
 function isCartridgeInternal(id=''){
   return CARTRIDGE_INTERNAL_IDS.has(id) || /^GamePakPad\d+$/.test(id);
+}
+function explosionTravelFor(node,v){
+  const id=node.userData?.partId||'';
+  const staged=isAssembledHidden(node) || (node.userData?.assembly==='Accessories' && isCartridgeInternal(id));
+  if(!staged)return v;
+  if(v<=ASSEMBLED_OCCLUSION_LIMIT)return 0;
+  const t=(v-ASSEMBLED_OCCLUSION_LIMIT)/(1-ASSEMBLED_OCCLUSION_LIMIT);
+  return INTERNAL_REVEAL_TRAVEL+(1-INTERNAL_REVEAL_TRAVEL)*t;
 }
 
 function labelOf(n){
@@ -337,7 +346,7 @@ export async function createDMGReferenceModel(){
   function apply(){
     for(const n of nodes){
       const b=n.userData.basePosition;if(!b)continue;
-      n.position.copy(b).addScaledVector(n.userData.explodeVector||new THREE.Vector3(),state.explosion);
+      n.position.copy(b).addScaledVector(n.userData.explodeVector||new THREE.Vector3(),explosionTravelFor(n,state.explosion));
     }
     syncVisibility();
     for(const key of state.pressed)for(const id of CONTROL[key]||[]){
@@ -423,7 +432,7 @@ export async function createDMGReferenceModel(){
       sourceCoordinateGate:Object.values(landmarkChecks).every(x=>x.withinSourceCoordinateTolerance)
     };
     return {
-      revision:'dmg-reference-cad-v11',
+      revision:'dmg-reference-cad-v12',
       geometryMaturity:'G4-render-reviewed-hybrid-reference; user-acceptance-pending',
       source:{
         assembly:{
@@ -447,6 +456,8 @@ export async function createDMGReferenceModel(){
         legacySpeakerMeshRetired:legacySpeakerMesh ? legacySpeakerMesh.visible===false : true,
         speakerGrilleBackingPresent:nodesByPartId.has('SpeakerGrilleBacking'),
         assembledOcclusionLimit:ASSEMBLED_OCCLUSION_LIMIT,
+        internalRevealTravel:INTERNAL_REVEAL_TRAVEL,
+        currentInternalExplosionTravel:explosionTravelFor(nodesByPartId.get('Mainboard')||{userData:{}},state.explosion),
         assembledOcclusionActive:state.explosion<=ASSEMBLED_OCCLUSION_LIMIT,
         dpadMembraneVisible:!!nodesByPartId.get('DPadMembrane')?.visible,
         actionMembraneVisible:!!nodesByPartId.get('ActionMembrane')?.visible,
