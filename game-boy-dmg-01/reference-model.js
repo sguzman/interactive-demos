@@ -131,6 +131,15 @@ export async function createDMGReferenceModel(){
     for(let x=0;x<160;x+=8)ctx.fillRect(x,s.ppu.ly%144,4,1);tex.needsUpdate=true;
   }
   function geometryDiagnostics(){
+    const landmarkIds=['DisplayGlass','DPad','ButtonA','ButtonB','SelectKey','StartKey','BatteryLED','Mainboard','FrontPCB','CartridgeSocket'];
+    const landmarkCenters={};
+    for(const id of landmarkIds){
+      const n=nodesByPartId.get(id);
+      if(n?.userData?.basePosition){
+        const p=n.userData.basePosition;
+        landmarkCenters[id]=[p.x*1000,p.y*1000,p.z*1000];
+      }
+    }
     const e=state.explosion,p=state.cartridgePresent;setExplosion(0);setCartridgePresent(true);
     const b=new THREE.Box3().setFromObject(cad),size=new THREE.Vector3();b.getSize(size);
     setCartridgePresent(p);setExplosion(e);
@@ -142,6 +151,7 @@ export async function createDMGReferenceModel(){
       bounds:{width:size.x,height:size.y,depth:size.z},
       nominalEnvelope:{width:90,height:148,depth:32},
       importedPartCount:nodesByPartId.size,pickableCount:pickables.length,
+      landmarkCenters,
       explosion:state.explosion,representativeProfile:CANONICAL.representativeProfile
     };
   }
