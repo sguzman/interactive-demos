@@ -431,7 +431,7 @@ export async function createDMGReferenceModel(){
     };
     return {
       revision:'dmg-reference-cad-v13',
-      geometryMaturity:'G4-render-reviewed-hybrid-reference; user-acceptance-pending',
+      geometryMaturity:'G4-render-review-in-progress; user-acceptance-open',
       source:{
         assembly:{
           repository:SRC.repo,commit:SRC.commit,sha256:SRC.sha256,
