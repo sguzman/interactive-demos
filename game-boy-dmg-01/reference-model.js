@@ -63,11 +63,25 @@ const SPECIAL={
 };
 
 const CONTROL={dpad:['DPad'],buttonA:['ButtonA'],buttonB:['ButtonB'],Start:['StartKey'],Select:['SelectKey']};
-const ASSEMBLED_OCCLUDED_IDS=new Set(['DPadMembrane','ActionMembrane']);
+const ASSEMBLED_OCCLUDED_IDS=new Set(['DPadMembrane','ActionMembrane','DPadCarrier']);
+const REAR_CARTRIDGE_COVERED_IDS=new Set(['RearModel','RearNintendo','RearRating','RearStudy']);
+const CARTRIDGE_INTERNAL_IDS=new Set(['CartridgePCB','CartridgeROM','CartridgeROMLeads']);
 const INSERT=new THREE.Vector3(-.106,.020,0);
 const ACCESSORY_SOURCE_CENTER=new THREE.Vector3(.106,.022,.004);
-const ACCESSORY_TARGET_CENTER=ACCESSORY_SOURCE_CENTER.clone().add(INSERT);
+const CARTRIDGE_REAR_PROJECTION_MM=1.5;
+const ACCESSORY_TARGET_CENTER=ACCESSORY_SOURCE_CENTER.clone().add(INSERT).add(new THREE.Vector3(0,0,-CARTRIDGE_REAR_PROJECTION_MM/1000));
 const ACCESSORY_INSERT_FLIP=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI);
+
+function isControlInternalOccluded(id=''){
+  return ASSEMBLED_OCCLUDED_IDS.has(id) ||
+    /^DPadStem\d+$/.test(id) ||
+    /^ButtonStem/.test(id) ||
+    /^Key(?:Contact|Pill|Boss)\d+$/.test(id) ||
+    /^System(?:Contact|Pill|Rubber|Stem)\d+$/.test(id);
+}
+function isCartridgeInternal(id=''){
+  return CARTRIDGE_INTERNAL_IDS.has(id) || /^GamePakPad\d+$/.test(id);
+}
 
 function labelOf(n){
   return (n.userData?.label||n.name||n.userData?.partId||'Component').replace(/^GAMEBOY-\d+\s*·\s*/,'');
@@ -123,6 +137,7 @@ export async function createDMGReferenceModel(){
 
   const state={explosion:0,layer:'physical',cartridgePresent:true,pressed:new Set()};
   const nodesByPartId=new Map(),nodes=[],pickables=[],accessories=[];
+  const accessoryNodes=new Set();
 
   cad.traverse(node=>{
     const id=node.userData?.partId||node.name;
@@ -140,6 +155,7 @@ export async function createDMGReferenceModel(){
       if(isAccessory){
         node.userData.explodeVector.applyQuaternion(ACCESSORY_INSERT_FLIP);
         accessories.push(node);
+        accessoryNodes.add(node);
       }
       nodes.push(node);
     }
@@ -265,13 +281,26 @@ export async function createDMGReferenceModel(){
     service:n=>['Body','Power','Audio','CardReader','ControlsInternal','Mainboard'].includes(n.userData?.assembly)
   };
 
+  function syncVisibility(){
+    const assembled=state.explosion<=.04;
+    for(const n of nodes){
+      const id=n.userData?.partId||'';
+      if(accessoryNodes.has(n)){
+        n.visible=state.cartridgePresent && !(assembled && isCartridgeInternal(id));
+      }else if(REAR_CARTRIDGE_COVERED_IDS.has(id)){
+        n.visible=!(assembled && state.cartridgePresent);
+      }else if(isControlInternalOccluded(id)){
+        n.visible=!assembled;
+      }
+    }
+    if(legacySpeakerMesh)legacySpeakerMesh.visible=false;
+  }
   function apply(){
     for(const n of nodes){
       const b=n.userData.basePosition;if(!b)continue;
       n.position.copy(b).addScaledVector(n.userData.explodeVector||new THREE.Vector3(),state.explosion);
-      if(ASSEMBLED_OCCLUDED_IDS.has(n.userData?.partId))n.visible=state.explosion>.04;
     }
-    if(legacySpeakerMesh)legacySpeakerMesh.visible=false;
+    syncVisibility();
     for(const key of state.pressed)for(const id of CONTROL[key]||[]){
       const n=nodesByPartId.get(id);if(n)n.position.z-=.00075;
     }
@@ -284,7 +313,7 @@ export async function createDMGReferenceModel(){
       else n.traverse(ch=>{if(ch.isMesh)hilite(ch,rule(n));});
     }
   }
-  function setCartridgePresent(v){state.cartridgePresent=!!v;for(const n of accessories)n.visible=state.cartridgePresent;}
+  function setCartridgePresent(v){state.cartridgePresent=!!v;syncVisibility();}
   function setButtonPressed(key,v){if(v)state.pressed.add(key);else state.pressed.delete(key);apply();}
   function updateScreen(s){
     const p=['#0f380f','#306230','#8bac0f','#9bbc0f'];ctx.fillStyle=p[3];ctx.fillRect(0,0,160,144);
@@ -292,6 +321,14 @@ export async function createDMGReferenceModel(){
     const ph=s.demo.tilePhase;ctx.fillStyle=p[ph%4];ctx.fillRect(24+ph*18,42,28,28);
     ctx.fillStyle=p[(ph+2)%4];ctx.fillRect(80,62+ph*5,40,18);ctx.fillStyle=p[0];
     for(let x=0;x<160;x+=8)ctx.fillRect(x,s.ppu.ly%144,4,1);tex.needsUpdate=true;
+  }
+  function assembledControlVisibility(){
+    const ids=nodes.filter(n=>isControlInternalOccluded(n.userData?.partId)).map(n=>n.userData.partId);
+    return {count:ids.length,allHidden:state.explosion>.04 ? true : ids.every(id=>nodesByPartId.get(id)?.visible===false)};
+  }
+  function assembledCartridgeVisibility(){
+    const ids=accessories.filter(n=>isCartridgeInternal(n.userData?.partId)).map(n=>n.userData.partId);
+    return {count:ids.length,allHidden:state.explosion>.04 || !state.cartridgePresent ? true : ids.every(id=>nodesByPartId.get(id)?.visible===false)};
   }
   function geometryDiagnostics(){
     const landmarkIds=['DisplayGlass','DPad','ButtonA','ButtonB','SelectKey','StartKey','BatteryLED','Mainboard','FrontPCB','CartridgeSocket'];
@@ -303,10 +340,16 @@ export async function createDMGReferenceModel(){
         landmarkCenters[id]=[p.x*1000,p.y*1000,p.z*1000];
       }
     }
-    const e=state.explosion,p=state.cartridgePresent;setExplosion(0);setCartridgePresent(true);
-    const b=new THREE.Box3().setFromObject(cad),size=new THREE.Vector3();b.getSize(size);
+    const e=state.explosion,p=state.cartridgePresent;setExplosion(0);
+    // The 90 × 148 × 32 mm published envelope is the handheld body, not the removable Game Pak.
+    // Measure the body with the accessory removed, then record the inserted assembly separately.
+    setCartridgePresent(false);
+    const bodyBox=new THREE.Box3().setFromObject(cad),size=new THREE.Vector3();bodyBox.getSize(size);
+    setCartridgePresent(true);
+    const insertedBox=new THREE.Box3().setFromObject(cad),insertedSize=new THREE.Vector3();insertedBox.getSize(insertedSize);
     setCartridgePresent(p);setExplosion(e);
     const bounds={width:size.x,height:size.y,depth:size.z};
+    const insertedBounds={width:insertedSize.x,height:insertedSize.y,depth:insertedSize.z};
     const envelopeDeltaMm={
       width:bounds.width-NOMINAL_ENVELOPE_MM.width,
       height:bounds.height-NOMINAL_ENVELOPE_MM.height,
@@ -341,7 +384,7 @@ export async function createDMGReferenceModel(){
       sourceCoordinateGate:Object.values(landmarkChecks).every(x=>x.withinSourceCoordinateTolerance)
     };
     return {
-      revision:'dmg-reference-cad-v6',
+      revision:'dmg-reference-cad-v7',
       geometryMaturity:'G4-render-reviewed-hybrid-reference; user-acceptance-pending',
       source:{
         assembly:{
@@ -356,6 +399,7 @@ export async function createDMGReferenceModel(){
       frontShellReference:frontShellDiagnostics,
       finite:[size.x,size.y,size.z].every(Number.isFinite),
       bounds,
+      insertedBounds,
       nominalEnvelope:NOMINAL_ENVELOPE_MM,
       importedPartCount:nodesByPartId.size,pickableCount:pickables.length,
       landmarkCenters,
@@ -366,7 +410,13 @@ export async function createDMGReferenceModel(){
         assembledOcclusionActive:state.explosion<=.04,
         dpadMembraneVisible:!!nodesByPartId.get('DPadMembrane')?.visible,
         actionMembraneVisible:!!nodesByPartId.get('ActionMembrane')?.visible,
-        cartridgeInsertion:'180deg-y-flip; label face outward toward rear viewer'
+        controlInternalBleedGuard:assembledControlVisibility(),
+        cartridgeInternalBleedGuard:assembledCartridgeVisibility(),
+        rearMarkingsOccludedByInsertedCartridge:state.cartridgePresent && state.explosion<=.04
+          ? [...REAR_CARTRIDGE_COVERED_IDS].every(id=>nodesByPartId.get(id)?.visible===false)
+          : true,
+        cartridgeRearProjectionMm:CARTRIDGE_REAR_PROJECTION_MM,
+        cartridgeInsertion:'180deg-y-flip; label face outward toward rear viewer; 1.5 mm rearward seating offset'
       },
       explosion:state.explosion,representativeProfile:CANONICAL.representativeProfile
     };
