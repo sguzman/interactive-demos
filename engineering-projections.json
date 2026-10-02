@@ -81,8 +81,8 @@
       "authorityRule": "Public implementation state is authoritative here; technical claims and provenance remain authoritative in Taria Engineering after explicit ingestion.",
       "canonicalVisibility": "private",
       "publicCanonicalIdentifier": "specimen:nintendo-game-boy-dmg-01",
-      "engineeringSyncDate": "2026-10-01",
-      "engineeringResearchState": "Canonical DMG-01 research, integrated causal model, Works guide, and browser runtime are complete for current scope. Public 3D geometry acceptance was reopened on 2026-10-02 after direct user visual QA; ENG-DMG-022 is active.",
+      "engineeringSyncDate": "2026-10-02",
+      "engineeringResearchState": "Canonical DMG-01 research, integrated causal model, Works guide, and browser runtime are complete for current scope. ENG-DMG-022 now uses a hybrid geometry stack: pinned full-assembly CAD plus an independently authored printable-replica front shell. Automated registration/runtime QA passes; final rendered comparison/user acceptance remains open.",
       "provenanceScheme": [
         "OEM manufacturer/service",
         "official developer documentation",
@@ -102,9 +102,9 @@
         "interactive specimen",
         "rich guide"
       ],
-      "publicUx": "multi-layer causal runtime published; reference-grounded 3D geometry repair active",
+      "publicUx": "multi-layer causal runtime published; hybrid reference-grounded front-shell repair implemented",
       "revisionBoundary": "DMG-01 retail identity spans multiple board and component revisions; later Game Boy family models require explicit lineage labels.",
-      "geometryStatus": "reopened-by-user-qa",
+      "geometryStatus": "hybrid-reference-implemented-awaiting-rendered-user-qa",
       "geometryTask": "ENG-DMG-022"
     }
   ]
