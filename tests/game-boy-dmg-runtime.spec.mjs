@@ -27,7 +27,7 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.activeView).toBe('product');
   expect(initial.activeLayer).toBe('physical');
   expect(initial.geometry.revision).toBe('dmg-reference-cad-v13');
-  expect(initial.geometry.geometryMaturity).toBe('G4-render-reviewed-hybrid-reference; user-acceptance-pending');
+  expect(initial.geometry.geometryMaturity).toBe('G4-render-review-in-progress; user-acceptance-open');
   expect(initial.geometry.finite).toBe(true);
   expect(initial.geometry.pickableCount).toBeGreaterThan(350);
   expect(initial.geometry.importedPartCount).toBeGreaterThanOrEqual(400);
@@ -282,6 +282,16 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
     window.__dmgDebug.setQaCamera([470,250,700],[0,0,-30],[0,1,0],430);
   });
   await page.screenshot({ path: 'test-results/dmg-reference-exploded.png', fullPage: true });
+
+  // Production-shadow regression: the user's reported detached black rectangle only appears with
+  // real shadow maps enabled, so capture one non-test-mode product frame as part of CI evidence.
+  await page.goto('http://127.0.0.1:4173/game-boy-dmg-01/', { waitUntil: 'domcontentloaded', timeout: 30_000 });
+  await page.waitForFunction(() => Boolean(window.__dmgDebug?.state), null, { timeout: 180_000 });
+  await page.evaluate(() => {
+    window.__dmgDebug.setView('product');
+    window.__dmgDebug.setExplosion(0);
+  });
+  await page.screenshot({ path: 'test-results/dmg-product-production-shadow.png', fullPage: true });
 
   expect(pageErrors).toEqual([]);
 });
