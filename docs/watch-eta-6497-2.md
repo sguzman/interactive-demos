@@ -1,4 +1,4 @@
-> **Public rendition.** Derived from Works expression `expression:eta-unitas-6497-2-public-engineering-guide:en:v1`. Canonical technical authority remains **Taria Engineering**; this repository owns the public implementation and rendition. Technical claim status follows the frozen Works provenance contract.
+> **Public rendition.** Derived from Works expression `expression:eta-unitas-6497-2-public-engineering-guide:en:v1`. Canonical technical authority remains **internal engineering corpus**; this repository owns the public implementation and rendition. Technical claim status follows the frozen Works provenance contract.
 
 [← Interactive Demos](../) · [Open 3D specimen ↗](../watch/)
 

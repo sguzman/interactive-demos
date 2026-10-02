@@ -1,7 +1,7 @@
 {
   "version": 7,
   "authority": "public-projection-registry",
-  "canonicalEngineeringAuthority": "Taria Engineering",
+  "canonicalEngineeringAuthority": "internal engineering corpus",
   "projections": [
     {
       "demoSlug": "watch",
@@ -47,7 +47,7 @@
       "documentationPath": "./docs/polaroid-sx-70.html",
       "modelClass": "causal educational reconstruction / articulated constructive geometry / live exploded internal mechanism",
       "examinedMaturity": "integrated folding + live internal exploded mechanism + optics + exposure-cycle + transport + chemistry public specimen",
-      "authorityRule": "Public implementation state is authoritative here; technical claims and provenance are authoritative in Taria Engineering after explicit ingestion.",
+      "authorityRule": "Public implementation state is authoritative here; technical claims and provenance are authoritative in internal engineering corpus after explicit ingestion.",
       "canonicalVisibility": "private",
       "publicCanonicalIdentifier": "specimen:polaroid-sx-70",
       "engineeringSyncDate": "2026-10-01",
@@ -60,7 +60,7 @@
         "P4 reconstruction",
         "P5 presentation"
       ],
-      "publicationBoundary": "Expose publication-safe identifiers and source-backed claims only; reconstructed dimensions remain reconstruction. Internal Taria paths remain unpublished.",
+      "publicationBoundary": "Expose publication-safe identifiers and source-backed claims only; reconstructed dimensions remain reconstruction. Internal corpus paths remain unpublished.",
       "worksExpressionId": "expression:polaroid-sx-70-public-engineering-guide:en:v1",
       "publicGuideStatus": "published",
       "readerJourney": [
@@ -78,7 +78,7 @@
       "documentationPath": "./docs/game-boy-dmg-01.html",
       "modelClass": "multi-layer causal educational reconstruction / representative DMG-CPU-06 + DMG-LCD-06 physical profile",
       "examinedMaturity": "browser-proven integrated physical + electrical + logical + temporal + cartridge + PPU + APU + input + service specimen",
-      "authorityRule": "Public implementation state is authoritative here; technical claims and provenance remain authoritative in Taria Engineering after explicit ingestion.",
+      "authorityRule": "Public implementation state is authoritative here; technical claims and provenance remain authoritative in internal engineering corpus after explicit ingestion.",
       "canonicalVisibility": "private",
       "publicCanonicalIdentifier": "specimen:nintendo-game-boy-dmg-01",
       "engineeringSyncDate": "2026-10-02",
@@ -94,7 +94,7 @@
         "Engineering derivation",
         "P4/P5 reconstruction/presentation"
       ],
-      "publicationBoundary": "Original monochrome DMG-01 is canonical. Representative DMG-CPU-06 / DMG-LCD-06 geometry is not a universal production BOM. Private Taria paths remain unpublished.",
+      "publicationBoundary": "Original monochrome DMG-01 is canonical. Representative DMG-CPU-06 / DMG-LCD-06 geometry is not a universal production BOM. Internal corpus paths remain unpublished.",
       "worksExpressionId": "expression:nintendo-game-boy-dmg-01-public-engineering-guide:en:v1",
       "publicGuideStatus": "published",
       "readerJourney": [

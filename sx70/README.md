@@ -60,7 +60,7 @@ uses P4 placement and P5 separation spacing where factory coordinates are unavai
 
 This repository is authoritative for public browser behavior and presentation.
 
-Taria Engineering is authoritative for technical claims and their provenance.
+internal engineering corpus is authoritative for technical claims and their provenance.
 
 Works owns the reader-facing expression:
 
