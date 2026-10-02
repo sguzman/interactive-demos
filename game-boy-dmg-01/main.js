@@ -295,6 +295,13 @@ if(ui.explodeRange){
  });
 }
 ui.resetBtn.addEventListener('click',()=>{chirp('reset');cancelExplosionAnimation();system.reset();setExplosion(0);setLayer('physical');setView('product');ui.mapperSelect.value='no-mbc';ui.joypSelect.value='action';updateUi();});
+
+// Every HUD button gets immediate audible feedback. Physical Game Boy controls and the four primary
+// actions above already call chirp with specific labels, so this covers the remaining inspection/
+// diagnostic buttons without double-triggering them.
+for(const button of document.querySelectorAll('button:not([data-button]):not(#powerBtn):not(#cartridgeBtn):not(#explodeBtn):not(#resetBtn)')){
+ button.addEventListener('pointerdown',()=>chirp(button.id||button.dataset.view||button.dataset.layer||'control'));
+}
 ui.joypSelect.addEventListener('change',()=>{system.selectJoyp(ui.joypSelect.value);updateUi();});
 ui.mapperSelect.addEventListener('change',()=>{system.setMapper(ui.mapperSelect.value);updateUi();});
 ui.mapperWriteBtn.addEventListener('click',()=>{system.writeMapper(0x2000,(system.state.cartridge.romBank+1)&0xff);updateUi();});
