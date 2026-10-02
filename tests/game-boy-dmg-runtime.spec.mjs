@@ -27,6 +27,7 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.activeView).toBe('product');
   expect(initial.activeLayer).toBe('physical');
   expect(initial.geometry.revision).toBe('dmg-reference-cad-v4');
+  expect(initial.geometry.geometryMaturity).toBe('G4-render-reviewed-hybrid-reference; user-acceptance-pending');
   expect(initial.geometry.finite).toBe(true);
   expect(initial.geometry.pickableCount).toBeGreaterThan(350);
   expect(initial.geometry.importedPartCount).toBeGreaterThanOrEqual(400);
