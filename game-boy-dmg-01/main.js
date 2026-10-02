@@ -253,6 +253,22 @@ function setQaCamera(position,target=[0,0,0],up=[0,1,0],orthoHeight=200){
  activeRenderCamera=camera;
 }
 
+function setProductionShadowQa(){
+ if(!testMode)return;
+ activeRenderCamera=camera;
+ floor.visible=true;
+ floor.receiveShadow=true;
+ renderer.shadowMap.enabled=true;
+ key.castShadow=true;
+ scene.fog=new THREE.Fog(0x080b0a,350,1200);
+ hemi.intensity=1.5;
+ ambient.intensity=.35;
+ qaFill.intensity=0;
+ rim.intensity=1.2;
+ setView('product');
+ renderer.shadowMap.needsUpdate=true;
+}
+
 function resize(){
  const w=canvas.clientWidth,h=canvas.clientHeight;
  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
@@ -287,6 +303,7 @@ window.__dmgDebug={
  setServiceScenario:system.setServiceScenario,
  runServiceTest:system.runServiceTest,
  setQaCamera,
+ setProductionShadowQa,
  updateUi
 };
 
