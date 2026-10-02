@@ -386,7 +386,15 @@ export async function createDMGReferenceModel(){
   }
   function setCartridgePresent(v){state.cartridgePresent=!!v;syncVisibility();}
   function setButtonPressed(key,v){if(v)state.pressed.add(key);else state.pressed.delete(key);apply();}
+  let screenPowered=true;
   function updateScreen(s){
+    screenPowered=Boolean(s.running);
+    if(!screenPowered){
+      ctx.fillStyle='#27311f';ctx.fillRect(0,0,160,144);
+      ctx.fillStyle='#3b4630';ctx.fillRect(7,7,146,130);
+      tex.needsUpdate=true;
+      return;
+    }
     const p=['#0f380f','#306230','#8bac0f','#9bbc0f'];ctx.fillStyle=p[3];ctx.fillRect(0,0,160,144);
     ctx.fillStyle=p[0];ctx.fillRect(7,7,146,130);ctx.fillStyle=p[2];ctx.fillRect(10,10,140,124);
     const ph=s.demo.tilePhase;ctx.fillStyle=p[ph%4];ctx.fillRect(24+ph*18,42,28,28);
@@ -501,6 +509,7 @@ export async function createDMGReferenceModel(){
       landmarkCenters,
       referenceConformance,
       dissectionAudit,
+      screenPowered,
       presentation:{
         legacySpeakerMeshRetired:legacySpeakerMesh ? legacySpeakerMesh.visible===false : true,
         speakerGrilleBackingPresent:nodesByPartId.has('SpeakerGrilleBacking'),
