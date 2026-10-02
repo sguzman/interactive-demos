@@ -26,7 +26,7 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.cartridge.mapper).toBe('no-mbc');
   expect(initial.activeView).toBe('product');
   expect(initial.activeLayer).toBe('physical');
-  expect(initial.geometry.revision).toBe('dmg-reference-cad-v4');
+  expect(initial.geometry.revision).toBe('dmg-reference-cad-v5');
   expect(initial.geometry.geometryMaturity).toBe('G4-render-reviewed-hybrid-reference; user-acceptance-pending');
   expect(initial.geometry.finite).toBe(true);
   expect(initial.geometry.pickableCount).toBeGreaterThan(350);
@@ -70,6 +70,11 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.geometry.landmarkCenters.StartKey[0]).toBeCloseTo(4, 3);
   expect(initial.geometry.referenceConformance.envelopeWithinReviewGate).toBe(true);
   expect(initial.geometry.referenceConformance.sourceCoordinateGate).toBe(true);
+  expect(initial.geometry.presentation.legacySpeakerMeshRetired).toBe(true);
+  expect(initial.geometry.presentation.speakerGrilleBackingPresent).toBe(true);
+  expect(initial.geometry.presentation.assembledOcclusionActive).toBe(true);
+  expect(initial.geometry.presentation.dpadMembraneVisible).toBe(false);
+  expect(initial.geometry.presentation.actionMembraneVisible).toBe(false);
   for (const check of Object.values(initial.geometry.referenceConformance.landmarks)) {
     expect(check.withinSourceCoordinateTolerance).toBe(true);
     expect(check.maxAbsDeltaMm).toBeLessThanOrEqual(initial.geometry.referenceConformance.landmarkToleranceMm);
