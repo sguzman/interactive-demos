@@ -27,6 +27,7 @@ const controls=new OrbitControls(camera,renderer.domElement);
 controls.enableDamping=true; controls.target.set(0,0,0); controls.minDistance=120; controls.maxDistance=950;
 
 scene.add(new THREE.HemisphereLight(0xdce6d5,0x172018,1.5));
+scene.add(new THREE.AmbientLight(0xffffff,testMode?.9:.35));
 const key=new THREE.DirectionalLight(0xffffff,3.0); key.position.set(150,220,180); key.castShadow=!testMode; scene.add(key);
 const rim=new THREE.DirectionalLight(0xa6cbe0,testMode?2.1:1.2); rim.position.set(-160,80,-180); scene.add(rim); scene.add(rim.target);
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.MeshStandardMaterial({color:0x0b0d0b,roughness:.95}));
@@ -94,8 +95,8 @@ function setView(name){
  camera.position.set(...p[0]); controls.target.set(...p[1]); controls.update();
 
  const messages={
-  product:['product','reference-grounded P4 CAD reconstruction','Game Boy DMG-01','Use the familiar handheld first. The running system state remains live while you move into deeper engineering views.'],
-  exploded:['physical assembly','reference-grounded external CAD + board-revision-aware reconstruction','Exploded product stack','Front/rear shell, front LCD/control board, mainboard, converter, jack board, batteries, speaker, and cartridge remain distinct assemblies.'],
+  product:['product','hybrid reference-grounded P4 reconstruction','Game Boy DMG-01','The full assembly/internals come from a pinned CAD reconstruction; the visible front enclosure is replaced by an independently authored printable-replica shell registered to the same envelope.'],
+  exploded:['physical assembly','hybrid exterior reference + board-revision-aware assembly reconstruction','Exploded product stack','The higher-fidelity front enclosure remains a distinct exploded part while the rear shell, front LCD/control board, mainboard, converter, jack board, batteries, speaker, and cartridge retain the assembly source hierarchy.'],
   power:['power architecture','board reverse engineering + Engineering integration','Power and reset','Four AA cells or external DC feed source selection, the DPDT power/reset switch, VCC, the converter, then VDD and VEE.'],
   'cpu-memory':['logical + electrical','community behavior + board/die reverse engineering','CPU, buses, memory, and ownership','DMG-CPU is the physical SoC; SM83 is its CPU core. CPU-visible addresses map onto different physical buses, memories, and register owners.'],
   cartridge:['removable module','interface source-grounded / module presentation','Cartridge hardware/software boundary','The cartridge is a removable electrical and logical module. Mapper state translates CPU windows into cartridge-local storage or peripherals.'],
