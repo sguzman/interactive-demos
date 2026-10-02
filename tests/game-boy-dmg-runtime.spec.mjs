@@ -182,24 +182,24 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
     window.__dmgDebug.setExplosion(0);
   });
 
-  await page.evaluate(() => window.__dmgDebug.setQaCamera([0,0,330],[0,0,0],[0,1,0]));
+  await page.evaluate(() => window.__dmgDebug.setQaCamera([0,0,330],[0,0,0],[0,1,0],200));
   await page.screenshot({ path: 'test-results/dmg-reference-front.png', fullPage: true });
 
-  await page.evaluate(() => window.__dmgDebug.setQaCamera([0,0,-330],[0,0,0],[0,1,0]));
+  await page.evaluate(() => window.__dmgDebug.setQaCamera([0,0,-330],[0,0,0],[0,1,0],200));
   await page.screenshot({ path: 'test-results/dmg-reference-rear.png', fullPage: true });
 
-  await page.evaluate(() => window.__dmgDebug.setQaCamera([-330,0,0],[0,0,0],[0,1,0]));
+  await page.evaluate(() => window.__dmgDebug.setQaCamera([-330,0,0],[0,0,0],[0,1,0],200));
   await page.screenshot({ path: 'test-results/dmg-reference-left.png', fullPage: true });
 
-  await page.evaluate(() => window.__dmgDebug.setQaCamera([330,0,0],[0,0,0],[0,1,0]));
+  await page.evaluate(() => window.__dmgDebug.setQaCamera([330,0,0],[0,0,0],[0,1,0],200));
   await page.screenshot({ path: 'test-results/dmg-reference-right.png', fullPage: true });
 
-  await page.evaluate(() => window.__dmgDebug.setQaCamera([0,330,0],[0,0,0],[0,0,-1]));
+  await page.evaluate(() => window.__dmgDebug.setQaCamera([0,330,0],[0,0,0],[0,0,-1],200));
   await page.screenshot({ path: 'test-results/dmg-reference-top.png', fullPage: true });
 
   await page.evaluate(() => {
     window.__dmgDebug.setExplosion(1);
-    window.__dmgDebug.setQaCamera([470,250,700],[0,0,-30],[0,1,0]);
+    window.__dmgDebug.setQaCamera([470,250,700],[0,0,-30],[0,1,0],430);
   });
   await page.screenshot({ path: 'test-results/dmg-reference-exploded.png', fullPage: true });
 
