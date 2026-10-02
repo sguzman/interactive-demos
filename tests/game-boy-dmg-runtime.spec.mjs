@@ -26,7 +26,7 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.cartridge.mapper).toBe('no-mbc');
   expect(initial.activeView).toBe('product');
   expect(initial.activeLayer).toBe('physical');
-  expect(initial.geometry.revision).toBe('dmg-reference-cad-v7');
+  expect(initial.geometry.revision).toBe('dmg-reference-cad-v8');
   expect(initial.geometry.geometryMaturity).toBe('G4-render-reviewed-hybrid-reference; user-acceptance-pending');
   expect(initial.geometry.finite).toBe(true);
   expect(initial.geometry.pickableCount).toBeGreaterThan(350);
@@ -76,7 +76,7 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.geometry.presentation.assembledOcclusionActive).toBe(true);
   expect(initial.geometry.presentation.dpadMembraneVisible).toBe(false);
   expect(initial.geometry.presentation.actionMembraneVisible).toBe(false);
-  expect(initial.geometry.presentation.controlInternalBleedGuard.count).toBeGreaterThan(10);
+  expect(initial.geometry.presentation.controlInternalBleedGuard.count).toBeGreaterThan(40);
   expect(initial.geometry.presentation.controlInternalBleedGuard.allHidden).toBe(true);
   expect(initial.geometry.presentation.cartridgeInternalBleedGuard.count).toBeGreaterThan(30);
   expect(initial.geometry.presentation.cartridgeInternalBleedGuard.allHidden).toBe(true);
