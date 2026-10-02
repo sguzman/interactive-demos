@@ -350,6 +350,13 @@ export async function createDMGReferenceModel(){
       importedPartCount:nodesByPartId.size,pickableCount:pickables.length,
       landmarkCenters,
       referenceConformance,
+      presentation:{
+        legacySpeakerMeshRetired:legacySpeakerMesh ? legacySpeakerMesh.visible===false : true,
+        speakerGrilleBackingPresent:nodesByPartId.has('SpeakerGrilleBacking'),
+        assembledOcclusionActive:state.explosion<=.04,
+        dpadMembraneVisible:!!nodesByPartId.get('DPadMembrane')?.visible,
+        actionMembraneVisible:!!nodesByPartId.get('ActionMembrane')?.visible
+      },
       explosion:state.explosion,representativeProfile:CANONICAL.representativeProfile
     };
   }
