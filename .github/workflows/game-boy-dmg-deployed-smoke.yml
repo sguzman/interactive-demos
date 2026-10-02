@@ -124,7 +124,20 @@ jobs:
           }
           await page.locator('#powerBtn').click();
 
-          // All eight physical HUD controls must emit feedback, not only A.
+          // UI/inspection controls stay silent; only the Game Boy's own physical button HUD chirps.
+          let hudAudio = await page.evaluate(() => window.__dmgDebug.state);
+          if (hudAudio.interaction.audioFeedbackCount !== 0) {
+            throw new Error('Non-Game-Boy HUD controls emitted audio before physical button test');
+          }
+          await page.locator('[data-view="power"]').click();
+          await page.locator('[data-layer="electrical"]').click();
+          hudAudio = await page.evaluate(() => window.__dmgDebug.state);
+          if (hudAudio.interaction.audioFeedbackCount !== 0) {
+            throw new Error('Inspection/view HUD controls emitted audio');
+          }
+          await page.evaluate(() => { window.__dmgDebug.setView('product'); window.__dmgDebug.setLayer('physical'); });
+
+          // All eight physical Game Boy HUD controls must emit feedback, not only A.
           const audioBefore = (await page.evaluate(() => window.__dmgDebug.state)).interaction.audioFeedbackCount;
           for (const name of ['Up','Down','Left','Right','B','A','Select','Start']) {
             await page.locator('[data-button="' + name + '"]').dispatchEvent('pointerdown');
