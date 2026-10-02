@@ -35,6 +35,13 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.geometry.bounds.height).toBeLessThan(151);
   expect(initial.geometry.bounds.depth).toBeGreaterThan(31);
   expect(initial.geometry.bounds.depth).toBeLessThan(35);
+  expect(initial.geometry.landmarkCenters.DisplayGlass[1]).toBeCloseTo(35.8, 3);
+  expect(initial.geometry.landmarkCenters.DPad[0]).toBeCloseTo(-26, 3);
+  expect(initial.geometry.landmarkCenters.DPad[1]).toBeCloseTo(-26, 3);
+  expect(initial.geometry.landmarkCenters.ButtonA[0]).toBeCloseTo(33, 3);
+  expect(initial.geometry.landmarkCenters.ButtonB[0]).toBeCloseTo(18, 3);
+  expect(initial.geometry.landmarkCenters.SelectKey[0]).toBeCloseTo(-12, 3);
+  expect(initial.geometry.landmarkCenters.StartKey[0]).toBeCloseTo(4, 3);
   expect(initial.geometry.representativeProfile.mainboard).toBe('DMG-CPU-06');
   expect(initial.geometry.representativeProfile.universalBomClaim).toBe(false);
 
