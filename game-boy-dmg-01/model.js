@@ -239,7 +239,16 @@ export function createDMGModel() {
     obj.position.z = obj.userData.baseLocalZ + (pressed ? -1.2 : 0);
   }
 
+  let screenPowered=true;
   function updateScreen(systemState){
+    screenPowered=Boolean(systemState.running);
+    if(!screenPowered){
+      // A powered-off passive LCD is blank and dramatically dimmer than the active demo image.
+      ctx.fillStyle='#27311f'; ctx.fillRect(0,0,160,144);
+      ctx.fillStyle='#3b4630'; ctx.fillRect(8,8,144,128);
+      texture.needsUpdate=true;
+      return;
+    }
     const palette=['#0f380f','#306230','#8bac0f','#9bbc0f'];
     ctx.fillStyle=palette[3]; ctx.fillRect(0,0,160,144);
     ctx.fillStyle=palette[0]; ctx.fillRect(8,8,144,128);
@@ -262,6 +271,7 @@ export function createDMGModel() {
       finite:[size.x,size.y,size.z].every(Number.isFinite),
       bounds:{width:size.x,height:size.y,depth:size.z},
       explosion:state.explosion,
+      screenPowered,
       representativeProfile:CANONICAL.representativeProfile,
       pickableCount:pickables.length
     };
