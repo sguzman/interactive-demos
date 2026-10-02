@@ -122,9 +122,12 @@ function setExplosion(value){
  explosion=Math.max(0,Math.min(1,value));
  model.setExplosion(explosion);
  // Keep the closed product contrasty, but lift deep internal layers as the stack separates.
- hemi.intensity=1.5+.8*explosion;
- ambient.intensity=ambientBase+(testMode?.45:.55)*explosion;
+ hemi.intensity=1.5+(testMode?1.15:.8)*explosion;
+ ambient.intensity=ambientBase+(testMode?1.15:.55)*explosion;
+ if(testMode)qaFill.intensity=.45+1.45*explosion;
  ui.explodeBtn.textContent=explosion>.5?'Assemble':'Explode';
+ if(ui.explodeRange)ui.explodeRange.value=String(Math.round(explosion*100));
+ if(ui.explodeValue)ui.explodeValue.textContent=Math.round(explosion*100)+'%';
 }
 
 function updateUi(){
