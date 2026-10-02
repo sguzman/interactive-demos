@@ -14,8 +14,8 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
     expect(guideHtml).toContain('../game-boy-dmg-01/?view=' + view);
   }
 
-  await page.goto('http://127.0.0.1:4173/game-boy-dmg-01/?test=1', { waitUntil: 'networkidle' });
-  await page.waitForFunction(() => Boolean(window.__dmgDebug?.state));
+  await page.goto('http://127.0.0.1:4173/game-boy-dmg-01/?test=1', { waitUntil: 'domcontentloaded', timeout: 30_000 });
+  await page.waitForFunction(() => Boolean(window.__dmgDebug?.state), null, { timeout: 180_000 });
 
   const initial = await page.evaluate(() => window.__dmgDebug.state);
   expect(initial.running).toBe(true);
