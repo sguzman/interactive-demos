@@ -44,10 +44,12 @@ const system=createDMGSystem();
 let model;
 let referenceGeometryReady=false;
 let referenceAssetsPromise=null;
+let referenceAssetsReady=null;
 let referenceUpgradeTimer=0;
 let referenceUpgradeStarted=false;
+let sceneManipulating=false;
 let lastInteractionAt=performance.now();
-const REFERENCE_IDLE_MS=5000;
+const REFERENCE_IDLE_MS=650;
 
 // Production must never block on the large external reference assets. Start from the local,
 // self-contained fallback immediately, then replace it in place when the high-fidelity reference
@@ -60,10 +62,16 @@ if(testMode&&!forceFallback){
  if(!forceFallback){
   // Download can proceed in the background, but expensive GLB parsing is deferred until the user
   // has been idle. This keeps a late CAD parse from freezing an active drag/button animation.
-  referenceAssetsPromise=fetchDMGReferenceAssets().catch(error=>{
-   console.warn('High-fidelity DMG assets unavailable; local model remains active.',error);
-   return null;
-  });
+  referenceAssetsPromise=fetchDMGReferenceAssets()
+   .then(assets=>{
+    referenceAssetsReady=assets;
+    scheduleReferenceUpgrade(80);
+    return assets;
+   })
+   .catch(error=>{
+    console.warn('High-fidelity DMG assets unavailable; local model remains active.',error);
+    return null;
+   });
  }
 }
 model.root.rotation.x=-.02;
@@ -126,24 +134,22 @@ async function upgradeReferenceGeometry(preparedAssets){
 }
 
 function scheduleReferenceUpgrade(delay=REFERENCE_IDLE_MS){
- if(testMode||forceFallback||referenceGeometryReady||referenceUpgradeStarted||!referenceAssetsPromise)return;
+ if(testMode||forceFallback||referenceGeometryReady||referenceUpgradeStarted||!referenceAssetsReady)return;
  if(referenceUpgradeTimer)clearTimeout(referenceUpgradeTimer);
  referenceUpgradeTimer=setTimeout(async()=>{
   referenceUpgradeTimer=0;
-  const preparedAssets=await referenceAssetsPromise;
-  if(!preparedAssets)return;
   const idleFor=performance.now()-lastInteractionAt;
-  if(idleFor<REFERENCE_IDLE_MS||sliderDragging||explosionAnimationFrame){
-   scheduleReferenceUpgrade(Math.max(180,REFERENCE_IDLE_MS-idleFor+120));
+  if(idleFor<REFERENCE_IDLE_MS||sceneManipulating||sliderDragging||explosionAnimationFrame){
+   scheduleReferenceUpgrade(Math.max(120,REFERENCE_IDLE_MS-idleFor+80));
    return;
   }
-  await upgradeReferenceGeometry(preparedAssets);
+  await upgradeReferenceGeometry(referenceAssetsReady);
  },Math.max(0,delay));
 }
 
 function noteUserInteraction(){
  lastInteractionAt=performance.now();
- if(!testMode&&!forceFallback&&!referenceGeometryReady)scheduleReferenceUpgrade();
+ if(!testMode&&!forceFallback&&!referenceGeometryReady&&referenceAssetsReady)scheduleReferenceUpgrade();
 }
 
 const presets={
@@ -306,10 +312,9 @@ for(const button of document.querySelectorAll('[data-button]')){
  button.addEventListener('pointerdown',down); button.addEventListener('pointerup',up); button.addEventListener('pointerleave',up);
 }
 
-ui.powerBtn.addEventListener('click',()=>{chirp('power');system.setPower(!system.state.power);updateUi();});
-ui.cartridgeBtn.addEventListener('click',()=>{chirp('cartridge');system.setCartridgePresent(!system.state.cartridge.present);updateUi();});
+ui.powerBtn.addEventListener('click',()=>{system.setPower(!system.state.power);updateUi();});
+ui.cartridgeBtn.addEventListener('click',()=>{system.setCartridgePresent(!system.state.cartridge.present);updateUi();});
 ui.explodeBtn.addEventListener('click',()=>{
- chirp('explode');
  animateExplosion(explosion>.5?0:1);
 });
 if(ui.explodeRange){
@@ -334,14 +339,7 @@ if(ui.explodeRange){
   // Slider is a dissection control, not a camera preset: keep the user's current viewpoint.
  });
 }
-ui.resetBtn.addEventListener('click',()=>{chirp('reset');cancelExplosionAnimation();system.reset();setExplosion(0);setLayer('physical');setView('product');ui.mapperSelect.value='no-mbc';ui.joypSelect.value='action';updateUi();});
-
-// Every HUD button gets immediate audible feedback. Physical Game Boy controls and the four primary
-// actions above already call chirp with specific labels, so this covers the remaining inspection/
-// diagnostic buttons without double-triggering them.
-for(const button of document.querySelectorAll('button:not([data-button]):not(#powerBtn):not(#cartridgeBtn):not(#explodeBtn):not(#resetBtn)')){
- button.addEventListener('pointerdown',()=>chirp(button.id||button.dataset.view||button.dataset.layer||'control'));
-}
+ui.resetBtn.addEventListener('click',()=>{cancelExplosionAnimation();system.reset();setExplosion(0);setLayer('physical');setView('product');ui.mapperSelect.value='no-mbc';ui.joypSelect.value='action';updateUi();});
 ui.joypSelect.addEventListener('change',()=>{system.selectJoyp(ui.joypSelect.value);updateUi();});
 ui.mapperSelect.addEventListener('change',()=>{system.setMapper(ui.mapperSelect.value);updateUi();});
 ui.mapperWriteBtn.addEventListener('click',()=>{system.writeMapper(0x2000,(system.state.cartridge.romBank+1)&0xff);updateUi();});
@@ -370,6 +368,16 @@ ui.serviceTestBtn.addEventListener('click',()=>{
 ui.burnInBtn.addEventListener('click',()=>{
  system.state.service.observations.push('OEM verification concept: ≥8 h burn-in + functional/final test');
  system.state.service.resolved=true;updateService();
+});
+
+controls.addEventListener('start',()=>{
+ sceneManipulating=true;
+ noteUserInteraction();
+});
+controls.addEventListener('end',()=>{
+ sceneManipulating=false;
+ lastInteractionAt=performance.now();
+ if(!testMode&&!forceFallback&&!referenceGeometryReady&&referenceAssetsReady)scheduleReferenceUpgrade(180);
 });
 
 const raycaster=new THREE.Raycaster(), pointer=new THREE.Vector2();
@@ -451,6 +459,8 @@ function debugState(){
    floorReceivesShadow:floor.receiveShadow,
    referenceUpgradeStarted,
    referenceUpgradeScheduled:referenceUpgradeTimer!==0,
+   referenceAssetsReady:Boolean(referenceAssetsReady),
+   sceneManipulating,
    idleForMs:Math.round(performance.now()-lastInteractionAt)
   },
   geometry:model.geometryDiagnostics(),
@@ -484,10 +494,10 @@ if(params.get('layer')) setLayer(params.get('layer'));
 updateUi();
 ui.loading.style.opacity='0';setTimeout(()=>{ if(ui.loading)ui.loading.hidden=true; },350);
 if(!testMode&&!forceFallback){
- for(const eventName of ['pointerdown','pointermove','input','keydown','wheel','focusin']){
+ for(const eventName of ['pointerdown','input','keydown']){
   document.addEventListener(eventName,noteUserInteraction,{capture:true,passive:true});
  }
- scheduleReferenceUpgrade();
+ if(referenceAssetsReady)scheduleReferenceUpgrade();
 }
 
 function animate(now){
