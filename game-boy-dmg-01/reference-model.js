@@ -67,6 +67,7 @@ const ASSEMBLED_OCCLUDED_IDS=new Set(['DPadMembrane','ActionMembrane','DPadCarri
 const ASSEMBLED_HIDDEN_ASSEMBLIES=new Set(['ControlsInternal','Mainboard','Power','Audio','Flex','Battery','Internal']);
 const REAR_CARTRIDGE_COVERED_IDS=new Set(['RearModel','RearNintendo','RearRating','RearStudy']);
 const CARTRIDGE_INTERNAL_IDS=new Set(['CartridgePCB','CartridgeROM','CartridgeROMLeads']);
+const CARTRIDGE_SHELL_IDS=new Set(['CartridgeBack','CartridgeWall','CartridgeFront']);
 const INSERT=new THREE.Vector3(-.106,.020,0);
 const ACCESSORY_SOURCE_CENTER=new THREE.Vector3(.106,.022,.004);
 const CARTRIDGE_REAR_PROJECTION_MM=1.5;
@@ -103,6 +104,18 @@ function hilite(mesh,on){
     m.emissive.copy(on?new THREE.Color(0x244b1a):(m.userData.baseEmissive||new THREE.Color(0)));
     m.emissiveIntensity=on?1.35:1;
   }
+}
+
+function tintNode(node,color,roughness=.74){
+  node?.traverse(mesh=>{
+    if(!mesh.isMesh)return;
+    for(const m of (Array.isArray(mesh.material)?mesh.material:[mesh.material])){
+      if(!m?.color)continue;
+      m.color.setHex(color);
+      if('roughness' in m)m.roughness=roughness;
+      if('metalness' in m)m.metalness=0;
+    }
+  });
 }
 
 function orientPrintableFrontShell(geometry){
@@ -191,6 +204,12 @@ export async function createDMGReferenceModel(){
       pickables.push(node);
     }
   });
+
+  // Original DMG Game Paks are visibly darker than the handheld enclosure. The assembly source
+  // reused its enclosure material for the blank study cartridge, which made the inserted module
+  // visually disappear into the rear shell. Keep the source geometry; only correct presentation.
+  for(const id of CARTRIDGE_SHELL_IDS)tintNode(nodesByPartId.get(id),0x777873,.78);
+  tintNode(nodesByPartId.get('CartridgeLabel'),0xb8bbb7,.82);
 
   // The assembly model is excellent for internals/explosion metadata, but its exterior front shell
   // is a study reconstruction. Replace only that front shell with a second, independently authored
@@ -405,7 +424,7 @@ export async function createDMGReferenceModel(){
       sourceCoordinateGate:Object.values(landmarkChecks).every(x=>x.withinSourceCoordinateTolerance)
     };
     return {
-      revision:'dmg-reference-cad-v8',
+      revision:'dmg-reference-cad-v9',
       geometryMaturity:'G4-render-reviewed-hybrid-reference; user-acceptance-pending',
       source:{
         assembly:{
@@ -437,6 +456,7 @@ export async function createDMGReferenceModel(){
           ? [...REAR_CARTRIDGE_COVERED_IDS].every(id=>nodesByPartId.get(id)?.visible===false)
           : true,
         cartridgeRearProjectionMm:CARTRIDGE_REAR_PROJECTION_MM,
+        cartridgeShellPresentation:'darker gray shell + light label; geometry unchanged',
         cartridgeInsertion:'180deg-y-flip; label face outward toward rear viewer; 1.5 mm rearward seating offset'
       },
       explosion:state.explosion,representativeProfile:CANONICAL.representativeProfile
