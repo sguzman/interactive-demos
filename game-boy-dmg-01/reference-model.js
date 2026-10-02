@@ -65,6 +65,9 @@ const SPECIAL={
 const CONTROL={dpad:['DPad'],buttonA:['ButtonA'],buttonB:['ButtonB'],Start:['StartKey'],Select:['SelectKey']};
 const ASSEMBLED_OCCLUDED_IDS=new Set(['DPadMembrane','ActionMembrane']);
 const INSERT=new THREE.Vector3(-.106,.020,0);
+const ACCESSORY_SOURCE_CENTER=new THREE.Vector3(.106,.022,.004);
+const ACCESSORY_TARGET_CENTER=ACCESSORY_SOURCE_CENTER.clone().add(INSERT);
+const ACCESSORY_INSERT_FLIP=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI);
 
 function labelOf(n){
   return (n.userData?.label||n.name||n.userData?.partId||'Component').replace(/^GAMEBOY-\d+\s*·\s*/,'');
@@ -126,11 +129,18 @@ export async function createDMGReferenceModel(){
     if(id){
       node.userData.partId=id;
       nodesByPartId.set(id,node);
-      if(node.userData.assembly==='Accessories')node.position.add(INSERT);
+      const isAccessory=node.userData.assembly==='Accessories';
+      if(isAccessory){
+        node.position.sub(ACCESSORY_SOURCE_CENTER).applyQuaternion(ACCESSORY_INSERT_FLIP).add(ACCESSORY_TARGET_CENTER);
+        node.quaternion.premultiply(ACCESSORY_INSERT_FLIP);
+      }
       node.userData.basePosition=node.position.clone();
       node.userData.explodeVector=Array.isArray(node.userData.explodeOffset)
         ? new THREE.Vector3(...node.userData.explodeOffset):new THREE.Vector3();
-      if(node.userData.assembly==='Accessories')accessories.push(node);
+      if(isAccessory){
+        node.userData.explodeVector.applyQuaternion(ACCESSORY_INSERT_FLIP);
+        accessories.push(node);
+      }
       nodes.push(node);
     }
     if(node.isMesh){
@@ -331,7 +341,7 @@ export async function createDMGReferenceModel(){
       sourceCoordinateGate:Object.values(landmarkChecks).every(x=>x.withinSourceCoordinateTolerance)
     };
     return {
-      revision:'dmg-reference-cad-v5',
+      revision:'dmg-reference-cad-v6',
       geometryMaturity:'G4-render-reviewed-hybrid-reference; user-acceptance-pending',
       source:{
         assembly:{
@@ -355,7 +365,8 @@ export async function createDMGReferenceModel(){
         speakerGrilleBackingPresent:nodesByPartId.has('SpeakerGrilleBacking'),
         assembledOcclusionActive:state.explosion<=.04,
         dpadMembraneVisible:!!nodesByPartId.get('DPadMembrane')?.visible,
-        actionMembraneVisible:!!nodesByPartId.get('ActionMembrane')?.visible
+        actionMembraneVisible:!!nodesByPartId.get('ActionMembrane')?.visible,
+        cartridgeInsertion:'180deg-y-flip; label face outward toward rear viewer'
       },
       explosion:state.explosion,representativeProfile:CANONICAL.representativeProfile
     };
