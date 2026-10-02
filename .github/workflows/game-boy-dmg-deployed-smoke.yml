@@ -1,15 +1,22 @@
 name: game boy dmg deployed smoke
 
 on:
-  deployment_status:
+  push:
+    branches: [main]
+    paths:
+      - 'game-boy-dmg-01/**'
+      - 'docs/game-boy-dmg-01.html'
+      - 'demos.json'
+      - 'engineering-projections.json'
+      - '.github/workflows/game-boy-dmg-deployed-smoke.yml'
+  workflow_dispatch:
 
 concurrency:
-  group: game-boy-dmg-deployed-${{ github.event.deployment.id }}
+  group: game-boy-dmg-deployed-main
   cancel-in-progress: true
 
 jobs:
   live-dmg:
-    if: github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'github-pages'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -23,6 +30,28 @@ jobs:
         run: |
           npm install --no-save playwright
           npx playwright install --with-deps chromium
+
+      - name: Wait for Pages to expose the repaired runtime
+        run: |
+          node --input-type=module <<'EOF'
+          const base = process.env.SITE_URL;
+          const deadline = Date.now() + 180_000;
+          let last = '';
+          while (Date.now() < deadline) {
+            try {
+              const r = await fetch(base + 'main.js?probe=' + Date.now(), { cache:'no-store' });
+              last = r.ok ? await r.text() : 'HTTP ' + r.status;
+              if (r.ok && last.includes('referenceGeometryReady') && last.includes('upgradeReferenceGeometry')) {
+                console.log('deployed runtime marker found');
+                process.exit(0);
+              }
+            } catch (error) {
+              last = String(error);
+            }
+            await new Promise(resolve => setTimeout(resolve, 5000));
+          }
+          throw new Error('Pages did not expose the repaired DMG runtime within 180s. Last probe: ' + last.slice(0,200));
+          EOF
 
       - name: Probe deployed DMG-01
         run: |
