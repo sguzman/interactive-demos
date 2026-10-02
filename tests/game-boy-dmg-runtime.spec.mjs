@@ -204,6 +204,11 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   await page.evaluate(() => window.__dmgDebug.setQaCamera([0,330,0],[0,0,0],[0,0,-1],200));
   await page.screenshot({ path: 'test-results/dmg-reference-top.png', fullPage: true });
 
+  // Three-quarter shell view: orthographic to remove focal-length ambiguity while retaining enough
+  // depth information to expose bevel, seam, port, control-well, and lower-corner mistakes.
+  await page.evaluate(() => window.__dmgDebug.setQaCamera([260,180,320],[0,0,0],[0,1,0],205));
+  await page.screenshot({ path: 'test-results/dmg-reference-three-quarter.png', fullPage: true });
+
   await page.evaluate(() => {
     window.__dmgDebug.setExplosion(1);
     window.__dmgDebug.setQaCamera([470,250,700],[0,0,-30],[0,1,0],430);
