@@ -429,8 +429,31 @@ export async function createDMGReferenceModel(){
       landmarks:landmarkChecks,
       sourceCoordinateGate:Object.values(landmarkChecks).every(x=>x.withinSourceCoordinateTolerance)
     };
+
+    const dissectionIds=['ReferenceFrontShell','BackCover','Mainboard','FrontPCB','DPadMembrane','CartridgeFront'];
+    const dissectionSamples={};
+    for(const id of dissectionIds){
+      const n=nodesByPartId.get(id),base=n?.userData?.basePosition,offset=n?.userData?.explodeVector;
+      if(!n||!base||!offset)continue;
+      const expected=base.clone().addScaledVector(offset,state.explosion);
+      const residual=n.position.clone().sub(expected).multiplyScalar(1000);
+      dissectionSamples[id]={
+        baseMm:[base.x*1000,base.y*1000,base.z*1000],
+        offsetMm:[offset.x*1000,offset.y*1000,offset.z*1000],
+        currentMm:[n.position.x*1000,n.position.y*1000,n.position.z*1000],
+        expectedMm:[expected.x*1000,expected.y*1000,expected.z*1000],
+        maxAbsResidualMm:Math.max(Math.abs(residual.x),Math.abs(residual.y),Math.abs(residual.z))
+      };
+    }
+    const dissectionAudit={
+      mode:'continuous-linear-dissection',
+      amount:state.explosion,
+      samples:dissectionSamples,
+      allSamplesLinear:Object.values(dissectionSamples).every(x=>x.maxAbsResidualMm<=1e-6)
+    };
+
     return {
-      revision:'dmg-reference-cad-v13',
+      revision:'dmg-reference-cad-v14',
       geometryMaturity:'G4-render-review-in-progress; user-acceptance-open',
       source:{
         assembly:{
@@ -450,6 +473,7 @@ export async function createDMGReferenceModel(){
       importedPartCount:nodesByPartId.size,pickableCount:pickables.length,
       landmarkCenters,
       referenceConformance,
+      dissectionAudit,
       presentation:{
         legacySpeakerMeshRetired:legacySpeakerMesh ? legacySpeakerMesh.visible===false : true,
         speakerGrilleBackingPresent:nodesByPartId.has('SpeakerGrilleBacking'),
