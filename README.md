@@ -67,12 +67,12 @@ rich guide.
 See `sx70/README.md`.
 
 
-## Taria Engineering projection contract
+## Engineering projection contract
 
 For engineering showcases, this repository is a **public projection surface**, not the canonical technical knowledge base.
 
 ```text
-private Taria Engineering
+private engineering corpus
     facts
     provenance
     mechanism ontology
@@ -109,7 +109,7 @@ Engineering-linked demos should preserve distinctions among manufacturer specifi
 
 The current watch documentation already follows this direction by distinguishing official ETA values from normalized educational reconstruction parameters.
 
-This repository remains authoritative for **public implementation state**. Taria Engineering is authoritative for technical claims after explicit ingestion and provenance classification.
+This repository remains authoritative for **public implementation state**. The private engineering corpus is authoritative for technical claims after explicit ingestion and provenance classification.
 
 
 ## Nintendo Game Boy DMG-01
