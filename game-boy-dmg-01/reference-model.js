@@ -181,11 +181,15 @@ async function fetchPinnedBinary(urls,label){
   throw new Error(label+' failed from every pinned mirror: '+failures.join(' | '));
 }
 
-export async function createDMGReferenceModel(){
-  const [assemblyAsset,frontShellAsset]=await Promise.all([
+export async function fetchDMGReferenceAssets(){
+  return Promise.all([
     fetchPinnedBinary(SRC.urls,'DMG assembly GLB'),
     fetchPinnedBinary(FRONT_SHELL_SRC.urls,'DMG front-shell STL')
   ]);
+}
+
+export async function createDMGReferenceModel(preparedAssets=null){
+  const [assemblyAsset,frontShellAsset]=preparedAssets||await fetchDMGReferenceAssets();
   const gltf=await new GLTFLoader().parseAsync(assemblyAsset.buffer,'');
   const frontShellGeometry=new STLLoader().parse(frontShellAsset.buffer);
   orientPrintableFrontShell(frontShellGeometry);
