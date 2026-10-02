@@ -65,13 +65,13 @@ const SPECIAL={
 const CONTROL={dpad:['DPad'],buttonA:['ButtonA'],buttonB:['ButtonB'],Start:['StartKey'],Select:['SelectKey']};
 const ASSEMBLED_OCCLUDED_IDS=new Set(['DPadMembrane','ActionMembrane','DPadCarrier']);
 const ASSEMBLED_HIDDEN_ASSEMBLIES=new Set(['ControlsInternal','Mainboard','Power','Audio','Flex','Battery','Internal']);
-const REAR_CARTRIDGE_COVERED_IDS=new Set(['RearModel','RearNintendo','RearRating','RearStudy']);
+const REAR_INFO_IDS=new Set(['RearModel','RearNintendo','RearRating','RearStudy']);
 const CARTRIDGE_INTERNAL_IDS=new Set(['CartridgePCB','CartridgeROM','CartridgeROMLeads']);
 const CARTRIDGE_SHELL_IDS=new Set(['CartridgeBack','CartridgeWall','CartridgeFront']);
 const INSERT=new THREE.Vector3(-.106,.020,0);
 const ACCESSORY_SOURCE_CENTER=new THREE.Vector3(.106,.022,.004);
-const CARTRIDGE_REAR_PROJECTION_MM=1.5;
-const ACCESSORY_TARGET_CENTER=ACCESSORY_SOURCE_CENTER.clone().add(INSERT).add(new THREE.Vector3(0,0,-CARTRIDGE_REAR_PROJECTION_MM/1000));
+const CARTRIDGE_REAR_INSET_MM=.35;
+const ACCESSORY_TARGET_CENTER=ACCESSORY_SOURCE_CENTER.clone().add(INSERT).add(new THREE.Vector3(0,0,CARTRIDGE_REAR_INSET_MM/1000));
 const ACCESSORY_INSERT_FLIP=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI);
 
 function isControlInternalOccluded(id=''){
@@ -327,8 +327,6 @@ export async function createDMGReferenceModel(){
       const id=n.userData?.partId||'';
       if(accessoryNodes.has(n)){
         n.visible=state.cartridgePresent && !(assembled && isCartridgeInternal(id));
-      }else if(REAR_CARTRIDGE_COVERED_IDS.has(id)){
-        n.visible=!(assembled && state.cartridgePresent);
       }else if(isAssembledHidden(n)){
         n.visible=!assembled;
       }
@@ -424,7 +422,7 @@ export async function createDMGReferenceModel(){
       sourceCoordinateGate:Object.values(landmarkChecks).every(x=>x.withinSourceCoordinateTolerance)
     };
     return {
-      revision:'dmg-reference-cad-v9',
+      revision:'dmg-reference-cad-v10',
       geometryMaturity:'G4-render-reviewed-hybrid-reference; user-acceptance-pending',
       source:{
         assembly:{
@@ -452,12 +450,12 @@ export async function createDMGReferenceModel(){
         actionMembraneVisible:!!nodesByPartId.get('ActionMembrane')?.visible,
         controlInternalBleedGuard:assembledControlVisibility(),
         cartridgeInternalBleedGuard:assembledCartridgeVisibility(),
-        rearMarkingsOccludedByInsertedCartridge:state.cartridgePresent && state.explosion<=.04
-          ? [...REAR_CARTRIDGE_COVERED_IDS].every(id=>nodesByPartId.get(id)?.visible===false)
+        rearMarkingsRemainVisibleWithInsertedCartridge:state.cartridgePresent && state.explosion<=.04
+          ? [...REAR_INFO_IDS].every(id=>nodesByPartId.get(id)?.visible!==false)
           : true,
-        cartridgeRearProjectionMm:CARTRIDGE_REAR_PROJECTION_MM,
-        cartridgeShellPresentation:'darker gray shell + light label; geometry unchanged',
-        cartridgeInsertion:'180deg-y-flip; label face outward toward rear viewer; 1.5 mm rearward seating offset'
+        cartridgeRearInsetMm:CARTRIDGE_REAR_INSET_MM,
+        cartridgeShellPresentation:'darker gray shell + light label; source cartridge geometry unchanged',
+        cartridgeInsertion:'180deg-y-flip; label face outward; shell seated 0.35 mm behind rear cover so the physical cartridge-well cutout provides occlusion'
       },
       explosion:state.explosion,representativeProfile:CANONICAL.representativeProfile
     };
