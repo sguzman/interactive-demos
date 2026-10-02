@@ -72,13 +72,15 @@ The browser smoke workflow records geometry diagnostics plus deterministic inspe
 - rear three-quarter;
 - left, right, and top orthographic views;
 - front three-quarter;
-- early unfold and shell-cleared unfold transition frames;
-- fully exploded stack.
+- low-percentage continuous-dissection frames;
+- fully exploded stack;
+- a production-mode shadow-map frame.
 
 Orthographic cameras remove focal-length ambiguity for elevation checks. QA lighting is
 camera-relative and fog-free so deep layers remain inspectable; production presentation keeps its own
-lighting/fog. The transition frames specifically guard the previously observed failure mode where
-internal pieces became visible before they had physically cleared the shell.
+lighting/fog. Dissection frames intentionally allow intermediate clipping: every part moves
+continuously from its actual assembled origin toward its source-authored exploded offset, making the
+origin/path legible instead of teleporting or appearing only after shell clearance.
 
-The G4 designation means the hybrid reconstruction has passed these rendered review gates. It does
-not mean the model is factory CAD or manufacturing-tolerance accurate.
+Rendered G4 review remains in progress and direct user visual acceptance is open. These checks do not
+mean the model is factory CAD or manufacturing-tolerance accurate.
