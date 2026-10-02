@@ -7,6 +7,12 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   page.on('pageerror', error => pageErrors.push(String(error)));
   page.on('console', message => console.log('[browser]', message.type(), message.text()));
 
+  const indexResponse = await page.request.get('http://127.0.0.1:4173/game-boy-dmg-01/');
+  expect(indexResponse.status()).toBe(200);
+  const indexHtml = await indexResponse.text();
+  expect(indexHtml).not.toContain('unpkg.com');
+  expect(indexHtml).toContain('../vendor/three/three.module.min.js');
+
   const guide = await page.request.get('http://127.0.0.1:4173/docs/game-boy-dmg-01.html');
   expect(guide.status()).toBe(200);
   const guideHtml = await guide.text();
@@ -26,6 +32,9 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.cartridge.mapper).toBe('no-mbc');
   expect(initial.activeView).toBe('product');
   expect(initial.activeLayer).toBe('physical');
+  expect(initial.referenceGeometryReady).toBe(true);
+  expect(await page.locator('#geometryProfileState').textContent()).toContain('Hybrid reference-grounded');
+  expect(await page.locator('#partProvenance').textContent()).toContain('hybrid reference-grounded');
   expect(initial.geometry.revision).toBe('dmg-reference-cad-v14');
   expect(initial.geometry.geometryMaturity).toBe('G4-render-review-in-progress; user-acceptance-open');
   expect(initial.geometry.finite).toBe(true);
@@ -307,6 +316,8 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(fallbackState.geometry.revision).toBe('dmg-public-v1');
   expect(fallbackState.referenceGeometryReady).toBe(false);
   expect(fallbackState.running).toBe(true);
+  expect(await page.locator('#geometryProfileState').textContent()).toContain('Local startup model');
+  expect(await page.locator('#partProvenance').textContent()).toContain('local startup geometry');
   await page.locator('#explodeRange').evaluate(el => {
     el.value = '25';
     el.dispatchEvent(new Event('input', { bubbles:true }));
