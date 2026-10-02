@@ -293,14 +293,10 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   });
   await page.screenshot({ path: 'test-results/dmg-reference-exploded.png', fullPage: true });
 
-  // Production-shadow regression: the user's reported detached black rectangle only appears with
-  // real shadow maps enabled, so capture one non-test-mode product frame as part of CI evidence.
-  await page.goto('http://127.0.0.1:4173/game-boy-dmg-01/', { waitUntil: 'domcontentloaded', timeout: 30_000 });
-  await page.waitForFunction(() => Boolean(window.__dmgDebug?.state), null, { timeout: 180_000 });
-  await page.evaluate(() => {
-    window.__dmgDebug.setView('product');
-    window.__dmgDebug.setExplosion(0);
-  });
+  // Production-shadow regression: enable the production camera/fog/shadow path on the already
+  // loaded model so the user's reported detached black rectangle is covered without a second 20 MB
+  // model download.
+  await page.evaluate(() => window.__dmgDebug.setProductionShadowQa());
   await page.screenshot({ path: 'test-results/dmg-product-production-shadow.png', fullPage: true });
 
   expect(pageErrors).toEqual([]);
