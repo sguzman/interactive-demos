@@ -37,7 +37,20 @@ const qaFill=new THREE.DirectionalLight(0xffffff,testMode?.45:0); qaFill.positio
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.MeshStandardMaterial({color:0x0b0d0b,roughness:.95}));
 floor.rotation.x=-Math.PI/2; floor.position.y=-88; floor.receiveShadow=!testMode; scene.add(floor);
 
-const model=await createDMGReferenceModel();
+const loadingEl=document.querySelector('#loading');
+let model;
+try{
+ model=await createDMGReferenceModel();
+}catch(error){
+ console.error('DMG model load failed',error);
+ if(loadingEl){
+  loadingEl.textContent='Model load failed. Reload to retry. '+(error?.message||String(error));
+  loadingEl.classList.add('load-error');
+  loadingEl.addEventListener('click',()=>location.reload(),{once:true});
+  loadingEl.title='Click to reload';
+ }
+ throw error;
+}
 model.root.rotation.x=-.02;
 scene.add(model.root);
 const system=createDMGSystem();
@@ -49,7 +62,7 @@ const ui={
  joypSelect:document.querySelector('#joypSelect'),mapperSelect:document.querySelector('#mapperSelect'),mapperWriteBtn:document.querySelector('#mapperWriteBtn'),dmaBtn:document.querySelector('#dmaBtn'),ppuDot:document.querySelector('#ppuDot'),ppuDotValue:document.querySelector('#ppuDotValue'),
  nr50:document.querySelector('#nr50'),nr50Value:document.querySelector('#nr50Value'),physicalVolume:document.querySelector('#physicalVolume'),physicalVolumeValue:document.querySelector('#physicalVolumeValue'),
  serviceScenario:document.querySelector('#serviceScenario'),serviceTestBtn:document.querySelector('#serviceTestBtn'),burnInBtn:document.querySelector('#burnInBtn'),serviceText:document.querySelector('#serviceText'),
- partCategory:document.querySelector('#partCategory'),partProvenance:document.querySelector('#partProvenance'),partName:document.querySelector('#partName'),partDescription:document.querySelector('#partDescription'),loading:document.querySelector('#loading')
+ partCategory:document.querySelector('#partCategory'),partProvenance:document.querySelector('#partProvenance'),partName:document.querySelector('#partName'),partDescription:document.querySelector('#partDescription'),loading:loadingEl
 };
 
 const viewButtons=[...document.querySelectorAll('[data-view]')];
