@@ -17,7 +17,9 @@ renderer.shadowMap.enabled=!testMode;
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x080b0a);
-scene.fog=new THREE.Fog(0x080b0a,350,1200);
+// Product mode keeps atmospheric depth. Deterministic QA renders disable fog so rear/internal
+// layers cannot disappear merely because they are farther from the inspection camera.
+scene.fog=testMode?null:new THREE.Fog(0x080b0a,350,1200);
 
 const camera=new THREE.PerspectiveCamera(34,1,.1,1200);
 camera.position.set(190,105,245);
@@ -29,8 +31,9 @@ controls.enableDamping=true; controls.target.set(0,0,0); controls.minDistance=12
 const hemi=new THREE.HemisphereLight(0xdce6d5,0x172018,1.5);scene.add(hemi);
 const ambientBase=testMode?.9:.35;
 const ambient=new THREE.AmbientLight(0xffffff,ambientBase);scene.add(ambient);
-const key=new THREE.DirectionalLight(0xffffff,3.0); key.position.set(150,220,180); key.castShadow=!testMode; scene.add(key);
+const key=new THREE.DirectionalLight(0xffffff,3.0); key.position.set(150,220,180); key.castShadow=!testMode; scene.add(key); scene.add(key.target);
 const rim=new THREE.DirectionalLight(0xa6cbe0,testMode?2.1:1.2); rim.position.set(-160,80,-180); scene.add(rim); scene.add(rim.target);
+const qaFill=new THREE.DirectionalLight(0xffffff,testMode?1.15:0); qaFill.position.set(0,-120,160); scene.add(qaFill); scene.add(qaFill.target);
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.MeshStandardMaterial({color:0x0b0d0b,roughness:.95}));
 floor.rotation.x=-Math.PI/2; floor.position.y=-88; floor.receiveShadow=!testMode; scene.add(floor);
 
@@ -216,9 +219,16 @@ function setQaCamera(position,target=[0,0,0],up=[0,1,0],orthoHeight=200){
   const eye=new THREE.Vector3(...position),look=new THREE.Vector3(...target),upv=new THREE.Vector3(...up).normalize();
   const view=eye.clone().sub(look).normalize();
   const right=new THREE.Vector3().crossVectors(view,upv).normalize();
-  rim.position.copy(eye).addScaledVector(right,90).addScaledVector(upv,70);
-  rim.target.position.copy(look);
-  rim.target.updateMatrixWorld();
+
+  // Camera-relative three-point QA lighting: key exposes the dominant surface relief, rim separates
+  // edges, and fill keeps deep exploded layers readable without changing production presentation.
+  key.position.copy(eye).addScaledVector(right,110).addScaledVector(upv,95);
+  key.target.position.copy(look); key.target.updateMatrixWorld();
+  rim.position.copy(eye).addScaledVector(right,-115).addScaledVector(upv,55);
+  rim.target.position.copy(look); rim.target.updateMatrixWorld();
+  qaFill.position.copy(look).addScaledVector(view,-180).addScaledVector(upv,-70);
+  qaFill.target.position.copy(look); qaFill.target.updateMatrixWorld();
+
   activeRenderCamera=qaCamera;
   floor.visible=false;
   return;
