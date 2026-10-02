@@ -7,7 +7,9 @@ export const CANONICAL = {
     lcdBoard: 'DMG-LCD-06',
     converter: 'representative type-D presentation',
     jackBoard: 'representative DMG-JACK-03 presentation',
-    universalBomClaim: false
+    universalBomClaim: false,
+    geometrySource: 'open-console-cad@55081da3b4864aba36082644f9a3c5cedf1061c8',
+    geometrySourceClass: 'P4 external CAD reconstruction'
   },
   masterClockHz: 4194304,
   display: { width: 160, height: 144, scanlines: 154, visibleScanlines: 144, dotsPerLine: 456 },
@@ -33,13 +35,13 @@ export const COMPONENTS = {
   shellFront: {
     name: 'Front enclosure',
     category: 'physical assembly',
-    provenance: 'P4 constructive geometry',
+    provenance: 'reference-grounded P4 external CAD reconstruction',
     description: 'Representative front shell carrying the controls, display window, and front-board stack.'
   },
   shellRear: {
     name: 'Rear enclosure',
     category: 'physical assembly',
-    provenance: 'P4 constructive geometry',
+    provenance: 'reference-grounded P4 external CAD reconstruction',
     description: 'Representative rear shell containing battery and cartridge access.'
   },
   mainboard: {
@@ -75,7 +77,7 @@ export const COMPONENTS = {
   cartridge: {
     name: 'Removable cartridge module',
     category: 'module',
-    provenance: 'P0/P3 interface + P4 generic envelope',
+    provenance: 'P0/P3 interface + reference-grounded P4 cartridge CAD',
     description: 'User-removable hardware/software module behind the 32-contact cartridge interface.'
   },
   powerBoard: {
@@ -105,19 +107,19 @@ export const COMPONENTS = {
   dpad: {
     name: 'D-pad',
     category: 'human input',
-    provenance: 'product-obvious / board-grounded matrix',
+    provenance: 'product-obvious / reference-grounded P4 control geometry / board-grounded matrix',
     description: 'Mechanical control whose contacts feed the active-low JOYP matrix.'
   },
   buttonA: {
     name: 'A button',
     category: 'human input',
-    provenance: 'product-obvious / board-grounded matrix',
+    provenance: 'product-obvious / reference-grounded P4 control geometry / board-grounded matrix',
     description: 'Physical button mapped to the action-button matrix and software-visible through JOYP.'
   },
   buttonB: {
     name: 'B button',
     category: 'human input',
-    provenance: 'product-obvious / board-grounded matrix',
+    provenance: 'product-obvious / reference-grounded P4 control geometry / board-grounded matrix',
     description: 'Physical button mapped to the action-button matrix and software-visible through JOYP.'
   },
   inputContacts: {
