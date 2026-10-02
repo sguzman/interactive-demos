@@ -63,6 +63,7 @@ const SPECIAL={
 };
 
 const CONTROL={dpad:['DPad'],buttonA:['ButtonA'],buttonB:['ButtonB'],Start:['StartKey'],Select:['SelectKey']};
+const ASSEMBLED_OCCLUDED_IDS=new Set(['DPadMembrane','ActionMembrane']);
 const INSERT=new THREE.Vector3(-.106,.020,0);
 
 function labelOf(n){
@@ -193,6 +194,30 @@ export async function createDMGReferenceModel(){
   nodes.push(frontShellReference);nodesByPartId.set('ReferenceFrontShell',frontShellReference);pickables.push(frontShellReference);
   for(const n of originalFront)n.visible=false;
 
+  // The assembly-source grille backing was clipped against its own shell corner and can protrude
+  // past the replacement shell's tighter lower-right contour. Retire it and add a compact backing
+  // that exists only to make the replacement shell's real grille openings read as dark.
+  const legacySpeakerMesh=nodesByPartId.get('SpeakerMesh');
+  if(legacySpeakerMesh)legacySpeakerMesh.visible=false;
+  const speakerGrilleBacking=new THREE.Mesh(
+    new THREE.CircleGeometry(.0125,48),
+    new THREE.MeshBasicMaterial({color:0x080908,side:THREE.DoubleSide})
+  );
+  speakerGrilleBacking.name='Speaker grille backing — replacement-shell presentation';
+  speakerGrilleBacking.position.set(.027,-.055,.02910);
+  speakerGrilleBacking.userData.partId='SpeakerGrilleBacking';
+  speakerGrilleBacking.userData.assembly='Body';
+  speakerGrilleBacking.userData.component={
+    name:'Speaker grille backing',
+    category:'presentation geometry',
+    provenance:'P5 registration aid for independent front-shell reference',
+    description:'Compact dark backing behind the printable-replica shell grille; replaces an assembly-source mesh whose old shell clipping could protrude beyond the hybrid enclosure.'
+  };
+  speakerGrilleBacking.userData.basePosition=speakerGrilleBacking.position.clone();
+  speakerGrilleBacking.userData.explodeVector=(frontAnchor?.userData?.explodeVector||new THREE.Vector3()).clone();
+  cad.add(speakerGrilleBacking);
+  nodes.push(speakerGrilleBacking);nodesByPartId.set('SpeakerGrilleBacking',speakerGrilleBacking);pickables.push(speakerGrilleBacking);
+
   const frontShellDiagnostics={
     source:{...FRONT_SHELL_SRC},
     rawOrientedBoundsMm:{width:sourceSize.x,height:sourceSize.y,depth:sourceSize.z},
@@ -234,7 +259,9 @@ export async function createDMGReferenceModel(){
     for(const n of nodes){
       const b=n.userData.basePosition;if(!b)continue;
       n.position.copy(b).addScaledVector(n.userData.explodeVector||new THREE.Vector3(),state.explosion);
+      if(ASSEMBLED_OCCLUDED_IDS.has(n.userData?.partId))n.visible=state.explosion>.04;
     }
+    if(legacySpeakerMesh)legacySpeakerMesh.visible=false;
     for(const key of state.pressed)for(const id of CONTROL[key]||[]){
       const n=nodesByPartId.get(id);if(n)n.position.z-=.00075;
     }
@@ -304,7 +331,7 @@ export async function createDMGReferenceModel(){
       sourceCoordinateGate:Object.values(landmarkChecks).every(x=>x.withinSourceCoordinateTolerance)
     };
     return {
-      revision:'dmg-reference-cad-v4',
+      revision:'dmg-reference-cad-v5',
       geometryMaturity:'G4-render-reviewed-hybrid-reference; user-acceptance-pending',
       source:{
         assembly:{
