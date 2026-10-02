@@ -26,7 +26,7 @@ const SRC={
 };
 
 const FRONT_SHELL_SRC={
-  repo:'guighub/DMG-01-Shell',
+  repository:'guighub/DMG-01-Shell',
   commit:'758e2841dc163b472815c39c651df641966e58eb',
   blob:'312893a8b6cb58eb97665c2dcb9be3b24b99ad3b',
   url:'https://raw.githubusercontent.com/guighub/DMG-01-Shell/758e2841dc163b472815c39c651df641966e58eb/STL/DMG-01_Front_v38.stl',
