@@ -204,6 +204,8 @@ function setQaCamera(position,target=[0,0,0],up=[0,1,0],orthoHeight=200){
   qaCamera.left=-halfW;qaCamera.right=halfW;qaCamera.top=halfH;qaCamera.bottom=-halfH;
   qaCamera.up.set(...up);qaCamera.position.set(...position);qaCamera.lookAt(...target);
   qaCamera.updateProjectionMatrix();
+  qaHeadlight.position.set(...position);qaHeadlight.target.position.set(...target);
+  qaHeadlight.target.updateMatrixWorld();
   activeRenderCamera=qaCamera;
   floor.visible=false;
   return;
