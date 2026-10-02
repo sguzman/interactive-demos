@@ -26,7 +26,7 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.cartridge.mapper).toBe('no-mbc');
   expect(initial.activeView).toBe('product');
   expect(initial.activeLayer).toBe('physical');
-  expect(initial.geometry.revision).toBe('dmg-reference-cad-v10');
+  expect(initial.geometry.revision).toBe('dmg-reference-cad-v11');
   expect(initial.geometry.geometryMaturity).toBe('G4-render-reviewed-hybrid-reference; user-acceptance-pending');
   expect(initial.geometry.finite).toBe(true);
   expect(initial.geometry.pickableCount).toBeGreaterThan(350);
@@ -72,6 +72,7 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.geometry.referenceConformance.sourceCoordinateGate).toBe(true);
   expect(initial.geometry.presentation.legacySpeakerMeshRetired).toBe(true);
   expect(initial.geometry.presentation.speakerGrilleBackingPresent).toBe(true);
+  expect(initial.geometry.presentation.assembledOcclusionLimit).toBeCloseTo(.08, 4);
   expect(initial.geometry.presentation.assembledOcclusionActive).toBe(true);
   expect(initial.geometry.presentation.dpadMembraneVisible).toBe(false);
   expect(initial.geometry.presentation.actionMembraneVisible).toBe(false);
@@ -206,6 +207,27 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
     window.__dmgDebug.setExplosion(0);
   });
 
+  // Transition QA guards the original failure mode: enclosed parts must not bleed through the
+  // shell during the first portion of explode/assemble travel. They reveal only after separation.
+  await page.evaluate(() => {
+    window.__dmgDebug.setExplosion(.06);
+    window.__dmgDebug.setQaCamera([260,180,320],[0,0,0],[0,1,0],205);
+  });
+  const earlyTravel = await page.evaluate(() => window.__dmgDebug.state.geometry.presentation);
+  expect(earlyTravel.assembledOcclusionActive).toBe(true);
+  expect(earlyTravel.controlInternalBleedGuard.allHidden).toBe(true);
+  expect(earlyTravel.cartridgeInternalBleedGuard.allHidden).toBe(true);
+  await page.screenshot({ path: 'test-results/dmg-reference-unfold-early.png', fullPage: true });
+
+  await page.evaluate(() => {
+    window.__dmgDebug.setExplosion(.12);
+    window.__dmgDebug.setQaCamera([260,180,320],[0,0,0],[0,1,0],205);
+  });
+  const clearedTravel = await page.evaluate(() => window.__dmgDebug.state.geometry.presentation);
+  expect(clearedTravel.assembledOcclusionActive).toBe(false);
+  await page.screenshot({ path: 'test-results/dmg-reference-unfold-cleared.png', fullPage: true });
+
+  await page.evaluate(() => window.__dmgDebug.setExplosion(0));
   await page.evaluate(() => window.__dmgDebug.setQaCamera([0,0,330],[0,0,0],[0,1,0],200));
   await page.screenshot({ path: 'test-results/dmg-reference-front.png', fullPage: true });
 
