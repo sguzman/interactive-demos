@@ -167,6 +167,31 @@ function updateRod(rod, a, b) {
   rod.userData.length = length;
 }
 
+function makeSlottedGuide(length, mat = materials.chromeDark) {
+  const group = new THREE.Group();
+  const plate = box(4.0, length, 1.35, mat);
+  group.add(plate);
+
+  // A dark inset reads as the guide slot from the side without pretending to model exact stamped
+  // production geometry.
+  const slot = box(1.25, Math.max(8, length - 11), 1.55, materials.black);
+  slot.position.x = 2.05;
+  group.add(slot);
+
+  group.userData.length = length;
+  return group;
+}
+
+function updateSlottedGuide(guide, anchor, follower) {
+  const direction = follower.clone().sub(anchor);
+  const followerDistance = Math.max(0.001, direction.length());
+  const unit = direction.normalize();
+  const length = guide.userData.length;
+  guide.position.copy(anchor).addScaledVector(unit, length * 0.5);
+  guide.quaternion.setFromUnitVectors(Y_AXIS, unit);
+  guide.userData.followerDistance = followerDistance;
+}
+
 function makeBellowsGeometry() {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Array(18).fill(0), 3));
@@ -409,13 +434,21 @@ export function createSX70Model() {
   register('viewfinder', viewfinder);
   root.add(viewfinder);
 
-  // Two small P4 support links keep the relay housing visually tied to the rear
-  // optical structure in the ordinary erect state. The prior unsupported cap
-  // read as a random floating cube during direct user QA.
+  // The real camera exposes a cover-support / guide mechanism under the cap. Represent it as
+  // fixed-length slotted guides with follower pins rather than v4's telescoping rods.
   const viewfinderSupports = new THREE.Group();
-  const viewfinderSupportLeft = makeRod(0.9, materials.chromeDark);
-  const viewfinderSupportRight = makeRod(0.9, materials.chromeDark);
-  viewfinderSupports.add(viewfinderSupportLeft, viewfinderSupportRight);
+  const viewfinderSupportLeft = makeSlottedGuide(A.viewfinderGuideLength, materials.chromeDark);
+  const viewfinderSupportRight = makeSlottedGuide(A.viewfinderGuideLength, materials.chromeDark);
+  const viewfinderFollowerLeft = cylinder(1.65, 2.4, materials.chromeDark, 18);
+  const viewfinderFollowerRight = cylinder(1.65, 2.4, materials.chromeDark, 18);
+  viewfinderFollowerLeft.rotation.z = Math.PI / 2;
+  viewfinderFollowerRight.rotation.z = Math.PI / 2;
+  viewfinderSupports.add(
+    viewfinderSupportLeft,
+    viewfinderSupportRight,
+    viewfinderFollowerLeft,
+    viewfinderFollowerRight
+  );
   register('viewfinder', viewfinderSupports);
   root.add(viewfinderSupports);
 
@@ -581,8 +614,10 @@ export function createSX70Model() {
     const vfRearRight = s.rearTop.clone(); vfRearRight.x = 31;
     const vfCapLeft = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(-31, -4.2, -20));
     const vfCapRight = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(31, -4.2, -20));
-    updateRod(viewfinderSupportLeft, vfRearLeft, vfCapLeft);
-    updateRod(viewfinderSupportRight, vfRearRight, vfCapRight);
+    updateSlottedGuide(viewfinderSupportLeft, vfRearLeft, vfCapLeft);
+    updateSlottedGuide(viewfinderSupportRight, vfRearRight, vfCapRight);
+    viewfinderFollowerLeft.position.copy(vfCapLeft);
+    viewfinderFollowerRight.position.copy(vfCapRight);
 
     const sideX = A.sideRailX;
     const rearTopLeft = s.rearTop.clone(); rearTopLeft.x = -sideX;
@@ -764,6 +799,8 @@ export function createSX70Model() {
       lensStandardHeight: lensHeight,
       lensStandardHeightError: lensHeight - A.lensStandardHeight,
       viewfinderRearSupportSpan,
+      viewfinderGuideLength: A.viewfinderGuideLength,
+      viewfinderFollowerWithinGuide: viewfinderRearSupportSpan <= A.viewfinderGuideLength + 1e-6,
       topFrontCoverLength,
       topFrontCoverLengthError: topFrontCoverLength - A.topFrontCoverLength,
       rearSideLinkLengthErrors: rearSideLinkLengths.map(length => length - A.rearWallLength),
