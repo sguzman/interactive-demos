@@ -50,8 +50,8 @@
       "authorityRule": "Public implementation state is authoritative here; technical claims and provenance are authoritative in internal engineering corpus after explicit ingestion.",
       "canonicalVisibility": "private",
       "publicCanonicalIdentifier": "specimen:polaroid-sx-70",
-      "engineeringSyncDate": "2026-10-01",
-      "engineeringResearchState": "Canonical documentary/reconstruction research and Works expression complete for current scope; public projection includes a browser-proven true internal cutaway/exploded model with live exposure/reflex/transport mechanics.",
+      "engineeringSyncDate": "2026-10-02",
+      "engineeringResearchState": "Canonical documentary/reconstruction research and Works expression complete for current scope; public projection includes browser-proven folding, live internal cutaway/exploded exposure/reflex/transport mechanics, and user-accepted v6 exterior geometry. Minor interpenetration/clipping and P4 surface-form approximations are explicitly accepted residual defects for this scope.",
       "provenanceScheme": [
         "P0 primary / authoritative",
         "P1 measurement",
@@ -69,7 +69,14 @@
         "rich guide"
       ],
       "publicUx": "product-intimate open/focus/take-photo path + primary Internals cutaway + subsystem views + collapsed Advanced diagnostics",
-      "revisionBoundary": "Original/manual-focus SX-70 is canonical. Sonar autofocus, later family revisions, Time-Zero lineage, and modern Polaroid film require explicit lineage labels."
+      "revisionBoundary": "Original/manual-focus SX-70 is canonical. Sonar autofocus, later family revisions, Time-Zero lineage, and modern Polaroid film require explicit lineage labels.",
+      "geometryStatus": "g4-user-accepted-current-scope",
+      "geometryAcceptance": "User visually accepted the articulated-v6 open and folded camera on 2026-10-02. Remaining minor clipping and blocky P4 surface approximations are tolerated; obvious detached eyepiece presentation was corrected before closure.",
+      "geometryKnownResiduals": [
+        "minor interpenetration/clipping during some folding views",
+        "P4 constructive surfaces remain boxier than factory industrial-design geometry",
+        "exact production pivot coordinates and hidden linkage dimensions remain unresolved"
+      ]
     },
     {
       "demoSlug": "game-boy-dmg-01",
