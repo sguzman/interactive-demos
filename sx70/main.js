@@ -186,6 +186,9 @@ const VIEW_PRESETS = {
 
 let cameraFlight = null;
 let activeView = 'overview';
+let explosionAnimationFrame = 0;
+let explosionAnimationToken = 0;
+let explosionSliderDragging = false;
 const viewButtons = [...document.querySelectorAll('[data-view]')];
 
 function setView(name, immediate = false) {
@@ -307,12 +310,43 @@ function setInspectionExplosion(value) {
   model.setExplode(normalized);
   mechanism.setExplosion(normalized);
   transport.setExplosion(normalized);
-  ui.explode.value = String(Math.round(normalized * 100));
+  if (!explosionSliderDragging) ui.explode.value = String(Math.round(normalized * 100));
   ui.explodeValue.value = `${Math.round(normalized * 100)}%`;
 
   const showInternals = normalized > 0.02;
   mechanism.setVisible(activeView !== 'chemistry' && (showInternals || activeView === 'sequence' || activeView === 'internals' || activeView === 'frontStandard'));
   transport.setVisible(activeView !== 'chemistry' && (showInternals || activeView === 'sequence' || activeView === 'transport' || activeView === 'internals' || activeView === 'frontStandard'));
+}
+
+function cancelExplosionAnimation() {
+  explosionAnimationToken += 1;
+  if (explosionAnimationFrame) cancelAnimationFrame(explosionAnimationFrame);
+  explosionAnimationFrame = 0;
+}
+
+function animateInspectionExplosion(target, duration = 1400) {
+  cancelExplosionAnimation();
+  const token = explosionAnimationToken;
+  const from = model.state.explosion;
+  const to = THREE.MathUtils.clamp(target, 0, 1);
+  if (Math.abs(to - from) < 1e-6) {
+    setInspectionExplosion(to);
+    return;
+  }
+
+  let progress = 0;
+  let previous = performance.now();
+  const step = now => {
+    if (token !== explosionAnimationToken) return;
+    const frameMs = Math.min(50, Math.max(0, now - previous));
+    previous = now;
+    progress = Math.min(1, progress + frameMs / duration);
+    const eased = progress * progress * (3 - 2 * progress);
+    setInspectionExplosion(THREE.MathUtils.lerp(from, to, eased));
+    if (progress < 1) explosionAnimationFrame = requestAnimationFrame(step);
+    else explosionAnimationFrame = 0;
+  };
+  explosionAnimationFrame = requestAnimationFrame(step);
 }
 
 ui.openBtn.addEventListener('click', () => setDeploymentTarget(1));
@@ -374,18 +408,32 @@ ui.exposureComp.addEventListener('input', () => {
   ui.exposureCompValue.value = `${ev >= 0 ? '+' : ''}${ev.toFixed(1)} EV`;
 });
 
-ui.explode.addEventListener('input', () => {
+ui.explode.addEventListener('pointerdown', event => {
+  explosionSliderDragging = true;
+  cancelExplosionAnimation();
+  event.stopPropagation();
+});
+const finishExplosionDrag = event => {
+  explosionSliderDragging = false;
+  ui.explode.value = String(Math.round(model.state.explosion * 100));
+  event.stopPropagation();
+};
+ui.explode.addEventListener('pointerup', finishExplosionDrag);
+ui.explode.addEventListener('pointercancel', finishExplosionDrag);
+ui.explode.addEventListener('lostpointercapture', finishExplosionDrag);
+ui.explode.addEventListener('input', event => {
   setInspectionExplosion(Number(ui.explode.value) / 100);
+  event.stopPropagation();
 });
 
 ui.assembleBtn.addEventListener('click', () => {
-  setInspectionExplosion(0);
+  animateInspectionExplosion(0);
 });
 
 ui.explodeBtn.addEventListener('click', () => {
-  if (model.state.deployment < 0.985) setDeploymentTarget(1);
-  setInspectionExplosion(1);
-  setView('internals');
+  // Explosion is an inspection axis independent of deployment. The button simply animates the
+  // same slider the user can drag, preserving the current camera pose and viewpoint.
+  animateInspectionExplosion(1);
 });
 
 ui.advancedToggleBtn.addEventListener('click', () => {
@@ -395,6 +443,7 @@ ui.advancedToggleBtn.addEventListener('click', () => {
 });
 
 function resetSpecimen() {
+  cancelExplosionAnimation();
   cycle.reset();
   transport.reset();
   chemistry.reset();
@@ -621,6 +670,10 @@ window.__sx70Debug = {
       targetDeployment: model.state.targetDeployment,
       focus: model.state.focus,
       explosion: model.state.explosion,
+      interaction: {
+        explosionAnimating: explosionAnimationFrame !== 0,
+        explosionSliderDragging
+      },
       activeView,
       opticsMode: optics.state.mode,
       cycle: cycle.snapshot(),
@@ -642,6 +695,8 @@ window.__sx70Debug = {
     optics.setFocus(value);
   },
   setExplode: value => setInspectionExplosion(value),
+  animateExplode: value => animateInspectionExplosion(value),
+  cancelExplodeAnimation: cancelExplosionAnimation,
   requestExposure: () => {
     const pack = transport.snapshot();
     return cycle.requestExposure({
