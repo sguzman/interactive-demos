@@ -20,12 +20,15 @@ Currently implemented:
 - gallery entry and projection registry;
 - Works-derived public engineering guide;
 - folded default state and product-intimate Open / Fold / Focus / Take photo path;
+- primary draggable fold/unfold scrubber for continuous deployment inspection;
 - constructive chassis/base geometry with a source-topology four-bar deployment reconstruction;
 - ordinary fold/unfold continuity without threshold pop-in of product parts;
 - bellows and lens/shutter housing;
 - viewing and exposure optical graphs;
 - integrated live internal mechanism with shutter blades, solenoid, motor, reduction gears, sequencing cam, reflex/Fresnel carrier, fixed viewing mirror and relay optics;
 - true hierarchical cutaway/exploded inspection independent of folding deployment;
+- shell-cutaway visibility gate that keeps large internal mirror/Fresnel/transport geometry hidden
+  until the exterior has opened enough to expose it, preventing low-explode "floating glass" leaks;
 - decomposed front-standard frame / faceplate / lens / shutter-chamber / metering / control presentation;
 - dedicated deep front-standard inspection view with component-level explosion;
 - clickable internal parts with provenance-aware inspector;
