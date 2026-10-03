@@ -200,6 +200,9 @@ input[type="range"] {
   width: 100%;
   accent-color: var(--accent);
   cursor: pointer;
+
+  touch-action: none;
+  user-select: none;
 }
 
 .controls:not(.advanced-open) .advanced-section { display: none; }
