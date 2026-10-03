@@ -160,7 +160,7 @@ The CI workflow is:
 `.github/workflows/sx70-runtime-smoke.yml`
 
 
-## v4 folding-shell contract
+## v6 folding-shell contract
 
 The current shell no longer interpolates the rear and front structures independently.
 
@@ -170,7 +170,11 @@ solved from fixed reconstructed link lengths.
 
 Those link lengths are P4 presentation geometry, not production measurements.
 
-This removes two previous failure modes:
+This removes several previous failure modes:
 
 - rigid-looking members silently changing length;
-- folded/open endpoints looking plausible while intermediate geometry is mechanically impossible.
+- folded/open endpoints looking plausible while intermediate geometry is mechanically impossible;
+- the viewfinder cap almost completing its motion while the structural body was still folded;
+- a cap pitch with the opposite sign from real side-reference photographs;
+- translucent ordinary-fold bellows that let unrelated parts visually bleed through;
+- a bellows envelope wider than the front standard/top cover, causing side-rail overlap.
