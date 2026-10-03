@@ -62,10 +62,12 @@ export const RECONSTRUCTION = {
     viewfinderLiftMm: 0
   },
   articulation: {
-    revision: 'articulated-v4',
-    provenance: 'P4/P5 visual reconstruction; not measured production pivot geometry',
-    rearBasePivotZ: -67,
-    frontStandardPivotZ: 58,
+    revision: 'articulated-v5',
+    provenance: 'P0 four-housing/four-bar topology + P4/P5 envelope-fitted pivots; not factory pivot coordinates',
+    // Shift the structural four-bar rearward so the folded rear/top/front members nest inside
+    // the 180 mm body envelope instead of letting the front standard hang beyond the film-door end.
+    rearBasePivotZ: -77,
+    frontStandardPivotZ: 48,
     rearWallLength: 86.75,
     lensStandardHeight: 41.75,
     rearFoldedAngleDeg: 90,
