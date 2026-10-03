@@ -68,7 +68,9 @@ const SPECIAL={
   CartridgeFront:'cartridge',CartridgePCB:'cartridge'
 };
 
-const CONTROL={dpad:['DPad'],buttonA:['ButtonA'],buttonB:['ButtonB'],Start:['StartKey'],Select:['SelectKey']};
+const CONTROL={buttonA:['ButtonA'],buttonB:['ButtonB'],Start:['StartKey'],Select:['SelectKey']};
+const DPAD_DIRECTIONS=new Set(['Up','Down','Left','Right']);
+const DPAD_TILT_RAD=THREE.MathUtils.degToRad(4.5);
 const ASSEMBLED_CLOSED_EPS=1e-6;
 const ASSEMBLED_OCCLUDED_IDS=new Set(['DPadMembrane','ActionMembrane','DPadCarrier']);
 const ASSEMBLED_HIDDEN_ASSEMBLIES=new Set(['ControlsInternal','Mainboard','Power','Audio','Flex','Battery','Internal']);
@@ -216,6 +218,7 @@ export async function createDMGReferenceModel(preparedAssets=null){
         node.quaternion.premultiply(ACCESSORY_INSERT_FLIP);
       }
       node.userData.basePosition=node.position.clone();
+      node.userData.baseQuaternion=node.quaternion.clone();
       node.userData.explodeVector=Array.isArray(node.userData.explodeOffset)
         ? new THREE.Vector3(...node.userData.explodeOffset):new THREE.Vector3();
       if(isAccessory){
@@ -258,13 +261,16 @@ export async function createDMGReferenceModel(preparedAssets=null){
   const sourceSize=new THREE.Vector3();sourceBox.getSize(sourceSize);
   const sx=originalFrontSize.x/sourceSize.x,sy=originalFrontSize.y/sourceSize.y;
   const shellScale=Math.sqrt(sx*sy);
+  const shellDepthScale=originalFrontSize.z/sourceSize.z;
 
   const frontShellReference=new THREE.Mesh(
     frontShellGeometry,
     new THREE.MeshStandardMaterial({color:0xb9bbb4,roughness:.72,metalness:0})
   );
   frontShellReference.name='DMG-01 front shell — printable replica reference';
-  frontShellReference.scale.setScalar(shellScale*.001);
+  // Preserve the independently authored front silhouette in X/Y, but fit shell depth to the
+  // assembly-source front half so the closed seam lands on the same mating plane as the original.
+  frontShellReference.scale.set(shellScale*.001,shellScale*.001,shellDepthScale*.001);
   frontShellReference.userData.partId='ReferenceFrontShell';
   frontShellReference.userData.assembly='Body';
   frontShellReference.userData.component={
@@ -322,12 +328,15 @@ export async function createDMGReferenceModel(preparedAssets=null){
   const frontShellDiagnostics={
     source:{...FRONT_SHELL_SRC},
     rawOrientedBoundsMm:{width:sourceSize.x,height:sourceSize.y,depth:sourceSize.z},
-    registrationScale:shellScale,
+    registrationScaleXY:shellScale,
+    registrationScaleDepth:shellDepthScale,
     targetBoundsMm:{width:originalFrontSize.x,height:originalFrontSize.y,depth:originalFrontSize.z},
     fittedBoundsMm:{width:fittedSize.x,height:fittedSize.y,depth:fittedSize.z},
     widthResidualMm:fittedSize.x-originalFrontSize.x,
     heightResidualMm:fittedSize.y-originalFrontSize.y,
-    frontPlaneResidualMm:fittedBox.max.z-originalFrontBox.max.z
+    depthResidualMm:fittedSize.z-originalFrontSize.z,
+    frontPlaneResidualMm:fittedBox.max.z-originalFrontBox.max.z,
+    rearMatingPlaneResidualMm:fittedBox.min.z-originalFrontBox.min.z
   };
 
   const glass=nodesByPartId.get('DisplayGlass');
@@ -376,6 +385,19 @@ export async function createDMGReferenceModel(preparedAssets=null){
       n.position.copy(b).addScaledVector(n.userData.explodeVector||new THREE.Vector3(),state.explosion);
     }
     syncVisibility();
+
+    const dpadNode=nodesByPartId.get('DPad');
+    if(dpadNode){
+      const baseQ=dpadNode.userData.baseQuaternion;
+      if(baseQ)dpadNode.quaternion.copy(baseQ);
+      let rx=0,ry=0;
+      if(state.pressed.has('Up'))rx-=DPAD_TILT_RAD;
+      if(state.pressed.has('Down'))rx+=DPAD_TILT_RAD;
+      if(state.pressed.has('Left'))ry-=DPAD_TILT_RAD;
+      if(state.pressed.has('Right'))ry+=DPAD_TILT_RAD;
+      if(rx||ry)dpadNode.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(rx,ry,0,'XYZ')));
+    }
+
     for(const key of state.pressed)for(const id of CONTROL[key]||[]){
       const n=nodesByPartId.get(id);if(n)n.position.z-=.00075;
     }
@@ -514,6 +536,10 @@ export async function createDMGReferenceModel(preparedAssets=null){
       referenceConformance,
       dissectionAudit,
       screenPowered,
+      controls:{
+        dpadTiltDegrees:4.5,
+        dpadPressedDirections:[...state.pressed].filter(k=>DPAD_DIRECTIONS.has(k))
+      },
       presentation:{
         legacySpeakerMeshRetired:legacySpeakerMesh ? legacySpeakerMesh.visible===false : true,
         speakerGrilleBackingPresent:nodesByPartId.has('SpeakerGrilleBacking'),
