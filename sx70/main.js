@@ -196,6 +196,23 @@ function inspectionCutawayOpen(value = model.state.explosion) {
   return value >= INTERNAL_VISIBILITY_START;
 }
 
+function syncInspectionOverlays(value = model.state.explosion) {
+  const cutawayOpen = inspectionCutawayOpen(value);
+  const chemistryOnly = activeView === 'chemistry';
+
+  // Mechanism and transport are inspection layers, not permanent product geometry. In particular,
+  // Exposure sequence must remain a clean camera unless the user has actually opened the shell;
+  // the old unconditional sequence visibility is what let the large mirror/Fresnel plates and
+  // rollers suddenly cover the camera. Transport is the one explicit subsystem view that may show
+  // its own layer without a shell cutaway. Front-standard focus suppresses unrelated transport.
+  const showMechanism = !chemistryOnly && activeView !== 'transport' && cutawayOpen;
+  const showTransport = !chemistryOnly && activeView !== 'frontStandard' &&
+    (activeView === 'transport' || cutawayOpen);
+
+  mechanism.setVisible(showMechanism);
+  transport.setVisible(showTransport);
+}
+
 function setView(name, immediate = false) {
   const preset = VIEW_PRESETS[name];
   if (!preset) return;
@@ -208,13 +225,8 @@ function setView(name, immediate = false) {
   model.setInspectionFocus(frontStandardFocus ? 'frontStandard' : 'all');
   mechanism.setInspectionFocus(frontStandardFocus ? 'frontStandard' : 'all');
 
-  // Internal mechanism/transport geometry must not leak through a nearly assembled shell.
-  // The old 2% threshold made the large Fresnel/mirror plates appear as "floating glass" almost
-  // immediately when the user touched Explode. Only reveal internals after the shell cutaway has
-  // actually opened, unless the user explicitly chose an internal subsystem view.
-  const cutawayOpen = inspectionCutawayOpen();
-  mechanism.setVisible(name !== 'chemistry' && (cutawayOpen || name === 'sequence' || name === 'internals' || name === 'frontStandard'));
-  transport.setVisible(name !== 'chemistry' && (cutawayOpen || name === 'sequence' || name === 'transport' || name === 'internals' || name === 'frontStandard'));
+  // Keep inspection layers synchronized with the actual shell cutaway and the selected subsystem.
+  syncInspectionOverlays();
   chemistry.setVisible(name === 'chemistry');
   model.root.visible = name !== 'chemistry';
 
@@ -322,9 +334,7 @@ function setInspectionExplosion(value) {
   if (!explosionSliderDragging) ui.explode.value = String(Math.round(normalized * 100));
   ui.explodeValue.value = `${Math.round(normalized * 100)}%`;
 
-  const showInternals = inspectionCutawayOpen(normalized);
-  mechanism.setVisible(activeView !== 'chemistry' && (showInternals || activeView === 'sequence' || activeView === 'internals' || activeView === 'frontStandard'));
-  transport.setVisible(activeView !== 'chemistry' && (showInternals || activeView === 'sequence' || activeView === 'transport' || activeView === 'internals' || activeView === 'frontStandard'));
+  syncInspectionOverlays(normalized);
 }
 
 function cancelExplosionAnimation() {
