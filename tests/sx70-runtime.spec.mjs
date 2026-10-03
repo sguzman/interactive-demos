@@ -47,6 +47,8 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
   expect(geometrySweep[2].viewfinderDeployment).toBeGreaterThan(geometrySweep[2].bodyDeployment);
   expect(geometrySweep.at(-1).bodyDeployment).toBeCloseTo(1, 6);
   expect(geometrySweep.at(-1).viewfinderDeployment).toBeCloseTo(1, 6);
+  expect(geometrySweep[0].viewfinderHoodOpeningMm).toBeLessThan(.1);
+  expect(geometrySweep.at(-1).viewfinderHoodOpeningMm).toBeGreaterThan(8);
   expect(geometrySweep.at(-1).capAngleDeg).toBeCloseTo(22, 3);
   expect(Math.abs(geometrySweep.at(-1).capToCoverPitchErrorDeg)).toBeLessThan(3);
 
@@ -57,6 +59,7 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
     expect(Math.abs(geometry.lensStandardHeightError)).toBeLessThan(1e-6);
     expect(geometry.viewfinderFollowerWithinGuide).toBe(true);
     expect(geometry.viewfinderFollowerTravel).toBeLessThanOrEqual(geometry.viewfinderGuideLength * 0.5);
+    expect(geometry.viewfinderHoodPersistent).toBe(true);
     expect(geometry.deploymentLead).toBeLessThanOrEqual(0.40);
     expect(geometry.bellowsClearance.frontStandardMm).toBeGreaterThan(2.5);
     expect(geometry.bellowsClearance.topCoverMm).toBeGreaterThan(2.5);
