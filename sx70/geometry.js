@@ -443,6 +443,12 @@ export function createSX70Model() {
   const viewfinderFollowerRight = cylinder(1.65, 2.4, materials.chromeDark, 18);
   viewfinderFollowerLeft.rotation.z = Math.PI / 2;
   viewfinderFollowerRight.rotation.z = Math.PI / 2;
+  viewfinderSupportLeft.position.set(-31, -5.6, 0);
+  viewfinderSupportRight.position.set(31, -5.6, 0);
+  viewfinderSupportLeft.rotation.x = Math.PI / 2;
+  viewfinderSupportRight.rotation.x = Math.PI / 2;
+  viewfinderFollowerLeft.position.set(-31, -5.6, -A.viewfinderGuideLength * 0.22);
+  viewfinderFollowerRight.position.set(31, -5.6, -A.viewfinderGuideLength * 0.22);
   viewfinderSupports.add(
     viewfinderSupportLeft,
     viewfinderSupportRight,
@@ -450,7 +456,7 @@ export function createSX70Model() {
     viewfinderFollowerRight
   );
   register('viewfinder', viewfinderSupports);
-  root.add(viewfinderSupports);
+  viewfinder.add(viewfinderSupports);
 
   // --- Bellows ---------------------------------------------------------------
   // One continuous triangular prism replaces the previous stack of expanding
@@ -610,14 +616,18 @@ export function createSX70Model() {
     viewfinder.position.copy(s.capPosition);
     viewfinder.rotation.set(s.capAngle, 0, 0);
 
-    const vfRearLeft = s.rearTop.clone(); vfRearLeft.x = -31;
-    const vfRearRight = s.rearTop.clone(); vfRearRight.x = 31;
-    const vfCapLeft = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(-31, -4.2, 18));
-    const vfCapRight = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(31, -4.2, 18));
-    updateSlottedGuide(viewfinderSupportLeft, vfRearLeft, vfCapLeft);
-    updateSlottedGuide(viewfinderSupportRight, vfRearRight, vfCapRight);
-    viewfinderFollowerLeft.position.copy(vfCapLeft);
-    viewfinderFollowerRight.position.copy(vfCapRight);
+    // The guide plates are structural features of the cap, so they stay rigid in cap-local
+    // coordinates. Only the follower pin slides in the slot as the rear structure rises. The
+    // previous world-space "point at the follower" transform made the entire 58 mm guide stand
+    // upright when folded, nearly doubling the camera's closed height.
+    viewfinder.updateMatrixWorld(true);
+    const rearLeftWorld = s.rearTop.clone(); rearLeftWorld.x = -31;
+    const rearRightWorld = s.rearTop.clone(); rearRightWorld.x = 31;
+    const rearLeftLocal = viewfinder.worldToLocal(rearLeftWorld.clone());
+    const rearRightLocal = viewfinder.worldToLocal(rearRightWorld.clone());
+    const followerLimit = A.viewfinderGuideLength * 0.5 - 4.5;
+    viewfinderFollowerLeft.position.set(-31, -5.6, THREE.MathUtils.clamp(rearLeftLocal.z, -followerLimit, followerLimit));
+    viewfinderFollowerRight.position.set(31, -5.6, THREE.MathUtils.clamp(rearRightLocal.z, -followerLimit, followerLimit));
 
     const sideX = A.sideRailX;
     const rearTopLeft = s.rearTop.clone(); rearTopLeft.x = -sideX;
@@ -682,7 +692,6 @@ export function createSX70Model() {
 
     // Supports remain real parts during inspection; spread them instead of
     // deleting them so explosion never becomes another pop-in/out trick.
-    viewfinderSupports.position.x = -42 * e;
     linksRoot.visible = true;
     forwardPanel.visible = true;
 
@@ -743,7 +752,6 @@ export function createSX70Model() {
     viewfinder.position.y = 0;
     bellows.position.x = 0;
     linksRoot.position.x = 0;
-    viewfinderSupports.position.x = 0;
     viewfinderSupports.visible = true;
     faceplateAssembly.position.set(0, 0, 0);
     frontControls.position.set(0, 0, 0);
@@ -770,8 +778,11 @@ export function createSX70Model() {
     const s = structuralState(state.deployment);
     const rearLength = s.rearBase.distanceTo(s.rearTop);
     const lensHeight = s.lensBase.distanceTo(s.lensTop);
-    const vfAnchor = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(0, -4.2, 18));
-    const viewfinderRearSupportSpan = vfAnchor.distanceTo(s.rearTop);
+    const followerTravel = Math.max(
+      Math.abs(viewfinderFollowerLeft.position.z),
+      Math.abs(viewfinderFollowerRight.position.z)
+    );
+    const followerLimit = A.viewfinderGuideLength * 0.5 - 4.5;
     const topFrontCoverLength = s.rearTop.distanceTo(s.lensTop);
     const rearSideLinkLengths = [links.leftRear.userData.length, links.rightRear.userData.length];
     const frontSideLinkLengths = [links.leftFront.userData.length, links.rightFront.userData.length];
@@ -798,9 +809,9 @@ export function createSX70Model() {
       rearMemberLengthError: rearLength - A.rearWallLength,
       lensStandardHeight: lensHeight,
       lensStandardHeightError: lensHeight - A.lensStandardHeight,
-      viewfinderRearSupportSpan,
+      viewfinderFollowerTravel: followerTravel,
       viewfinderGuideLength: A.viewfinderGuideLength,
-      viewfinderFollowerWithinGuide: viewfinderRearSupportSpan <= A.viewfinderGuideLength + 1e-6,
+      viewfinderFollowerWithinGuide: followerTravel <= followerLimit + 1e-6,
       topFrontCoverLength,
       topFrontCoverLengthError: topFrontCoverLength - A.topFrontCoverLength,
       rearSideLinkLengthErrors: rearSideLinkLengths.map(length => length - A.rearWallLength),
