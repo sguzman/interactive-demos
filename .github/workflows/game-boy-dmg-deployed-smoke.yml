@@ -161,6 +161,24 @@ jobs:
             throw new Error('Reference LCD did not restore after power-on');
           }
 
+          const shell = reference.geometry?.frontShellReference;
+          if (!shell || Math.abs(shell.depthResidualMm) > 0.05 || Math.abs(shell.rearMatingPlaneResidualMm) > 0.05) {
+            throw new Error('Closed-shell seam registration failed: ' + JSON.stringify(shell));
+          }
+
+          // The D-pad must pivot by direction, not sink as one rigid cross.
+          const q0 = reference.geometry?.controls?.dpadQuaternion;
+          await page.locator('[data-button="Up"]').dispatchEvent('pointerdown');
+          const q1 = (await page.evaluate(() => window.__dmgDebug.state)).geometry?.controls?.dpadQuaternion;
+          if (!q0 || !q1 || JSON.stringify(q0) === JSON.stringify(q1)) {
+            throw new Error('D-pad did not tilt for Up press');
+          }
+          await page.locator('[data-button="Up"]').dispatchEvent('pointerup');
+          const q2 = (await page.evaluate(() => window.__dmgDebug.state)).geometry?.controls?.dpadQuaternion;
+          if (!q2 || q0.some((v,i) => Math.abs(v-q2[i]) > 1e-6)) {
+            throw new Error('D-pad did not return to its neutral pivot');
+          }
+
           await page.evaluate(() => window.__dmgDebug.setExplosion(0));
           await page.screenshot({ path: 'dmg-deployed.png', fullPage: true });
 
