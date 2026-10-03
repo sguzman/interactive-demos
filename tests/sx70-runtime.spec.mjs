@@ -90,15 +90,30 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
   }
 
   // Pure side profile makes linkage nesting and fold-path defects obvious instead of hiding them
-  // behind the presentation camera.
-  await page.evaluate(() => window.__sx70Debug.setQaCamera([260, 48, 0], [0, 35, 0], [0, 1, 0]));
+  // behind the presentation camera. Hide overlay chrome for these QA frames so the controls cannot
+  // cover the front standard — that defeated the point of the previous side-profile screenshots.
+  await page.evaluate(() => {
+    for (const selector of ['.topbar', '.controls', '.inspector']) {
+      const element = document.querySelector(selector);
+      if (element) element.dataset.qaPreviousDisplay = element.style.display;
+      if (element) element.style.display = 'none';
+    }
+    window.__sx70Debug.setQaCamera([260, 48, 0], [0, 35, 0], [0, 1, 0]);
+  });
   for (const deployment of [0, 0.25, 0.50, 0.75, 1]) {
     await page.evaluate(value => window.__sx70Debug.setDeployment(value), deployment);
     await page.waitForTimeout(120);
     const label = String(Math.round(deployment * 100)).padStart(3, '0');
     await page.screenshot({ path: `test-results/sx70-side-deployment-${label}.png`, fullPage: true });
   }
-  await page.evaluate(() => window.__sx70Debug.setDeployment(0));
+  await page.evaluate(() => {
+    window.__sx70Debug.setDeployment(0);
+    for (const selector of ['.topbar', '.controls', '.inspector']) {
+      const element = document.querySelector(selector);
+      if (element) element.style.display = element.dataset.qaPreviousDisplay || '';
+      if (element) delete element.dataset.qaPreviousDisplay;
+    }
+  });
 
   await page.locator('#openBtn').click();
   await page.waitForFunction(() => window.__sx70Debug.state.deployment > 0.985);
