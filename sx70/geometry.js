@@ -473,7 +473,14 @@ export function createSX70Model() {
   };
 
   function structuralState(t) {
-    const e = smoother(t);
+    const normalized = THREE.MathUtils.clamp(t, 0, 1);
+
+    // The real camera is opened by lifting the rear/serrated end of the viewfinder cap; that
+    // releases the latches and the camera body follows until the cover support locks. Model those
+    // as two continuous but non-identical motions instead of making every member move in lockstep.
+    const viewfinderDeployment = smoother(THREE.MathUtils.smoothstep(normalized, 0.0, 0.34));
+    const bodyDeployment = smoother(THREE.MathUtils.smoothstep(normalized, 0.10, 1.0));
+    const e = bodyDeployment;
 
     const rearAngle = THREE.MathUtils.lerp(
       A.rearFoldedAngleDeg,
@@ -496,23 +503,39 @@ export function createSX70Model() {
       lensTop.y - lensBase.y
     );
 
-    const upperSpan = lensTop.clone().sub(rearTop);
-    const openCapAngle = Math.atan2(-upperSpan.y, upperSpan.z);
-    // Keep the viewing relay physically associated with the rear optical structure.
-    // The earlier midpoint + large lift made it read as an unexplained floating cube.
+    // The top cap is visually near-horizontal in the erected camera. v4 accidentally derived
+    // its angle from the sloping four-bar coupler, making the cap look like another structural rail.
+    // Use the separately reconstructed cap angle and let its *lift* lead the body erection.
+    const openCapAngle = A.topCapOpenAngleDeg * DEG;
     const openCapCenter = rearTop.clone().lerp(lensTop, 0.34);
-    openCapCenter.y += 2.6;
+    openCapCenter.y += 16.0;
     openCapCenter.z -= 4.0;
 
-    const foldedCapCenter = new THREE.Vector3(0, baseTopY + 9.2, -7);
+    const foldedCapCenter = new THREE.Vector3(0, baseTopY + 11.7, -7);
     const capPosition = foldedCapCenter.clone().lerp(openCapCenter, e);
+    // During the initial unlatch/lift, the user is literally pulling the cap upward before the
+    // main four-bar has fully followed. This transient lift is continuous and disappears as the
+    // structural body catches up.
+    capPosition.y += (1 - e) * viewfinderDeployment * 23.0;
     const capAngle = THREE.MathUtils.lerp(
       A.topCapFoldedAngleDeg * DEG,
       openCapAngle,
-      e
+      viewfinderDeployment
     );
 
-    return { e, rearAngle, lensAngle, capAngle, capPosition, rearBase, rearTop, lensBase, lensTop };
+    return {
+      e,
+      bodyDeployment,
+      viewfinderDeployment,
+      rearAngle,
+      lensAngle,
+      capAngle,
+      capPosition,
+      rearBase,
+      rearTop,
+      lensBase,
+      lensTop
+    };
   }
 
   function updateBellows(s) {
