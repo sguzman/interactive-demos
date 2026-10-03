@@ -68,10 +68,10 @@
         "interactive specimen",
         "rich guide"
       ],
-      "publicUx": "product-intimate open/focus/take-photo path + primary Internals cutaway + subsystem views + collapsed Advanced diagnostics",
+      "publicUx": "product-intimate open/fold/focus/take-photo path + primary continuous fold scrubber + primary Explode inspection + subsystem views + collapsed Advanced diagnostics",
       "revisionBoundary": "Original/manual-focus SX-70 is canonical. Sonar autofocus, later family revisions, Time-Zero lineage, and modern Polaroid film require explicit lineage labels.",
       "geometryStatus": "g4-user-accepted-current-scope",
-      "geometryAcceptance": "User visually accepted the articulated-v6 open and folded camera on 2026-10-02. Remaining minor clipping and blocky P4 surface approximations are tolerated; obvious detached eyepiece presentation was corrected before closure.",
+      "geometryAcceptance": "User visually accepted the articulated-v6 open and folded camera on 2026-10-02. Remaining minor clipping and blocky P4 surface-form approximations are tolerated. Detached-eyepiece presentation and low-explode/sequence inspection-layer leakage were corrected before closure; internal mirror/Fresnel/transport layers are now gated behind the shell cutaway except in their explicit subsystem view.",
       "geometryKnownResiduals": [
         "minor interpenetration/clipping during some folding views",
         "P4 constructive surfaces remain boxier than factory industrial-design geometry",
