@@ -45,7 +45,7 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
     geometrySweep[0].bounds.height,
     'folded assembly envelopes: ' + JSON.stringify(geometrySweep[0].partBounds)
   ).toBeLessThan(45);
-  expect(geometrySweep[0].bounds.depth).toBeLessThan(205);
+  expect(geometrySweep[0].bounds.depth).toBeLessThan(181);
   // Opening starts at the viewfinder cap, then the structural four-bar follows.
   expect(geometrySweep[2].viewfinderDeployment).toBeGreaterThan(geometrySweep[2].bodyDeployment);
   expect(geometrySweep.at(-1).bodyDeployment).toBeCloseTo(1, 6);
@@ -61,6 +61,7 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
     expect(Math.abs(geometry.rearMemberLengthError)).toBeLessThan(1e-6);
     expect(Math.abs(geometry.lensStandardHeightError)).toBeLessThan(1e-6);
     expect(geometry.frontStandardHingeInsetMm).toBeCloseTo(-10, 5);
+    expect(geometry.frontStandardAlongMemberInsetMm).toBeCloseTo(-6.5, 5);
     expect(geometry.viewfinderFollowerWithinGuide).toBe(true);
     expect(geometry.viewfinderFollowerTravel).toBeLessThanOrEqual(geometry.viewfinderGuideLength * 0.5);
     expect(geometry.viewfinderHoodPersistent).toBe(true);
@@ -85,6 +86,9 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
     if (geometry.deployment < 0.001) {
       expect(geometry.partBounds.frontStandard.minY).toBeGreaterThanOrEqual(
         geometry.partBounds.base.minY - 1
+      );
+      expect(geometry.partBounds.frontStandard.maxZ).toBeLessThanOrEqual(
+        geometry.partBounds.base.maxZ + 1
       );
     }
   }
