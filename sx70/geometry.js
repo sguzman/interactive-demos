@@ -755,6 +755,9 @@ export function createSX70Model() {
     return {
       revision: A.revision,
       deployment: state.deployment,
+      bodyDeployment: s.bodyDeployment,
+      viewfinderDeployment: s.viewfinderDeployment,
+      capAngleDeg: THREE.MathUtils.radToDeg(s.capAngle),
       inspectionFocus: state.inspectionFocus,
       rearMemberLength: rearLength,
       rearMemberLengthError: rearLength - A.rearWallLength,
