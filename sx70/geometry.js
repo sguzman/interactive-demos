@@ -465,10 +465,19 @@ export function createSX70Model() {
   capUnderside.position.set(0, -4.55, 0);
   viewfinder.add(capUnderside);
 
-  const eyepiece = cylinder(7.3, 3.5, materials.glass, 32);
+  // Rear eyepiece. The previous 14.6 mm-diameter blue cylinder was taller than the entire
+  // 8.2 mm cap body, so from oblique and folded views it appeared as a detached glass coin
+  // floating above the leather. Seat a compact bezel/aperture into the *rear face* of the cap
+  // instead. It may project slightly rearward, but it must remain vertically contained by the cap.
+  const eyepieceBezelRadius = 3.6;
+  const eyepieceGlassRadius = 2.85;
+  const eyepieceBezel = cylinder(eyepieceBezelRadius, 1.7, materials.black, 32);
+  const eyepiece = cylinder(eyepieceGlassRadius, 0.9, materials.glass, 32);
+  eyepieceBezel.rotation.x = Math.PI / 2;
   eyepiece.rotation.x = Math.PI / 2;
-  eyepiece.position.set(18, 0, -28);
-  viewfinder.add(eyepiece);
+  eyepieceBezel.position.set(18, 0, -29.25);
+  eyepiece.position.set(18, 0, -30.05);
+  viewfinder.add(eyepieceBezel, eyepiece);
 
   register('viewfinder', viewfinder);
   root.add(viewfinder);
@@ -934,6 +943,8 @@ export function createSX70Model() {
       if (child.isMesh) ordinaryMeshes.push(child);
     });
     const ordinaryHiddenPersistentPartCount = ordinaryMeshes.filter(mesh => mesh.visible === false).length;
+    const eyepieceVerticalClearanceMm = 8.2 / 2 - (Math.abs(eyepieceBezel.position.y) + eyepieceBezelRadius);
+    const eyepieceLateralClearanceMm = 76 / 2 - (Math.abs(eyepieceBezel.position.x) + eyepieceBezelRadius);
     const frontStandardInspectableKeys = new Set();
     lensHousing.traverse(child => {
       if (child.isMesh && child.userData?.componentKey) {
@@ -969,6 +980,13 @@ export function createSX70Model() {
       viewfinderHoodOpeningMm,
       viewfinderHoodPersistent: viewfinderHoodCore.visible,
       viewfinderHoodRibCount: viewfinderHoodRibs.length,
+      eyepiecePresentation: {
+        bezelRadiusMm: eyepieceBezelRadius,
+        glassRadiusMm: eyepieceGlassRadius,
+        verticalClearanceMm: eyepieceVerticalClearanceMm,
+        lateralClearanceMm: eyepieceLateralClearanceMm,
+        rearFaceSeated: eyepiece.position.z < -29
+      },
       topFrontCoverLength,
       topFrontCoverLengthError: topFrontCoverLength - A.topFrontCoverLength,
       rearSideLinkLengthErrors: rearSideLinkLengths.map(length => length - A.rearWallLength),
