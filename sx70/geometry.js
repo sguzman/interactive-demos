@@ -229,7 +229,7 @@ function localPointOnRotatedGroup(group, local) {
 
 export function createSX70Model() {
   const root = new THREE.Group();
-  root.name = 'Polaroid SX-70 articulated public reconstruction v4';
+  root.name = 'Polaroid SX-70 articulated public reconstruction v6';
 
   const pickables = [];
   const componentRoots = new Map();
@@ -517,8 +517,14 @@ export function createSX70Model() {
     // The real camera is opened by lifting the rear/serrated end of the viewfinder cap; that
     // releases the latches and the camera body follows until the cover support locks. Model those
     // as two continuous but non-identical motions instead of making every member move in lockstep.
-    const viewfinderDeployment = smoother(THREE.MathUtils.smoothstep(normalized, 0.0, 0.34));
-    const bodyDeployment = smoother(THREE.MathUtils.smoothstep(normalized, 0.10, 1.0));
+    // A real SX-70 begins with a lift at the serrated viewfinder cap, but the previous timing
+    // effectively finished the cap motion before the four-bar had even started (at t=.25 the cap
+    // was ~96% deployed while the body was ~0.4%). That produced the floating/interpenetrating
+    // look during folding. Keep the cap as the leader, but make both motions overlap substantially.
+    const viewfinderDeployment = smoother(normalized / A.viewfinderLeadEnd);
+    const bodyDeployment = smoother(
+      (normalized - A.bodyFollowStart) / (1 - A.bodyFollowStart)
+    );
     const e = bodyDeployment;
 
     const rearAngle = THREE.MathUtils.lerp(
@@ -542,9 +548,10 @@ export function createSX70Model() {
       lensTop.y - lensBase.y
     );
 
-    // The top cap is visually near-horizontal in the erected camera. v4 accidentally derived
-    // its angle from the sloping four-bar coupler, making the cap look like another structural rail.
-    // Use the separately reconstructed cap angle and let its *lift* lead the body erection.
+    // Side references show the erected cap descending toward the camera front and running close
+    // to the top-front cover's pitch. The old negative angle sloped the hood in the opposite
+    // direction. Keep the cap independently reconstructed, but with a source-consistent sign and
+    // a bounded lead over the structural four-bar.
     const openCapAngle = A.topCapOpenAngleDeg * DEG;
     const openCapCenter = rearTop.clone().lerp(lensTop, 0.34);
     openCapCenter.y += 16.0;
@@ -784,6 +791,15 @@ export function createSX70Model() {
     );
     const followerLimit = A.viewfinderGuideLength * 0.5 - 4.5;
     const topFrontCoverLength = s.rearTop.distanceTo(s.lensTop);
+    const coverDy = s.lensTop.y - s.rearTop.y;
+    const coverDz = s.lensTop.z - s.rearTop.z;
+    const topCoverPitchDeg = THREE.MathUtils.radToDeg(Math.atan2(-coverDy, coverDz));
+    const capToCoverPitchErrorDeg = THREE.MathUtils.radToDeg(s.capAngle) - topCoverPitchDeg;
+    const bellowsClearance = {
+      frontStandardMm: housingW / 2 - A.bellowsHalfWidth,
+      topCoverMm: 80 / 2 - A.bellowsHalfWidth,
+      sideRailMm: A.sideRailX - A.bellowsHalfWidth
+    };
     const rearSideLinkLengths = [links.leftRear.userData.length, links.rightRear.userData.length];
     const frontSideLinkLengths = [links.leftFront.userData.length, links.rightFront.userData.length];
     const ordinaryMeshes = [];
@@ -804,6 +820,10 @@ export function createSX70Model() {
       bodyDeployment: s.bodyDeployment,
       viewfinderDeployment: s.viewfinderDeployment,
       capAngleDeg: THREE.MathUtils.radToDeg(s.capAngle),
+      topCoverPitchDeg,
+      capToCoverPitchErrorDeg,
+      deploymentLead: s.viewfinderDeployment - s.bodyDeployment,
+      bellowsClearance,
       inspectionFocus: state.inspectionFocus,
       rearMemberLength: rearLength,
       rearMemberLengthError: rearLength - A.rearWallLength,
