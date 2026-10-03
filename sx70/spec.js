@@ -76,6 +76,9 @@ export const RECONSTRUCTION = {
     lensOpenAngleDeg: -8,
     topCapFoldedAngleDeg: 0,
     topCapOpenAngleDeg: -7,
+    // P4 presentation length for the visible cover-support / guide members. The follower pin
+    // moves within the slot; the guide itself must remain rigid rather than telescope.
+    viewfinderGuideLength: 58,
     bellowsHalfWidth: 42,
     sideRailX: 46,
     topFrontCoverLength: 80,
