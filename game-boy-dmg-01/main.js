@@ -306,7 +306,7 @@ function animateExplosion(target,duration=1250){
 
 for(const button of document.querySelectorAll('[data-button]')){
  const name=button.dataset.button;
- const key=name==='A'?'buttonA':name==='B'?'buttonB':name==='Start'?'Start':name==='Select'?'Select':name==='Up'||name==='Down'||name==='Left'||name==='Right'?'dpad':null;
+ const key=name==='A'?'buttonA':name==='B'?'buttonB':name==='Start'?'Start':name==='Select'?'Select':['Up','Down','Left','Right'].includes(name)?name:null;
  const down=ev=>{ev.preventDefault();system.pressButton(name,true);if(key)model.setButtonPressed(key,true);chirp(name);updateUi();};
  const up=ev=>{ev.preventDefault();system.pressButton(name,false);if(key)model.setButtonPressed(key,false);updateUi();};
  button.addEventListener('pointerdown',down); button.addEventListener('pointerup',up); button.addEventListener('pointerleave',up);
