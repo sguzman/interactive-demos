@@ -44,6 +44,12 @@
         <button id="loadPackBtn" class="secondary">Load fresh pack</button>
       </div>
 
+      <label class="range-row" for="deployment">
+        <span>Fold / unfold</span>
+        <output id="deploymentValue">0%</output>
+      </label>
+      <input id="deployment" type="range" min="0" max="100" value="0" aria-label="Fold or unfold the SX-70" />
+
       <label class="range-row" for="explode">
         <span>Exploded inspection</span>
         <output id="explodeValue">0%</output>
@@ -106,16 +112,6 @@
         Exact hidden-part placement remains P4/P5 reconstruction where production coordinates are
         not documented.
       </div>
-    </section>
-
-    <section class="advanced-section">
-      <div class="section-title">Structural inspection</div>
-      <label class="range-row" for="deployment">
-        <span>Deployment state</span>
-        <output id="deploymentValue">0%</output>
-      </label>
-      <input id="deployment" type="range" min="0" max="100" value="0" />
-
     </section>
 
     <section class="advanced-section">
