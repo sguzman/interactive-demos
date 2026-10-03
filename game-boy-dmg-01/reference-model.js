@@ -71,11 +71,6 @@ const SPECIAL={
 const CONTROL={buttonA:['ButtonA'],buttonB:['ButtonB'],Start:['StartKey'],Select:['SelectKey']};
 const DPAD_DIRECTIONS=new Set(['Up','Down','Left','Right']);
 const DPAD_TILT_RAD=THREE.MathUtils.degToRad(4.5);
-// The visible enclosure is a hybrid of two independently authored CAD sources. Matching their
-// nominal mating planes still leaves daylight at the side seam because the edge profiles differ.
-// Keep the front-most face registered exactly, but carry the replacement shell slightly through
-// the rear mating plane so the closed product reads as physically interlocked rather than split.
-const CLOSED_SHELL_INTERLOCK_MM=1.0;
 const ASSEMBLED_CLOSED_EPS=1e-6;
 const ASSEMBLED_OCCLUDED_IDS=new Set(['DPadMembrane','ActionMembrane','DPadCarrier']);
 const ASSEMBLED_HIDDEN_ASSEMBLIES=new Set(['ControlsInternal','Mainboard','Power','Audio','Flex','Battery','Internal']);
@@ -266,17 +261,23 @@ export async function createDMGReferenceModel(preparedAssets=null){
   const sourceSize=new THREE.Vector3();sourceBox.getSize(sourceSize);
   const sx=originalFrontSize.x/sourceSize.x,sy=originalFrontSize.y/sourceSize.y;
   const shellScale=Math.sqrt(sx*sy);
-  const shellDepthScale=(originalFrontSize.z+CLOSED_SHELL_INTERLOCK_MM)/sourceSize.z;
+  const shellDepthScale=originalFrontSize.z/sourceSize.z;
 
   const frontShellReference=new THREE.Mesh(
     frontShellGeometry,
-    new THREE.MeshStandardMaterial({color:0xb9bbb4,roughness:.72,metalness:0})
+    new THREE.MeshStandardMaterial({
+      color:0xb9bbb4,roughness:.72,metalness:0,
+      // The original assembly-source front shell remains underneath only while assembled so its
+      // mating edge can close against the assembly-source rear shell. Bias the independent
+      // high-detail replacement forward in depth testing so coincident facade surfaces never
+      // z-fight even though their physical front planes remain registered.
+      polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2
+    })
   );
   frontShellReference.name='DMG-01 front shell — printable replica reference';
-  // Preserve the independently authored front silhouette in X/Y. Along depth, extend the
-  // replacement shell through the nominal mating plane by a small interlock amount while keeping
-  // its front-most plane fixed below. This closes the hybrid-source daylight seam without moving
-  // the visible front face or faking a wider exterior shell.
+  // Preserve the independently authored front silhouette in X/Y and fit its nominal depth to the
+  // assembly-source front half. Closed-shell mating is handled separately below by retaining the
+  // same-source front edge under the replacement, rather than distorting either shell to force fit.
   frontShellReference.scale.set(shellScale*.001,shellScale*.001,shellDepthScale*.001);
   frontShellReference.userData.partId='ReferenceFrontShell';
   frontShellReference.userData.assembly='Body';
@@ -306,7 +307,18 @@ export async function createDMGReferenceModel(preparedAssets=null){
   frontShellReference.userData.explodeVector=(frontAnchor?.userData?.explodeVector||new THREE.Vector3()).clone();
   cloneMat(frontShellReference);frontShellReference.castShadow=true;frontShellReference.receiveShadow=true;
   nodes.push(frontShellReference);nodesByPartId.set('ReferenceFrontShell',frontShellReference);pickables.push(frontShellReference);
-  for(const n of originalFront)n.visible=false;
+
+  // IMPORTANT: the detailed printable front and the rear enclosure come from different CAD
+  // authors. Their outer envelopes can be registered while their *edge profiles* still disagree,
+  // which is exactly what produced the user's visible strip of background along the side seam.
+  // Keep the original assembly-source front shell underneath ONLY in the fully assembled state.
+  // It shares the rear shell's native mating geometry, so it physically closes the enclosure while
+  // the independently authored shell supplies the visible high-detail facade. As soon as the model
+  // is dissected, hide this underlay so explosion views do not contain duplicate front shells.
+  for(const n of originalFront){
+    n.userData.hybridMatingUnderlay=true;
+    n.visible=true;
+  }
 
   // The assembly-source grille backing was clipped against its own shell corner and can protrude
   // past the replacement shell's tighter lower-right contour. Retire it and add a compact backing
@@ -337,7 +349,6 @@ export async function createDMGReferenceModel(preparedAssets=null){
     rawOrientedBoundsMm:{width:sourceSize.x,height:sourceSize.y,depth:sourceSize.z},
     registrationScaleXY:shellScale,
     registrationScaleDepth:shellDepthScale,
-    closedShellInterlockMm:CLOSED_SHELL_INTERLOCK_MM,
     targetBoundsMm:{width:originalFrontSize.x,height:originalFrontSize.y,depth:originalFrontSize.z},
     fittedBoundsMm:{width:fittedSize.x,height:fittedSize.y,depth:fittedSize.z},
     widthResidualMm:fittedSize.x-originalFrontSize.x,
@@ -377,7 +388,9 @@ export async function createDMGReferenceModel(preparedAssets=null){
     const assembled=state.explosion<=ASSEMBLED_CLOSED_EPS;
     for(const n of nodes){
       const id=n.userData?.partId||'';
-      if(accessoryNodes.has(n)){
+      if(n.userData?.hybridMatingUnderlay){
+        n.visible=assembled;
+      }else if(accessoryNodes.has(n)){
         n.visible=state.cartridgePresent && !(assembled && isCartridgeInternal(id));
       }else if(isAssembledHidden(n)){
         n.visible=!assembled;
@@ -522,7 +535,7 @@ export async function createDMGReferenceModel(preparedAssets=null){
     };
 
     return {
-      revision:'dmg-reference-cad-v14',
+      revision:'dmg-reference-cad-v15',
       geometryMaturity:'G4-render-review-in-progress; user-acceptance-open',
       source:{
         assembly:{
@@ -553,6 +566,12 @@ export async function createDMGReferenceModel(preparedAssets=null){
       presentation:{
         legacySpeakerMeshRetired:legacySpeakerMesh ? legacySpeakerMesh.visible===false : true,
         speakerGrilleBackingPresent:nodesByPartId.has('SpeakerGrilleBacking'),
+        sameSourceMatingUnderlay:{
+          ids:originalFront.map(n=>n.userData?.partId).filter(Boolean),
+          active:state.explosion<=ASSEMBLED_CLOSED_EPS,
+          visible:originalFront.every(n=>n.visible!==false),
+          purpose:'block hybrid-CAD daylight seam while assembled; hidden during dissection'
+        },
         assembledClosedEpsilon:ASSEMBLED_CLOSED_EPS,
         explodeMode:'continuous-linear-dissection',
         currentInternalExplosionTravel:state.explosion,
