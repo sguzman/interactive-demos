@@ -62,7 +62,7 @@ export const RECONSTRUCTION = {
     viewfinderLiftMm: 0
   },
   articulation: {
-    revision: 'articulated-v5',
+    revision: 'articulated-v6',
     provenance: 'P0 four-housing/four-bar topology + P4/P5 envelope-fitted pivots; not factory pivot coordinates',
     // Shift the structural four-bar rearward so the folded rear/top/front members nest inside
     // the 180 mm body envelope instead of letting the front standard hang beyond the film-door end.
@@ -75,13 +75,23 @@ export const RECONSTRUCTION = {
     lensFoldedAngleDeg: 90,
     lensOpenAngleDeg: -8,
     topCapFoldedAngleDeg: 0,
-    topCapOpenAngleDeg: -7,
+    // Side-reference calibration: the open cap descends toward the front and runs nearly
+    // parallel to the rigid top-front cover. Negative pitch made the hood visibly slope the
+    // wrong way relative to real SX-70 side profiles.
+    topCapOpenAngleDeg: 22,
     // P4 presentation length for the visible cover-support / guide members. The follower pin
     // moves within the slot; the guide itself must remain rigid rather than telescope.
     viewfinderGuideLength: 58,
-    bellowsHalfWidth: 42,
+    // Keep the flexible bellows visibly inside the 79 mm front standard and 80 mm top cover.
+    // The previous 84 mm-wide envelope protruded through the chrome rails during folding.
+    bellowsHalfWidth: 36.5,
     sideRailX: 46,
     topFrontCoverLength: 80,
+    // Deployment staging: the user lifts the cap first, but it must not become almost fully
+    // erected while the structural body is still folded.
+    viewfinderLeadEnd: 0.72,
+    bodyFollowStart: 0.08,
+    maxViewfinderLead: 0.40,
     clearanceMmPresentation: 2.2
   },
   inspection: {
