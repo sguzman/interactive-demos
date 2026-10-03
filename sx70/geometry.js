@@ -877,6 +877,27 @@ export function createSX70Model() {
     const foldedEnvelope = RECONSTRUCTION.envelopeMm;
     const bounds = new THREE.Box3().setFromObject(root);
     const size = bounds.getSize(new THREE.Vector3());
+    const partBounds = {};
+    for (const [name, object] of [
+      ['base', base],
+      ['rearPanel', rearPanel],
+      ['forwardPanel', forwardPanel],
+      ['frontStandard', lensHousing],
+      ['viewfinder', viewfinder],
+      ['bellows', bellows],
+      ['erectingLinks', linksRoot]
+    ]) {
+      const box3 = new THREE.Box3().setFromObject(object);
+      const partSize = box3.getSize(new THREE.Vector3());
+      partBounds[name] = {
+        minY: box3.min.y,
+        maxY: box3.max.y,
+        height: partSize.y,
+        minZ: box3.min.z,
+        maxZ: box3.max.z,
+        depth: partSize.z
+      };
+    }
 
     const s = structuralState(state.deployment);
     const rearLength = s.rearBase.distanceTo(s.rearTop);
@@ -960,6 +981,7 @@ export function createSX70Model() {
         height: size.y,
         depth: size.z
       },
+      partBounds,
       foldedEnvelopeReference: foldedEnvelope,
       finite: [
         ...s.rearBase.toArray(),
