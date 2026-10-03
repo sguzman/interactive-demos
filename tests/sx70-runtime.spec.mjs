@@ -29,6 +29,29 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
   await expect(page.locator('#deploymentState')).toHaveText('FOLDED');
   await expect(page.locator('#powerState')).toHaveText('S6 OPEN · DISABLED');
 
+  // Fold/unfold scrubbing is a primary product control, not buried under Advanced inspection.
+  const deploymentSlider = page.locator('.basic-controls #deployment');
+  await expect(deploymentSlider).toBeVisible();
+  expect(await page.locator('.advanced-section #deployment').count()).toBe(0);
+  await deploymentSlider.scrollIntoViewIfNeeded();
+  const deploymentBox = await deploymentSlider.boundingBox();
+  expect(deploymentBox).not.toBeNull();
+  await page.mouse.move(deploymentBox.x + 4, deploymentBox.y + deploymentBox.height / 2);
+  await page.mouse.down();
+  for (let i = 1; i <= 6; i += 1) {
+    await page.mouse.move(
+      deploymentBox.x + 4 + (deploymentBox.width - 8) * (0.68 * i / 6),
+      deploymentBox.y + deploymentBox.height / 2
+    );
+    await page.waitForTimeout(45);
+  }
+  await page.mouse.up();
+  const scrubbedDeployment = await page.evaluate(() => window.__sx70Debug.state);
+  expect(scrubbedDeployment.deployment).toBeGreaterThan(0.55);
+  expect(scrubbedDeployment.deployment).toBeLessThan(0.80);
+  expect(scrubbedDeployment.targetDeployment).toBeCloseTo(scrubbedDeployment.deployment, 2);
+  await page.evaluate(() => window.__sx70Debug.setDeployment(0));
+
   // Geometry-v6 continuity regression: sample the entire physical deployment path.
   // Persistent product geometry must remain present; endpoints alone are not enough.
   const deploymentSamples = [0, 0.10, 0.25, 0.50, 0.75, 0.90, 1];
@@ -146,6 +169,33 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
   await page.locator('[data-view="overview"]').click();
   await page.waitForTimeout(250);
   await page.screenshot({ path: 'test-results/sx70-open-overview.png', fullPage: true });
+
+  // Regression for the user-reported "random glass" leak: touching Explode by a few percent must
+  // not reveal the large Fresnel/mirror/transport internals through an almost-assembled shell.
+  await page.evaluate(() => window.__sx70Debug.setExplode(0.01));
+  let lowExplode = await page.evaluate(() => window.__sx70Debug.state);
+  expect(lowExplode.interaction.inspectionCutawayOpen).toBe(false);
+  expect(lowExplode.mechanism.visible).toBe(false);
+  expect(lowExplode.transport.visible).toBe(false);
+
+  await page.evaluate(() => {
+    const start = window.__sx70Debug.state.interaction.internalVisibilityStart;
+    window.__sx70Debug.setExplode(Math.max(0, start - 0.01));
+  });
+  lowExplode = await page.evaluate(() => window.__sx70Debug.state);
+  expect(lowExplode.interaction.inspectionCutawayOpen).toBe(false);
+  expect(lowExplode.mechanism.visible).toBe(false);
+  expect(lowExplode.transport.visible).toBe(false);
+
+  await page.evaluate(() => {
+    const start = window.__sx70Debug.state.interaction.internalVisibilityStart;
+    window.__sx70Debug.setExplode(start);
+  });
+  const cutawayExplode = await page.evaluate(() => window.__sx70Debug.state);
+  expect(cutawayExplode.interaction.inspectionCutawayOpen).toBe(true);
+  expect(cutawayExplode.mechanism.visible).toBe(true);
+  expect(cutawayExplode.transport.visible).toBe(true);
+  await page.evaluate(() => window.__sx70Debug.setExplode(0));
 
   // Front-standard deep inspection is a first-class view, not an opaque housing.
   await page.locator('[data-view="frontStandard"]').click();
