@@ -41,7 +41,10 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
     window.__sx70Debug.setDeployment(0);
     return result;
   }, deploymentSamples);
-  expect(geometrySweep[0].bounds.height).toBeLessThan(55);
+  expect(
+    geometrySweep[0].bounds.height,
+    'folded assembly envelopes: ' + JSON.stringify(geometrySweep[0].partBounds)
+  ).toBeLessThan(55);
   expect(geometrySweep[0].bounds.depth).toBeLessThan(205);
   // Opening starts at the viewfinder cap, then the structural four-bar follows.
   expect(geometrySweep[2].viewfinderDeployment).toBeGreaterThan(geometrySweep[2].bodyDeployment);
