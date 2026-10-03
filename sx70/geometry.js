@@ -430,6 +430,14 @@ export function createSX70Model() {
   lensGlass.rotation.x = Math.PI / 2;
   lensHousing.add(lensGlass);
 
+  // The kinematic hinge line is an internal axis, not the geometric center plane of the shutter
+  // housing. Reparent the complete visible front-standard assembly under one rigid visual offset
+  // so it can nest beneath the top cover when folded without changing any internal part spacing.
+  const lensVisual = new THREE.Group();
+  for (const child of [...lensHousing.children]) lensVisual.add(child);
+  lensVisual.position.z = A.frontStandardHingeInsetMm;
+  lensHousing.add(lensVisual);
+
   register('lensHousing', lensHousing);
   reclassify('frontStandardFrame', frontStandardFrame);
   reclassify('frontStandardFaceplate', faceplateAssembly);
@@ -931,6 +939,7 @@ export function createSX70Model() {
       rearMemberLengthError: rearLength - A.rearWallLength,
       lensStandardHeight: lensHeight,
       lensStandardHeightError: lensHeight - A.lensStandardHeight,
+      frontStandardHingeInsetMm: lensVisual.position.z,
       viewfinderFollowerTravel: followerTravel,
       viewfinderGuideLength: A.viewfinderGuideLength,
       viewfinderFollowerWithinGuide: followerTravel <= followerLimit + 1e-6,
