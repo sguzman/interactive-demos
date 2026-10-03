@@ -192,6 +192,36 @@ function updateSlottedGuide(guide, anchor, follower) {
   guide.userData.followerDistance = followerDistance;
 }
 
+function makeQuadPrismGeometry() {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Array(24).fill(0), 3));
+  geometry.setIndex([
+    0, 1, 2, 0, 2, 3,
+    4, 6, 5, 4, 7, 6,
+    0, 4, 5, 0, 5, 1,
+    1, 5, 6, 1, 6, 2,
+    2, 6, 7, 2, 7, 3,
+    3, 7, 4, 3, 4, 0
+  ]);
+  return geometry;
+}
+
+function updateQuadPrismGeometry(geometry, upperRear, upperFront, lowerFront, lowerRear, halfWidth) {
+  const positions = geometry.attributes.position;
+  const profile = [upperRear, upperFront, lowerFront, lowerRear];
+  let i = 0;
+  for (const x of [-halfWidth, halfWidth]) {
+    for (const point of profile) {
+      positions.setXYZ(i, x, point.y, point.z);
+      i += 1;
+    }
+  }
+  positions.needsUpdate = true;
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+}
+
 function makeBellowsGeometry() {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Array(18).fill(0), 3));
@@ -458,6 +488,18 @@ export function createSX70Model() {
   register('viewfinder', viewfinderSupports);
   viewfinder.add(viewfinderSupports);
 
+  // The real viewing system has a folding black hood/bellows between the raised cap and the
+  // structural top cover. Leaving that volume empty made the cap look like a detached floating
+  // slab in every erected and intermediate side view. Keep one persistent hood topology and
+  // collapse it continuously under the cap when the camera is folded.
+  const viewfinderHoodGeometry = makeQuadPrismGeometry();
+  const viewfinderHoodCore = new THREE.Mesh(viewfinderHoodGeometry, materials.bellows);
+  viewfinderHoodCore.castShadow = true;
+  viewfinderHoodCore.receiveShadow = true;
+  mark(viewfinderHoodCore, 'viewfinder');
+  pickables.push(viewfinderHoodCore);
+  viewfinder.add(viewfinderHoodCore);
+
   // --- Bellows ---------------------------------------------------------------
   // One continuous triangular prism replaces the previous stack of expanding
   // boxes. Its three profile vertices are driven by structural anchors.
@@ -637,6 +679,33 @@ export function createSX70Model() {
     viewfinderFollowerLeft.position.set(-31, -5.6, THREE.MathUtils.clamp(rearLeftLocal.z, -followerLimit, followerLimit));
     viewfinderFollowerRight.position.set(31, -5.6, THREE.MathUtils.clamp(rearRightLocal.z, -followerLimit, followerLimit));
 
+    // Build the viewing hood in cap-local coordinates. At the folded endpoint its lower edge is
+    // coincident with the cap underside; as the cap/body erect, that edge travels continuously to
+    // the top-cover anchors, filling the real camera's black viewing chamber instead of leaving air.
+    const hoodUpperRear = new THREE.Vector3(0, -5.0, -23);
+    const hoodUpperFront = new THREE.Vector3(0, -5.0, 23);
+    const structuralHoodRearWorld = s.rearTop.clone().lerp(s.lensTop, 0.08);
+    structuralHoodRearWorld.y += 1.2;
+    const structuralHoodFrontWorld = s.rearTop.clone().lerp(s.lensTop, 0.65);
+    structuralHoodFrontWorld.y += 1.2;
+    const structuralHoodRearLocal = viewfinder.worldToLocal(structuralHoodRearWorld.clone());
+    const structuralHoodFrontLocal = viewfinder.worldToLocal(structuralHoodFrontWorld.clone());
+    const hoodErection = smoother(Math.max(s.viewfinderDeployment, s.bodyDeployment));
+    const hoodLowerRear = hoodUpperRear.clone().lerp(structuralHoodRearLocal, hoodErection);
+    const hoodLowerFront = hoodUpperFront.clone().lerp(structuralHoodFrontLocal, hoodErection);
+    updateQuadPrismGeometry(
+      viewfinderHoodGeometry,
+      hoodUpperRear,
+      hoodUpperFront,
+      hoodLowerFront,
+      hoodLowerRear,
+      32.5
+    );
+    viewfinderHoodCore.visible = true;
+    viewfinderHoodCore.material.opacity = 1;
+    viewfinderHoodCore.material.transparent = false;
+    viewfinderHoodCore.material.depthWrite = true;
+
     const sideX = A.sideRailX;
     const rearTopLeft = s.rearTop.clone(); rearTopLeft.x = -sideX;
     const rearTopRight = s.rearTop.clone(); rearTopRight.x = sideX;
@@ -788,6 +857,15 @@ export function createSX70Model() {
       Math.abs(viewfinderFollowerRight.position.z)
     );
     const followerLimit = A.viewfinderGuideLength * 0.5 - 4.5;
+    const hoodPositions = viewfinderHoodGeometry.attributes.position;
+    const hoodUpperRear = new THREE.Vector3().fromBufferAttribute(hoodPositions, 0);
+    const hoodUpperFront = new THREE.Vector3().fromBufferAttribute(hoodPositions, 1);
+    const hoodLowerFront = new THREE.Vector3().fromBufferAttribute(hoodPositions, 2);
+    const hoodLowerRear = new THREE.Vector3().fromBufferAttribute(hoodPositions, 3);
+    const viewfinderHoodOpeningMm = Math.max(
+      hoodUpperRear.distanceTo(hoodLowerRear),
+      hoodUpperFront.distanceTo(hoodLowerFront)
+    );
     const topFrontCoverLength = s.rearTop.distanceTo(s.lensTop);
     const coverDy = s.lensTop.y - s.rearTop.y;
     const coverDz = s.lensTop.z - s.rearTop.z;
@@ -835,6 +913,8 @@ export function createSX70Model() {
       viewfinderFollowerTravel: followerTravel,
       viewfinderGuideLength: A.viewfinderGuideLength,
       viewfinderFollowerWithinGuide: followerTravel <= followerLimit + 1e-6,
+      viewfinderHoodOpeningMm,
+      viewfinderHoodPersistent: viewfinderHoodCore.visible,
       topFrontCoverLength,
       topFrontCoverLengthError: topFrontCoverLength - A.topFrontCoverLength,
       rearSideLinkLengthErrors: rearSideLinkLengths.map(length => length - A.rearWallLength),
