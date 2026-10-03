@@ -71,6 +71,11 @@ const SPECIAL={
 const CONTROL={buttonA:['ButtonA'],buttonB:['ButtonB'],Start:['StartKey'],Select:['SelectKey']};
 const DPAD_DIRECTIONS=new Set(['Up','Down','Left','Right']);
 const DPAD_TILT_RAD=THREE.MathUtils.degToRad(4.5);
+// The visible enclosure is a hybrid of two independently authored CAD sources. Matching their
+// nominal mating planes still leaves daylight at the side seam because the edge profiles differ.
+// Keep the front-most face registered exactly, but carry the replacement shell slightly through
+// the rear mating plane so the closed product reads as physically interlocked rather than split.
+const CLOSED_SHELL_INTERLOCK_MM=1.0;
 const ASSEMBLED_CLOSED_EPS=1e-6;
 const ASSEMBLED_OCCLUDED_IDS=new Set(['DPadMembrane','ActionMembrane','DPadCarrier']);
 const ASSEMBLED_HIDDEN_ASSEMBLIES=new Set(['ControlsInternal','Mainboard','Power','Audio','Flex','Battery','Internal']);
@@ -261,15 +266,17 @@ export async function createDMGReferenceModel(preparedAssets=null){
   const sourceSize=new THREE.Vector3();sourceBox.getSize(sourceSize);
   const sx=originalFrontSize.x/sourceSize.x,sy=originalFrontSize.y/sourceSize.y;
   const shellScale=Math.sqrt(sx*sy);
-  const shellDepthScale=originalFrontSize.z/sourceSize.z;
+  const shellDepthScale=(originalFrontSize.z+CLOSED_SHELL_INTERLOCK_MM)/sourceSize.z;
 
   const frontShellReference=new THREE.Mesh(
     frontShellGeometry,
     new THREE.MeshStandardMaterial({color:0xb9bbb4,roughness:.72,metalness:0})
   );
   frontShellReference.name='DMG-01 front shell — printable replica reference';
-  // Preserve the independently authored front silhouette in X/Y, but fit shell depth to the
-  // assembly-source front half so the closed seam lands on the same mating plane as the original.
+  // Preserve the independently authored front silhouette in X/Y. Along depth, extend the
+  // replacement shell through the nominal mating plane by a small interlock amount while keeping
+  // its front-most plane fixed below. This closes the hybrid-source daylight seam without moving
+  // the visible front face or faking a wider exterior shell.
   frontShellReference.scale.set(shellScale*.001,shellScale*.001,shellDepthScale*.001);
   frontShellReference.userData.partId='ReferenceFrontShell';
   frontShellReference.userData.assembly='Body';
@@ -330,6 +337,7 @@ export async function createDMGReferenceModel(preparedAssets=null){
     rawOrientedBoundsMm:{width:sourceSize.x,height:sourceSize.y,depth:sourceSize.z},
     registrationScaleXY:shellScale,
     registrationScaleDepth:shellDepthScale,
+    closedShellInterlockMm:CLOSED_SHELL_INTERLOCK_MM,
     targetBoundsMm:{width:originalFrontSize.x,height:originalFrontSize.y,depth:originalFrontSize.z},
     fittedBoundsMm:{width:fittedSize.x,height:fittedSize.y,depth:fittedSize.z},
     widthResidualMm:fittedSize.x-originalFrontSize.x,
