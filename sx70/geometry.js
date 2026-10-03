@@ -493,7 +493,7 @@ export function createSX70Model() {
   // slab in every erected and intermediate side view. Keep one persistent hood topology and
   // collapse it continuously under the cap when the camera is folded.
   const viewfinderHoodGeometry = makeQuadPrismGeometry();
-  const viewfinderHoodCore = new THREE.Mesh(viewfinderHoodGeometry, materials.bellows);
+  const viewfinderHoodCore = new THREE.Mesh(viewfinderHoodGeometry, materials.bellows.clone());
   viewfinderHoodCore.castShadow = true;
   viewfinderHoodCore.receiveShadow = true;
   mark(viewfinderHoodCore, 'viewfinder');
