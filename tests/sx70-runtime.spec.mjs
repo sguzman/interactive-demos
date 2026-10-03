@@ -197,6 +197,17 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
   expect(cutawayExplode.transport.visible).toBe(true);
   await page.evaluate(() => window.__sx70Debug.setExplode(0));
 
+  // Exposure-sequence mode used to force the entire internal mechanism + transport visible even
+  // with a closed shell, producing the giant floating mirror/roller clutter from the user report.
+  // Sequence may animate optics/cycle state, but inspection layers stay hidden until cutaway opens.
+  await page.locator('[data-view="sequence"]').click();
+  await page.waitForTimeout(120);
+  const cleanSequence = await page.evaluate(() => window.__sx70Debug.state);
+  expect(cleanSequence.explosion).toBeLessThan(0.01);
+  expect(cleanSequence.mechanism.visible).toBe(false);
+  expect(cleanSequence.transport.visible).toBe(false);
+  await page.locator('[data-view="overview"]').click();
+
   // Front-standard deep inspection is a first-class view, not an opaque housing.
   await page.locator('[data-view="frontStandard"]').click();
   await page.waitForFunction(() =>
