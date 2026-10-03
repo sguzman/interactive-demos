@@ -189,7 +189,12 @@ let activeView = 'overview';
 let explosionAnimationFrame = 0;
 let explosionAnimationToken = 0;
 let explosionSliderDragging = false;
+const INTERNAL_VISIBILITY_START = RECONSTRUCTION.inspection.shellCutawayEnd;
 const viewButtons = [...document.querySelectorAll('[data-view]')];
+
+function inspectionCutawayOpen(value = model.state.explosion) {
+  return value >= INTERNAL_VISIBILITY_START;
+}
 
 function setView(name, immediate = false) {
   const preset = VIEW_PRESETS[name];
@@ -203,9 +208,13 @@ function setView(name, immediate = false) {
   model.setInspectionFocus(frontStandardFocus ? 'frontStandard' : 'all');
   mechanism.setInspectionFocus(frontStandardFocus ? 'frontStandard' : 'all');
 
-  const exploded = model.state.explosion > 0.02;
-  mechanism.setVisible(name !== 'chemistry' && (exploded || name === 'sequence' || name === 'internals' || name === 'frontStandard'));
-  transport.setVisible(name !== 'chemistry' && (exploded || name === 'sequence' || name === 'transport' || name === 'internals' || name === 'frontStandard'));
+  // Internal mechanism/transport geometry must not leak through a nearly assembled shell.
+  // The old 2% threshold made the large Fresnel/mirror plates appear as "floating glass" almost
+  // immediately when the user touched Explode. Only reveal internals after the shell cutaway has
+  // actually opened, unless the user explicitly chose an internal subsystem view.
+  const cutawayOpen = inspectionCutawayOpen();
+  mechanism.setVisible(name !== 'chemistry' && (cutawayOpen || name === 'sequence' || name === 'internals' || name === 'frontStandard'));
+  transport.setVisible(name !== 'chemistry' && (cutawayOpen || name === 'sequence' || name === 'transport' || name === 'internals' || name === 'frontStandard'));
   chemistry.setVisible(name === 'chemistry');
   model.root.visible = name !== 'chemistry';
 
@@ -313,7 +322,7 @@ function setInspectionExplosion(value) {
   if (!explosionSliderDragging) ui.explode.value = String(Math.round(normalized * 100));
   ui.explodeValue.value = `${Math.round(normalized * 100)}%`;
 
-  const showInternals = normalized > 0.02;
+  const showInternals = inspectionCutawayOpen(normalized);
   mechanism.setVisible(activeView !== 'chemistry' && (showInternals || activeView === 'sequence' || activeView === 'internals' || activeView === 'frontStandard'));
   transport.setVisible(activeView !== 'chemistry' && (showInternals || activeView === 'sequence' || activeView === 'transport' || activeView === 'internals' || activeView === 'frontStandard'));
 }
@@ -684,7 +693,9 @@ window.__sx70Debug = {
       explosion: model.state.explosion,
       interaction: {
         explosionAnimating: explosionAnimationFrame !== 0,
-        explosionSliderDragging
+        explosionSliderDragging,
+        internalVisibilityStart: INTERNAL_VISIBILITY_START,
+        inspectionCutawayOpen: inspectionCutawayOpen()
       },
       activeView,
       opticsMode: optics.state.mode,
