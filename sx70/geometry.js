@@ -596,11 +596,12 @@ export function createSX70Model() {
       halfWidth
     );
 
-    // Ordinary deployment keeps one persistent bellows topology. Opacity may
-    // vary continuously for readability, but the bellows never appears/disappears.
-    const expansion = THREE.MathUtils.smoothstep(s.e, 0.0, 0.32);
-    bellowsCore.material.opacity = THREE.MathUtils.lerp(0.82, 1, expansion);
-    bellowsCore.material.transparent = expansion < 0.995;
+    // Ordinary folding is product motion, not an inspection cutaway. The real bellows is opaque;
+    // making it translucent while folded/intermediate let rails and shell parts visibly bleed
+    // through one another. Ghosting is reserved strictly for a nonzero inspection explosion.
+    bellowsCore.material.opacity = 1;
+    bellowsCore.material.transparent = false;
+    bellowsCore.material.depthWrite = true;
 
     for (const rib of bellowsRibs) {
       const u = rib.userData.u;
@@ -690,12 +691,9 @@ export function createSX70Model() {
 
     // The bellows is an enclosure, not the subject of internal inspection.
     // Fade it into a ghosted contextual envelope as explosion increases.
-    bellowsCore.material.opacity = THREE.MathUtils.lerp(
-      THREE.MathUtils.lerp(0.72, 1, THREE.MathUtils.smoothstep(state.deployment, 0.03, 0.32)),
-      0.16,
-      e
-    );
-    bellowsCore.material.transparent = e > 0.01 || state.deployment < 0.995;
+    bellowsCore.material.opacity = THREE.MathUtils.lerp(1, 0.16, e);
+    bellowsCore.material.transparent = e > 0.01;
+    bellowsCore.material.depthWrite = e <= 0.01;
 
     // Supports remain real parts during inspection; spread them instead of
     // deleting them so explosion never becomes another pop-in/out trick.
@@ -824,6 +822,11 @@ export function createSX70Model() {
       capToCoverPitchErrorDeg,
       deploymentLead: s.viewfinderDeployment - s.bodyDeployment,
       bellowsClearance,
+      bellowsPresentation: {
+        opacity: bellowsCore.material.opacity,
+        transparent: bellowsCore.material.transparent,
+        depthWrite: bellowsCore.material.depthWrite
+      },
       inspectionFocus: state.inspectionFocus,
       rearMemberLength: rearLength,
       rearMemberLengthError: rearLength - A.rearWallLength,
