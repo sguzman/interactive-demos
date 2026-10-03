@@ -612,8 +612,8 @@ export function createSX70Model() {
 
     const vfRearLeft = s.rearTop.clone(); vfRearLeft.x = -31;
     const vfRearRight = s.rearTop.clone(); vfRearRight.x = 31;
-    const vfCapLeft = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(-31, -4.2, -20));
-    const vfCapRight = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(31, -4.2, -20));
+    const vfCapLeft = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(-31, -4.2, 18));
+    const vfCapRight = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(31, -4.2, 18));
     updateSlottedGuide(viewfinderSupportLeft, vfRearLeft, vfCapLeft);
     updateSlottedGuide(viewfinderSupportRight, vfRearRight, vfCapRight);
     viewfinderFollowerLeft.position.copy(vfCapLeft);
@@ -770,7 +770,7 @@ export function createSX70Model() {
     const s = structuralState(state.deployment);
     const rearLength = s.rearBase.distanceTo(s.rearTop);
     const lensHeight = s.lensBase.distanceTo(s.lensTop);
-    const vfAnchor = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(0, -4.2, -20));
+    const vfAnchor = localPointOnRotatedGroup(viewfinder, new THREE.Vector3(0, -4.2, 18));
     const viewfinderRearSupportSpan = vfAnchor.distanceTo(s.rearTop);
     const topFrontCoverLength = s.rearTop.distanceTo(s.lensTop);
     const rearSideLinkLengths = [links.leftRear.userData.length, links.rightRear.userData.length];
