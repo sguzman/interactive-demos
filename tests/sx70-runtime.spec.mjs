@@ -177,6 +177,7 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
   expect(lowExplode.interaction.inspectionCutawayOpen).toBe(false);
   expect(lowExplode.mechanism.visible).toBe(false);
   expect(lowExplode.transport.visible).toBe(false);
+  await page.screenshot({ path: 'test-results/sx70-overview-explode-01-clean.png', fullPage: true });
 
   await page.evaluate(() => {
     const start = window.__sx70Debug.state.interaction.internalVisibilityStart;
@@ -206,6 +207,7 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
   expect(cleanSequence.explosion).toBeLessThan(0.01);
   expect(cleanSequence.mechanism.visible).toBe(false);
   expect(cleanSequence.transport.visible).toBe(false);
+  await page.screenshot({ path: 'test-results/sx70-sequence-clean-shell.png', fullPage: true });
   await page.locator('[data-view="overview"]').click();
 
   // Front-standard deep inspection is a first-class view, not an opaque housing.
