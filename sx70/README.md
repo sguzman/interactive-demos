@@ -56,6 +56,19 @@ hidden-part placement, gear tooth counts, mirror angles, cam profiles, transport
 and proprietary film kinetics remain explicitly unresolved or reconstructive. The internal explode
 uses P4 placement and P5 separation spacing where factory coordinates are unavailable.
 
+### Exterior geometry acceptance
+
+The articulated-v6 exterior was visually accepted for the current project scope on 2026-10-02 after
+open/folded user review. Known residual defects are deliberately retained rather than hidden:
+
+- minor interpenetration/clipping remains at some folding angles;
+- constructive P4 shell surfaces are somewhat boxier than factory industrial-design surfaces;
+- exact production pivots and hidden linkage dimensions remain unresolved;
+- the previously detached-looking rear eyepiece presentation was corrected by seating it into the
+  viewfinder-cap rear face before closure.
+
+These residuals do not reopen the current specimen unless a later fidelity tranche explicitly does so.
+
 ## Authority contract
 
 This repository is authoritative for public browser behavior and presentation.
