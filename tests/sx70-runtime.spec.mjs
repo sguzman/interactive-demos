@@ -61,6 +61,9 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
     expect(geometry.bellowsClearance.frontStandardMm).toBeGreaterThan(2.5);
     expect(geometry.bellowsClearance.topCoverMm).toBeGreaterThan(2.5);
     expect(geometry.bellowsClearance.sideRailMm).toBeGreaterThan(7);
+    expect(geometry.bellowsPresentation.opacity).toBeCloseTo(1, 6);
+    expect(geometry.bellowsPresentation.transparent).toBe(false);
+    expect(geometry.bellowsPresentation.depthWrite).toBe(true);
     expect(Math.abs(geometry.topFrontCoverLengthError)).toBeLessThan(1e-6);
     expect(geometry.rearSideLinkLengthErrors.every(error => Math.abs(error) < 1e-6)).toBe(true);
     expect(geometry.frontSideLinkLengthErrors.every(error => Math.abs(error) < 1e-6)).toBe(true);
