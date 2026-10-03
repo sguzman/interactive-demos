@@ -68,10 +68,11 @@ export const RECONSTRUCTION = {
     // the 180 mm body envelope instead of letting the front standard hang beyond the film-door end.
     rearBasePivotZ: -77,
     frontStandardPivotZ: 48,
-    // The hinge axis is not through the visual center of the shutter housing. Inset the visible
-    // housing toward the camera front so the rear frame nests under the top cover when folded
-    // instead of protruding through it.
-    frontStandardHingeInsetMm: 6.5,
+    // The hinge axis is not through the visual center of the shutter housing. The folded-envelope
+    // audit shows the visible housing must sit rearward of that axis: a +6.5 mm inset drove the
+    // standard 16 mm below the base. A -10 mm rigid offset nests its lower edge at the base envelope
+    // while preserving every internal front-standard relationship.
+    frontStandardHingeInsetMm: -10.0,
     rearWallLength: 86.75,
     lensStandardHeight: 41.75,
     rearFoldedAngleDeg: 90,
