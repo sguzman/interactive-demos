@@ -29,7 +29,7 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
   await expect(page.locator('#deploymentState')).toHaveText('FOLDED');
   await expect(page.locator('#powerState')).toHaveText('S6 OPEN · DISABLED');
 
-  // Geometry-v4 continuity regression: sample the entire physical deployment path.
+  // Geometry-v6 continuity regression: sample the entire physical deployment path.
   // Persistent product geometry must remain present; endpoints alone are not enough.
   const deploymentSamples = [0, 0.10, 0.25, 0.50, 0.75, 0.90, 1];
   const geometrySweep = await page.evaluate(samples => {
@@ -47,15 +47,20 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
   expect(geometrySweep[2].viewfinderDeployment).toBeGreaterThan(geometrySweep[2].bodyDeployment);
   expect(geometrySweep.at(-1).bodyDeployment).toBeCloseTo(1, 6);
   expect(geometrySweep.at(-1).viewfinderDeployment).toBeCloseTo(1, 6);
-  expect(geometrySweep.at(-1).capAngleDeg).toBeCloseTo(-7, 3);
+  expect(geometrySweep.at(-1).capAngleDeg).toBeCloseTo(22, 3);
+  expect(Math.abs(geometrySweep.at(-1).capToCoverPitchErrorDeg)).toBeLessThan(3);
 
   for (const geometry of geometrySweep) {
-    expect(geometry.revision).toBe('articulated-v5');
+    expect(geometry.revision).toBe('articulated-v6');
     expect(geometry.finite).toBe(true);
     expect(Math.abs(geometry.rearMemberLengthError)).toBeLessThan(1e-6);
     expect(Math.abs(geometry.lensStandardHeightError)).toBeLessThan(1e-6);
     expect(geometry.viewfinderFollowerWithinGuide).toBe(true);
     expect(geometry.viewfinderFollowerTravel).toBeLessThanOrEqual(geometry.viewfinderGuideLength * 0.5);
+    expect(geometry.deploymentLead).toBeLessThanOrEqual(0.40);
+    expect(geometry.bellowsClearance.frontStandardMm).toBeGreaterThan(2.5);
+    expect(geometry.bellowsClearance.topCoverMm).toBeGreaterThan(2.5);
+    expect(geometry.bellowsClearance.sideRailMm).toBeGreaterThan(7);
     expect(Math.abs(geometry.topFrontCoverLengthError)).toBeLessThan(1e-6);
     expect(geometry.rearSideLinkLengthErrors.every(error => Math.abs(error) < 1e-6)).toBe(true);
     expect(geometry.frontSideLinkLengthErrors.every(error => Math.abs(error) < 1e-6)).toBe(true);
