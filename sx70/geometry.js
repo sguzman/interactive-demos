@@ -500,6 +500,17 @@ export function createSX70Model() {
   pickables.push(viewfinderHoodCore);
   viewfinder.add(viewfinderHoodCore);
 
+  const viewfinderHoodRibs = [];
+  for (const side of [-1, 1]) {
+    for (const u of [0.25, 0.5, 0.75]) {
+      const rib = makeRod(0.48, materials.bellowsRib);
+      rib.userData.side = side;
+      rib.userData.u = u;
+      viewfinder.add(rib);
+      viewfinderHoodRibs.push(rib);
+    }
+  }
+
   // --- Bellows ---------------------------------------------------------------
   // One continuous triangular prism replaces the previous stack of expanding
   // boxes. Its three profile vertices are driven by structural anchors.
@@ -705,6 +716,16 @@ export function createSX70Model() {
     viewfinderHoodCore.material.opacity = 1;
     viewfinderHoodCore.material.transparent = false;
     viewfinderHoodCore.material.depthWrite = true;
+    for (const rib of viewfinderHoodRibs) {
+      const u = rib.userData.u;
+      const side = rib.userData.side;
+      const upper = hoodUpperRear.clone().lerp(hoodUpperFront, u);
+      const lower = hoodLowerRear.clone().lerp(hoodLowerFront, u);
+      upper.x = side * 32.9;
+      lower.x = side * 32.9;
+      updateRod(rib, upper, lower);
+      rib.visible = true;
+    }
 
     const sideX = A.sideRailX;
     const rearTopLeft = s.rearTop.clone(); rearTopLeft.x = -sideX;
@@ -915,6 +936,7 @@ export function createSX70Model() {
       viewfinderFollowerWithinGuide: followerTravel <= followerLimit + 1e-6,
       viewfinderHoodOpeningMm,
       viewfinderHoodPersistent: viewfinderHoodCore.visible,
+      viewfinderHoodRibCount: viewfinderHoodRibs.length,
       topFrontCoverLength,
       topFrontCoverLengthError: topFrontCoverLength - A.topFrontCoverLength,
       rearSideLinkLengthErrors: rearSideLinkLengths.map(length => length - A.rearWallLength),
