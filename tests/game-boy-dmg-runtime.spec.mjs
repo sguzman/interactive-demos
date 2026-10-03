@@ -65,10 +65,9 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.geometry.frontShellReference.source.scope).toBe('front shell only');
   expect(Math.abs(initial.geometry.frontShellReference.widthResidualMm)).toBeLessThan(1.0);
   expect(Math.abs(initial.geometry.frontShellReference.heightResidualMm)).toBeLessThan(1.0);
-  expect(initial.geometry.frontShellReference.closedShellInterlockMm).toBeCloseTo(1.0, 5);
-  expect(initial.geometry.frontShellReference.depthResidualMm).toBeCloseTo(1.0, 2);
+  expect(Math.abs(initial.geometry.frontShellReference.depthResidualMm)).toBeLessThan(.05);
   expect(Math.abs(initial.geometry.frontShellReference.frontPlaneResidualMm)).toBeLessThan(.05);
-  expect(initial.geometry.frontShellReference.rearMatingPlaneResidualMm).toBeCloseTo(-1.0, 2);
+  expect(Math.abs(initial.geometry.frontShellReference.rearMatingPlaneResidualMm)).toBeLessThan(.05);
   expect(initial.geometry.bounds.width).toBeGreaterThan(89);
   expect(initial.geometry.bounds.width).toBeLessThan(92);
   expect(initial.geometry.bounds.height).toBeGreaterThan(147);
@@ -86,6 +85,9 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.geometry.referenceConformance.sourceCoordinateGate).toBe(true);
   expect(initial.geometry.presentation.legacySpeakerMeshRetired).toBe(true);
   expect(initial.geometry.presentation.speakerGrilleBackingPresent).toBe(true);
+  expect(initial.geometry.presentation.sameSourceMatingUnderlay.ids).toEqual(expect.arrayContaining(['MainFrame','FrontFace']));
+  expect(initial.geometry.presentation.sameSourceMatingUnderlay.active).toBe(true);
+  expect(initial.geometry.presentation.sameSourceMatingUnderlay.visible).toBe(true);
   expect(initial.geometry.presentation.assembledClosedEpsilon).toBeLessThanOrEqual(1e-5);
   expect(initial.geometry.presentation.explodeMode).toBe('continuous-linear-dissection');
   expect(initial.geometry.presentation.currentInternalExplosionTravel).toBeCloseTo(0, 4);
@@ -126,6 +128,8 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   const duringDrag = await page.evaluate(() => window.__dmgDebug.state);
   expect(duringDrag.interaction.sliderDragging).toBe(true);
   expect(duringDrag.explosion).toBeGreaterThan(.80);
+  expect(duringDrag.geometry.presentation.sameSourceMatingUnderlay.active).toBe(false);
+  expect(duringDrag.geometry.presentation.sameSourceMatingUnderlay.visible).toBe(false);
   await page.mouse.up();
   let dissectionState = await page.evaluate(() => window.__dmgDebug.state);
   expect(dissectionState.interaction.sliderDragging).toBe(false);
@@ -151,6 +155,8 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   await page.waitForFunction(() => window.__dmgDebug.state.explosion < .005 && !window.__dmgDebug.state.interaction.explosionAnimating);
   dissectionState = await page.evaluate(() => window.__dmgDebug.state);
   expect(dissectionState.explosion).toBeCloseTo(0, 3);
+  expect(dissectionState.geometry.presentation.sameSourceMatingUnderlay.active).toBe(true);
+  expect(dissectionState.geometry.presentation.sameSourceMatingUnderlay.visible).toBe(true);
 
   // Power state is visual as well as logical: off must blank the LCD.
   await page.locator('#powerBtn').click();
