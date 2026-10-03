@@ -596,6 +596,15 @@ const requestedView = new URLSearchParams(window.location.search).get('view');
 if (requestedView && VIEW_PRESETS[requestedView]) setView(requestedView, true);
 else setView('overview', true);
 
+function setQaCamera(position, target = [0, 35, 0], up = [0, 1, 0]) {
+  cameraFlight = null;
+  camera.up.set(...up);
+  camera.position.set(...position);
+  controls.target.set(...target);
+  camera.lookAt(...target);
+  controls.update();
+}
+
 function resize() {
   const width = window.innerWidth;
   const height = window.innerHeight;
@@ -696,6 +705,7 @@ window.__sx70Debug = {
   },
   setExplode: value => setInspectionExplosion(value),
   animateExplode: value => animateInspectionExplosion(value),
+  setQaCamera,
   cancelExplodeAnimation: cancelExplosionAnimation,
   requestExposure: () => {
     const pack = transport.snapshot();
