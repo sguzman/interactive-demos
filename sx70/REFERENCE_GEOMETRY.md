@@ -59,7 +59,14 @@ The public runtime therefore treats these as hard modeling rules:
 3. viewfinder-cap erection leads the structural four-bar during opening;
 4. visible support/link parts must remain mechanically associated with their parent structures;
 5. folded/open/intermediate side profiles require deterministic rendered QA;
-6. inspection explosion is independent from folding and uses continuous slider displacement.
+6. inspection explosion is independent from folding and uses continuous slider displacement;
+7. ordinary folded/intermediate bellows remain opaque; transparency is an inspection effect only;
+8. the bellows side envelope stays visibly inside the front-standard/top-cover chrome structure;
+9. cap motion leads the body but remains bounded and substantially overlaps four-bar erection;
+10. open cap pitch follows the same front-descending sense as the top-front cover in side references.
+
+The exact cap pitch and bellows inset used by the browser remain P4 calibration values derived from
+reference silhouettes and collision/containment review, not factory dimensions.
 
 Exact production pivot coordinates and hidden link dimensions remain unresolved. Any coordinates not
 directly supported by source material remain P4 reconstruction values and must not be described as
