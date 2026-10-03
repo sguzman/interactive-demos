@@ -65,7 +65,9 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   expect(initial.geometry.frontShellReference.source.scope).toBe('front shell only');
   expect(Math.abs(initial.geometry.frontShellReference.widthResidualMm)).toBeLessThan(1.0);
   expect(Math.abs(initial.geometry.frontShellReference.heightResidualMm)).toBeLessThan(1.0);
+  expect(Math.abs(initial.geometry.frontShellReference.depthResidualMm)).toBeLessThan(.05);
   expect(Math.abs(initial.geometry.frontShellReference.frontPlaneResidualMm)).toBeLessThan(.05);
+  expect(Math.abs(initial.geometry.frontShellReference.rearMatingPlaneResidualMm)).toBeLessThan(.05);
   expect(initial.geometry.bounds.width).toBeGreaterThan(89);
   expect(initial.geometry.bounds.width).toBeLessThan(92);
   expect(initial.geometry.bounds.height).toBeGreaterThan(147);
@@ -167,6 +169,17 @@ test('DMG-01 multi-layer causal specimen remains coherent in Chromium', async ({
   await page.locator('[data-layer="electrical"]').click();
   expect((await page.evaluate(() => window.__dmgDebug.state)).interaction.audioFeedbackCount).toBe(0);
   await page.evaluate(() => { window.__dmgDebug.setView('product'); window.__dmgDebug.setLayer('physical'); });
+
+  // Directional presses tilt the D-pad around its center pivot instead of translating the whole cross.
+  const dpadBefore = (await page.evaluate(() => window.__dmgDebug.state)).geometry.controls.dpadQuaternion;
+  await page.locator('[data-button="Up"]').dispatchEvent('pointerdown');
+  const dpadPressed = (await page.evaluate(() => window.__dmgDebug.state)).geometry.controls;
+  expect(dpadPressed.dpadPressedDirections).toContain('Up');
+  expect(dpadPressed.dpadQuaternion).not.toEqual(dpadBefore);
+  await page.locator('[data-button="Up"]').dispatchEvent('pointerup');
+  const dpadReleased = (await page.evaluate(() => window.__dmgDebug.state)).geometry.controls;
+  expect(dpadReleased.dpadPressedDirections).toEqual([]);
+  for(let i=0;i<dpadBefore.length;i++) expect(dpadReleased.dpadQuaternion[i]).toBeCloseTo(dpadBefore[i], 6);
 
   // Every physical Game Boy HUD control emits feedback; A additionally drives the demo/APU state.
   const audioBefore = (await page.evaluate(() => window.__dmgDebug.state)).interaction.audioFeedbackCount;
