@@ -411,6 +411,10 @@ ui.exposureComp.addEventListener('input', () => {
 ui.explode.addEventListener('pointerdown', event => {
   explosionSliderDragging = true;
   cancelExplosionAnimation();
+  // Native range inputs may release their implicit pointer capture while the thumb is still being
+  // dragged. Drag state belongs to the physical pointer button, not to that browser-internal
+  // capture lifecycle, so hold explicit capture when available and finish only on up/cancel.
+  try { ui.explode.setPointerCapture?.(event.pointerId); } catch {}
   event.stopPropagation();
 });
 const finishExplosionDrag = event => {
@@ -420,7 +424,6 @@ const finishExplosionDrag = event => {
 };
 ui.explode.addEventListener('pointerup', finishExplosionDrag);
 ui.explode.addEventListener('pointercancel', finishExplosionDrag);
-ui.explode.addEventListener('lostpointercapture', finishExplosionDrag);
 ui.explode.addEventListener('input', event => {
   setInspectionExplosion(Number(ui.explode.value) / 100);
   event.stopPropagation();
