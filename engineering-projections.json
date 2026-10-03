@@ -51,7 +51,7 @@
       "canonicalVisibility": "private",
       "publicCanonicalIdentifier": "specimen:polaroid-sx-70",
       "engineeringSyncDate": "2026-10-02",
-      "engineeringResearchState": "Canonical documentary/reconstruction research and Works expression complete for current scope; public projection includes browser-proven folding, live internal cutaway/exploded exposure/reflex/transport mechanics, and user-accepted v6 exterior geometry. Minor interpenetration/clipping and P4 surface-form approximations are explicitly accepted residual defects for this scope.",
+      "engineeringResearchState": "Complete for the current Engineering tranche. Canonical documentary/reconstruction research, articulated-v6 exterior geometry, continuous fold scrubbing, live internal cutaway/exploded exposure/reflex/transport mechanics, optics, and chemistry projection are established. User explicitly accepted the remaining minor folding interpenetration/clipping as a known residual defect on 2026-10-02; future work requires a new fidelity tranche rather than reopening this one.",
       "provenanceScheme": [
         "P0 primary / authoritative",
         "P1 measurement",
@@ -70,8 +70,8 @@
       ],
       "publicUx": "product-intimate open/fold/focus/take-photo path + primary continuous fold scrubber + primary Explode inspection + subsystem views + collapsed Advanced diagnostics",
       "revisionBoundary": "Original/manual-focus SX-70 is canonical. Sonar autofocus, later family revisions, Time-Zero lineage, and modern Polaroid film require explicit lineage labels.",
-      "geometryStatus": "g4-user-accepted-current-scope",
-      "geometryAcceptance": "User visually accepted the articulated-v6 open and folded camera on 2026-10-02. Remaining minor clipping and blocky P4 surface-form approximations are tolerated. Detached-eyepiece presentation and low-explode/sequence inspection-layer leakage were corrected before closure; internal mirror/Fresnel/transport layers are now gated behind the shell cutaway except in their explicit subsystem view.",
+      "geometryStatus": "complete-current-scope-user-accepted",
+      "geometryAcceptance": "Final user acceptance recorded 2026-10-02 after the low-explode/sequence inspection-layer leak was fixed and fold/unfold scrubbing was promoted to the primary UI. Minor interpenetration/clipping during folding remains explicitly tolerated and does not block completion.",
       "geometryKnownResiduals": [
         "minor interpenetration/clipping during some folding views",
         "P4 constructive surfaces remain boxier than factory industrial-design geometry",
