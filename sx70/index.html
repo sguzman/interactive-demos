@@ -7,7 +7,7 @@
   <title>Polaroid SX-70 — Interactive Engineering Specimen</title>
   <link rel="stylesheet" href="./style.css" />
   <script type="importmap">
-  {"imports":{"three":"https://unpkg.com/three@0.180.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.180.0/examples/jsm/"}}
+  {"imports":{"three":"../vendor/three/three.module.min.js","three/addons/":"../vendor/three/addons/"}}
   </script>
 </head>
 <body>
@@ -42,6 +42,16 @@
         <button id="takePhotoBtn" class="secondary" disabled>Take photo</button>
         <button id="resetBtn" class="secondary">Reset specimen</button>
         <button id="loadPackBtn" class="secondary">Load fresh pack</button>
+      </div>
+
+      <label class="range-row" for="explode">
+        <span>Exploded inspection</span>
+        <output id="explodeValue">0%</output>
+      </label>
+      <input id="explode" type="range" min="0" max="100" value="0" />
+      <div class="button-row">
+        <button id="assembleBtn" class="secondary">Assemble</button>
+        <button id="explodeBtn" class="secondary">Explode gradually</button>
       </div>
 
       <div class="state-grid">
@@ -106,15 +116,6 @@
       </label>
       <input id="deployment" type="range" min="0" max="100" value="0" />
 
-      <label class="range-row" for="explode">
-        <span>Exploded inspection</span>
-        <output id="explodeValue">0%</output>
-      </label>
-      <input id="explode" type="range" min="0" max="100" value="0" />
-      <div class="button-row">
-        <button id="assembleBtn" class="secondary">Assemble</button>
-        <button id="explodeBtn" class="secondary">Explode</button>
-      </div>
     </section>
 
     <section class="advanced-section">
