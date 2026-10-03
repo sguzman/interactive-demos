@@ -435,6 +435,7 @@ export function createSX70Model() {
   // so it can nest beneath the top cover when folded without changing any internal part spacing.
   const lensVisual = new THREE.Group();
   for (const child of [...lensHousing.children]) lensVisual.add(child);
+  lensVisual.position.y = A.frontStandardAlongMemberInsetMm;
   lensVisual.position.z = A.frontStandardHingeInsetMm;
   lensHousing.add(lensVisual);
 
@@ -961,6 +962,7 @@ export function createSX70Model() {
       lensStandardHeight: lensHeight,
       lensStandardHeightError: lensHeight - A.lensStandardHeight,
       frontStandardHingeInsetMm: lensVisual.position.z,
+      frontStandardAlongMemberInsetMm: lensVisual.position.y,
       viewfinderFollowerTravel: followerTravel,
       viewfinderGuideLength: A.viewfinderGuideLength,
       viewfinderFollowerWithinGuide: followerTravel <= followerLimit + 1e-6,
