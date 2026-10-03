@@ -174,7 +174,9 @@ export function createDMGModel() {
   }
   groups.batteries=batteries; root.add(batteries);
 
-  const state={ explosion:0, layer:'physical', cartridgePresent:true };
+  const state={ explosion:0, layer:'physical', cartridgePresent:true, pressed:new Set() };
+  const dpadBaseRotation=dpad.rotation.clone();
+  const dpadTiltRad=THREE.MathUtils.degToRad(4.5);
 
   const bases = new Map();
   root.traverse(o=>{ if(o.isObject3D) bases.set(o,{p:o.position.clone(),r:o.rotation.clone()}); });
@@ -233,6 +235,18 @@ export function createDMGModel() {
   }
 
   function setButtonPressed(key,pressed){
+    if(['Up','Down','Left','Right'].includes(key)){
+      if(pressed)state.pressed.add(key);else state.pressed.delete(key);
+      let rx=0,ry=0;
+      if(state.pressed.has('Up'))rx-=dpadTiltRad;
+      if(state.pressed.has('Down'))rx+=dpadTiltRad;
+      if(state.pressed.has('Left'))ry-=dpadTiltRad;
+      if(state.pressed.has('Right'))ry+=dpadTiltRad;
+      dpad.rotation.copy(dpadBaseRotation);
+      dpad.rotateX(rx);
+      dpad.rotateY(ry);
+      return;
+    }
     const obj=groups[key];
     if(!obj) return;
     if(obj.userData.baseLocalZ === undefined) obj.userData.baseLocalZ = obj.position.z;
@@ -272,6 +286,10 @@ export function createDMGModel() {
       bounds:{width:size.x,height:size.y,depth:size.z},
       explosion:state.explosion,
       screenPowered,
+      controls:{
+        dpadTiltDegrees:4.5,
+        dpadPressedDirections:[...state.pressed]
+      },
       representativeProfile:CANONICAL.representativeProfile,
       pickableCount:pickables.length
     };
