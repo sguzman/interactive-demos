@@ -538,7 +538,9 @@ export async function createDMGReferenceModel(preparedAssets=null){
       screenPowered,
       controls:{
         dpadTiltDegrees:4.5,
-        dpadPressedDirections:[...state.pressed].filter(k=>DPAD_DIRECTIONS.has(k))
+        dpadPressedDirections:[...state.pressed].filter(k=>DPAD_DIRECTIONS.has(k)),
+        dpadQuaternion:(nodesByPartId.get('DPad')?.quaternion?.toArray?.()||[]),
+        dpadBaseQuaternion:(nodesByPartId.get('DPad')?.userData?.baseQuaternion?.toArray?.()||[])
       },
       presentation:{
         legacySpeakerMeshRetired:legacySpeakerMesh ? legacySpeakerMesh.visible===false : true,
