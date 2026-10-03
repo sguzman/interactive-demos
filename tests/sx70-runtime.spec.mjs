@@ -75,6 +75,16 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
     const label = String(Math.round(deployment * 100)).padStart(2, '0');
     await page.screenshot({ path: `test-results/sx70-deployment-${label}.png`, fullPage: true });
   }
+
+  // Pure side profile makes linkage nesting and fold-path defects obvious instead of hiding them
+  // behind the presentation camera.
+  await page.evaluate(() => window.__sx70Debug.setQaCamera([260, 48, 0], [0, 35, 0], [0, 1, 0]));
+  for (const deployment of [0, 0.25, 0.50, 0.75, 1]) {
+    await page.evaluate(value => window.__sx70Debug.setDeployment(value), deployment);
+    await page.waitForTimeout(120);
+    const label = String(Math.round(deployment * 100)).padStart(3, '0');
+    await page.screenshot({ path: `test-results/sx70-side-deployment-${label}.png`, fullPage: true });
+  }
   await page.evaluate(() => window.__sx70Debug.setDeployment(0));
 
   await page.locator('#openBtn').click();
