@@ -29,9 +29,9 @@ export const CANONICAL = {
 export const RECONSTRUCTION = {
   provenance: 'P4 reconstruction',
   envelopeMm: {
-    width: 105,
-    foldedDepth: 180,
-    foldedHeightPresentation: 38
+    width: 106,
+    foldedDepth: 179,
+    foldedHeightPresentation: 44
   },
   base: {
     width: 105,
