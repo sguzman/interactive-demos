@@ -73,6 +73,10 @@ export const RECONSTRUCTION = {
     // standard 16 mm below the base. A -10 mm rigid offset nests its lower edge at the base envelope
     // while preserving every internal front-standard relationship.
     frontStandardHingeInsetMm: -10.0,
+    // The visible 49 mm shutter housing is taller than the reconstructed 41.75 mm kinematic
+    // member. Offset it along that member so the folded housing ends at the film-pack envelope
+    // instead of hanging 6.5 mm beyond the front of the closed camera.
+    frontStandardAlongMemberInsetMm: -6.5,
     rearWallLength: 86.75,
     lensStandardHeight: 41.75,
     rearFoldedAngleDeg: 90,
