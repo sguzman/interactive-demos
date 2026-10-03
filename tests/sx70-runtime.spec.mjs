@@ -42,9 +42,15 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
     return result;
   }, deploymentSamples);
   expect(geometrySweep[0].bounds.height).toBeLessThan(55);
+  expect(geometrySweep[0].bounds.depth).toBeLessThan(205);
+  // Opening starts at the viewfinder cap, then the structural four-bar follows.
+  expect(geometrySweep[2].viewfinderDeployment).toBeGreaterThan(geometrySweep[2].bodyDeployment);
+  expect(geometrySweep.at(-1).bodyDeployment).toBeCloseTo(1, 6);
+  expect(geometrySweep.at(-1).viewfinderDeployment).toBeCloseTo(1, 6);
+  expect(geometrySweep.at(-1).capAngleDeg).toBeCloseTo(-7, 3);
 
   for (const geometry of geometrySweep) {
-    expect(geometry.revision).toBe('articulated-v4');
+    expect(geometry.revision).toBe('articulated-v5');
     expect(geometry.finite).toBe(true);
     expect(Math.abs(geometry.rearMemberLengthError)).toBeLessThan(1e-6);
     expect(Math.abs(geometry.lensStandardHeightError)).toBeLessThan(1e-6);
@@ -216,15 +222,42 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
   expect(exposure.deployment).toBeGreaterThan(0.985);
   await page.screenshot({ path: 'test-results/sx70-exposure-optics.png', fullPage: true });
 
-  await page.locator('#advancedToggleBtn').click();
-  await expect(page.locator('.controls')).toHaveClass(/advanced-open/);
+  const explodeSlider = page.locator('#explode');
+  const explodeBox = await explodeSlider.boundingBox();
+  expect(explodeBox).not.toBeNull();
+  await page.mouse.move(explodeBox.x + 4, explodeBox.y + explodeBox.height / 2);
+  await page.mouse.down();
+  for (let i = 1; i <= 7; i += 1) {
+    await page.mouse.move(
+      explodeBox.x + 4 + (explodeBox.width - 8) * (i / 7),
+      explodeBox.y + explodeBox.height / 2
+    );
+    await page.waitForTimeout(90);
+  }
+  const draggingExplosion = await page.evaluate(() => window.__sx70Debug.state);
+  expect(draggingExplosion.interaction.explosionSliderDragging).toBe(true);
+  expect(draggingExplosion.explosion).toBeGreaterThan(.75);
+  await page.mouse.up();
+  await page.evaluate(() => window.__sx70Debug.setExplode(0));
 
-  // Explosion is independent of deployment and is safe to move between assembled,
-  // cutaway, and full separation states without corrupting mechanism state.
+  // Explode is a primary control now. It must animate the same slider continuously rather than
+  // teleporting to an exploded layout or requiring Advanced inspection.
+  await expect(page.locator('.controls')).not.toHaveClass(/advanced-open/);
+  await page.evaluate(() => window.__sx70Debug.setExplode(0));
   await page.locator('#explodeBtn').click();
+  await page.waitForTimeout(280);
+  const explodingMid = await page.evaluate(() => window.__sx70Debug.state);
+  expect(explodingMid.interaction.explosionAnimating).toBe(true);
+  expect(explodingMid.explosion).toBeGreaterThan(.01);
+  expect(explodingMid.explosion).toBeLessThan(.95);
+  await page.waitForFunction(() =>
+    window.__sx70Debug.state.explosion > .995 &&
+    !window.__sx70Debug.state.interaction.explosionAnimating
+  );
+
   const exploded = await page.evaluate(() => window.__sx70Debug.state);
   expect(exploded.deployment).toBeGreaterThan(0.985);
-  expect(exploded.explosion).toBeCloseTo(1, 6);
+  expect(exploded.explosion).toBeCloseTo(1, 3);
   expect(exploded.mechanism.visible).toBe(true);
   expect(exploded.geometry.frontStandardDeepExploded).toBe(true);
   expect(exploded.geometry.frontStandardInspectablePartCount).toBeGreaterThanOrEqual(6);
@@ -232,9 +265,18 @@ test('SX-70 opens, exposes live internals, cycles, explodes, and folds in Chromi
   await page.screenshot({ path: 'test-results/sx70-front-standard-deep-explode.png', fullPage: true });
 
   await page.locator('#assembleBtn').click();
+  await page.waitForTimeout(280);
+  const assemblingMid = await page.evaluate(() => window.__sx70Debug.state);
+  expect(assemblingMid.interaction.explosionAnimating).toBe(true);
+  expect(assemblingMid.explosion).toBeGreaterThan(.05);
+  expect(assemblingMid.explosion).toBeLessThan(.99);
+  await page.waitForFunction(() =>
+    window.__sx70Debug.state.explosion < .005 &&
+    !window.__sx70Debug.state.interaction.explosionAnimating
+  );
   const assembled = await page.evaluate(() => window.__sx70Debug.state);
   expect(assembled.deployment).toBeGreaterThan(0.985);
-  expect(assembled.explosion).toBeCloseTo(0, 6);
+  expect(assembled.explosion).toBeCloseTo(0, 3);
 
   await page.locator('[data-view="folding"]').click();
   await page.waitForTimeout(500);
