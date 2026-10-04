@@ -564,7 +564,7 @@ window.__selectricDebug = {
     return true;
   },
   holdCharacterAt(char = 'a', progress = 0.62) {
-    if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation) return false;
+    if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
     startCharacterCycle(char);
     runtime.debugCycleHold = THREE.MathUtils.clamp(Number(progress) || 0, 0, 0.999);
     runCycle(performance.now());
