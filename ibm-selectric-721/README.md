@@ -34,7 +34,7 @@ The browser model currently includes:
 - deterministic character-cycle ordering through code setup, selection, fine align, impact, escapement and clutch check;
 - fixed escapement/margin/tab rack families, runtime-adjustable left/right margin stops on the 12-CPI pitch, live right-margin line lock, opposed carrier cords, common escapement-shaft drums, mainspring cue, spring-loaded right tension arm, sustained carrier-return clutch/pinion drive and non-propulsive tab governor;
 - dedicated 7X1 12P backspace rack/bellcrank presentation rather than reverse-escapement shorthand;
-- clutched 180° space/backspace service-cam actions, mainspring-style tab destination, carrier return + index, animated 180° shift-cam transition with character-cycle interlock, and animated 360° index-cam/pawl action;
+- clutched 180° space/backspace service-cam actions, including filter-shaft-style storage of a space request made during an active character cycle and release immediately after character escapement; mainspring-style tab destination, carrier return + index, animated 180° shift-cam transition with character-cycle interlock, and animated 360° index-cam/pawl action;
 - assembled / exploded inspection and click-to-inspect provenance;
 - a centered P5 startup carrier pose for immediate type-element visibility; carrier return still terminates at the left writing margin.
 
@@ -59,7 +59,7 @@ The Playwright smoke test checks:
 - impact before escapement advance;
 - ribbon selector modes, stencil feed lockout/centering, distinct load pose, and automatic fabric-ribbon reversal through the animated reverse sequence;
 - explosion independence;
-- space / backspace;
+- space / backspace, including stored-space interlock release after an active character cycle;
 - adjustable margin-stop positions, right-margin line lock and carrier return to the live left stop;
 - shift hemisphere;
 - one-tooth 27T paper index;
