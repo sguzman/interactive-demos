@@ -392,6 +392,7 @@ export function createSelectricModel() {
     printApproach: 0,
     platenIndex: 0,
     paperAdvanceMm: 0,
+    feedRollPhaseRad: 0,
     lineSpacingTeeth: 1,
     cyclePhase: 0,
     keyboardCode: 0,
@@ -1090,22 +1091,33 @@ export function createSelectricModel() {
   addPickable(frontFeedShaft, COMPONENTS.paperFeed, pickables);
   paperFeedCarriage.add(frontFeedShaft);
 
-  for (const x of feedRollXs) {
-    const rearRoller = pulley(6.2, 15, rubber, 'rear molded rubber feed roller');
-    rearRoller.position.set(x, P4.platen.y - 11, P4.platen.z - 12);
-    rearRoller.userData.baseY = rearRoller.position.y;
-    rearRoller.userData.baseZ = rearRoller.position.z;
-    addPickable(rearRoller, COMPONENTS.paperFeed, pickables);
-    paperFeedCarriage.add(rearRoller);
-    rearFeedRollers.push(rearRoller);
+  function makeFeedRollerPivot(x, y, z, name) {
+    const pivot = new THREE.Group();
+    pivot.name = name + ' rotational pivot';
+    pivot.position.set(x, y, z);
+    pivot.userData.baseY = y;
+    pivot.userData.baseZ = z;
 
-    const frontRoller = pulley(6.2, 15, rubber, 'front molded rubber feed roller');
-    frontRoller.position.set(x, P4.platen.y - 12, P4.platen.z + 16);
-    frontRoller.userData.baseY = frontRoller.position.y;
-    frontRoller.userData.baseZ = frontRoller.position.z;
-    addPickable(frontRoller, COMPONENTS.paperFeed, pickables);
-    paperFeedCarriage.add(frontRoller);
-    frontFeedRollers.push(frontRoller);
+    const roller = pulley(6.2, 15, rubber, name);
+    addPickable(roller, COMPONENTS.paperFeed, pickables);
+    pivot.add(roller);
+
+    const phaseCue = box(7.5, 1.1, 1.7, metal, name + ' phase cue');
+    phaseCue.position.set(0, 6.15, 0);
+    addPickable(phaseCue, COMPONENTS.paperFeed, pickables);
+    pivot.add(phaseCue);
+
+    paperFeedCarriage.add(pivot);
+    return pivot;
+  }
+
+  for (const x of feedRollXs) {
+    rearFeedRollers.push(
+      makeFeedRollerPivot(x, P4.platen.y - 11, P4.platen.z - 12, 'rear molded rubber feed roller')
+    );
+    frontFeedRollers.push(
+      makeFeedRollerPivot(x, P4.platen.y - 12, P4.platen.z + 16, 'front molded rubber feed roller')
+    );
   }
 
   const paperDeflector = box(238, 2.2, 42, shellDark, 'paper deflector beneath platen');
@@ -2036,6 +2048,13 @@ export function createSelectricModel() {
     rocker.rotation.x = deg(angleDeg);
   }
 
+  function updateFeedRollRotation() {
+    // Roller radius is reconstructed P4, so this is a visual kinematic cue rather than an OEM angle claim.
+    state.feedRollPhaseRad = state.paperAdvanceMm / 6.2;
+    rearFeedRollers.forEach(roller => { roller.rotation.x = state.feedRollPhaseRad; });
+    frontFeedRollers.forEach(roller => { roller.rotation.x = -state.feedRollPhaseRad; });
+  }
+
   function setPaperRelease(released) {
     state.feedRollsEngaged = !Boolean(released);
     const release = state.feedRollsEngaged ? 0 : 1;
@@ -2084,6 +2103,7 @@ export function createSelectricModel() {
     if (state.feedRollsEngaged) {
       state.paperAdvanceMm += rotation * CANONICAL.platen.radiusMm;
       paper.setAdvance(state.paperAdvanceMm);
+      updateFeedRollRotation();
     }
     return true;
   }
@@ -2113,6 +2133,7 @@ export function createSelectricModel() {
     if (state.feedRollsEngaged) {
       state.paperAdvanceMm += delta * CANONICAL.platen.radiusMm;
       paper.setAdvance(state.paperAdvanceMm);
+      updateFeedRollRotation();
     }
   }
 
@@ -2163,6 +2184,7 @@ export function createSelectricModel() {
   function clearPaper() {
     state.paperAdvanceMm = 0;
     paper.setAdvance(0);
+    updateFeedRollRotation();
     paper.clear();
   }
 
@@ -2299,6 +2321,8 @@ export function createSelectricModel() {
         variableOffsetPersistsWhenRecoupled: true,
         paperAdvanceMm: state.paperAdvanceMm,
         paperAdvanceClass: 'P2 platen arc length while feed rolls are engaged',
+        feedRollPhaseRad: state.feedRollPhaseRad,
+        feedRollRotationClass: 'P4 roller-radius kinematic presentation driven from paper advance; exact roller radius unresolved',
         exactCenters: 'unresolved-P4'
       },
       ribbon: {

@@ -17,7 +17,7 @@ This is a source-aware mechanical reconstruction of an original IBM Selectric Mo
 
 The browser model currently includes:
 
-- product shell / keyboard / platen / 27-tooth representative ratchet / single-vs-double line-spacing selector (one or two ratchet teeth per index) / P2 paper advance derived from platen arc length while feed rolls are engaged / four-front-plus-four-rear feed rollers / common-shaft coupled paper release / five-position copy-control carriage motion / two-stable-state two-roller paper bail / platen-variable decoupling with manual rotation and persistent re-coupled phase offset / paper;
+- product shell / keyboard / platen / 27-tooth representative ratchet / single-vs-double line-spacing selector (one or two ratchet teeth per index) / P2 paper advance derived from platen arc length while feed rolls are engaged / four-front-plus-four-rear feed rollers with visible P4 phase cues driven from the same paper-advance state / common-shaft coupled paper release / five-position copy-control carriage motion / two-stable-state two-roller paper bail / platen-variable decoupling with manual rotation and persistent re-coupled phase offset / paper;
 - D6 print shaft, current IBM 1164740 bearing family, IBM 1164739 gear envelope and market-unfrozen item-51 C-clip presentation;
 - IBM 1124109 fixed 12P rack with repeated pitch geometry;
 - carrier translating over the 215.9 mm writing line, with the writing-position pointer parented to the carrier so it tracks the fixed 12-CPI rule;
@@ -64,7 +64,7 @@ The Playwright smoke test checks:
 - programmable tab-stop set/clear plus capture at the next active stop;
 - shift hemisphere;
 - one-tooth single and two-tooth double 27T paper indexing, including P2 physical sheet advance from platen radius × rotation;
-- paper-release decoupling: platen rotation leaves sheet position unchanged while both feed-roll banks are released;
+- paper-release decoupling: platen rotation leaves sheet position and feed-roll phase unchanged while both feed-roll banks are released;
 - platen-variable manual rotation: public +/- controls leave ratchet phase fixed while free, advance paper only when feed is engaged, and preserve the new platen phase offset after re-coupling;
 - tab capture on the writing lattice;
 - carrier return to left margin plus one index;

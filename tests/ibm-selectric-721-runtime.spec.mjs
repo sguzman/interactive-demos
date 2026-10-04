@@ -140,10 +140,12 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(feedReleased.feedRollsEngaged).toBe(false);
   expect(feedReleased.geometry.paperFeed.frontRearReleaseCoupled).toBe(true);
   const releasedPaperAdvance = feedReleased.paperAdvanceMm;
+  const releasedFeedRollPhase = feedReleased.geometry.paperFeed.feedRollPhaseRad;
   await page.evaluate(() => window.__selectricDebug.togglePlatenVariable());
   await page.evaluate(() => window.__selectricDebug.rotatePlatenManually(Math.PI / 18));
   const releasedManualTurn = await page.evaluate(() => window.__selectricDebug.state);
   expect(releasedManualTurn.paperAdvanceMm).toBeCloseTo(releasedPaperAdvance, 8);
+  expect(releasedManualTurn.geometry.paperFeed.feedRollPhaseRad).toBeCloseTo(releasedFeedRollPhase, 8);
   await page.evaluate(() => window.__selectricDebug.rotatePlatenManually(-Math.PI / 18));
   await page.evaluate(() => window.__selectricDebug.togglePlatenVariable());
   await page.evaluate(() => window.__selectricDebug.togglePaperRelease());
@@ -185,6 +187,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(afterManualPlaten.geometry.paperFeed.platenPhysicalAngleRad).toBeCloseTo(ratchetBeforeVariable + manualStep, 8);
   expect(afterManualPlaten.paperAdvanceMm - paperBeforeManual).toBeCloseTo(18.1864 * manualStep, 8);
   expect(afterManualPlaten.geometry.paperFeed.paperAdvanceMm).toBeCloseTo(afterManualPlaten.paperAdvanceMm, 8);
+  expect(afterManualPlaten.geometry.paperFeed.feedRollPhaseRad).toBeCloseTo(afterManualPlaten.paperAdvanceMm / 6.2, 8);
+  expect(afterManualPlaten.geometry.paperFeed.feedRollRotationClass).toContain('P4 roller-radius');
   expect(afterManualPlaten.events.some(event => event.name === 'MANUAL_PLATEN_STEP')).toBe(true);
 
   await page.evaluate(() => window.__selectricDebug.togglePlatenVariable());
