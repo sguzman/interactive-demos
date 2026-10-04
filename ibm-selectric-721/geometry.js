@@ -382,6 +382,7 @@ export function createSelectricModel() {
     serviceCoverOpen: 0,
     selectorInputs: { T1: 0, T2: 0, R1: 0, R2: 0, R2A: 0, fiveUnit: 0 },
     ribbonFeedStep: 0,
+    ribbonFeedApproxRatchetTeeth: 0,
     ribbonFeedDirection: 1,
     motorPhase: 0,
     keyboardPressCharacter: null,
@@ -1086,12 +1087,12 @@ export function createSelectricModel() {
   ribbonAssembly.name = 'carrier-parented new-style fabric ribbon assembly';
   carrierMotion.add(ribbonAssembly);
   const ribbonSpools = [];
+  const ribbonRatchets = [];
   for (const x of [-P4.ribbon.spoolCenterX, P4.ribbon.spoolCenterX]) {
     const spool = new THREE.Mesh(
       new THREE.CylinderGeometry(P4.ribbon.spoolRadiusP4, P4.ribbon.spoolRadiusP4, 10, 36),
       ribbonMat
     );
-    spool.rotation.x = Math.PI / 2;
     spool.position.set(x, 93, -49);
     spool.name = x < 0 ? 'left fabric-ribbon spool' : 'right fabric-ribbon spool';
     addPickable(spool, COMPONENTS.ribbon, pickables);
@@ -1099,14 +1100,25 @@ export function createSelectricModel() {
     ribbonSpools.push(spool);
 
     const ratchet = new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 3.5, 20), darkMetal);
-    ratchet.rotation.x = Math.PI / 2;
-    ratchet.position.set(x, 93, -42);
+    ratchet.position.set(x, 88, -49);
     ratchet.name = x < 0 ? 'left ribbon feed ratchet' : 'right ribbon feed ratchet';
     addPickable(ratchet, COMPONENTS.ribbon, pickables);
     ribbonAssembly.add(ratchet);
+    ribbonRatchets.push(ratchet);
+
+    const reverseTrigger = box(3, 9, 5, metal, x < 0 ? 'left reverse-trigger bellcrank cue' : 'right reverse-trigger bellcrank cue');
+    reverseTrigger.position.set(x, 84, -39);
+    reverseTrigger.rotation.z = deg(x < 0 ? -18 : 18);
+    addPickable(reverseTrigger, COMPONENTS.ribbon, pickables);
+    ribbonAssembly.add(reverseTrigger);
+
+    const brakeSpring = box(10, 1.2, 3, metal, x < 0 ? 'left spool retainer/brake spring cue' : 'right spool retainer/brake spring cue');
+    brakeSpring.position.set(x, 99, -43);
+    addPickable(brakeSpring, COMPONENTS.ribbon, pickables);
+    ribbonAssembly.add(brakeSpring);
   }
 
-  const feedPlate = box(74, 3.5, 10, metal, 'ribbon feed-and-reverse plate');
+  const feedPlate = box(74, 3.5, 10, metal, 'feed-and-reverse plate · slide plus reverse pivot');
   feedPlate.position.set(0, 83, -45);
   addPickable(feedPlate, COMPONENTS.ribbon, pickables);
   ribbonAssembly.add(feedPlate);
@@ -1117,10 +1129,56 @@ export function createSelectricModel() {
   addPickable(feedPawl, COMPONENTS.ribbon, pickables);
   ribbonAssembly.add(feedPawl);
 
-  const ribbonStrip = box(92, P4.ribbon.widthMm, 1.2, ribbonMat, '14.2875 mm fabric ribbon at print point');
-  ribbonStrip.position.set(0, P4.ribbon.yRest, P4.ribbon.z);
-  addPickable(ribbonStrip, COMPONENTS.ribbon, pickables);
-  ribbonAssembly.add(ribbonStrip);
+  const detentLever = box(68, 3, 5, darkMetal, 'ratchet detent/check lever');
+  detentLever.position.set(0, 79, -48);
+  addPickable(detentLever, COMPONENTS.ribbon, pickables);
+  ribbonAssembly.add(detentLever);
+
+  const leftGuide = new THREE.Vector3(-18, P4.ribbon.yRest, P4.ribbon.z);
+  const rightGuide = new THREE.Vector3(18, P4.ribbon.yRest, P4.ribbon.z);
+  for (const x of [-18, 18]) {
+    const guide = box(4, 21, 4, metal, x < 0 ? 'left ribbon lift guide' : 'right ribbon lift guide');
+    guide.position.set(x, P4.ribbon.yRest - 3, P4.ribbon.z + 1);
+    addPickable(guide, COMPONENTS.ribbon, pickables);
+    ribbonAssembly.add(guide);
+  }
+
+  function makeRibbonSegment(name) {
+    const segment = box(1, P4.ribbon.widthMm, 1.0, ribbonMat, name);
+    addPickable(segment, COMPONENTS.ribbon, pickables);
+    ribbonAssembly.add(segment);
+    return segment;
+  }
+
+  const ribbonLeftSegment = makeRibbonSegment('fabric ribbon · left spool to lift guide');
+  const ribbonCenterSegment = makeRibbonSegment('fabric ribbon · print-point span');
+  const ribbonRightSegment = makeRibbonSegment('fabric ribbon · lift guide to right spool');
+  const ribbonXAxis = new THREE.Vector3(1, 0, 0);
+
+  function updateRibbonSegment(mesh, a, b) {
+    const delta = new THREE.Vector3().subVectors(b, a);
+    const length = delta.length();
+    mesh.position.copy(a).add(b).multiplyScalar(0.5);
+    mesh.quaternion.setFromUnitVectors(ribbonXAxis, delta.clone().normalize());
+    mesh.scale.set(length, 1, 1);
+  }
+
+  function updateRibbonPath(lift) {
+    const liftY = THREE.MathUtils.lerp(P4.ribbon.yRest, P4.ribbon.yLift, lift);
+    leftGuide.y = liftY;
+    rightGuide.y = liftY;
+    updateRibbonSegment(
+      ribbonLeftSegment,
+      new THREE.Vector3(-P4.ribbon.spoolCenterX + 5, 94, -50),
+      leftGuide
+    );
+    updateRibbonSegment(ribbonCenterSegment, leftGuide, rightGuide);
+    updateRibbonSegment(
+      ribbonRightSegment,
+      rightGuide,
+      new THREE.Vector3(P4.ribbon.spoolCenterX - 5, 94, -50)
+    );
+  }
 
   const printSleeveRotor = new THREE.Group();
   printSleeveRotor.position.set(0, P4.printShaft.y, P4.printShaft.z);
@@ -1315,15 +1373,19 @@ export function createSelectricModel() {
 
   function setRibbonLift(value) {
     state.ribbonLift = THREE.MathUtils.clamp(value, 0, 1);
-    ribbonStrip.position.y = THREE.MathUtils.lerp(P4.ribbon.yRest, P4.ribbon.yLift, state.ribbonLift);
+    updateRibbonPath(state.ribbonLift);
   }
 
   function feedRibbon() {
     state.ribbonFeedStep += 1;
+    state.ribbonFeedApproxRatchetTeeth += 2.5;
     const presentationStep = 0.17 * state.ribbonFeedDirection;
     ribbonSpools[0].rotation.y -= presentationStep;
     ribbonSpools[1].rotation.y += presentationStep;
+    ribbonRatchets[0].rotation.y -= presentationStep * 1.8;
+    ribbonRatchets[1].rotation.y += presentationStep * 1.8;
     feedPlate.position.z = -45 + (state.ribbonFeedStep % 2 ? 2.5 : 0);
+    feedPawl.rotation.z = deg(12 + (state.ribbonFeedStep % 2 ? 8 : 0));
   }
 
   function setPrintApproach(value) {
@@ -1464,7 +1526,12 @@ export function createSelectricModel() {
         parent: 'carrier',
         mediaWidthMm: P4.ribbon.widthMm,
         feedStepCount: state.ribbonFeedStep,
+        approximateRatchetTeethAdvanced: state.ribbonFeedApproxRatchetTeeth,
+        nominalRatchetTeethPerCharacter: 2.5,
+        nominalRatchetTeethQualifier: 'approximately',
         feedDirection: state.ribbonFeedDirection,
+        path: ['left-spool', 'left-guide', 'print-point', 'right-guide', 'right-spool'],
+        reverseTopology: 'trigger -> feed/reverse plate pivot -> feed-pawl transfer',
         exactLinearFeedMm: 'unresolved'
       },
       sleeveCamOrder: ['ribbon-lift', '1164240-feed-detent', '1124174-print-restoring'],

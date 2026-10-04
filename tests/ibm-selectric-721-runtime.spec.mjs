@@ -37,6 +37,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.paperFeed.frontRearReleaseCoupled).toBe(true);
   expect(initial.geometry.ribbon.parent).toBe('carrier');
   expect(initial.geometry.ribbon.mediaWidthMm).toBeCloseTo(14.2875, 6);
+  expect(initial.geometry.ribbon.nominalRatchetTeethPerCharacter).toBeCloseTo(2.5, 8);
+  expect(initial.geometry.ribbon.path).toEqual(['left-spool','left-guide','print-point','right-guide','right-spool']);
+  expect(initial.geometry.ribbon.reverseTopology).toContain('feed-pawl transfer');
   expect(initial.geometry.shaftTiming.cycleShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.filterShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.printShaftDegPerCharacter).toBe(360);
@@ -111,6 +114,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(typed.carrierX - initialCarrier).toBeCloseTo(typed.geometry.pitchMm * 2, 5);
   expect(typed.ribbonLift).toBe(0);
   expect(typed.ribbonFeedStep).toBe(2);
+  expect(typed.geometry.ribbon.approximateRatchetTeethAdvanced).toBeCloseTo(5, 8);
   expect(typed.events.some(event => event.name === 'RIBBON_FEED_COMPLETE_EXCEPT_PAWL_RESTORE')).toBe(true);
   expect(typed.printApproach).toBe(0);
   expect(typed.cyclePhase).toBe(0);
