@@ -89,7 +89,14 @@ export const P4 = Object.freeze({
     derivedPoweredEndpointClearanceMm: 0.5528,
     class: 'P4 pivot selected to satisfy OEM service clearance envelopes'
   },
-  ribbon: { yRest: 101, yLift: 113, z: -73 },
+  ribbon: {
+    yRest: 103,
+    yLift: 114,
+    z: -68,
+    widthMm: 14.2875,
+    spoolCenterX: 42,
+    spoolRadiusP4: 20
+  },
   keyboard: { y: 43, z: 78 },
   motor: { x: -116, y: 39, z: 42 },
   writingLineRacks: { marginY: 68, marginZ: -80, tabY: 61, tabZ: -86, length: 245 },

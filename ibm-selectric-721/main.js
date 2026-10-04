@@ -87,6 +87,7 @@ const runtime = {
   cycleStart: 0,
   cycleAdvanceCommitted: false,
   cycleImpactCommitted: false,
+  ribbonFeedCommitted: false,
   pendingCharacter: 'a',
   selectionTarget: { tilt: 0, rotate: 0, shift: 0 },
   cycleDurationMs: 1250,
@@ -144,6 +145,7 @@ function resetMechanicalState() {
   runtime.cycleStart = 0;
   runtime.cycleAdvanceCommitted = false;
   runtime.cycleImpactCommitted = false;
+  runtime.ribbonFeedCommitted = false;
   runtime.operation = null;
   runtime.eventLog = [];
   runtime.lastRecordedCycle = 'C0_REST';
@@ -169,6 +171,7 @@ function startCharacterCycle(character = runtime.pendingCharacter) {
   runtime.cycleStart = performance.now();
   runtime.cycleAdvanceCommitted = false;
   runtime.cycleImpactCommitted = false;
+  runtime.ribbonFeedCommitted = false;
   runtime.lastAction = 'character-cycle';
   syncUi();
 }
@@ -248,6 +251,11 @@ function runCycle(now) {
     model.setTypeball(runtime.selectionTarget.tilt, runtime.selectionTarget.rotate, runtime.selectionTarget.shift);
     model.setRibbonLift(k);
     model.setPrintApproach(k * 0.55);
+    if (!runtime.ribbonFeedCommitted && k > 0.35) {
+      model.feedRibbon();
+      runtime.ribbonFeedCommitted = true;
+      recordEvent('RIBBON_FEED_COMPLETE_EXCEPT_PAWL_RESTORE');
+    }
   } else if (t < 0.66) {
     setCycleState('C5_PRINT_IMPACT');
     const k = (t - 0.54) / 0.12;
@@ -417,6 +425,7 @@ function snapshot() {
       mappingClass: 'P5 deterministic key-to-slot presentation; not a specific IBM typeball layout'
     },
     ribbonLift: model.state.ribbonLift,
+    ribbonFeedStep: model.state.ribbonFeedStep,
     printApproach: model.state.printApproach,
     platenIndex: model.state.platenIndex,
     cyclePhase: model.state.cyclePhase,

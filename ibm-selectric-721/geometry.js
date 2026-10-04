@@ -328,7 +328,9 @@ export function createSelectricModel() {
     keyboardCode: 0,
     cordPhase: 0,
     serviceCoverOpen: 0,
-    selectorInputs: { T1: 0, T2: 0, R1: 0, R2: 0, R2A: 0, fiveUnit: 0 }
+    selectorInputs: { T1: 0, T2: 0, R1: 0, R2: 0, R2A: 0, fiveUnit: 0 },
+    ribbonFeedStep: 0,
+    ribbonFeedDirection: 1
   };
 
   const shellMat = material(0xb8b4a8, 0.03, 0.76);
@@ -687,22 +689,6 @@ export function createSelectricModel() {
     platenAssembly.add(roller);
   }
 
-  const ribbonAssembly = makeAssembly('ribbon assembly', new THREE.Vector3(0, 18, 10));
-  assemblies.push(ribbonAssembly);
-  root.add(ribbonAssembly);
-  for (const x of [-108, 108]) {
-    const spool = new THREE.Mesh(new THREE.CylinderGeometry(24, 24, 12, 36), ribbonMat);
-    spool.rotation.x = Math.PI / 2;
-    spool.position.set(x, 85, -46);
-    spool.name = x < 0 ? 'left ribbon spool' : 'right ribbon spool';
-    addPickable(spool, COMPONENTS.ribbon, pickables);
-    ribbonAssembly.add(spool);
-  }
-  const ribbonStrip = box(225, 8, 1.3, ribbonMat, 'fabric ribbon span');
-  ribbonStrip.position.set(0, P4.ribbon.yRest, P4.ribbon.z);
-  addPickable(ribbonStrip, COMPONENTS.ribbon, pickables);
-  ribbonAssembly.add(ribbonStrip);
-
   const selectionAssembly = makeAssembly('selection transmission', new THREE.Vector3(0, 12, 28));
   assemblies.push(selectionAssembly);
   root.add(selectionAssembly);
@@ -802,6 +788,46 @@ export function createSelectricModel() {
   carrierBody.position.set(0, P4.carrier.y, P4.carrier.z);
   addPickable(carrierBody, COMPONENTS.carrier, pickables);
   carrierMotion.add(carrierBody);
+
+  const ribbonAssembly = new THREE.Group();
+  ribbonAssembly.name = 'carrier-parented new-style fabric ribbon assembly';
+  carrierMotion.add(ribbonAssembly);
+  const ribbonSpools = [];
+  for (const x of [-P4.ribbon.spoolCenterX, P4.ribbon.spoolCenterX]) {
+    const spool = new THREE.Mesh(
+      new THREE.CylinderGeometry(P4.ribbon.spoolRadiusP4, P4.ribbon.spoolRadiusP4, 10, 36),
+      ribbonMat
+    );
+    spool.rotation.x = Math.PI / 2;
+    spool.position.set(x, 93, -49);
+    spool.name = x < 0 ? 'left fabric-ribbon spool' : 'right fabric-ribbon spool';
+    addPickable(spool, COMPONENTS.ribbon, pickables);
+    ribbonAssembly.add(spool);
+    ribbonSpools.push(spool);
+
+    const ratchet = new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 3.5, 20), darkMetal);
+    ratchet.rotation.x = Math.PI / 2;
+    ratchet.position.set(x, 93, -42);
+    ratchet.name = x < 0 ? 'left ribbon feed ratchet' : 'right ribbon feed ratchet';
+    addPickable(ratchet, COMPONENTS.ribbon, pickables);
+    ribbonAssembly.add(ratchet);
+  }
+
+  const feedPlate = box(74, 3.5, 10, metal, 'ribbon feed-and-reverse plate');
+  feedPlate.position.set(0, 83, -45);
+  addPickable(feedPlate, COMPONENTS.ribbon, pickables);
+  ribbonAssembly.add(feedPlate);
+
+  const feedPawl = box(5, 18, 3, darkMetal, 'ribbon feed pawl');
+  feedPawl.position.set(0, 87, -42);
+  feedPawl.rotation.z = deg(12);
+  addPickable(feedPawl, COMPONENTS.ribbon, pickables);
+  ribbonAssembly.add(feedPawl);
+
+  const ribbonStrip = box(92, P4.ribbon.widthMm, 1.2, ribbonMat, '14.2875 mm fabric ribbon at print point');
+  ribbonStrip.position.set(0, P4.ribbon.yRest, P4.ribbon.z);
+  addPickable(ribbonStrip, COMPONENTS.ribbon, pickables);
+  ribbonAssembly.add(ribbonStrip);
 
   const printSleeveRotor = new THREE.Group();
   printSleeveRotor.position.set(0, P4.printShaft.y, P4.printShaft.z);
@@ -937,6 +963,14 @@ export function createSelectricModel() {
     ribbonStrip.position.y = THREE.MathUtils.lerp(P4.ribbon.yRest, P4.ribbon.yLift, state.ribbonLift);
   }
 
+  function feedRibbon() {
+    state.ribbonFeedStep += 1;
+    const presentationStep = 0.17 * state.ribbonFeedDirection;
+    ribbonSpools[0].rotation.y -= presentationStep;
+    ribbonSpools[1].rotation.y += presentationStep;
+    feedPlate.position.z = -45 + (state.ribbonFeedStep % 2 ? 2.5 : 0);
+  }
+
   function setPrintApproach(value) {
     state.printApproach = THREE.MathUtils.clamp(value, 0, 1);
     const poweredBoundary = 0.90;
@@ -1008,6 +1042,13 @@ export function createSelectricModel() {
       selectorInputs: { ...state.selectorInputs },
       cordPhase: state.cordPhase,
       writingLineRacks: ['1124109 escapement', '1164743 margin', '1164102/6519354 tab'],
+      ribbon: {
+        parent: 'carrier',
+        mediaWidthMm: P4.ribbon.widthMm,
+        feedStepCount: state.ribbonFeedStep,
+        feedDirection: state.ribbonFeedDirection,
+        exactLinearFeedMm: 'unresolved'
+      },
       sleeveCamOrder: ['ribbon-lift', '1164240-feed-detent', '1124174-print-restoring'],
       printRocker: {
         motion: 'revolute',
@@ -1038,6 +1079,7 @@ export function createSelectricModel() {
     setCarrierX,
     setTypeball,
     setRibbonLift,
+    feedRibbon,
     setPrintApproach,
     setPlatenIndex,
     setCyclePhase,

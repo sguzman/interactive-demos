@@ -20,6 +20,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.revision).toBe('selectric-public-foundation-v3');
   expect(initial.geometry.supportTopology).toContain('Level-2');
   expect(initial.geometry.shellTopology).toContain('service-cover loft');
+  expect(initial.geometry.ribbon.parent).toBe('carrier');
+  expect(initial.geometry.ribbon.mediaWidthMm).toBeCloseTo(14.2875, 6);
   expect(initial.geometry.printRocker.motion).toBe('revolute');
   expect(initial.geometry.printRocker.restClearanceMm).toBeGreaterThanOrEqual(6.604);
   expect(initial.geometry.printRocker.restClearanceMm).toBeLessThanOrEqual(6.858);
@@ -53,6 +55,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const typed = await page.evaluate(() => window.__selectricDebug.state);
   expect(typed.carrierX - initialCarrier).toBeCloseTo(typed.geometry.pitchMm, 5);
   expect(typed.ribbonLift).toBe(0);
+  expect(typed.ribbonFeedStep).toBe(1);
+  expect(typed.events.some(event => event.name === 'RIBBON_FEED_COMPLETE_EXCEPT_PAWL_RESTORE')).toBe(true);
   expect(typed.printApproach).toBe(0);
   expect(typed.cyclePhase).toBe(0);
   expect(typed.selection.tiltBand).toBeGreaterThanOrEqual(0);
