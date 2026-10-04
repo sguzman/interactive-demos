@@ -2046,7 +2046,7 @@ export function createSelectricModel() {
   function applyTypeElementOrientation() {
     updateSelectionDrive(state.tiltBand, state.rotateUnit);
     const rotateSlotStepDegP4 = 360 / CANONICAL.typeElement.positionsPerBand;
-    typeElement.rotation.x = typeBandNormalTiltRadP4(state.tiltBand);
+    typeElement.rotation.x = -typeBandNormalTiltRadP4(state.tiltBand);
     // 22 structural positions around each band = 11 base rotate coordinates plus the
     // independent 180° shift hemisphere. The public key-to-slot assignment remains P5,
     // but the visible ball now lands on the same structural lattice as its 88 slug cues.
@@ -2509,7 +2509,7 @@ export function createSelectricModel() {
         slugOrientation: 'P4 surface-normal tangent frames on structural ellipsoid',
         rotateSlotStepDegP4: 360 / CANONICAL.typeElement.positionsPerBand,
         bandLatitudesP4: [...TYPE_BAND_LATITUDES_P4],
-        bandTiltAnglesDegP4: TYPE_BAND_LATITUDES_P4.map((_, band) => THREE.MathUtils.radToDeg(typeBandNormalTiltRadP4(band))),
+        bandTiltAnglesDegP4: TYPE_BAND_LATITUDES_P4.map((_, band) => -THREE.MathUtils.radToDeg(typeBandNormalTiltRadP4(band))),
         orientationDegP4: {
           tilt: THREE.MathUtils.radToDeg(typeElement.rotation.x),
           rotate: THREE.MathUtils.radToDeg(typeElement.rotation.y)
