@@ -681,13 +681,14 @@ ui.ribbonLoadBtn.addEventListener('click', () => {
 function setMarginAtCarrier(side) {
   if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
   const index = carrierColumnIndex();
-  const maxIndex = CANONICAL.nominalPositions - 1;
   if (side === 'left') {
     model.setMarginInsets(index, model.state.rightMarginInsetColumns);
     runtime.lastAction = 'left-margin-set';
     recordEvent('LEFT_MARGIN_SET', { index, x: model.state.leftMarginX });
   } else if (side === 'right') {
-    model.setMarginInsets(model.state.leftMarginInsetColumns, maxIndex - index);
+    // The 215.9 mm writing span is exactly 102 12-CPI pitches. Right inset is therefore
+    // measured from the opposite writing-line boundary, not from the highest 0-based key index.
+    model.setMarginInsets(model.state.leftMarginInsetColumns, CANONICAL.nominalPositions - index);
     runtime.lastAction = 'right-margin-set';
     recordEvent('RIGHT_MARGIN_SET', { index, x: model.state.rightMarginX });
   } else {

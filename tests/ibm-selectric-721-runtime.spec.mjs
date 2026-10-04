@@ -536,7 +536,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
 
   await page.locator('#marginRightBtn').click();
   const rightMarginAtCarrier = await page.evaluate(() => window.__selectricDebug.state);
-  expect(rightMarginAtCarrier.margins.rightInsetColumns).toBe(97);
+  expect(rightMarginAtCarrier.margins.rightInsetColumns).toBe(98);
   expect(rightMarginAtCarrier.margins.rightX).toBeCloseTo(customTabbed.carrierX, 5);
   expect(rightMarginAtCarrier.events.some(event => event.name === 'RIGHT_MARGIN_SET')).toBe(true);
   await page.locator('#marginResetBtn').click();
