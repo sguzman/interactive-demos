@@ -238,8 +238,16 @@ function runCarrierOperation(now) {
     model.setBackspaceLinkage(op.type === 'backspace' ? t : 0);
   } else if (op.type === 'carrier-return') {
     model.setOperationalCam('carrier-return', Math.min(1, t * 4));
+    model.setCarrierReturnDrive(t);
+    model.setTabGovernor(0);
+  } else if (op.type === 'tab') {
+    model.setOperationalCam(null, 0);
+    model.setCarrierReturnDrive(0);
+    model.setTabGovernor(t);
   } else {
     model.setOperationalCam(null, 0);
+    model.setCarrierReturnDrive(0);
+    model.setTabGovernor(0);
   }
 
   model.setCarrierX(THREE.MathUtils.lerp(op.from, op.to, eased));
@@ -253,6 +261,8 @@ function runCarrierOperation(now) {
     if (endEvent) recordEvent(endEvent, { destination: op.to });
     model.setOperationalCam(null, 0);
     model.setBackspaceLinkage(0);
+    model.setCarrierReturnDrive(0);
+    model.setTabGovernor(0);
     runtime.operation = null;
   }
   syncUi();

@@ -391,7 +391,9 @@ export function createSelectricModel() {
     operationalCamAction: 'rest',
     operationalCamPhase: 0,
     backspaceLinkage: 0,
-    tensionArmAngleDeg: 0
+    tensionArmAngleDeg: 0,
+    carrierReturnDrivePhase: 0,
+    tabGovernorPhase: 0
   };
 
   const shellMat = material(0xb8b4a8, 0.03, 0.76);
@@ -900,6 +902,47 @@ export function createSelectricModel() {
   returnDrum.position.set(-22, P4.cordSystem.shaftY, P4.cordSystem.shaftZ);
   addPickable(returnDrum, COMPONENTS.horizontalMotion, pickables);
   horizontalAssembly.add(returnDrum);
+
+  const returnDriveGroup = new THREE.Group();
+  returnDriveGroup.name = 'sustained carrier-return drive';
+  returnDriveGroup.position.set(-62, P4.cordSystem.shaftY, P4.cordSystem.shaftZ + 2);
+  horizontalAssembly.add(returnDriveGroup);
+
+  const returnSpringClutch = pulley(12, 14, metal, 'carrier-return wrap/spring clutch cue');
+  addPickable(returnSpringClutch, COMPONENTS.returnTabDrive, pickables);
+  returnDriveGroup.add(returnSpringClutch);
+
+  const returnPinion = pulley(6.5, 8, darkMetal, 'carrier-return pinion');
+  returnPinion.position.set(18, 0, 0);
+  addPickable(returnPinion, COMPONENTS.returnTabDrive, pickables);
+  returnDriveGroup.add(returnPinion);
+
+  const bevelGear = new THREE.Mesh(new THREE.CylinderGeometry(10, 6, 7, 24), metal);
+  bevelGear.rotation.z = Math.PI / 2;
+  bevelGear.position.set(30, 0, -1);
+  bevelGear.name = 'carrier-return bevel-drive cue';
+  addPickable(bevelGear, COMPONENTS.returnTabDrive, pickables);
+  returnDriveGroup.add(bevelGear);
+
+  const tabGovernorGroup = new THREE.Group();
+  tabGovernorGroup.name = 'tab operational-shaft governor';
+  tabGovernorGroup.position.set(52, P4.cordSystem.shaftY - 10, P4.cordSystem.shaftZ + 28);
+  horizontalAssembly.add(tabGovernorGroup);
+
+  const governorPinion = pulley(7, 7, darkMetal, 'tab governor pinion');
+  addPickable(governorPinion, COMPONENTS.returnTabDrive, pickables);
+  tabGovernorGroup.add(governorPinion);
+
+  const governorClutch = pulley(11, 8, metal, 'tab governor spring-clutch cue');
+  governorClutch.position.set(16, 0, 0);
+  addPickable(governorClutch, COMPONENTS.returnTabDrive, pickables);
+  tabGovernorGroup.add(governorClutch);
+
+  const governorArm = box(4, 24, 4, metal, 'tab governor arm cue');
+  governorArm.position.set(22, 8, 0);
+  governorArm.rotation.z = deg(-25);
+  addPickable(governorArm, COMPONENTS.returnTabDrive, pickables);
+  tabGovernorGroup.add(governorArm);
 
   for (const [x, z, name] of [
     [P4.cordSystem.leftPulleyX, -36, 'left return pulley 1'],
@@ -1444,6 +1487,18 @@ export function createSelectricModel() {
     if (activeKey) activeKey.position.y = activeKey.userData.baseY - state.keyboardPress * 4.2;
   }
 
+  function setCarrierReturnDrive(value) {
+    state.carrierReturnDrivePhase = THREE.MathUtils.clamp(Number(value) || 0, 0, 1);
+    returnSpringClutch.rotation.x = state.carrierReturnDrivePhase * Math.PI * 4;
+    returnPinion.rotation.x = state.carrierReturnDrivePhase * Math.PI * 8;
+    bevelGear.rotation.x = state.carrierReturnDrivePhase * Math.PI * 6;
+  }
+
+  function setTabGovernor(value) {
+    state.tabGovernorPhase = THREE.MathUtils.clamp(Number(value) || 0, 0, 1);
+    tabGovernorGroup.rotation.x = state.tabGovernorPhase * Math.PI * 4;
+  }
+
   function setBackspaceLinkage(value) {
     state.backspaceLinkage = THREE.MathUtils.clamp(Number(value) || 0, 0, 1);
     const pulse = Math.sin(state.backspaceLinkage * Math.PI);
@@ -1606,6 +1661,15 @@ export function createSelectricModel() {
       selectorInputs: { ...state.selectorInputs },
       cordPhase: state.cordPhase,
       writingLineRacks: ['1124109 escapement', '1164743 margin', '1164102/6519354 tab'],
+      returnTabDrive: {
+        carrierReturnFiniteTriggerThenSustained: true,
+        carrierReturnSpringClutch: true,
+        carrierReturnDrivePhase: state.carrierReturnDrivePhase,
+        tabPropulsion: 'mainspring',
+        tabGovernorReference: 'operational-shaft',
+        tabGovernorPropulsion: false,
+        tabGovernorPhase: state.tabGovernorPhase
+      },
       cordSystem: {
         commonEscapementShaft: true,
         opposedDrumWinding: true,
@@ -1709,6 +1773,8 @@ export function createSelectricModel() {
   setKeyboardCode(0);
   setKeyPress(null, 0);
   setBackspaceLinkage(0);
+  setCarrierReturnDrive(0);
+  setTabGovernor(0);
   setCarrierX(state.carrierX);
   setTypeball(0, 0, 0);
   setRibbonLift(0);
@@ -1726,6 +1792,8 @@ export function createSelectricModel() {
     setKeyboardCode,
     setKeyPress,
     setBackspaceLinkage,
+    setCarrierReturnDrive,
+    setTabGovernor,
     setCarrierX,
     setShiftTransition,
     setTypeball,

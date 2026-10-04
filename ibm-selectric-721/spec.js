@@ -233,6 +233,12 @@ export const COMPONENTS = Object.freeze({
     provenance: 'source-grounded energy and tension topology + P4 drum/spring/arm geometry',
     description: 'Escapement/tab and carrier-return cords wind in opposition on the common escapement shaft. A right-side pivoting pulley arm with two spiral springs maintains tension while the mainspring supplies ordinary rightward carrier energy.'
   },
+  returnTabDrive: {
+    name: 'Carrier-return drive / tab governor',
+    category: 'horizontal transport control',
+    provenance: 'source-grounded sustained-return and governor topology + P4 gear/clutch geometry',
+    description: 'Carrier return receives a finite operational-cam trigger then persists through a spring clutch/pinion/escapement-shaft drive. Tab is mainspring-propelled; its operational-shaft coupling is a speed governor only.'
+  },
   backspaceLinkage: {
     name: 'Dedicated 12P backspace linkage',
     category: 'horizontal transport',

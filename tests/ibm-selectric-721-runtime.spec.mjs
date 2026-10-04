@@ -71,6 +71,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.operationalCams.carrierReturnIndexDegreesPerOperation).toBe(360);
   expect(initial.geometry.operationalCams.tabUsesPoweredCam).toBe(false);
   expect(initial.geometry.operationalCams.shiftInterlocksCharacterCycle).toBe(true);
+  expect(initial.geometry.returnTabDrive.carrierReturnFiniteTriggerThenSustained).toBe(true);
+  expect(initial.geometry.returnTabDrive.carrierReturnSpringClutch).toBe(true);
+  expect(initial.geometry.returnTabDrive.tabPropulsion).toBe('mainspring');
+  expect(initial.geometry.returnTabDrive.tabGovernorReference).toBe('operational-shaft');
+  expect(initial.geometry.returnTabDrive.tabGovernorPropulsion).toBe(false);
   expect(initial.geometry.cordSystem.commonEscapementShaft).toBe(true);
   expect(initial.geometry.cordSystem.opposedDrumWinding).toBe(true);
   expect(initial.geometry.cordSystem.mainspringSuppliesRightwardCarrierEnergy).toBe(true);
@@ -202,6 +207,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(tabbed.carrierX).toBeGreaterThan(beforeTab);
   expect(tabbed.events.some(event => event.name === 'TAB_RELEASE')).toBe(true);
   expect(tabbed.events.some(event => event.name === 'TAB_CAPTURE')).toBe(true);
+  expect(tabbed.geometry.returnTabDrive.tabGovernorPhase).toBe(0);
 
   const lineBeforeReturn = tabbed.line;
   const platenBeforeReturn = tabbed.platenIndex;
@@ -214,6 +220,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(returned.geometry.writingLineRacks).toContain('1164743 margin');
   expect(returned.events.some(event => event.name === 'CARRIER_RETURN_CLUTCH_ENGAGED')).toBe(true);
   expect(returned.events.some(event => event.name === 'CARRIER_RETURN_TERMINATED_AT_LEFT_MARGIN')).toBe(true);
+  expect(returned.geometry.returnTabDrive.carrierReturnDrivePhase).toBe(0);
 
   expect(errors).toEqual([]);
 });
