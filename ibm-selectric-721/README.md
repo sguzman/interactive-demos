@@ -25,7 +25,7 @@ The browser model currently includes:
 - carrier-parented escapement bracket and pawl cue;
 - IBM 1141628 print sleeve;
 - ribbon-lift -> IBM 1164240 -> IBM 1124174 cam-stack order;
-- 88-position structural type-element model with four × 22 repeated slug cues oriented tangent to the P4 ellipsoidal body, with visible tilt/rotate aligned to that same structural lattice (11 base rotate coordinates plus the independent 180° shift hemisphere) and anchored to the reconstruction's platen-facing -Z print side; diagnostics now solve the selected slug normal and verify that it actually lands on that print-facing direction, while exact keyboard/glyph mapping and glyph-face sections remain unresolved;
+- 88-position structural type-element model constrained by the 34.925 mm nominal element diameter, with four × 22 repeated surface-normal slug cues, a recognizable P4 black interchangeable-element top cap/release latch, and chrome-like slug/skirt finish continuous with the element shell instead of the earlier black checkerboard blocks; visible tilt/rotate remains aligned to the same structural lattice (11 base rotate coordinates plus the independent 180° shift hemisphere) and anchored to the reconstruction's platen-facing -Z print side; diagnostics solve the selected slug normal and verify that it lands on that print-facing direction, while exact keyboard/glyph mapping and glyph-face sections remain unresolved;
 - distinct coarse selection and carrier-local tilt/rotate fine-alignment detents, with source-order-preserving P5 engagement/release phasing;
 - 7X1 gearless tilt and rotate tape presentation driven by the source-backed normalized 1:2 tilt weighting, staged 1:2:2 rotate weighting and signed five-unit balance, with carrier-sweep constant-length paths now embodied as flat P4 tape strips over separate stationary and carrier-local guide lanes rather than round cords through decorative pulley centers; exact production sheave coordinates remain unresolved;
 - cycle and operational shafts, cams, motor and a P4 motor-to-cycle positive-drive belt solved onto the external tangents of the reconstructed 8T/29T pitch circles rather than routed through arbitrary top/bottom points; four explicitly P5 motion markers are advected along that solved loop from motor pitch-circle travel so the continuously moving belt is inspectable, while exact belt pitch and absolute pulley diameters remain unresolved;
@@ -54,6 +54,9 @@ The Playwright smoke test checks:
 
 - gallery registration;
 - finite geometry;
+- type-element 4×22 structure, 34.925 mm nominal diameter anchor, P4 top-cap/latch presentation, chrome-like slug finish and platen-facing selected-slug alignment;
+- flat tilt/rotate selection-tape cross-sections, explicit stationary/carrier guide counts and carrier-sweep length invariants;
+- powerframe inspection cutaway hides only shell/keyboard occluders and restores both when returning to the product view;
 - current carrier-support and print-sleeve topology metadata;
 - one character = one 12-CPI carrier pitch, with the writing-position pointer following the same carrier coordinate;
 - impact before escapement advance, with the impact screenshot now captured after the actual PRINT_IMPACT threshold and a live selected-slug/platen clearance sanity bound;
