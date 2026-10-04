@@ -19,17 +19,18 @@
     <div class="identity">
       <div class="eyebrow">INTERACTIVE ENGINEERING SPECIMEN · CONSTRUCTIVE MECHANICAL RECONSTRUCTION</div>
       <h1>IBM Selectric 721</h1>
-      <p>keypress → mechanical selection → type element → print impact → escapement → carrier advance</p>
+      <p>keypress → mechanical code → tilt/rotate selection → type element → impact → escapement → carrier advance</p>
     </div>
-    <span class="status">FOUNDATION BUILD</span>
+    <span class="status">ACTIVE BUILD</span>
   </header>
 
   <aside class="controls panel" aria-label="Selectric controls">
     <section>
       <div class="section-title">Use the typewriter</div>
-      <p class="intro"><strong>7X1 · 12 CPI · fabric ribbon.</strong> This first public geometry tranche carries the sourced product envelope, platen and type-element metrics into one inspectable machine while unresolved hidden dimensions remain explicitly P4 reconstruction.</p>
+      <p class="intro"><strong>7X1 · 12 CPI · fabric ribbon.</strong> Type directly on your keyboard or use the controls. The model now exposes the D6 frame, current bearing branch, fixed rack, Level-2 rear carrier support, print sleeve/cam stack, selection tapes, type element, ribbon and paper output as one coupled machine.</p>
       <div class="action-grid">
         <button id="typeBtn">Type test character</button>
+        <button id="shiftBtn" class="secondary">Shift: lower</button>
         <button id="spaceBtn" class="secondary">Space</button>
         <button id="backspaceBtn" class="secondary">Backspace</button>
         <button id="returnBtn" class="secondary">Carriage return</button>
@@ -42,10 +43,12 @@
 
       <div class="state-grid">
         <div><span>Carrier</span><output id="carrierState">—</output></div>
-        <div><span>Cycle</span><output id="cycleState">IDLE</output></div>
-        <div><span>Selection</span><output id="selectionState">T 0 · R 0</output></div>
+        <div><span>Cycle</span><output id="cycleState">C0_REST</output></div>
+        <div><span>Selection</span><output id="selectionState">T0 · R0</output></div>
+        <div><span>Shift</span><output id="shiftState">LOWER HEMISPHERE</output></div>
         <div><span>Ribbon lift</span><output id="ribbonState">0%</output></div>
         <div><span>Line</span><output id="lineState">0</output></div>
+        <div><span>Character</span><output id="characterState">a</output></div>
       </div>
 
       <div class="section-title sub">Inspection view</div>
@@ -53,9 +56,11 @@
         <button class="secondary active" data-view="product">Product</button>
         <button class="secondary" data-view="carrier">Carrier / typeball</button>
         <button class="secondary" data-view="selection">Selection</button>
+        <button class="secondary" data-view="rack">Rack / support</button>
         <button class="secondary" data-view="power">Powerframe</button>
       </div>
 
+      <p class="note"><strong>Selection note:</strong> keyboard characters use a deterministic P5 mapping into the 4 × 22 type-element slot structure so the mechanism can be exercised before one exact physical typeball layout is frozen. The mechanical selection ranges themselves are canonical: tilt bands 0–3, rotate units −5…+5, plus the independent 180° shift hemisphere.</p>
       <p class="note">Exact factory geometry is not claimed for unresolved hidden sections. P4 parts preserve the active branch, known dimensions, service topology and mechanical relationships while the reconstruction is refined.</p>
     </section>
   </aside>
@@ -66,12 +71,13 @@
       <span class="provenance" id="partProvenance">P4 reconstruction</span>
     </div>
     <h2 id="partName">IBM Selectric 721</h2>
-    <p id="partDescription">Orbit the model, explode the major assemblies, run a test print cycle, or click a component to inspect its provenance boundary.</p>
+    <p id="partDescription">Orbit the model, explode the major assemblies, type a character, or click a component to inspect its provenance boundary.</p>
   </aside>
 
   <div class="legend panel">
-    <span>known metric anchors + explicit P4 reconstruction</span>
+    <span>metric anchors + explicit P4 reconstruction</span>
     <span>12 CPI pitch = 2.1167 mm</span>
+    <span>cycle shaft 180° · print sleeve 360° / character</span>
   </div>
 
   <div id="loading">Building Selectric geometry…</div>

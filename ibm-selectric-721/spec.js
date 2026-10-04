@@ -13,21 +13,52 @@ export const CANONICAL = Object.freeze({
     ratchetDiameterMm: 30.1498,
     representativeRatchetTeeth: 27
   },
-  typeElement: { nominalDiameterMm: 34.925, nominalRadiusMm: 17.4625 },
+  typeElement: {
+    overallNominalDiameterMm: 34.925,
+    structuralRadiusP4Mm: 16.8,
+    structuralDiameterP4Mm: 33.6,
+    topAboveCenterP4Mm: 11.4,
+    skirtHeightP4Mm: 4.6,
+    bossOuterRadiusP4Mm: 5.7,
+    bossHeightP4Mm: 8.2,
+    detentPeakOffsetP4Mm: 6.1,
+    positionsPerBand: 22,
+    bands: 4,
+    characterCount: 88
+  },
   printShaft: {
     partNumber: '1164736',
     axis: 'D6',
     endPlayMm: [0.127, 0.254],
     bearingPartNumber: '1164740',
     bearingOuterSphereMm: 15.875,
-    bearingBoreMm: 9.5377
+    bearingBoreMm: 9.5377,
+    bearingLengthMm: 9.398
   },
   rack: {
     partNumber: '1124109',
     pitchClass: '12P',
     toothInclinationDeg: 14
   },
-  bracketClearanceMm: [0.254, 0.3048]
+  sleeve: {
+    partNumber: '1141628',
+    keyPartNumber: '1141151',
+    combinedFeedDetentCamPartNumber: '1164240',
+    printRestoringCamPartNumber: '1124174',
+    level2EndPlayMm: [0.0254, 0.1016]
+  },
+  carrierRearSupport: {
+    upperShoePartNumber: '1141770',
+    eccentricStudPartNumber: '1141772',
+    springPartNumber: '1141985',
+    lowerShoeAssemblyPartNumber: '1147260',
+    springSuppressedPlayMm: [0.0508, 0.1524]
+  },
+  bracketClearanceMm: [0.254, 0.3048],
+  timing: {
+    cycleShaftDegPerCharacter: 180,
+    printShaftDegPerCharacter: 360
+  }
 });
 
 export const P4 = Object.freeze({
@@ -41,11 +72,20 @@ export const P4 = Object.freeze({
   operationalShaft: { y: 61, z: 24, radius: 4.5, length: 276 },
   rack: { y: 78, z: -69, length: 245, bodyY: 5.5, bodyZ: 7.5 },
   carrier: { y: 91, z: -54, width: 61, height: 22, depth: 42 },
-  typeball: { y: 116, zRest: -53.5, zImpact: -56.2 },
+  typeball: { y: 116, zRest: -53.5, zImpact: -59.0 },
   ribbon: { yRest: 101, yLift: 113, z: -73 },
   keyboard: { y: 43, z: 78 },
   motor: { x: -116, y: 39, z: 42 },
-  shell: { baseY: 12, keyboardDeckY: 44, rearDeckY: 88 }
+  shell: { baseY: 12, keyboardDeckY: 44, rearDeckY: 88 },
+  carrierLocal: {
+    sleeveLength: 57,
+    sleeveRadius: 7.2,
+    bearingX: 25,
+    escapementBracketY: 89,
+    escapementBracketZ: -67,
+    supportPlateY: 84,
+    supportPlateZ: -70
+  }
 });
 
 export const COMPONENTS = Object.freeze({
@@ -53,7 +93,7 @@ export const COMPONENTS = Object.freeze({
     name: 'Outer case / shell',
     category: 'product',
     provenance: 'P4 surface reconstruction constrained by product envelope',
-    description: 'Recognizable 7X1 Selectric exterior blockout. Exact industrial-design surfaces remain reconstruction.'
+    description: 'Recognizable 7X1 Selectric exterior reconstruction. Exact industrial-design surfaces remain reconstruction.'
   },
   keyboard: {
     name: 'Keyboard',
@@ -71,7 +111,13 @@ export const COMPONENTS = Object.freeze({
     name: 'Print shaft · IBM 1164736',
     category: 'primary frame',
     provenance: 'exact active part identity + P4 visible section',
-    description: 'D6 axis. Bearing identity and service constraints are sourced; visible shaft section is reconstructive until journal/keyway dimensions close.'
+    description: 'D6 axis. Current IBM 1164740 bearing geometry is exact-part interchange evidence; shaft journal and installed coordinates remain reconstruction.'
+  },
+  bearing: {
+    name: 'D6 bearing · IBM 1164740',
+    category: 'primary frame',
+    provenance: 'exact-part federal interchange geometry',
+    description: '15.875 mm spherical outer diameter, 9.5377 mm bore, 9.398 mm length. Bearing bore is not treated as a shaft-journal claim.'
   },
   rack: {
     name: 'Escapement rack · IBM 1124109',
@@ -85,28 +131,52 @@ export const COMPONENTS = Object.freeze({
     provenance: 'P4 constructive geometry',
     description: 'Carrier rides the D6/front support and rack/shoe rear support and translates across the 8.5-inch writing line.'
   },
+  sleeve: {
+    name: 'Print sleeve · IBM 1141628',
+    category: 'carrier / print',
+    provenance: 'exact active part identity + topology-grounded P4 dimensions',
+    description: 'Later/new-style sleeve with ribbon-lift cam, IBM 1164240 combined feed/detent cam and IBM 1124174 double print/restoring cam in sourced left-to-right order.'
+  },
+  rearSupport: {
+    name: 'Level-2 rear carrier support',
+    category: 'carrier support',
+    provenance: 'source-grounded topology + P4 local sections',
+    description: 'Upper shoe, shared eccentric/support plate, lower shoe and leaf spring preserve the documented Level-2 force path against the fixed rack.'
+  },
+  escapementBracket: {
+    name: 'Escapement bracket',
+    category: 'escapement',
+    provenance: 'source-grounded parentage + P4 section',
+    description: 'Carrier-parented bracket above the fixed rack. The active Level-2 bracket/tab clearance constraint remains 0.254–0.3048 mm.'
+  },
   typeball: {
     name: 'Selectric type element',
     category: 'selection / print',
-    provenance: 'nominal element diameter + P4 glyph surface',
-    description: 'Nominal 34.925 mm element envelope. Tilt/rotate motion is represented independently of carrier translation.'
+    provenance: 'IBM overall scale + convergent P4 functional-CAD seed',
+    description: 'Four bands × 22 positions = 88-character structural model with boss, skirt and repeated type-slug cues; not a plain sphere and not factory CAD.'
   },
   selection: {
     name: 'Selection transmission',
     category: 'mechanical information processing',
-    provenance: 'source-grounded topology + P4 path geometry',
-    description: 'Representative tape/pulley paths preserve the carrier-relative selection concept without claiming factory path coordinates.'
+    provenance: 'source-grounded topology + width-specific 7X1 identities + P4 path geometry',
+    description: 'Gearless-tilt 7X1 tape/pulley presentation. Tape geometry updates with carrier travel while type-element selection remains invariant under carrier x.'
   },
   ribbon: {
     name: 'Fabric ribbon system',
     category: 'inking',
     provenance: 'active fabric-ribbon branch + P4 path',
-    description: 'Twin-spool fabric ribbon presentation with a lift state coupled to the print cycle.'
+    description: 'Twin-spool fabric ribbon presentation with lift coupled to the fine-align/print portion of the character cycle.'
   },
   drive: {
     name: 'Drive / operational shafts',
     category: 'power',
     provenance: 'source-grounded shaft topology + P4 placement',
-    description: 'Representative motor, cycle shaft and operational shaft establish the powerframe reading before finer cam geometry is added.'
+    description: 'Motor, cycle shaft, operational shaft and visible cams establish the powerframe reading. Character cycle rotates the cycle shaft 180° and print sleeve 360°.'
+  },
+  paper: {
+    name: 'Paper / impression field',
+    category: 'print output',
+    provenance: 'P5 browser presentation on P4 paper path',
+    description: 'Presentation sheet records typed characters at the current carrier/line position. The visual text field is not a claim about IBM paper-handling typography.'
   }
 });

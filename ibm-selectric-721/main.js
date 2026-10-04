@@ -55,6 +55,7 @@ scene.add(model.root);
 
 const ui = {
   typeBtn: document.querySelector('#typeBtn'),
+  shiftBtn: document.querySelector('#shiftBtn'),
   spaceBtn: document.querySelector('#spaceBtn'),
   backspaceBtn: document.querySelector('#backspaceBtn'),
   returnBtn: document.querySelector('#returnBtn'),
@@ -65,8 +66,10 @@ const ui = {
   carrierState: document.querySelector('#carrierState'),
   cycleState: document.querySelector('#cycleState'),
   selectionState: document.querySelector('#selectionState'),
+  shiftState: document.querySelector('#shiftState'),
   ribbonState: document.querySelector('#ribbonState'),
   lineState: document.querySelector('#lineState'),
+  characterState: document.querySelector('#characterState'),
   partName: document.querySelector('#partName'),
   partCategory: document.querySelector('#partCategory'),
   partProvenance: document.querySelector('#partProvenance'),
@@ -75,43 +78,66 @@ const ui = {
 };
 
 const runtime = {
-  cycle: 'IDLE',
+  cycle: 'C0_REST',
   line: 0,
   lastAction: 'ready',
   cycleStart: 0,
   cycleAdvanceCommitted: false,
-  selectionTarget: { tilt: 2, rotate: -3 },
-  cycleDurationMs: 1150
+  cycleImpactCommitted: false,
+  pendingCharacter: 'a',
+  selectionTarget: { tilt: 0, rotate: 0, shift: 0 },
+  cycleDurationMs: 1250
 };
+
+function selectionForCharacter(character) {
+  const cp = (character || 'a').codePointAt(0) || 97;
+  const slot = (cp * 37 + 11) % CANONICAL.typeElement.characterCount;
+  const tilt = Math.floor(slot / CANONICAL.typeElement.positionsPerBand);
+  const around = slot % CANONICAL.typeElement.positionsPerBand;
+  const shift = around >= 11 ? 1 : 0;
+  const rotate = (around % 11) - 5;
+  return { tilt, rotate, shift, slot };
+}
 
 function syncUi() {
   ui.carrierState.textContent = model.state.carrierX.toFixed(2) + ' mm';
   ui.cycleState.textContent = runtime.cycle;
-  ui.selectionState.textContent = 'T ' + model.state.tiltUnit.toFixed(1) + ' · R ' + model.state.rotateUnit.toFixed(1);
+  ui.selectionState.textContent = 'T' + model.state.tiltBand.toFixed(1) + ' · R' + model.state.rotateUnit.toFixed(1);
+  ui.shiftState.textContent = model.state.shiftHemisphere ? 'UPPER HEMISPHERE' : 'LOWER HEMISPHERE';
   ui.ribbonState.textContent = Math.round(model.state.ribbonLift * 100) + '%';
   ui.lineState.textContent = String(runtime.line);
+  ui.characterState.textContent = runtime.pendingCharacter === ' ' ? 'SPACE' : runtime.pendingCharacter;
   ui.explodeValue.textContent = Math.round(model.state.explosion * 100) + '%';
+  ui.shiftBtn.textContent = model.state.shiftHemisphere ? 'Shift: upper' : 'Shift: lower';
 }
 
 function resetMechanicalState() {
-  runtime.cycle = 'IDLE';
+  runtime.cycle = 'C0_REST';
   runtime.line = 0;
   runtime.lastAction = 'reset';
   runtime.cycleStart = 0;
   runtime.cycleAdvanceCommitted = false;
+  runtime.cycleImpactCommitted = false;
+  runtime.pendingCharacter = 'a';
+  runtime.selectionTarget = selectionForCharacter('a');
   model.setCarrierX(-CANONICAL.writingLineMm / 2);
-  model.setTypeball(0, 0);
+  model.setTypeball(0, 0, 0);
   model.setRibbonLift(0);
   model.setPrintApproach(0);
   model.setPlatenIndex(0);
+  model.setCyclePhase(0);
+  model.clearPaper();
   syncUi();
 }
 
-function startCharacterCycle() {
-  if (runtime.cycle !== 'IDLE') return;
-  runtime.cycle = 'SELECT';
+function startCharacterCycle(character = runtime.pendingCharacter) {
+  if (runtime.cycle !== 'C0_REST') return;
+  runtime.pendingCharacter = character || 'a';
+  runtime.selectionTarget = selectionForCharacter(runtime.pendingCharacter);
+  runtime.cycle = 'C1_TRIP';
   runtime.cycleStart = performance.now();
   runtime.cycleAdvanceCommitted = false;
+  runtime.cycleImpactCommitted = false;
   runtime.lastAction = 'character-cycle';
   syncUi();
 }
@@ -122,68 +148,88 @@ function advanceCarrier(delta) {
 }
 
 function runCycle(now) {
-  if (runtime.cycle === 'IDLE') return;
+  if (runtime.cycle === 'C0_REST') return;
   const t = Math.min(1, (now - runtime.cycleStart) / runtime.cycleDurationMs);
+  model.setCyclePhase(t);
 
-  if (t < 0.22) {
-    runtime.cycle = 'SELECT';
-    const k = t / 0.22;
-    model.setTypeball(runtime.selectionTarget.tilt * k, runtime.selectionTarget.rotate * k);
+  if (t < 0.12) {
+    runtime.cycle = 'C1_TRIP';
+    model.setTypeball(0, 0, runtime.selectionTarget.shift);
     model.setRibbonLift(0);
     model.setPrintApproach(0);
-  } else if (t < 0.47) {
-    runtime.cycle = 'APPROACH';
-    const k = (t - 0.22) / 0.25;
-    model.setTypeball(runtime.selectionTarget.tilt, runtime.selectionTarget.rotate);
-    model.setRibbonLift(Math.min(1, k * 1.35));
-    model.setPrintApproach(k);
-  } else if (t < 0.64) {
-    runtime.cycle = 'IMPACT';
-    model.setTypeball(runtime.selectionTarget.tilt, runtime.selectionTarget.rotate);
+  } else if (t < 0.28) {
+    runtime.cycle = 'C2_CODE_SETUP';
+    const k = (t - 0.12) / 0.16;
+    model.setTypeball(runtime.selectionTarget.tilt * k, runtime.selectionTarget.rotate * k, runtime.selectionTarget.shift);
+  } else if (t < 0.43) {
+    runtime.cycle = 'C3_SELECTION_DRIVE';
+    model.setTypeball(runtime.selectionTarget.tilt, runtime.selectionTarget.rotate, runtime.selectionTarget.shift);
+  } else if (t < 0.54) {
+    runtime.cycle = 'C4_FINE_ALIGN';
+    const k = (t - 0.43) / 0.11;
+    model.setTypeball(runtime.selectionTarget.tilt, runtime.selectionTarget.rotate, runtime.selectionTarget.shift);
+    model.setRibbonLift(k);
+    model.setPrintApproach(k * 0.55);
+  } else if (t < 0.66) {
+    runtime.cycle = 'C5_PRINT_IMPACT';
+    const k = (t - 0.54) / 0.12;
     model.setRibbonLift(1);
-    model.setPrintApproach(1);
-  } else if (t < 0.88) {
-    runtime.cycle = 'RESTORE';
-    const k = 1 - (t - 0.64) / 0.24;
+    model.setPrintApproach(Math.min(1, 0.55 + k * 0.45));
+    if (!runtime.cycleImpactCommitted && k > 0.58) {
+      model.stampCharacter(runtime.pendingCharacter, runtime.line);
+      runtime.cycleImpactCommitted = true;
+    }
+  } else if (t < 0.91) {
+    runtime.cycle = 'C6_ESCAPEMENT_RIBBON_RESTORE';
+    const k = 1 - (t - 0.66) / 0.25;
     model.setRibbonLift(Math.max(0, k));
     model.setPrintApproach(Math.max(0, k));
-  } else {
-    runtime.cycle = 'ESCAPEMENT';
-    model.setRibbonLift(0);
-    model.setPrintApproach(0);
-    if (!runtime.cycleAdvanceCommitted) {
+    if (!runtime.cycleAdvanceCommitted && t > 0.73) {
       advanceCarrier(CANONICAL.pitchMm);
       runtime.cycleAdvanceCommitted = true;
     }
+  } else {
+    runtime.cycle = 'C7_CLUTCH_DISENGAGE_CHECK';
+    model.setRibbonLift(0);
+    model.setPrintApproach(0);
   }
 
   if (t >= 1) {
-    runtime.cycle = 'IDLE';
+    runtime.cycle = 'C0_REST';
     model.setRibbonLift(0);
     model.setPrintApproach(0);
+    model.setCyclePhase(0);
   }
   syncUi();
 }
 
-ui.typeBtn.addEventListener('click', startCharacterCycle);
+ui.typeBtn.addEventListener('click', () => startCharacterCycle(runtime.pendingCharacter));
+ui.shiftBtn.addEventListener('click', () => {
+  if (runtime.cycle !== 'C0_REST') return;
+  const next = model.state.shiftHemisphere ? 0 : 1;
+  model.setTypeball(model.state.tiltBand, model.state.rotateUnit, next);
+  runtime.lastAction = 'shift-toggle';
+  syncUi();
+});
 ui.spaceBtn.addEventListener('click', () => {
-  if (runtime.cycle !== 'IDLE') return;
+  if (runtime.cycle !== 'C0_REST') return;
   runtime.lastAction = 'space';
+  runtime.pendingCharacter = ' ';
   advanceCarrier(CANONICAL.pitchMm);
 });
 ui.backspaceBtn.addEventListener('click', () => {
-  if (runtime.cycle !== 'IDLE') return;
+  if (runtime.cycle !== 'C0_REST') return;
   runtime.lastAction = 'backspace';
   advanceCarrier(-CANONICAL.pitchMm);
 });
 ui.returnBtn.addEventListener('click', () => {
-  if (runtime.cycle !== 'IDLE') return;
+  if (runtime.cycle !== 'C0_REST') return;
   runtime.lastAction = 'carriage-return';
   model.setCarrierX(-CANONICAL.writingLineMm / 2);
   syncUi();
 });
 ui.indexBtn.addEventListener('click', () => {
-  if (runtime.cycle !== 'IDLE') return;
+  if (runtime.cycle !== 'C0_REST') return;
   runtime.lastAction = 'paper-index';
   runtime.line += 1;
   model.setPlatenIndex(model.state.platenIndex + Math.PI / 12);
@@ -199,7 +245,8 @@ const presets = {
   product: { position: [420, 270, 470], target: [0, 77, -8] },
   carrier: { position: [275, 175, 230], target: [0, 100, -58] },
   selection: { position: [330, 175, 250], target: [0, 72, -32] },
-  power: { position: [350, 150, 315], target: [-45, 50, 20] }
+  power: { position: [350, 150, 315], target: [-45, 50, 20] },
+  rack: { position: [310, 145, 90], target: [0, 83, -65] }
 };
 
 document.querySelectorAll('[data-view]').forEach(button => {
@@ -232,6 +279,7 @@ renderer.domElement.addEventListener('pointerdown', event => {
 window.addEventListener('keydown', event => {
   if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement || event.target instanceof HTMLTextAreaElement) return;
+
   if (event.key === ' ') {
     event.preventDefault();
     ui.spaceBtn.click();
@@ -240,8 +288,10 @@ window.addEventListener('keydown', event => {
     ui.backspaceBtn.click();
   } else if (event.key === 'Enter') {
     ui.returnBtn.click();
-  } else if (event.key.length === 1 && /[a-z0-9]/i.test(event.key)) {
-    startCharacterCycle();
+  } else if (event.key === 'Shift') {
+    ui.shiftBtn.click();
+  } else if (event.key.length === 1 && /[a-z0-9.,;:'!?-]/i.test(event.key)) {
+    startCharacterCycle(event.key);
   }
 });
 
@@ -261,11 +311,18 @@ function snapshot() {
     cycle: runtime.cycle,
     line: runtime.line,
     lastAction: runtime.lastAction,
+    pendingCharacter: runtime.pendingCharacter,
     carrierX: model.state.carrierX,
-    selection: { tiltUnit: model.state.tiltUnit, rotateUnit: model.state.rotateUnit },
+    selection: {
+      tiltBand: model.state.tiltBand,
+      rotateUnit: model.state.rotateUnit,
+      shiftHemisphere: model.state.shiftHemisphere,
+      mappingClass: 'P5 deterministic key-to-slot presentation; not a specific IBM typeball layout'
+    },
     ribbonLift: model.state.ribbonLift,
     printApproach: model.state.printApproach,
     platenIndex: model.state.platenIndex,
+    cyclePhase: model.state.cyclePhase,
     explosion: model.state.explosion,
     geometry: model.geometryDiagnostics(),
     profile: CANONICAL.profile
@@ -274,11 +331,12 @@ function snapshot() {
 
 window.__selectricDebug = {
   get state() { return snapshot(); },
-  typeCharacter: startCharacterCycle,
+  typeCharacter: char => startCharacterCycle(char || 'a'),
   space: () => ui.spaceBtn.click(),
   backspace: () => ui.backspaceBtn.click(),
   carriageReturn: () => ui.returnBtn.click(),
   index: () => ui.indexBtn.click(),
+  shift: () => ui.shiftBtn.click(),
   reset: resetMechanicalState,
   setExplosion(value) {
     model.setExplosion(value);
