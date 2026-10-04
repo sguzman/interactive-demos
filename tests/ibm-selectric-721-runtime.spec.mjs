@@ -104,6 +104,13 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.primaryDrive.beltMotorWrapDegP4 + initial.geometry.primaryDrive.beltCycleWrapDegP4).toBeCloseTo(360, 8);
   expect(initial.geometry.primaryDrive.beltTangentOrthogonalityErrorMm).toBeLessThan(1e-10);
   expect(initial.geometry.primaryDrive.beltCenterlineLengthMmP4).toBeGreaterThan(0);
+  expect(initial.geometry.primaryDrive.beltMotionMarkerCountP5).toBe(4);
+  expect(initial.geometry.primaryDrive.beltMotionMarkerPhaseP5).toHaveLength(4);
+  expect(initial.geometry.primaryDrive.beltTravelFractionPerMotorRevP4).toBeCloseTo(
+    2 * Math.PI * 7 / initial.geometry.primaryDrive.beltCenterlineLengthMmP4,
+    10
+  );
+  expect(initial.geometry.primaryDrive.beltMotionClass).toContain('advected along the P4 belt path');
   expect(initial.geometry.primaryDrive.beltPathClass).toContain('external-tangent solve');
   expect(initial.geometry.primaryDrive.cycleClutchPulleyHubContinuous).toBe(true);
   expect(initial.geometry.primaryDrive.cycleShaftEventGated).toBe(true);
@@ -150,13 +157,22 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
 
   const carrierBeforePowerOff = initial.carrierX;
   await page.evaluate(() => window.__selectricDebug.setPower(false));
+  const poweredOffStart = await page.evaluate(() => window.__selectricDebug.state);
+  const beltMarkersOffStart = [...poweredOffStart.geometry.primaryDrive.beltMotionMarkerPhaseP5];
   await page.evaluate(() => window.__selectricDebug.typeCharacter('x'));
   await page.waitForTimeout(150);
   const poweredOff = await page.evaluate(() => window.__selectricDebug.state);
   expect(poweredOff.powered).toBe(false);
   expect(poweredOff.cycle).toBe('C0_REST');
   expect(poweredOff.carrierX).toBeCloseTo(carrierBeforePowerOff, 6);
+  expect(poweredOff.geometry.primaryDrive.beltMotionMarkerPhaseP5).toEqual(beltMarkersOffStart);
   await page.evaluate(() => window.__selectricDebug.setPower(true));
+  await page.waitForTimeout(120);
+  const poweredBackOn = await page.evaluate(() => window.__selectricDebug.state);
+  expect(poweredBackOn.geometry.primaryDrive.beltMotionMarkerPhaseP5[0]).not.toBeCloseTo(
+    beltMarkersOffStart[0],
+    6
+  );
 
   await page.evaluate(() => window.__selectricDebug.togglePaperRelease());
   const feedReleased = await page.evaluate(() => window.__selectricDebug.state);

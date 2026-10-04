@@ -1059,6 +1059,36 @@ export function createSelectricModel() {
   addPickable(driveBelt, COMPONENTS.drive, pickables);
   driveAssembly.add(driveBelt);
 
+  const driveBeltMarkerCountP5 = 4;
+  const driveBeltMarkerPhaseP5 = [];
+  const driveBeltMarkers = [];
+  const driveBeltTravelFractionPerMotorRevP4 =
+    (Math.PI * 2 * motorPitchRadiusP4) / driveBeltPathP4.centerlineLengthMmP4;
+  for (let i = 0; i < driveBeltMarkerCountP5; i += 1) {
+    const marker = new THREE.Mesh(
+      new THREE.SphereGeometry(2.8, 14, 10),
+      material(0xb9b4a7, 0.08, 0.46)
+    );
+    marker.name = 'P5 positive-drive belt motion marker ' + (i + 1);
+    marker.userData.component = COMPONENTS.drive;
+    marker.castShadow = true;
+    pickables.push(marker);
+    driveAssembly.add(marker);
+    driveBeltMarkers.push(marker);
+    driveBeltMarkerPhaseP5.push(i / driveBeltMarkerCountP5);
+  }
+
+  function updateDriveBeltMarkers() {
+    driveBeltMarkers.forEach((marker, index) => {
+      const u = (
+        driveBeltMarkerPhaseP5[index] +
+        state.motorPhase * driveBeltTravelFractionPerMotorRevP4
+      ) % 1;
+      marker.position.copy(driveBeltCurveP4.getPointAt(u));
+      marker.userData.beltPhaseP5 = u;
+    });
+  }
+
   const horizontalAssembly = makeAssembly('writing-line racks and cords', new THREE.Vector3(104, 8, -62));
   assemblies.push(horizontalAssembly);
   root.add(horizontalAssembly);
@@ -2549,6 +2579,7 @@ export function createSelectricModel() {
     operationalRotor.rotation.x = state.motorPhase * Math.PI * 2;
     motorDriveRotor.rotation.x = state.motorPhase * Math.PI * 2;
     cycleDriveRotor.rotation.x = state.motorPhase * Math.PI * 2 / CANONICAL.drive.positiveBeltReduction;
+    updateDriveBeltMarkers();
   }
 
   function setOperationalCam(action, phase = 0) {
@@ -2870,6 +2901,10 @@ export function createSelectricModel() {
         beltCycleWrapDegP4: driveBeltPathP4.cycleWrapDegP4,
         beltCenterlineLengthMmP4: driveBeltPathP4.centerlineLengthMmP4,
         beltTangentOrthogonalityErrorMm: driveBeltPathP4.tangentOrthogonalityErrorMm,
+        beltMotionMarkerCountP5: driveBeltMarkers.length,
+        beltMotionMarkerPhaseP5: driveBeltMarkers.map(marker => marker.userData.beltPhaseP5),
+        beltTravelFractionPerMotorRevP4: driveBeltTravelFractionPerMotorRevP4,
+        beltMotionClass: 'P5 visible markers advected along the P4 belt path by motor pitch-circle travel; marker spacing/shape are presentation only',
         beltPathClass: 'P4 external-tangent solve from reconstructed pitch radii/axis centers; positive-drive tooth count ratio source-backed, exact belt pitch and absolute pulley diameters unresolved',
         beltPitchAndAbsolutePulleyDiameters: 'unresolved'
       },
