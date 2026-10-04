@@ -16,8 +16,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
 
   const initial = await page.evaluate(() => window.__selectricDebug.state);
   expect(initial.geometry.finite).toBe(true);
-  expect(initial.geometry.revision).toBe('selectric-public-foundation-v2');
+  expect(initial.geometry.revision).toBe('selectric-public-foundation-v3');
   expect(initial.geometry.supportTopology).toContain('Level-2');
+  expect(initial.geometry.shellTopology).toContain('service-cover loft');
   expect(initial.geometry.sleeveCamOrder).toEqual([
     'ribbon-lift',
     '1164240-feed-detent',
