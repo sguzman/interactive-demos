@@ -22,6 +22,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.shellTopology).toContain('service-cover loft');
   expect(initial.geometry.ribbon.parent).toBe('carrier');
   expect(initial.geometry.ribbon.mediaWidthMm).toBeCloseTo(14.2875, 6);
+  expect(initial.geometry.shaftTiming.cycleShaftDegPerCharacter).toBe(180);
+  expect(initial.geometry.shaftTiming.filterShaftDegPerCharacter).toBe(180);
+  expect(initial.geometry.shaftTiming.printShaftDegPerCharacter).toBe(360);
   expect(initial.geometry.printRocker.motion).toBe('revolute');
   expect(initial.geometry.printRocker.restClearanceMm).toBeGreaterThanOrEqual(6.604);
   expect(initial.geometry.printRocker.restClearanceMm).toBeLessThanOrEqual(6.858);

@@ -481,10 +481,17 @@ export function createSelectricModel() {
     keyboardMechanismAssembly.add(bail);
   }
 
+  const filterShaftRotor = new THREE.Group();
+  filterShaftRotor.position.set(0, 32, 18);
+  filterShaftRotor.name = 'filter shaft rotational frame';
+  keyboardMechanismAssembly.add(filterShaftRotor);
   const filterShaft = shaft(294, 3.4, darkMetal, 'filter shaft');
-  filterShaft.position.set(0, 32, 18);
   addPickable(filterShaft, COMPONENTS.keyboardMechanism, pickables);
-  keyboardMechanismAssembly.add(filterShaft);
+  filterShaftRotor.add(filterShaft);
+  const filterBlade = box(18, 3, 8, metal, 'filter-shaft pickup blade cue');
+  filterBlade.position.set(0, 6, 0);
+  addPickable(filterBlade, COMPONENTS.keyboardMechanism, pickables);
+  filterShaftRotor.add(filterBlade);
 
   const latchBail = box(286, 4.5, 9, metal, 'selector latch bail');
   latchBail.position.set(0, 45, -42);
@@ -517,10 +524,20 @@ export function createSelectricModel() {
     frameAssembly.add(bearing);
   }
 
+  const printShaftRotor = new THREE.Group();
+  printShaftRotor.name = 'D6 print-shaft rotational frame';
+  printShaftRotor.position.set(0, P4.printShaft.y, P4.printShaft.z);
+  frameAssembly.add(printShaftRotor);
+
   const printShaft = shaft(P4.printShaft.length, P4.printShaft.visibleRadius, metal, 'IBM 1164736 print shaft / D6');
-  printShaft.position.set(0, P4.printShaft.y, P4.printShaft.z);
   addPickable(printShaft, COMPONENTS.printShaft, pickables);
-  frameAssembly.add(printShaft);
+  printShaftRotor.add(printShaft);
+
+  const shaftPhaseMarker = box(8, 2, 2, darkMetal, 'P5 D6 phase marker');
+  shaftPhaseMarker.position.set(0, P4.printShaft.visibleRadius + 1.6, 0);
+  addPickable(shaftPhaseMarker, COMPONENTS.printShaft, pickables);
+  printShaftRotor.add(shaftPhaseMarker);
+
   frameAssembly.add(makeRack(rackMat, darkMetal, pickables));
 
   const driveAssembly = makeAssembly('drive assembly', new THREE.Vector3(0, -10, 42));
@@ -999,6 +1016,8 @@ export function createSelectricModel() {
   function setCyclePhase(value) {
     state.cyclePhase = THREE.MathUtils.clamp(value, 0, 1);
     cycleRotor.rotation.x = state.cyclePhase * Math.PI;
+    filterShaftRotor.rotation.x = state.cyclePhase * Math.PI;
+    printShaftRotor.rotation.x = state.cyclePhase * Math.PI * 2;
     printSleeveRotor.rotation.x = state.cyclePhase * Math.PI * 2;
   }
 
@@ -1050,6 +1069,12 @@ export function createSelectricModel() {
         exactLinearFeedMm: 'unresolved'
       },
       sleeveCamOrder: ['ribbon-lift', '1164240-feed-detent', '1124174-print-restoring'],
+      shaftTiming: {
+        cycleShaftDegPerCharacter: 180,
+        filterShaftDegPerCharacter: 180,
+        printShaftDegPerCharacter: 360,
+        printSleeveDegPerCharacter: 360
+      },
       printRocker: {
         motion: 'revolute',
         restClearanceMm: P4.printRocker.derivedRestClearanceMm,
