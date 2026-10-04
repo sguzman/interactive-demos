@@ -52,7 +52,7 @@
   },
   {
     "slug": "game-boy-dmg-01",
-    "title": "Nintendo Game Boy DMG-01",
+    "title": "Nintendo Game Boy DMG-01 — One Handheld, Many Machines",
     "summary": "Press the controls, explode the original Game Boy, trace JOYP and cartridge buses, step through the PPU/LCD and APU/audio paths, run OAM DMA, and use service diagnostics across one multi-layer causal model.",
     "kind": "Three.js · Computing · Electronics",
     "status": "active",
