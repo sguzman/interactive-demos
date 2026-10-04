@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-// The causal smoke also captures seven full-page inspection artifacts; CI rendering can exceed three minutes.\ntest.setTimeout(300_000);
+// The causal smoke also captures seven full-page inspection artifacts; CI rendering can exceed three minutes.
+test.setTimeout(300_000);
 
 test('IBM Selectric 721 causal foundation and gallery integration', async ({ page }) => {
   const errors = [];
