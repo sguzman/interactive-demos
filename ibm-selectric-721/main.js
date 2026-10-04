@@ -14,7 +14,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0c0e0f);
-scene.fog = new THREE.Fog(0x0c0e0f, 520, 900);
+scene.fog = new THREE.Fog(0x0c0e0f, 700, 1350);
 
 const camera = new THREE.PerspectiveCamera(33, 1, 0.1, 1600);
 camera.position.set(350, 235, 505);
@@ -620,7 +620,7 @@ const presets = {
   selection: { position: [300, 120, 255], target: [0, 55, -18], cover: 1 },
   power: { position: [380, 170, 345], target: [-40, 54, 12], cover: 1 },
   rack: { position: [330, 155, 125], target: [0, 84, -66], cover: 1 },
-  exploded: { position: [650, 430, 820], target: [0, 78, -18], cover: 0 }
+  exploded: { position: [500, 330, 600], target: [0, 78, -18], cover: 0 }
 };
 
 document.querySelectorAll('[data-view]').forEach(button => {
