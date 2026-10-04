@@ -386,6 +386,11 @@ export function createSelectricModel() {
     ribbonFeedStep: 0,
     ribbonFeedApproxRatchetTeeth: 0,
     ribbonFeedDirection: 1,
+    ribbonFeedStrokeInDirection: 0,
+    ribbonReverseCount: 0,
+    ribbonReversePhase: 0,
+    ribbonReverseState: 'feeding',
+    ribbonReverseThresholdStepsP5: 12,
     motorPhase: 0,
     keyboardPressCharacter: null,
     keyboardPress: 0,
@@ -1382,6 +1387,8 @@ export function createSelectricModel() {
   carrierMotion.add(ribbonAssembly);
   const ribbonSpools = [];
   const ribbonRatchets = [];
+  const reverseTriggers = [];
+  const ribbonPawlTargetXP5 = 30;
   for (const x of [-P4.ribbon.spoolCenterX, P4.ribbon.spoolCenterX]) {
     const spool = new THREE.Mesh(
       new THREE.CylinderGeometry(P4.ribbon.spoolRadiusP4, P4.ribbon.spoolRadiusP4, 10, 36),
@@ -1403,8 +1410,10 @@ export function createSelectricModel() {
     const reverseTrigger = box(3, 9, 5, metal, x < 0 ? 'left reverse-trigger bellcrank cue' : 'right reverse-trigger bellcrank cue');
     reverseTrigger.position.set(x, 84, -39);
     reverseTrigger.rotation.z = deg(x < 0 ? -18 : 18);
+    reverseTrigger.userData.baseRotationZ = reverseTrigger.rotation.z;
     addPickable(reverseTrigger, COMPONENTS.ribbon, pickables);
     ribbonAssembly.add(reverseTrigger);
+    reverseTriggers.push(reverseTrigger);
 
     const brakeSpring = box(10, 1.2, 3, metal, x < 0 ? 'left spool retainer/brake spring cue' : 'right spool retainer/brake spring cue');
     brakeSpring.position.set(x, 99, -43);
@@ -1790,9 +1799,67 @@ export function createSelectricModel() {
     updateRibbonPath(state.ribbonLift);
   }
 
+  function applyRibbonFeedSelection(direction = state.ribbonFeedDirection) {
+    const d = direction >= 0 ? 1 : -1;
+    feedPawl.position.x = d * ribbonPawlTargetXP5;
+    detentLever.position.x = d * 2.5;
+  }
+
+  function setRibbonReversePhase(value) {
+    if (state.ribbonReverseState !== 'reversing') {
+      state.ribbonReversePhase = 0;
+      reverseTriggers.forEach(trigger => {
+        trigger.rotation.z = trigger.userData.baseRotationZ;
+      });
+      feedPlate.position.x = 0;
+      feedPlate.rotation.y = 0;
+      applyRibbonFeedSelection();
+      return false;
+    }
+
+    const t = THREE.MathUtils.clamp(Number(value) || 0, 0, 1);
+    const eased = t * t * (3 - 2 * t);
+    const directionBefore = state.ribbonFeedDirection;
+    const supplyTriggerIndex = directionBefore > 0 ? 0 : 1;
+    state.ribbonReversePhase = t;
+
+    reverseTriggers.forEach((trigger, index) => {
+      const active = index === supplyTriggerIndex ? eased : 0;
+      const outward = index === 0 ? -1 : 1;
+      trigger.rotation.z = trigger.userData.baseRotationZ + deg(outward * 34 * active);
+    });
+
+    // P5 amplitudes embody the OEM sequence: one plate side is restricted, the other
+    // continues forward, the plate pivots sideways, and the pawl transfers ratchets.
+    feedPlate.position.x = directionBefore * 5.5 * eased;
+    feedPlate.rotation.y = deg(-directionBefore * 9 * eased);
+    feedPawl.position.x = THREE.MathUtils.lerp(
+      directionBefore * ribbonPawlTargetXP5,
+      -directionBefore * ribbonPawlTargetXP5,
+      eased
+    );
+    detentLever.position.x = THREE.MathUtils.lerp(directionBefore * 2.5, -directionBefore * 2.5, eased);
+
+    if (t < 1) return false;
+
+    state.ribbonFeedDirection = -directionBefore;
+    state.ribbonFeedStrokeInDirection = 0;
+    state.ribbonReverseCount += 1;
+    state.ribbonReverseState = 'feeding';
+    state.ribbonReversePhase = 0;
+    reverseTriggers.forEach(trigger => {
+      trigger.rotation.z = trigger.userData.baseRotationZ;
+    });
+    feedPlate.position.x = 0;
+    feedPlate.rotation.y = 0;
+    applyRibbonFeedSelection();
+    return true;
+  }
+
   function feedRibbon() {
     state.ribbonFeedStep += 1;
     state.ribbonFeedApproxRatchetTeeth += 2.5;
+    state.ribbonFeedStrokeInDirection += 1;
     const presentationStep = 0.17 * state.ribbonFeedDirection;
     ribbonSpools[0].rotation.y -= presentationStep;
     ribbonSpools[1].rotation.y += presentationStep;
@@ -1800,6 +1867,41 @@ export function createSelectricModel() {
     ribbonRatchets[1].rotation.y += presentationStep * 1.8;
     feedPlate.position.z = -45 + (state.ribbonFeedStep % 2 ? 2.5 : 0);
     feedPawl.rotation.z = deg(12 + (state.ribbonFeedStep % 2 ? 8 : 0));
+    applyRibbonFeedSelection();
+
+    if (
+      state.ribbonReverseState === 'feeding' &&
+      state.ribbonFeedStrokeInDirection >= state.ribbonReverseThresholdStepsP5
+    ) {
+      state.ribbonReverseState = 'reversing';
+      state.ribbonReversePhase = 0;
+    }
+  }
+
+  function primeRibbonAutoReverse() {
+    if (state.ribbonReverseState !== 'feeding') return false;
+    state.ribbonFeedStrokeInDirection = Math.max(0, state.ribbonReverseThresholdStepsP5 - 1);
+    return true;
+  }
+
+  function resetRibbonTransport() {
+    state.ribbonFeedStep = 0;
+    state.ribbonFeedApproxRatchetTeeth = 0;
+    state.ribbonFeedDirection = 1;
+    state.ribbonFeedStrokeInDirection = 0;
+    state.ribbonReverseCount = 0;
+    state.ribbonReversePhase = 0;
+    state.ribbonReverseState = 'feeding';
+    ribbonSpools.forEach(spool => { spool.rotation.y = 0; });
+    ribbonRatchets.forEach(ratchet => { ratchet.rotation.y = 0; });
+    feedPlate.position.x = 0;
+    feedPlate.position.z = -45;
+    feedPlate.rotation.y = 0;
+    feedPawl.rotation.z = deg(12);
+    reverseTriggers.forEach(trigger => {
+      trigger.rotation.z = trigger.userData.baseRotationZ;
+    });
+    applyRibbonFeedSelection();
   }
 
   function setFineAlignment(tiltValue, rotateValue = tiltValue) {
@@ -2052,8 +2154,15 @@ export function createSelectricModel() {
         nominalRatchetTeethPerCharacter: 2.5,
         nominalRatchetTeethQualifier: 'approximately',
         feedDirection: state.ribbonFeedDirection,
+        feedStrokeInDirection: state.ribbonFeedStrokeInDirection,
+        reverseState: state.ribbonReverseState,
+        reversePhase: state.ribbonReversePhase,
+        reverseCount: state.ribbonReverseCount,
+        reverseThresholdStepsP5: state.ribbonReverseThresholdStepsP5,
+        reverseThresholdClass: 'P5 compressed demonstration capacity; not physical ribbon length',
         path: ['left-spool', 'left-guide', 'print-point', 'right-guide', 'right-spool'],
-        reverseTopology: 'trigger -> feed/reverse plate pivot -> feed-pawl transfer',
+        reverseTopology: 'lost supply-core loop -> reverse trigger -> plate pivot -> pawl/check transfer -> opposite ratchet',
+        reverseIsAnimatedSequence: true,
         exactLinearFeedMm: 'unresolved'
       },
       sleeveCamOrder: ['ribbon-lift', '1164240-feed-detent', '1124174-print-restoring'],
@@ -2122,6 +2231,7 @@ export function createSelectricModel() {
   setCarrierX(state.carrierX);
   setTypeball(0, 0, 0);
   setRibbonLift(0);
+  resetRibbonTransport();
   setFineAlignment(0, 0);
   setPaperRelease(false);
   setPaperBail(true);
@@ -2148,6 +2258,9 @@ export function createSelectricModel() {
     setTypeball,
     setRibbonLift,
     feedRibbon,
+    setRibbonReversePhase,
+    primeRibbonAutoReverse,
+    resetRibbonTransport,
     setFineAlignment,
     setPaperRelease,
     setPaperBail,
