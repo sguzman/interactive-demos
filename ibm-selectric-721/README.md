@@ -31,7 +31,7 @@ The browser model currently includes:
 - fabric-ribbon lift;
 - paper output that records typed characters;
 - deterministic character-cycle ordering through code setup, selection, fine align, impact, escapement and clutch check;
-- fixed escapement/margin/tab rack families, physical left/right margin stops and opposed carrier-cord presentation;
+- fixed escapement/margin/tab rack families, physical left/right margin stops, opposed carrier cords, common escapement-shaft drums, mainspring cue and spring-loaded right tension arm;
 - dedicated 7X1 12P backspace rack/bellcrank presentation rather than reverse-escapement shorthand;
 - clutched 180° space/backspace service-cam actions, mainspring-style tab destination, carrier return + index, animated 180° shift-cam transition with character-cycle interlock, and animated 360° index-cam/pawl action;
 - assembled / exploded inspection and click-to-inspect provenance;

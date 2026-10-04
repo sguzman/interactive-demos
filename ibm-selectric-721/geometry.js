@@ -390,7 +390,8 @@ export function createSelectricModel() {
     keyboardPress: 0,
     operationalCamAction: 'rest',
     operationalCamPhase: 0,
-    backspaceLinkage: 0
+    backspaceLinkage: 0,
+    tensionArmAngleDeg: 0
   };
 
   const shellMat = material(0xb8b4a8, 0.03, 0.76);
@@ -837,6 +838,59 @@ export function createSelectricModel() {
   addPickable(escapementShaft, COMPONENTS.horizontalMotion, pickables);
   horizontalAssembly.add(escapementShaft);
 
+  const mainspringCage = pulley(18, 15, darkMetal, 'mainspring cage presentation');
+  mainspringCage.position.set(104, P4.cordSystem.shaftY, P4.cordSystem.shaftZ);
+  addPickable(mainspringCage, COMPONENTS.mainspringCordSystem, pickables);
+  horizontalAssembly.add(mainspringCage);
+
+  const mainspringPoints = [];
+  for (let i = 0; i <= 72; i += 1) {
+    const a = i / 72 * Math.PI * 4.8;
+    const r = 2.4 + i / 72 * 12.0;
+    mainspringPoints.push(new THREE.Vector3(104, P4.cordSystem.shaftY + Math.cos(a) * r, P4.cordSystem.shaftZ + Math.sin(a) * r));
+  }
+  const mainspringSpiral = new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(mainspringPoints), 96, 0.7, 6, false),
+    material(0xb8b0a0, 0.72, 0.34)
+  );
+  mainspringSpiral.name = 'P4 flat spiral mainspring cue';
+  addPickable(mainspringSpiral, COMPONENTS.mainspringCordSystem, pickables);
+  horizontalAssembly.add(mainspringSpiral);
+
+  const tensionArm = new THREE.Group();
+  tensionArm.name = 'right-side cord tension arm';
+  tensionArm.position.set(P4.cordSystem.rightPulleyX, P4.cordSystem.shaftY, P4.cordSystem.shaftZ);
+  horizontalAssembly.add(tensionArm);
+  const tensionArmBar = box(5, 5, 42, metal, 'pivoting tension-arm link');
+  tensionArmBar.position.set(0, 8, -15);
+  tensionArmBar.rotation.x = deg(-24);
+  addPickable(tensionArmBar, COMPONENTS.mainspringCordSystem, pickables);
+  tensionArm.add(tensionArmBar);
+  const tensionPulley = pulley(7.5, 6, darkMetal, 'tension-arm pulley');
+  tensionPulley.position.set(0, 20, -20);
+  addPickable(tensionPulley, COMPONENTS.mainspringCordSystem, pickables);
+  tensionArm.add(tensionPulley);
+
+  for (const xOffset of [-3, 3]) {
+    const springPoints = [];
+    for (let i = 0; i <= 32; i += 1) {
+      const a = i / 32 * Math.PI * 3.5;
+      const r = 1.5 + i / 32 * 5.5;
+      springPoints.push(new THREE.Vector3(
+        P4.cordSystem.rightPulleyX + xOffset,
+        P4.cordSystem.shaftY + Math.cos(a) * r,
+        P4.cordSystem.shaftZ + Math.sin(a) * r
+      ));
+    }
+    const tensionSpring = new THREE.Mesh(
+      new THREE.TubeGeometry(new THREE.CatmullRomCurve3(springPoints), 42, 0.42, 5, false),
+      metal
+    );
+    tensionSpring.name = 'tension-arm spiral spring';
+    addPickable(tensionSpring, COMPONENTS.mainspringCordSystem, pickables);
+    horizontalAssembly.add(tensionSpring);
+  }
+
   const escapementDrum = pulley(P4.cordSystem.drumRadius, 18, metal, 'escapement / tab cord drum');
   escapementDrum.position.set(72, P4.cordSystem.shaftY, P4.cordSystem.shaftZ);
   addPickable(escapementDrum, COMPONENTS.horizontalMotion, pickables);
@@ -850,7 +904,7 @@ export function createSelectricModel() {
   for (const [x, z, name] of [
     [P4.cordSystem.leftPulleyX, -36, 'left return pulley 1'],
     [P4.cordSystem.leftPulleyX, -58, 'left return pulley 2'],
-    [P4.cordSystem.rightPulleyX, -36, 'right escapement guide pulley']
+    [P4.cordSystem.rightPulleyX - 18, -36, 'right escapement guide pulley']
   ]) {
     const guidePulley = pulley(7, 5.5, metal, name);
     guidePulley.position.set(x, 60, z);
@@ -863,10 +917,19 @@ export function createSelectricModel() {
   horizontalAssembly.add(escapementCord.mesh, returnCord.mesh);
 
   function updateCordGeometry(carrierX) {
+    const normalized = (carrierX + CANONICAL.writingLineMm / 2) / CANONICAL.writingLineMm;
+    state.tensionArmAngleDeg = THREE.MathUtils.lerp(-5, 5, normalized);
+    tensionArm.rotation.x = deg(state.tensionArmAngleDeg);
+    const armAngle = tensionArm.rotation.x;
+    const localY = 20;
+    const localZ = -20;
+    const tensionY = P4.cordSystem.shaftY + localY * Math.cos(armAngle) - localZ * Math.sin(armAngle);
+    const tensionZ = P4.cordSystem.shaftZ + localY * Math.sin(armAngle) + localZ * Math.cos(armAngle);
+
     escapementCord.update([
       new THREE.Vector3(72, P4.cordSystem.shaftY, P4.cordSystem.shaftZ - 9),
-      new THREE.Vector3(P4.cordSystem.rightPulleyX, 60, -36),
-      new THREE.Vector3(P4.cordSystem.rightPulleyX, 72, -58),
+      new THREE.Vector3(P4.cordSystem.rightPulleyX - 18, 60, -36),
+      new THREE.Vector3(P4.cordSystem.rightPulleyX, tensionY, tensionZ),
       new THREE.Vector3(carrierX + 24, 82, -48)
     ]);
     returnCord.update([
@@ -1543,6 +1606,13 @@ export function createSelectricModel() {
       selectorInputs: { ...state.selectorInputs },
       cordPhase: state.cordPhase,
       writingLineRacks: ['1124109 escapement', '1164743 margin', '1164102/6519354 tab'],
+      cordSystem: {
+        commonEscapementShaft: true,
+        opposedDrumWinding: true,
+        mainspringSuppliesRightwardCarrierEnergy: true,
+        rightTensionArmSpiralSprings: 2,
+        tensionArmAngleDeg: state.tensionArmAngleDeg
+      },
       marginStops: {
         leftPhysical: true,
         rightPhysical: true,

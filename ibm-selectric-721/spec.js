@@ -227,6 +227,12 @@ export const COMPONENTS = Object.freeze({
     provenance: 'exact rack identities + source-grounded cord topology + P4 path geometry',
     description: 'Fixed margin/tab racks and opposed carrier cords share the writing coordinate. Rightward motion is mainspring-powered; carrier return winds the return cord and tightens the mainspring.'
   },
+  mainspringCordSystem: {
+    name: 'Mainspring / opposed cord system',
+    category: 'horizontal transport energy',
+    provenance: 'source-grounded energy and tension topology + P4 drum/spring/arm geometry',
+    description: 'Escapement/tab and carrier-return cords wind in opposition on the common escapement shaft. A right-side pivoting pulley arm with two spiral springs maintains tension while the mainspring supplies ordinary rightward carrier energy.'
+  },
   backspaceLinkage: {
     name: 'Dedicated 12P backspace linkage',
     category: 'horizontal transport',
