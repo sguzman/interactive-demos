@@ -1810,6 +1810,7 @@ export function createSelectricModel() {
     const next = allowed.includes(mode) ? mode : 'middle';
     state.ribbonPrintMode = next;
     setRibbonLift(state.ribbonLiftCommand);
+    applyRibbonFeedSelection();
     return next;
   }
 
@@ -1830,6 +1831,11 @@ export function createSelectricModel() {
   }
 
   function applyRibbonFeedSelection(direction = state.ribbonFeedDirection) {
+    if (state.ribbonPrintMode === 'stencil') {
+      feedPawl.position.x = 0;
+      detentLever.position.x = 0;
+      return;
+    }
     const d = direction >= 0 ? 1 : -1;
     feedPawl.position.x = d * ribbonPawlTargetXP5;
     detentLever.position.x = d * 2.5;
@@ -2196,6 +2202,8 @@ export function createSelectricModel() {
         liftHeightClass: 'P5 relative display heights; exact OEM lift heights unresolved',
         stencilRibbonAtPrintPoint: state.ribbonPrintMode !== 'stencil',
         stencilFeedSuppressed: state.ribbonPrintMode === 'stencil',
+        stencilPawlCentered: state.ribbonPrintMode === 'stencil' ? Math.abs(feedPawl.position.x) < 1e-9 : null,
+        stencilDetentCentered: state.ribbonPrintMode === 'stencil' ? Math.abs(detentLever.position.x) < 1e-9 : null,
         feedSuppressedCount: state.ribbonFeedSuppressedCount,
         feedStepCount: state.ribbonFeedStep,
         approximateRatchetTeethAdvanced: state.ribbonFeedApproxRatchetTeeth,
