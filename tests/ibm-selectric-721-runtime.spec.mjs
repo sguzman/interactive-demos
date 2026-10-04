@@ -98,6 +98,13 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.primaryDrive.cycleClutchPulleyTeeth).toBe(29);
   expect(initial.geometry.primaryDrive.reduction).toBeCloseTo(3.625, 10);
   expect(initial.geometry.primaryDrive.pitchRadiusRatio).toBeCloseTo(29 / 8, 10);
+  expect(initial.geometry.primaryDrive.beltPathPointCount).toBeGreaterThan(40);
+  expect(initial.geometry.primaryDrive.beltMotorWrapDegP4).toBeLessThan(180);
+  expect(initial.geometry.primaryDrive.beltCycleWrapDegP4).toBeGreaterThan(180);
+  expect(initial.geometry.primaryDrive.beltMotorWrapDegP4 + initial.geometry.primaryDrive.beltCycleWrapDegP4).toBeCloseTo(360, 8);
+  expect(initial.geometry.primaryDrive.beltTangentOrthogonalityErrorMm).toBeLessThan(1e-10);
+  expect(initial.geometry.primaryDrive.beltCenterlineLengthMmP4).toBeGreaterThan(0);
+  expect(initial.geometry.primaryDrive.beltPathClass).toContain('external-tangent solve');
   expect(initial.geometry.primaryDrive.cycleClutchPulleyHubContinuous).toBe(true);
   expect(initial.geometry.primaryDrive.cycleShaftEventGated).toBe(true);
   expect(initial.geometry.powerPresentation.operationalShaftContinuousWhenPowered).toBe(true);

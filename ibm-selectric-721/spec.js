@@ -254,8 +254,8 @@ export const COMPONENTS = Object.freeze({
   drive: {
     name: 'Drive / operational shafts',
     category: 'power',
-    provenance: 'source-grounded shaft topology + P4 placement',
-    description: 'Motor, cycle shaft, operational shaft and visible cams establish the powerframe reading. Character cycle rotates the cycle shaft 180° and print sleeve 360°.'
+    provenance: 'source-grounded shaft topology and 8:29 positive-drive ratio + P4 placement/path geometry',
+    description: 'Motor, cycle shaft, operational shaft and visible cams establish the powerframe reading. The motor-to-cycle positive-drive belt now follows an explicit P4 external-tangent solve between reconstructed pitch circles while preserving the source-backed 8:29 ratio; exact belt pitch and absolute pulley diameters remain unresolved. Character cycle rotates the cycle shaft 180° and print sleeve 360°.'
   },
   paper: {
     name: 'Paper / impression field',

@@ -157,6 +157,87 @@ function dynamicTube(color, radius, name, component, pickables) {
   };
 }
 
+function openPositiveDriveBeltPathP4(x, motorCenter, motorRadius, cycleCenter, cycleRadius, arcSegments = 24) {
+  const dy = cycleCenter.y - motorCenter.y;
+  const dz = cycleCenter.z - motorCenter.z;
+  const centerDistance = Math.hypot(dy, dz);
+  const radiusDifference = cycleRadius - motorRadius;
+  if (cycleRadius < motorRadius || centerDistance <= Math.abs(radiusDifference)) {
+    throw new Error('P4 positive-drive belt centers/radii do not admit the intended external tangents');
+  }
+
+  const uy = dy / centerDistance;
+  const uz = dz / centerDistance;
+  const py = -uz;
+  const pz = uy;
+  const a = (motorRadius - cycleRadius) / centerDistance;
+  const b = Math.sqrt(Math.max(0, 1 - a * a));
+
+  let nA = { y: a * uy + b * py, z: a * uz + b * pz };
+  let nB = { y: a * uy - b * py, z: a * uz - b * pz };
+  let thetaA = Math.atan2(nA.z, nA.y);
+  let thetaB = Math.atan2(nB.z, nB.y);
+  const positiveModulo = angle => ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  let motorWrap = positiveModulo(thetaB - thetaA);
+
+  // Choose A/B so the motor gets the shorter external-contact arc and the larger cycle pulley
+  // gets the complementary wrap. This is a P4 geometric solve from the reconstructed pitch circles.
+  if (motorWrap > Math.PI) {
+    [nA, nB] = [nB, nA];
+    [thetaA, thetaB] = [thetaB, thetaA];
+    motorWrap = positiveModulo(thetaB - thetaA);
+  }
+  const thetaBUnwrapped = thetaA + motorWrap;
+  const cycleWrap = Math.PI * 2 - motorWrap;
+
+  const pointFromNormal = (center, radius, normal) => new THREE.Vector3(
+    x,
+    center.y + normal.y * radius,
+    center.z + normal.z * radius
+  );
+  const pointFromAngle = (center, radius, angle) => new THREE.Vector3(
+    x,
+    center.y + Math.cos(angle) * radius,
+    center.z + Math.sin(angle) * radius
+  );
+
+  const motorA = pointFromNormal(motorCenter, motorRadius, nA);
+  const cycleA = pointFromNormal(cycleCenter, cycleRadius, nA);
+  const cycleB = pointFromNormal(cycleCenter, cycleRadius, nB);
+  const motorB = pointFromNormal(motorCenter, motorRadius, nB);
+
+  const points = [motorA, cycleA];
+  for (let i = 1; i <= arcSegments; i += 1) {
+    points.push(pointFromAngle(cycleCenter, cycleRadius, thetaA - cycleWrap * i / arcSegments));
+  }
+  points.push(motorB);
+  for (let i = 1; i < arcSegments; i += 1) {
+    points.push(pointFromAngle(motorCenter, motorRadius, thetaBUnwrapped - motorWrap * i / arcSegments));
+  }
+
+  const tangentA = cycleA.clone().sub(motorA);
+  const tangentB = cycleB.clone().sub(motorB);
+  const tangentOrthogonalityErrorMm = Math.max(
+    Math.abs(tangentA.y * nA.y + tangentA.z * nA.z),
+    Math.abs(tangentB.y * nB.y + tangentB.z * nB.z)
+  );
+  const straightSpanMm = Math.sqrt(centerDistance * centerDistance - radiusDifference * radiusDifference);
+  const centerlineLengthMmP4 =
+    2 * straightSpanMm +
+    motorRadius * motorWrap +
+    cycleRadius * cycleWrap;
+
+  return {
+    points,
+    centerDistanceMmP4: centerDistance,
+    straightSpanMmP4: straightSpanMm,
+    motorWrapDegP4: THREE.MathUtils.radToDeg(motorWrap),
+    cycleWrapDegP4: THREE.MathUtils.radToDeg(cycleWrap),
+    tangentOrthogonalityErrorMm,
+    centerlineLengthMmP4
+  };
+}
+
 function keyLabelTexture(label) {
   const canvas = document.createElement('canvas');
   canvas.width = 160;
@@ -926,15 +1007,26 @@ export function createSelectricModel() {
   pickables.push(cycleTeeth);
   cycleDriveRotor.add(cycleTeeth);
 
-  const driveBelt = dynamicTube(0x222221, 2.2, 'positive-drive belt presentation', COMPONENTS.drive, pickables);
-  driveBelt.update([
-    new THREE.Vector3(-145, 39 + motorPitchRadiusP4, 42),
-    new THREE.Vector3(-145, P4.cycleShaft.y + cyclePitchRadiusP4, P4.cycleShaft.z),
-    new THREE.Vector3(-145, P4.cycleShaft.y - cyclePitchRadiusP4, P4.cycleShaft.z),
-    new THREE.Vector3(-145, 39 - motorPitchRadiusP4, 42),
-    new THREE.Vector3(-145, 39 + motorPitchRadiusP4, 42)
-  ]);
-  driveAssembly.add(driveBelt.mesh);
+  const driveBeltPathP4 = openPositiveDriveBeltPathP4(
+    -145,
+    { y: 39, z: 42 },
+    motorPitchRadiusP4,
+    { y: P4.cycleShaft.y, z: P4.cycleShaft.z },
+    cyclePitchRadiusP4
+  );
+  const driveBeltCurveP4 = new THREE.CatmullRomCurve3(
+    driveBeltPathP4.points,
+    true,
+    'centripetal',
+    0.5
+  );
+  const driveBelt = new THREE.Mesh(
+    new THREE.TubeGeometry(driveBeltCurveP4, 120, 2.2, 8, true),
+    material(0x222221, 0.05, 0.54)
+  );
+  driveBelt.name = 'P4 positive-drive belt on solved external tangents';
+  addPickable(driveBelt, COMPONENTS.drive, pickables);
+  driveAssembly.add(driveBelt);
 
   const horizontalAssembly = makeAssembly('writing-line racks and cords', new THREE.Vector3(104, 8, -62));
   assemblies.push(horizontalAssembly);
@@ -2733,6 +2825,14 @@ export function createSelectricModel() {
         pitchRadiusRatio: cyclePitchRadiusP4 / motorPitchRadiusP4,
         cycleClutchPulleyHubContinuous: true,
         cycleShaftEventGated: true,
+        beltPathPointCount: driveBeltPathP4.points.length,
+        beltCenterDistanceMmP4: driveBeltPathP4.centerDistanceMmP4,
+        beltStraightSpanMmP4: driveBeltPathP4.straightSpanMmP4,
+        beltMotorWrapDegP4: driveBeltPathP4.motorWrapDegP4,
+        beltCycleWrapDegP4: driveBeltPathP4.cycleWrapDegP4,
+        beltCenterlineLengthMmP4: driveBeltPathP4.centerlineLengthMmP4,
+        beltTangentOrthogonalityErrorMm: driveBeltPathP4.tangentOrthogonalityErrorMm,
+        beltPathClass: 'P4 external-tangent solve from reconstructed pitch radii/axis centers; positive-drive tooth count ratio source-backed, exact belt pitch and absolute pulley diameters unresolved',
         beltPitchAndAbsolutePulleyDiameters: 'unresolved'
       },
       powerPresentation: {
