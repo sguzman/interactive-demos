@@ -330,7 +330,8 @@ export function createSelectricModel() {
     serviceCoverOpen: 0,
     selectorInputs: { T1: 0, T2: 0, R1: 0, R2: 0, R2A: 0, fiveUnit: 0 },
     ribbonFeedStep: 0,
-    ribbonFeedDirection: 1
+    ribbonFeedDirection: 1,
+    motorPhase: 0
   };
 
   const shellMat = material(0xb8b4a8, 0.03, 0.76);
@@ -558,16 +559,19 @@ export function createSelectricModel() {
     cycleRotor.add(cam);
   }
 
+  const operationalRotor = new THREE.Group();
+  operationalRotor.name = 'operational shaft rotational frame';
+  operationalRotor.position.set(0, P4.operationalShaft.y, P4.operationalShaft.z);
+  driveAssembly.add(operationalRotor);
   const operational = shaft(P4.operationalShaft.length, P4.operationalShaft.radius, darkMetal, 'operational shaft');
-  operational.position.set(0, P4.operationalShaft.y, P4.operationalShaft.z);
   addPickable(operational, COMPONENTS.drive, pickables);
-  driveAssembly.add(operational);
+  operationalRotor.add(operational);
   for (const x of [-85, -28, 34, 86]) {
     const cam = pulley(10, 7, metal, 'operational shaft cam');
-    cam.position.set(x, P4.operationalShaft.y, P4.operationalShaft.z);
+    cam.position.set(x, 0, 0);
     cam.scale.y = 0.75;
     addPickable(cam, COMPONENTS.drive, pickables);
-    driveAssembly.add(cam);
+    operationalRotor.add(cam);
   }
 
   const motor = new THREE.Mesh(new THREE.CylinderGeometry(24, 24, 58, 36), darkMetal);
@@ -1013,6 +1017,12 @@ export function createSelectricModel() {
     platen.rotation.x = value;
   }
 
+  function setMotorPhase(value) {
+    state.motorPhase = ((Number(value) || 0) % 1 + 1) % 1;
+    operationalRotor.rotation.x = state.motorPhase * Math.PI * 2;
+    drivePulley.rotation.x = state.motorPhase * Math.PI * 2;
+  }
+
   function setCyclePhase(value) {
     state.cyclePhase = THREE.MathUtils.clamp(value, 0, 1);
     cycleRotor.rotation.x = state.cyclePhase * Math.PI;
@@ -1069,6 +1079,11 @@ export function createSelectricModel() {
         exactLinearFeedMm: 'unresolved'
       },
       sleeveCamOrder: ['ribbon-lift', '1164240-feed-detent', '1124174-print-restoring'],
+      powerPresentation: {
+        operationalShaftContinuousWhenPowered: true,
+        motorPhase: state.motorPhase,
+        speedClass: 'P5 slowed presentation'
+      },
       shaftTiming: {
         cycleShaftDegPerCharacter: 180,
         filterShaftDegPerCharacter: 180,
@@ -1092,6 +1107,7 @@ export function createSelectricModel() {
   setTypeball(0, 0, 0);
   setRibbonLift(0);
   setPrintApproach(0);
+  setMotorPhase(0);
   setCyclePhase(0);
   setServiceCover(0);
   setExplosion(0);
@@ -1107,6 +1123,7 @@ export function createSelectricModel() {
     feedRibbon,
     setPrintApproach,
     setPlatenIndex,
+    setMotorPhase,
     setCyclePhase,
     setServiceCover,
     setExplosion,

@@ -54,6 +54,7 @@ const model = createSelectricModel();
 scene.add(model.root);
 
 const ui = {
+  powerBtn: document.querySelector('#powerBtn'),
   typeBtn: document.querySelector('#typeBtn'),
   shiftBtn: document.querySelector('#shiftBtn'),
   coverBtn: document.querySelector('#coverBtn'),
@@ -65,6 +66,7 @@ const ui = {
   resetBtn: document.querySelector('#resetBtn'),
   explode: document.querySelector('#explode'),
   explodeValue: document.querySelector('#explodeValue'),
+  powerState: document.querySelector('#powerState'),
   carrierState: document.querySelector('#carrierState'),
   cycleState: document.querySelector('#cycleState'),
   selectionState: document.querySelector('#selectionState'),
@@ -81,6 +83,7 @@ const ui = {
 };
 
 const runtime = {
+  powered: true,
   cycle: 'C0_REST',
   line: 0,
   lastAction: 'ready',
@@ -125,6 +128,8 @@ function selectionForCharacter(character) {
 }
 
 function syncUi() {
+  ui.powerState.textContent = runtime.powered ? 'RUNNING' : 'OFF / LOCKED';
+  ui.powerBtn.textContent = runtime.powered ? 'Power off' : 'Power on';
   ui.carrierState.textContent = model.state.carrierX.toFixed(2) + ' mm';
   ui.cycleState.textContent = runtime.cycle;
   ui.selectionState.textContent = 'T' + model.state.tiltBand.toFixed(1) + ' · R' + model.state.rotateUnit.toFixed(1);
@@ -164,7 +169,7 @@ function resetMechanicalState() {
 }
 
 function startCharacterCycle(character = runtime.pendingCharacter) {
-  if (runtime.cycle !== 'C0_REST' || runtime.operation) return;
+  if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation) return;
   runtime.pendingCharacter = character || 'a';
   runtime.selectionTarget = selectionForCharacter(runtime.pendingCharacter);
   setCycleState('C1_TRIP');
@@ -193,7 +198,7 @@ function nextDefaultTabStop() {
 }
 
 function beginCarrierOperation(type, destination, durationMs, includesIndex = false) {
-  if (runtime.cycle !== 'C0_REST' || runtime.operation) return false;
+  if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation) return false;
   const from = model.state.carrierX;
   runtime.operation = {
     type,
@@ -293,6 +298,13 @@ function runCycle(now) {
   syncUi();
 }
 
+ui.powerBtn.addEventListener('click', () => {
+  if (runtime.cycle !== 'C0_REST' || runtime.operation) return;
+  runtime.powered = !runtime.powered;
+  runtime.lastAction = runtime.powered ? 'power-on' : 'power-off';
+  recordEvent(runtime.powered ? 'POWER_ON' : 'POWER_OFF');
+  syncUi();
+});
 ui.typeBtn.addEventListener('click', () => startCharacterCycle(runtime.pendingCharacter));
 ui.coverBtn.addEventListener('click', () => {
   model.setServiceCover(model.state.serviceCoverOpen > 0.5 ? 0 : 1);
@@ -300,14 +312,14 @@ ui.coverBtn.addEventListener('click', () => {
   syncUi();
 });
 ui.shiftBtn.addEventListener('click', () => {
-  if (runtime.cycle !== 'C0_REST') return;
+  if (!runtime.powered || runtime.cycle !== 'C0_REST') return;
   const next = model.state.shiftHemisphere ? 0 : 1;
   model.setTypeball(model.state.tiltBand, model.state.rotateUnit, next);
   runtime.lastAction = 'shift-toggle';
   syncUi();
 });
 ui.spaceBtn.addEventListener('click', () => {
-  if (runtime.cycle !== 'C0_REST' || runtime.operation) return;
+  if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation) return;
   runtime.lastAction = 'space';
   runtime.pendingCharacter = ' ';
   advanceCarrier(CANONICAL.pitchMm);
@@ -318,7 +330,7 @@ ui.tabBtn.addEventListener('click', () => {
   beginCarrierOperation('tab', destination, 280 + distance * 3.2, false);
 });
 ui.backspaceBtn.addEventListener('click', () => {
-  if (runtime.cycle !== 'C0_REST' || runtime.operation) return;
+  if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation) return;
   runtime.lastAction = 'backspace';
   advanceCarrier(-CANONICAL.pitchMm);
 });
@@ -328,7 +340,7 @@ ui.returnBtn.addEventListener('click', () => {
   beginCarrierOperation('carrier-return', destination, 360 + distance * 2.4, true);
 });
 ui.indexBtn.addEventListener('click', () => {
-  if (runtime.cycle !== 'C0_REST') return;
+  if (!runtime.powered || runtime.cycle !== 'C0_REST') return;
   runtime.lastAction = 'paper-index';
   singleIndex();
   recordEvent('INDEX_ONE_RATCHET_TOOTH');
@@ -410,6 +422,7 @@ function resize() {
 function snapshot() {
   return {
     running: true,
+    powered: runtime.powered,
     cycle: runtime.cycle,
     operation: runtime.operation ? { type: runtime.operation.type, from: runtime.operation.from, to: runtime.operation.to } : null,
     line: runtime.line,
@@ -439,6 +452,13 @@ function snapshot() {
 
 window.__selectricDebug = {
   get state() { return snapshot(); },
+  setPower(value) {
+    const next = Boolean(value);
+    if (runtime.cycle !== 'C0_REST' || runtime.operation) return false;
+    runtime.powered = next;
+    syncUi();
+    return true;
+  },
   typeCharacter: char => startCharacterCycle(char || 'a'),
   space: () => ui.spaceBtn.click(),
   tab: () => ui.tabBtn.click(),
@@ -462,6 +482,7 @@ window.__selectricDebug = {
 function animate(now) {
   requestAnimationFrame(animate);
   resize();
+  if (runtime.powered) model.setMotorPhase(now * 0.00022);
   runCycle(now);
   runCarrierOperation(now);
   orbit.update();

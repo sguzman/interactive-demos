@@ -29,6 +29,7 @@
       <div class="section-title">Use the typewriter</div>
       <p class="intro"><strong>7X1 · 12 CPI · fabric ribbon.</strong> Type directly on your keyboard or use the controls. The model now exposes the repeated keylever/interposer field, six selector-bail channels, D6 frame, current bearing branch, fixed rack, Level-2 rear carrier support, print sleeve/cam stack, selection tapes, type element, ribbon and paper output as one coupled machine.</p>
       <div class="action-grid">
+        <button id="powerBtn" class="secondary">Power off</button>
         <button id="typeBtn">Type test character</button>
         <button id="shiftBtn" class="secondary">Shift: lower</button>
         <button id="coverBtn" class="secondary">Open service cover</button>
@@ -44,6 +45,7 @@
       <input id="explode" type="range" min="0" max="100" value="0" />
 
       <div class="state-grid">
+        <div><span>Power</span><output id="powerState">RUNNING</output></div>
         <div><span>Carrier</span><output id="carrierState">—</output></div>
         <div><span>Cycle</span><output id="cycleState">C0_REST</output></div>
         <div><span>Selection</span><output id="selectionState">T0 · R0</output></div>
@@ -63,6 +65,7 @@
         <button class="secondary" data-view="power">Powerframe</button>
       </div>
 
+      <p class="note"><strong>Power note:</strong> the operational shaft receives a deliberately slowed P5 continuous-motion presentation while powered. Power-off blocks ordinary character and powered operational actions rather than merely freezing the display.</p>
       <p class="note"><strong>Cover note:</strong> the hinged service-cover motion is a P5 presentation path kept separate from exploded inspection and from the live mechanical state. Opening it exposes the carrier/type-element region without moving the frame.</p>
       <p class="note"><strong>Horizontal-motion note:</strong> tab stops are shown on the 12-CPI writing lattice with a P5 default every eight positions. Tab travel is mainspring-propelled in the real mechanism; the public action now sweeps to the next default stop while the cord/drum geometry updates from the same carrier coordinate. Carrier return terminates at the left margin and performs one 27-tooth-profile index step.</p>
       <p class="note"><strong>Selection note:</strong> keyboard characters use a deterministic P5 mapping into the 4 × 22 type-element slot structure so the mechanism can be exercised before one exact physical typeball layout is frozen. The mechanical selection ranges themselves are canonical: tilt bands 0–3, rotate units −5…+5, plus the independent 180° shift hemisphere.</p>

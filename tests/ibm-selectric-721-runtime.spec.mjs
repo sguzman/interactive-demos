@@ -40,6 +40,18 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.explosion).toBe(0);
   expect(initial.serviceCoverOpen).toBe(0);
   expect(initial.cycle).toBe('C0_REST');
+  expect(initial.powered).toBe(true);
+  expect(initial.geometry.powerPresentation.operationalShaftContinuousWhenPowered).toBe(true);
+
+  const carrierBeforePowerOff = initial.carrierX;
+  await page.evaluate(() => window.__selectricDebug.setPower(false));
+  await page.evaluate(() => window.__selectricDebug.typeCharacter('x'));
+  await page.waitForTimeout(150);
+  const poweredOff = await page.evaluate(() => window.__selectricDebug.state);
+  expect(poweredOff.powered).toBe(false);
+  expect(poweredOff.cycle).toBe('C0_REST');
+  expect(poweredOff.carrierX).toBeCloseTo(carrierBeforePowerOff, 6);
+  await page.evaluate(() => window.__selectricDebug.setPower(true));
 
   const coverCarrier = initial.carrierX;
   await page.evaluate(() => window.__selectricDebug.setServiceCover(1));
