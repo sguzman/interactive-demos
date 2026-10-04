@@ -159,7 +159,7 @@ function resetMechanicalState() {
   runtime.pendingCharacter = 'a';
   runtime.selectionTarget = selectionForCharacter('a');
   model.setKeyboardCode(0);
-  model.setCarrierX(-CANONICAL.writingLineMm / 2);
+  model.setCarrierX(0);
   model.setTypeball(0, 0, 0);
   model.setRibbonLift(0);
   model.setPrintApproach(0);

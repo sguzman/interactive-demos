@@ -343,7 +343,7 @@ export function createSelectricModel() {
   const assemblies = [];
   const state = {
     explosion: 0,
-    carrierX: -CANONICAL.writingLineMm / 2,
+    carrierX: 0,
     tiltBand: 0,
     rotateUnit: 0,
     shiftHemisphere: 0,
