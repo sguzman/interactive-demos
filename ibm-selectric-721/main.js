@@ -253,7 +253,7 @@ function runCycle(now) {
     const k = (t - 0.54) / 0.12;
     model.setRibbonLift(1);
     model.setPrintApproach(Math.min(1, 0.55 + k * 0.45));
-    if (!runtime.cycleImpactCommitted && k > 0.58) {
+    if (!runtime.cycleImpactCommitted && k > 0.95) {
       model.stampCharacter(runtime.pendingCharacter, runtime.line);
       runtime.cycleImpactCommitted = true;
       recordEvent('PRINT_IMPACT', { character: runtime.pendingCharacter });

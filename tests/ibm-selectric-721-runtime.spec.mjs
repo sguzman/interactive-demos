@@ -20,6 +20,12 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.revision).toBe('selectric-public-foundation-v3');
   expect(initial.geometry.supportTopology).toContain('Level-2');
   expect(initial.geometry.shellTopology).toContain('service-cover loft');
+  expect(initial.geometry.printRocker.motion).toBe('revolute');
+  expect(initial.geometry.printRocker.restClearanceMm).toBeGreaterThanOrEqual(6.604);
+  expect(initial.geometry.printRocker.restClearanceMm).toBeLessThanOrEqual(6.858);
+  expect(initial.geometry.printRocker.poweredEndpointClearanceMm).toBeGreaterThanOrEqual(0.508);
+  expect(initial.geometry.printRocker.poweredEndpointClearanceMm).toBeLessThanOrEqual(0.762);
+  expect(initial.geometry.printRocker.freeFlightRepresented).toBe(true);
   expect(initial.geometry.sleeveCamOrder).toEqual([
     'ribbon-lift',
     '1164240-feed-detent',

@@ -864,16 +864,21 @@ export function createSelectricModel() {
 
   const rocker = new THREE.Group();
   rocker.name = 'type-element rocker';
+  rocker.position.set(0, P4.printRocker.pivotY, P4.printRocker.pivotZ);
   carrierMotion.add(rocker);
 
-  const neck = shaft(25, 3.6, metal, 'type-element support');
+  const typeLocalY = P4.typeball.y - P4.printRocker.pivotY;
+  const typeLocalZ = P4.typeball.zRest - P4.printRocker.pivotZ;
+
+  const neck = shaft(Math.hypot(typeLocalY, typeLocalZ) * 0.78, 3.6, metal, 'type-element rocker arm');
   neck.rotation.z = 0;
-  neck.position.set(0, 101, -55);
+  neck.rotation.x = Math.atan2(-typeLocalZ, typeLocalY);
+  neck.position.set(0, typeLocalY * 0.48, typeLocalZ * 0.48);
   addPickable(neck, COMPONENTS.typeball, pickables);
   rocker.add(neck);
 
   const typeElement = makeTypeElement(ballMat, darkMetal, pickables);
-  typeElement.position.set(0, P4.typeball.y, P4.typeball.zRest);
+  typeElement.position.set(0, typeLocalY, typeLocalZ);
   rocker.add(typeElement);
 
   const carrierTiltPulley = pulley(8.5, 5.5, metal, 'carrier gearless tilt pulley');
@@ -934,8 +939,22 @@ export function createSelectricModel() {
 
   function setPrintApproach(value) {
     state.printApproach = THREE.MathUtils.clamp(value, 0, 1);
-    rocker.position.z = THREE.MathUtils.lerp(0, P4.typeball.zImpact - P4.typeball.zRest, state.printApproach);
-    rocker.rotation.x = deg(-state.printApproach * 5.5);
+    const poweredBoundary = 0.90;
+    let angleDeg;
+    if (state.printApproach <= poweredBoundary) {
+      angleDeg = THREE.MathUtils.lerp(
+        0,
+        P4.printRocker.poweredEndpointAngleDeg,
+        state.printApproach / poweredBoundary
+      );
+    } else {
+      angleDeg = THREE.MathUtils.lerp(
+        P4.printRocker.poweredEndpointAngleDeg,
+        P4.printRocker.impactAngleDeg,
+        (state.printApproach - poweredBoundary) / (1 - poweredBoundary)
+      );
+    }
+    rocker.rotation.x = deg(angleDeg);
   }
 
   function setPlatenIndex(value) {
@@ -990,6 +1009,14 @@ export function createSelectricModel() {
       cordPhase: state.cordPhase,
       writingLineRacks: ['1124109 escapement', '1164743 margin', '1164102/6519354 tab'],
       sleeveCamOrder: ['ribbon-lift', '1164240-feed-detent', '1124174-print-restoring'],
+      printRocker: {
+        motion: 'revolute',
+        restClearanceMm: P4.printRocker.derivedRestClearanceMm,
+        poweredEndpointClearanceMm: P4.printRocker.derivedPoweredEndpointClearanceMm,
+        poweredEndpointAngleDeg: P4.printRocker.poweredEndpointAngleDeg,
+        impactAngleDeg: P4.printRocker.impactAngleDeg,
+        freeFlightRepresented: true
+      },
       provenance: CANONICAL.provenance
     };
   }

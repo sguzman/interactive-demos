@@ -79,7 +79,16 @@ export const P4 = Object.freeze({
   operationalShaft: { y: 61, z: 24, radius: 4.5, length: 276 },
   rack: { y: 78, z: -69, length: 245, bodyY: 5.5, bodyZ: 7.5 },
   carrier: { y: 91, z: -54, width: 61, height: 22, depth: 42 },
-  typeball: { y: 116, zRest: -53.5, zImpact: -59.0 },
+  typeball: { y: 116, zRest: -50.4 },
+  printRocker: {
+    pivotY: 94.0,
+    pivotZ: -41.9,
+    poweredEndpointAngleDeg: -17.0,
+    impactAngleDeg: -18.7,
+    derivedRestClearanceMm: 6.6136,
+    derivedPoweredEndpointClearanceMm: 0.5528,
+    class: 'P4 pivot selected to satisfy OEM service clearance envelopes'
+  },
   ribbon: { yRest: 101, yLift: 113, z: -73 },
   keyboard: { y: 43, z: 78 },
   motor: { x: -116, y: 39, z: 42 },
