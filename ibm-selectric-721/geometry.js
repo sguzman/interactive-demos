@@ -1824,12 +1824,21 @@ export function createSelectricModel() {
 
   const leftGuide = new THREE.Vector3(-18, P4.ribbon.yRest, P4.ribbon.z);
   const rightGuide = new THREE.Vector3(18, P4.ribbon.yRest, P4.ribbon.z);
+  const ribbonLiftGuides = [];
   for (const x of [-18, 18]) {
     const guide = box(4, 21, 4, metal, x < 0 ? 'left ribbon lift guide' : 'right ribbon lift guide');
     guide.position.set(x, P4.ribbon.yRest - 3, P4.ribbon.z + 1);
+    guide.userData.ribbonYOffsetP4 = -3;
     addPickable(guide, COMPONENTS.ribbon, pickables);
     ribbonAssembly.add(guide);
+    ribbonLiftGuides.push(guide);
   }
+
+  const ribbonGuideBridge = box(42, 2.2, 4.5, darkMetal, 'ribbon lift guide bridge cue');
+  ribbonGuideBridge.position.set(0, P4.ribbon.yRest - 12, P4.ribbon.z + 3);
+  ribbonGuideBridge.userData.ribbonYOffsetP4 = -12;
+  addPickable(ribbonGuideBridge, COMPONENTS.ribbon, pickables);
+  ribbonAssembly.add(ribbonGuideBridge);
 
   function makeRibbonSegment(name) {
     const segment = box(1, P4.ribbon.widthMm, 1.0, ribbonMat, name);
@@ -1866,6 +1875,10 @@ export function createSelectricModel() {
     const liftY = THREE.MathUtils.lerp(P4.ribbon.yRest, P4.ribbon.yLift, lift);
     leftGuide.y = liftY;
     rightGuide.y = liftY;
+    ribbonLiftGuides.forEach(guide => {
+      guide.position.y = liftY + guide.userData.ribbonYOffsetP4;
+    });
+    ribbonGuideBridge.position.y = liftY + ribbonGuideBridge.userData.ribbonYOffsetP4;
     const leftRadius = P4.ribbon.spoolRadiusP4 * ribbonSpools[0].scale.x;
     const rightRadius = P4.ribbon.spoolRadiusP4 * ribbonSpools[1].scale.x;
     updateRibbonSegment(
@@ -2858,6 +2871,14 @@ export function createSelectricModel() {
         loadState: state.ribbonLoadState,
         loadStateDistinctFromHighPrintLift: true,
         loadLiftNormalizedP5: 1.24,
+        liftGuideCount: ribbonLiftGuides.length,
+        liftGuidesFollowRibbon: true,
+        ribbonCenterY: leftGuide.y,
+        liftGuideCenterY: ribbonLiftGuides[0].position.y,
+        liftGuideRibbonOffsetMmP4: ribbonLiftGuides[0].userData.ribbonYOffsetP4,
+        guideBridgeCenterY: ribbonGuideBridge.position.y,
+        guideBridgeRibbonOffsetMmP4: ribbonGuideBridge.userData.ribbonYOffsetP4,
+        liftGuideMotionClass: 'P4 carrier-local guide/vibrator topology following the live ribbon lift; exact guide sections and service-pose overtravel unresolved',
         loadLiftClass: 'P5 threading pose above high print lift; exact OEM load height unresolved',
         liftCommand: state.ribbonLiftCommand,
         actualLiftNormalizedP5: state.ribbonLift,

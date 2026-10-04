@@ -323,10 +323,17 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(loadPose.ribbonLoadState).toBe(true);
   expect(loadPose.ribbonLift).toBeCloseTo(loadPose.geometry.ribbon.loadLiftNormalizedP5, 8);
   expect(loadPose.ribbonLift).toBeGreaterThan(1);
+  expect(loadPose.geometry.ribbon.liftGuideCount).toBe(2);
+  expect(loadPose.geometry.ribbon.liftGuidesFollowRibbon).toBe(true);
+  expect(loadPose.geometry.ribbon.liftGuideCenterY - loadPose.geometry.ribbon.ribbonCenterY).toBeCloseTo(-3, 8);
+  expect(loadPose.geometry.ribbon.guideBridgeCenterY - loadPose.geometry.ribbon.ribbonCenterY).toBeCloseTo(-12, 8);
+  expect(loadPose.geometry.ribbon.liftGuideMotionClass).toContain('following the live ribbon lift');
   await page.evaluate(() => window.__selectricDebug.setRibbonLoadState(false));
   const loadReleased = await page.evaluate(() => window.__selectricDebug.state);
   expect(loadReleased.ribbonLoadState).toBe(false);
   expect(loadReleased.ribbonLift).toBe(0);
+  expect(loadReleased.geometry.ribbon.ribbonCenterY).toBeCloseTo(103, 8);
+  expect(loadReleased.geometry.ribbon.liftGuideCenterY).toBeCloseTo(100, 8);
 
   const feedStepsBeforeStencil = loadReleased.ribbonFeedStep;
   const stencilSelected = await page.evaluate(() => window.__selectricDebug.setRibbonMode('stencil'));
