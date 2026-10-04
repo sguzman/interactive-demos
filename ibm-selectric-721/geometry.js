@@ -387,7 +387,8 @@ export function createSelectricModel() {
     keyboardPressCharacter: null,
     keyboardPress: 0,
     operationalCamAction: 'rest',
-    operationalCamPhase: 0
+    operationalCamPhase: 0,
+    backspaceLinkage: 0
   };
 
   const shellMat = material(0xb8b4a8, 0.03, 0.76);
@@ -742,6 +743,17 @@ export function createSelectricModel() {
   addPickable(marginRack, COMPONENTS.horizontalMotion, pickables);
   horizontalAssembly.add(marginRack);
 
+  const marginLimit = CANONICAL.writingLineMm / 2;
+  for (const [x, name] of [
+    [-marginLimit, 'left physical margin stop / carrier-return terminator'],
+    [marginLimit, 'right physical margin stop / line-lock interface']
+  ]) {
+    const stop = box(8, 15, 10, darkMetal, name);
+    stop.position.set(x, P4.writingLineRacks.marginY + 8, P4.writingLineRacks.marginZ);
+    addPickable(stop, COMPONENTS.horizontalMotion, pickables);
+    horizontalAssembly.add(stop);
+  }
+
   const tabRack = box(P4.writingLineRacks.length, 4, 5, darkMetal, 'IBM 1164102/6519354 7X1 tab rack family');
   tabRack.position.set(0, P4.writingLineRacks.tabY, P4.writingLineRacks.tabZ);
   addPickable(tabRack, COMPONENTS.horizontalMotion, pickables);
@@ -1095,6 +1107,41 @@ export function createSelectricModel() {
   addPickable(bracket, COMPONENTS.escapementBracket, pickables);
   carrierMotion.add(bracket);
 
+  const backspaceRack = box(48, 4, 6, rackMat, 'IBM 1124568 / 6519139 7X1 12P backspace rack family');
+  backspaceRack.position.set(0, P4.rack.y - 12, P4.rack.z + 10);
+  backspaceRack.userData.baseX = backspaceRack.position.x;
+  addPickable(backspaceRack, COMPONENTS.backspaceLinkage, pickables);
+  carrierMotion.add(backspaceRack);
+
+  const backspaceTeeth = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(CANONICAL.pitchMm * 0.42, 3.0, 3.4),
+    darkMetal,
+    20
+  );
+  backspaceTeeth.name = '12P backspace rack tooth cues';
+  const backspaceToothMatrix = new THREE.Matrix4();
+  for (let i = 0; i < 20; i += 1) {
+    backspaceToothMatrix.makeTranslation((i - 9.5) * CANONICAL.pitchMm, P4.rack.y - 9.6, P4.rack.z + 12.5);
+    backspaceTeeth.setMatrixAt(i, backspaceToothMatrix);
+  }
+  backspaceTeeth.userData.component = COMPONENTS.backspaceLinkage;
+  backspaceTeeth.castShadow = true;
+  pickables.push(backspaceTeeth);
+  carrierMotion.add(backspaceTeeth);
+
+  const backspaceBellcrank = new THREE.Group();
+  backspaceBellcrank.name = 'backspace bellcrank / intermediate lever presentation';
+  backspaceBellcrank.position.set(-18, P4.rack.y - 2, P4.rack.z + 18);
+  carrierMotion.add(backspaceBellcrank);
+  const backspaceArmA = box(31, 4, 5, metal, 'backspace bellcrank arm');
+  backspaceArmA.position.x = 12;
+  addPickable(backspaceArmA, COMPONENTS.backspaceLinkage, pickables);
+  backspaceBellcrank.add(backspaceArmA);
+  const backspaceArmB = box(4, 24, 5, darkMetal, 'backspace intermediate lever');
+  backspaceArmB.position.set(0, -9, 0);
+  addPickable(backspaceArmB, COMPONENTS.backspaceLinkage, pickables);
+  backspaceBellcrank.add(backspaceArmB);
+
   const pawl = box(10, 11, 3.5, darkMetal, 'escapement pawl');
   pawl.position.set(-25, P4.rack.y + 4.7, P4.rack.z + 4.5);
   pawl.rotation.z = deg(-14);
@@ -1194,6 +1241,13 @@ export function createSelectricModel() {
     });
     const activeKey = state.keyboardPressCharacter ? keyMeshes.get(state.keyboardPressCharacter) : null;
     if (activeKey) activeKey.position.y = activeKey.userData.baseY - state.keyboardPress * 4.2;
+  }
+
+  function setBackspaceLinkage(value) {
+    state.backspaceLinkage = THREE.MathUtils.clamp(Number(value) || 0, 0, 1);
+    const pulse = Math.sin(state.backspaceLinkage * Math.PI);
+    backspaceRack.position.x = backspaceRack.userData.baseX - pulse * 5.5;
+    backspaceBellcrank.rotation.z = deg(-22 * pulse);
   }
 
   function setCarrierX(x) {
@@ -1326,6 +1380,20 @@ export function createSelectricModel() {
       selectorInputs: { ...state.selectorInputs },
       cordPhase: state.cordPhase,
       writingLineRacks: ['1124109 escapement', '1164743 margin', '1164102/6519354 tab'],
+      marginStops: {
+        leftPhysical: true,
+        rightPhysical: true,
+        leftTerminatesCarrierReturn: true,
+        rightLineLockInterface: true
+      },
+      backspace: {
+        mechanism: 'dedicated-powered-reverse-linkage',
+        rackFamily: ['1124568', '6519139'],
+        activePitch: '12P',
+        displacementMm: -CANONICAL.pitchMm,
+        serialExactPart: 'unresolved',
+        linkagePhase: state.backspaceLinkage
+      },
       d6CurrentSet: {
         shaft: '1164736',
         bearings: '1164740',
@@ -1387,6 +1455,7 @@ export function createSelectricModel() {
 
   setKeyboardCode(0);
   setKeyPress(null, 0);
+  setBackspaceLinkage(0);
   setCarrierX(state.carrierX);
   setTypeball(0, 0, 0);
   setRibbonLift(0);
@@ -1403,6 +1472,7 @@ export function createSelectricModel() {
     state,
     setKeyboardCode,
     setKeyPress,
+    setBackspaceLinkage,
     setCarrierX,
     setTypeball,
     setRibbonLift,

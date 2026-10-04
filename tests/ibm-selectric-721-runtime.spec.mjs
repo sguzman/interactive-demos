@@ -61,6 +61,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.operationalCams.spaceBackspaceDegreesPerOperation).toBe(180);
   expect(initial.geometry.operationalCams.carrierReturnIndexDegreesPerOperation).toBe(360);
   expect(initial.geometry.operationalCams.tabUsesPoweredCam).toBe(false);
+  expect(initial.geometry.marginStops.leftTerminatesCarrierReturn).toBe(true);
+  expect(initial.geometry.marginStops.rightLineLockInterface).toBe(true);
+  expect(initial.geometry.backspace.mechanism).toBe('dedicated-powered-reverse-linkage');
+  expect(initial.geometry.backspace.rackFamily).toEqual(['1124568', '6519139']);
+  expect(initial.geometry.backspace.displacementMm).toBeCloseTo(-initial.geometry.pitchMm, 8);
 
   const carrierBeforePowerOff = initial.carrierX;
   await page.evaluate(() => window.__selectricDebug.setPower(false));

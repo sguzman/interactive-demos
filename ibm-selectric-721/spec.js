@@ -222,6 +222,12 @@ export const COMPONENTS = Object.freeze({
     provenance: 'exact rack identities + source-grounded cord topology + P4 path geometry',
     description: 'Fixed margin/tab racks and opposed carrier cords share the writing coordinate. Rightward motion is mainspring-powered; carrier return winds the return cord and tightens the mainspring.'
   },
+  backspaceLinkage: {
+    name: 'Dedicated 12P backspace linkage',
+    category: 'horizontal transport',
+    provenance: 'OEM 7X1 12P rack-family identity + source-grounded linkage topology + P4 local geometry',
+    description: 'Backspace uses its own powered bellcrank/intermediate-lever/rack path rather than reversing ordinary escapement. IBM 1124568 and 6519139 are documented 7X1 12P rack-family identities; exact serial-level installed part remains unresolved.'
+  },
   drive: {
     name: 'Drive / operational shafts',
     category: 'power',

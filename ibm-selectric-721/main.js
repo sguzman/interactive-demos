@@ -233,6 +233,7 @@ function runCarrierOperation(now) {
 
   if (op.type === 'space' || op.type === 'backspace') {
     model.setOperationalCam(op.type, t);
+    model.setBackspaceLinkage(op.type === 'backspace' ? t : 0);
   } else if (op.type === 'carrier-return') {
     model.setOperationalCam('carrier-return', Math.min(1, t * 4));
   } else {
@@ -249,6 +250,7 @@ function runCarrierOperation(now) {
     }[op.type];
     if (endEvent) recordEvent(endEvent, { destination: op.to });
     model.setOperationalCam(null, 0);
+    model.setBackspaceLinkage(0);
     runtime.operation = null;
   }
   syncUi();
