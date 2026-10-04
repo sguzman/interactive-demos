@@ -56,6 +56,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.ribbon.printModes).toEqual(['stencil', 'low', 'middle', 'high']);
   expect(initial.geometry.ribbon.liftHeightClass).toContain('exact OEM lift heights unresolved');
   expect(initial.geometry.ribbon.stencilRibbonAtPrintPoint).toBe(true);
+  expect(initial.ribbonLoadState).toBe(false);
+  expect(initial.geometry.ribbon.loadStateDistinctFromHighPrintLift).toBe(true);
+  expect(initial.geometry.ribbon.loadLiftClass).toContain('exact OEM load height unresolved');
   expect(initial.geometry.shaftTiming.cycleShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.filterShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.printShaftDegPerCharacter).toBe(360);
@@ -154,7 +157,18 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(afterManualPlaten.geometry.paperFeed.manualPlatenAngle).toBeCloseTo(Math.PI / 9, 8);
   await page.evaluate(() => window.__selectricDebug.togglePlatenVariable());
 
-  const feedStepsBeforeStencil = (await page.evaluate(() => window.__selectricDebug.state)).ribbonFeedStep;
+  const loadSelected = await page.evaluate(() => window.__selectricDebug.setRibbonLoadState(true));
+  expect(loadSelected).toBe(true);
+  const loadPose = await page.evaluate(() => window.__selectricDebug.state);
+  expect(loadPose.ribbonLoadState).toBe(true);
+  expect(loadPose.ribbonLift).toBeCloseTo(loadPose.geometry.ribbon.loadLiftNormalizedP5, 8);
+  expect(loadPose.ribbonLift).toBeGreaterThan(1);
+  await page.evaluate(() => window.__selectricDebug.setRibbonLoadState(false));
+  const loadReleased = await page.evaluate(() => window.__selectricDebug.state);
+  expect(loadReleased.ribbonLoadState).toBe(false);
+  expect(loadReleased.ribbonLift).toBe(0);
+
+  const feedStepsBeforeStencil = loadReleased.ribbonFeedStep;
   const stencilSelected = await page.evaluate(() => window.__selectricDebug.setRibbonMode('stencil'));
   expect(stencilSelected).toBe(true);
   const stencilReady = await page.evaluate(() => window.__selectricDebug.state);
