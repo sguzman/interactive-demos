@@ -534,11 +534,6 @@ export function createSelectricModel() {
   pickables.push(ticks);
   shellAssembly.add(ticks);
 
-  const indicator = box(3.5, 8, 4, material(0xa64032, 0.1, 0.52), 'writing-position indicator');
-  indicator.position.set(0, 85, 25.5);
-  addPickable(indicator, COMPONENTS.horizontalMotion, pickables);
-  shellAssembly.add(indicator);
-
   const keyboardAssembly = makeAssembly('keyboard assembly', new THREE.Vector3(0, -46, 155));
   assemblies.push(keyboardAssembly);
   const keyboardSurface = makeKeyboard(keyMat, shellDark, pickables);
@@ -1376,6 +1371,17 @@ export function createSelectricModel() {
   carrierMotion.name = 'carrier mechanical transform';
   carrierAssembly.add(carrierMotion);
 
+  const writingPositionIndicator = box(
+    3.5,
+    8,
+    4,
+    material(0xa64032, 0.1, 0.52),
+    'carrier-parented writing-position indicator'
+  );
+  writingPositionIndicator.position.set(0, 85, 25.5);
+  addPickable(writingPositionIndicator, COMPONENTS.horizontalMotion, pickables);
+  carrierMotion.add(writingPositionIndicator);
+
   const carrierHalfW = P4.carrier.width / 2;
   const carrierHalfD = P4.carrier.depth / 2;
   for (const sign of [-1, 1]) {
@@ -2161,11 +2167,19 @@ export function createSelectricModel() {
     const bounds = new THREE.Box3().setFromObject(root);
     const size = new THREE.Vector3();
     bounds.getSize(size);
+    const indicatorWorld = new THREE.Vector3();
+    writingPositionIndicator.getWorldPosition(indicatorWorld);
     return {
       revision: 'selectric-public-foundation-v3',
       finite: [size.x, size.y, size.z].every(Number.isFinite),
       bounds: { width: size.x, height: size.y, depth: size.z },
       carrierX: state.carrierX,
+      writingPositionIndicator: {
+        carrierParented: writingPositionIndicator.parent === carrierMotion,
+        worldX: indicatorWorld.x,
+        localX: writingPositionIndicator.position.x,
+        role: 'carrier position pointer over the fixed writing-position rule'
+      },
       pitchMm: CANONICAL.pitchMm,
       writingLineMm: CANONICAL.writingLineMm,
       explosion: state.explosion,

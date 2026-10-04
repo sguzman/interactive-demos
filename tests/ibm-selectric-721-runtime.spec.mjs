@@ -24,6 +24,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.revision).toBe('selectric-public-foundation-v3');
   expect(initial.geometry.supportTopology).toContain('Level-2');
   expect(initial.geometry.shellTopology).toContain('hinged hood');
+  expect(initial.geometry.writingPositionIndicator.carrierParented).toBe(true);
+  expect(initial.geometry.writingPositionIndicator.worldX).toBeCloseTo(initial.carrierX, 8);
   expect(initial.geometry.explosionClass).toContain('assembly-separation');
   expect(initial.geometry.d6CurrentSet.shaft).toBe('1164736');
   expect(initial.geometry.d6CurrentSet.bearings).toBe('1164740');
@@ -339,6 +341,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(typed.selection.selectorInputs.T1 + 2 * typed.selection.selectorInputs.T2).toBe(typed.selection.tiltBand);
   if (typed.selection.rotateUnit < 0) expect(typed.selection.selectorInputs.fiveUnit).toBe(1);
   expect(typed.selection.mappingClass).toContain('P5');
+  expect(typed.geometry.writingPositionIndicator.carrierParented).toBe(true);
+  expect(typed.geometry.writingPositionIndicator.worldX).toBeCloseTo(typed.carrierX, 8);
 
   const names = typed.events.map(event => event.name);
   const impact = names.indexOf('PRINT_IMPACT');

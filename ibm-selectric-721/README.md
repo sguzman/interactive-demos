@@ -20,7 +20,7 @@ The browser model currently includes:
 - product shell / keyboard / platen / 27-tooth representative ratchet / single-vs-double line-spacing selector (one or two ratchet teeth per index) / P2 paper advance derived from platen arc length while feed rolls are engaged / four-front-plus-four-rear feed rollers / common-shaft coupled paper release / five-position copy-control carriage motion / two-stable-state two-roller paper bail / platen-variable decoupling / paper;
 - D6 print shaft, current IBM 1164740 bearing family, IBM 1164739 gear envelope and market-unfrozen item-51 C-clip presentation;
 - IBM 1124109 fixed 12P rack with repeated pitch geometry;
-- carrier translating over the 215.9 mm writing line;
+- carrier translating over the 215.9 mm writing line, with the writing-position pointer parented to the carrier so it tracks the fixed 12-CPI rule;
 - Level-2 upper/lower rear shoe topology;
 - carrier-parented escapement bracket and pawl cue;
 - IBM 1141628 print sleeve;
@@ -55,7 +55,7 @@ The Playwright smoke test checks:
 - gallery registration;
 - finite geometry;
 - current carrier-support and print-sleeve topology metadata;
-- one character = one 12-CPI carrier pitch;
+- one character = one 12-CPI carrier pitch, with the writing-position pointer following the same carrier coordinate;
 - impact before escapement advance;
 - ribbon selector modes, stencil feed lockout/centering, distinct load pose, and automatic fabric-ribbon reversal through the animated reverse sequence;
 - explosion independence;
