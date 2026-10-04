@@ -236,8 +236,8 @@ export const COMPONENTS = Object.freeze({
   mainspringCordSystem: {
     name: 'Mainspring / opposed cord system',
     category: 'horizontal transport energy',
-    provenance: 'source-grounded energy and tension topology + P4 drum/spring/arm geometry',
-    description: 'Escapement/tab and carrier-return cords wind in opposition on the common escapement shaft. A right-side pivoting pulley arm with two spiral springs maintains tension while the mainspring supplies ordinary rightward carrier energy.'
+    provenance: 'source-grounded energy and tension topology + solved P4 drum/spring/arm geometry',
+    description: 'Escapement/tab and carrier-return cords wind in opposition on the common escapement shaft. The right-side pivoting pulley arm with two spiral springs is solved from live carrier position against a reconstructed drum-payout relation so the visible cord centerline remains tension-consistent; exact IBM pivots and wrap arcs remain unresolved.'
   },
   returnTabDrive: {
     name: 'Carrier-return drive / tab governor',
