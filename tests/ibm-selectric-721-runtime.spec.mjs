@@ -175,6 +175,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(stencilReady.ribbonPrintMode).toBe('stencil');
   expect(stencilReady.geometry.ribbon.stencilRibbonAtPrintPoint).toBe(false);
   expect(stencilReady.geometry.ribbon.stencilFeedSuppressed).toBe(true);
+  expect(stencilReady.geometry.ribbon.stencilPawlCentered).toBe(true);
+  expect(stencilReady.geometry.ribbon.stencilDetentCentered).toBe(true);
   await page.evaluate(() => window.__selectricDebug.typeCharacter('q'));
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
   const stencilTyped = await page.evaluate(() => window.__selectricDebug.state);
