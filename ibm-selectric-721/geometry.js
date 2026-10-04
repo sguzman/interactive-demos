@@ -327,6 +327,7 @@ export function createSelectricModel() {
     cyclePhase: 0,
     keyboardCode: 0,
     cordPhase: 0,
+    serviceCoverOpen: 0,
     selectorInputs: { T1: 0, T2: 0, R1: 0, R2: 0, R2A: 0, fiveUnit: 0 }
   };
 
@@ -366,21 +367,27 @@ export function createSelectricModel() {
   addPickable(rightCheek, COMPONENTS.shell, pickables);
   shellAssembly.add(rightCheek);
 
+  const serviceCoverPivot = new THREE.Group();
+  serviceCoverPivot.name = 'top service cover hinge presentation';
+  serviceCoverPivot.position.set(0, 83, -55);
+  shellAssembly.add(serviceCoverPivot);
+
   const upperCover = loftPrism([
     { z: 36, halfWidth: 160, bottomY: 69, topY: 84 },
     { z: 8, halfWidth: 163, bottomY: 73, topY: 102 },
     { z: -22, halfWidth: 164, bottomY: 78, topY: 121 },
     { z: -55, halfWidth: 162, bottomY: 83, topY: 137 }
   ], shellMat, 'top service cover / front shoulder loft');
+  upperCover.position.set(0, -83, 55);
   addPickable(upperCover, COMPONENTS.shell, pickables);
-  shellAssembly.add(upperCover);
+  serviceCoverPivot.add(upperCover);
 
   const badgeMat = material(0x233b55, 0.28, 0.42);
   const badge = box(30, 8, 2, badgeMat, 'IBM badge');
-  badge.position.set(0, 114, -14);
+  badge.position.set(0, 31, 41);
   badge.rotation.x = deg(-38);
   addPickable(badge, COMPONENTS.shell, pickables);
-  shellAssembly.add(badge);
+  serviceCoverPivot.add(badge);
 
   const rearCowl = box(330, 72, 72, shellMat, 'rear cowl');
   rearCowl.position.set(0, 83, -118);
@@ -942,6 +949,11 @@ export function createSelectricModel() {
     printSleeveRotor.rotation.x = state.cyclePhase * Math.PI * 2;
   }
 
+  function setServiceCover(value) {
+    state.serviceCoverOpen = THREE.MathUtils.clamp(value, 0, 1);
+    serviceCoverPivot.rotation.x = deg(-52) * state.serviceCoverOpen;
+  }
+
   function setExplosion(value) {
     state.explosion = THREE.MathUtils.clamp(value, 0, 1);
     assemblies.forEach(group => setAssemblyExplosion(group, state.explosion));
@@ -968,6 +980,7 @@ export function createSelectricModel() {
       pitchMm: CANONICAL.pitchMm,
       writingLineMm: CANONICAL.writingLineMm,
       explosion: state.explosion,
+      serviceCoverOpen: state.serviceCoverOpen,
       pickableCount: pickables.length,
       supportTopology: 'D6 front + Level-2 upper/lower rack shoes',
       shellTopology: 'longitudinal side-cheek loft + upper service-cover loft + explicit carrier opening',
@@ -987,6 +1000,7 @@ export function createSelectricModel() {
   setRibbonLift(0);
   setPrintApproach(0);
   setCyclePhase(0);
+  setServiceCover(0);
   setExplosion(0);
 
   return {
@@ -1000,6 +1014,7 @@ export function createSelectricModel() {
     setPrintApproach,
     setPlatenIndex,
     setCyclePhase,
+    setServiceCover,
     setExplosion,
     stampCharacter,
     clearPaper,

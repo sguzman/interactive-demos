@@ -26,7 +26,16 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   ]);
   expect(initial.profile).toContain('12 CPI');
   expect(initial.explosion).toBe(0);
+  expect(initial.serviceCoverOpen).toBe(0);
   expect(initial.cycle).toBe('C0_REST');
+
+  const coverCarrier = initial.carrierX;
+  await page.evaluate(() => window.__selectricDebug.setServiceCover(1));
+  const coverOpen = await page.evaluate(() => window.__selectricDebug.state);
+  expect(coverOpen.serviceCoverOpen).toBe(1);
+  expect(coverOpen.carrierX).toBeCloseTo(coverCarrier, 6);
+  await page.screenshot({ path: 'test-results/selectric-cover-open.png', fullPage: true });
+  await page.evaluate(() => window.__selectricDebug.setServiceCover(0));
 
   const initialCarrier = initial.carrierX;
   await page.evaluate(() => window.__selectricDebug.typeCharacter('q'));

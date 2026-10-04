@@ -56,6 +56,7 @@ scene.add(model.root);
 const ui = {
   typeBtn: document.querySelector('#typeBtn'),
   shiftBtn: document.querySelector('#shiftBtn'),
+  coverBtn: document.querySelector('#coverBtn'),
   spaceBtn: document.querySelector('#spaceBtn'),
   tabBtn: document.querySelector('#tabBtn'),
   backspaceBtn: document.querySelector('#backspaceBtn'),
@@ -133,6 +134,7 @@ function syncUi() {
   ui.codeState.textContent = model.state.keyboardCode.toString(2).padStart(6, '0');
   ui.explodeValue.textContent = Math.round(model.state.explosion * 100) + '%';
   ui.shiftBtn.textContent = model.state.shiftHemisphere ? 'Shift: upper' : 'Shift: lower';
+  ui.coverBtn.textContent = model.state.serviceCoverOpen > 0.5 ? 'Close service cover' : 'Open service cover';
 }
 
 function resetMechanicalState() {
@@ -154,6 +156,7 @@ function resetMechanicalState() {
   model.setPrintApproach(0);
   model.setPlatenIndex(0);
   model.setCyclePhase(0);
+  model.setServiceCover(0);
   model.clearPaper();
   syncUi();
 }
@@ -283,6 +286,11 @@ function runCycle(now) {
 }
 
 ui.typeBtn.addEventListener('click', () => startCharacterCycle(runtime.pendingCharacter));
+ui.coverBtn.addEventListener('click', () => {
+  model.setServiceCover(model.state.serviceCoverOpen > 0.5 ? 0 : 1);
+  runtime.lastAction = model.state.serviceCoverOpen ? 'service-cover-open' : 'service-cover-close';
+  syncUi();
+});
 ui.shiftBtn.addEventListener('click', () => {
   if (runtime.cycle !== 'C0_REST') return;
   const next = model.state.shiftHemisphere ? 0 : 1;
@@ -413,6 +421,7 @@ function snapshot() {
     platenIndex: model.state.platenIndex,
     cyclePhase: model.state.cyclePhase,
     explosion: model.state.explosion,
+    serviceCoverOpen: model.state.serviceCoverOpen,
     geometry: model.geometryDiagnostics(),
     events: runtime.eventLog.map(event => ({ ...event })),
     profile: CANONICAL.profile
@@ -428,6 +437,11 @@ window.__selectricDebug = {
   carriageReturn: () => ui.returnBtn.click(),
   index: () => ui.indexBtn.click(),
   shift: () => ui.shiftBtn.click(),
+  toggleServiceCover: () => ui.coverBtn.click(),
+  setServiceCover: value => {
+    model.setServiceCover(value);
+    syncUi();
+  },
   reset: resetMechanicalState,
   setExplosion(value) {
     model.setExplosion(value);
