@@ -375,6 +375,9 @@ export function createSelectricModel() {
     shiftHemisphere: 0,
     shiftAngleDeg: 0,
     ribbonLift: 0,
+    ribbonLiftCommand: 0,
+    ribbonPrintMode: 'middle',
+    ribbonFeedSuppressedCount: 0,
     printApproach: 0,
     platenIndex: 0,
     cyclePhase: 0,
@@ -1794,8 +1797,24 @@ export function createSelectricModel() {
     updateSelectionTapes();
   }
 
+  function ribbonLiftScaleForMode(mode = state.ribbonPrintMode) {
+    if (mode === 'stencil') return 0;
+    if (mode === 'low') return 0.62;
+    if (mode === 'high') return 1;
+    return 0.82;
+  }
+
+  function setRibbonMode(mode) {
+    const allowed = ['stencil', 'low', 'middle', 'high'];
+    const next = allowed.includes(mode) ? mode : 'middle';
+    state.ribbonPrintMode = next;
+    setRibbonLift(state.ribbonLiftCommand);
+    return next;
+  }
+
   function setRibbonLift(value) {
-    state.ribbonLift = THREE.MathUtils.clamp(value, 0, 1);
+    state.ribbonLiftCommand = THREE.MathUtils.clamp(value, 0, 1);
+    state.ribbonLift = state.ribbonLiftCommand * ribbonLiftScaleForMode();
     updateRibbonPath(state.ribbonLift);
   }
 
@@ -1857,6 +1876,10 @@ export function createSelectricModel() {
   }
 
   function feedRibbon() {
+    if (state.ribbonPrintMode === 'stencil') {
+      state.ribbonFeedSuppressedCount += 1;
+      return false;
+    }
     state.ribbonFeedStep += 1;
     state.ribbonFeedApproxRatchetTeeth += 2.5;
     state.ribbonFeedStrokeInDirection += 1;
@@ -1876,6 +1899,7 @@ export function createSelectricModel() {
       state.ribbonReverseState = 'reversing';
       state.ribbonReversePhase = 0;
     }
+    return true;
   }
 
   function primeRibbonAutoReverse() {
@@ -1892,6 +1916,7 @@ export function createSelectricModel() {
     state.ribbonReverseCount = 0;
     state.ribbonReversePhase = 0;
     state.ribbonReverseState = 'feeding';
+    state.ribbonFeedSuppressedCount = 0;
     ribbonSpools.forEach(spool => { spool.rotation.y = 0; });
     ribbonRatchets.forEach(ratchet => { ratchet.rotation.y = 0; });
     feedPlate.position.x = 0;
@@ -2149,6 +2174,14 @@ export function createSelectricModel() {
       ribbon: {
         parent: 'carrier',
         mediaWidthMm: P4.ribbon.widthMm,
+        printMode: state.ribbonPrintMode,
+        printModes: ['stencil', 'low', 'middle', 'high'],
+        liftCommand: state.ribbonLiftCommand,
+        actualLiftNormalizedP5: state.ribbonLift,
+        liftHeightClass: 'P5 relative display heights; exact OEM lift heights unresolved',
+        stencilRibbonAtPrintPoint: state.ribbonPrintMode !== 'stencil',
+        stencilFeedSuppressed: state.ribbonPrintMode === 'stencil',
+        feedSuppressedCount: state.ribbonFeedSuppressedCount,
         feedStepCount: state.ribbonFeedStep,
         approximateRatchetTeethAdvanced: state.ribbonFeedApproxRatchetTeeth,
         nominalRatchetTeethPerCharacter: 2.5,
@@ -2230,6 +2263,7 @@ export function createSelectricModel() {
   setTabGovernor(0);
   setCarrierX(state.carrierX);
   setTypeball(0, 0, 0);
+  setRibbonMode('middle');
   setRibbonLift(0);
   resetRibbonTransport();
   setFineAlignment(0, 0);
@@ -2256,6 +2290,7 @@ export function createSelectricModel() {
     setCarrierX,
     setShiftTransition,
     setTypeball,
+    setRibbonMode,
     setRibbonLift,
     feedRibbon,
     setRibbonReversePhase,
