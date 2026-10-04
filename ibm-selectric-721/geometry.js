@@ -373,6 +373,7 @@ export function createSelectricModel() {
     tiltBand: 0,
     rotateUnit: 0,
     shiftHemisphere: 0,
+    shiftAngleDeg: 0,
     ribbonLift: 0,
     printApproach: 0,
     platenIndex: 0,
@@ -978,6 +979,7 @@ export function createSelectricModel() {
   const indexPawl = box(5, 20, 4, darkMetal, 'platen index pawl');
   indexPawl.position.set(P4.platen.length / 2 - 20, P4.platen.y - 2, P4.platen.z + 15);
   indexPawl.rotation.x = deg(-22);
+  indexPawl.userData.baseRotationX = indexPawl.rotation.x;
   addPickable(indexPawl, COMPONENTS.platenRatchet, pickables);
   platenAssembly.add(indexPawl);
 
@@ -1393,13 +1395,27 @@ export function createSelectricModel() {
     updateCordGeometry(state.carrierX);
   }
 
+  function applyTypeElementOrientation() {
+    updateSelectionDrive(state.tiltBand, state.rotateUnit);
+    typeElement.rotation.x = deg(state.tiltBand * 7.5);
+    typeElement.rotation.y = deg(state.rotateUnit * 10 + state.shiftAngleDeg);
+  }
+
   function setTypeball(tiltBand, rotateUnit, shiftHemisphere = state.shiftHemisphere) {
     state.tiltBand = THREE.MathUtils.clamp(tiltBand, 0, 3);
     state.rotateUnit = THREE.MathUtils.clamp(rotateUnit, -5, 5);
     state.shiftHemisphere = shiftHemisphere ? 1 : 0;
-    updateSelectionDrive(state.tiltBand, state.rotateUnit);
-    typeElement.rotation.x = deg(state.tiltBand * 7.5);
-    typeElement.rotation.y = deg(state.rotateUnit * 10 + state.shiftHemisphere * 180);
+    state.shiftAngleDeg = state.shiftHemisphere * 180;
+    applyTypeElementOrientation();
+  }
+
+  function setShiftTransition(fromHemisphere, toHemisphere, progress) {
+    const from = fromHemisphere ? 1 : 0;
+    const to = toHemisphere ? 1 : 0;
+    const t = THREE.MathUtils.clamp(Number(progress) || 0, 0, 1);
+    state.shiftAngleDeg = THREE.MathUtils.lerp(from * 180, to * 180, t);
+    if (t >= 1) state.shiftHemisphere = to;
+    applyTypeElementOrientation();
   }
 
   function setRibbonLift(value) {
@@ -1437,6 +1453,11 @@ export function createSelectricModel() {
       );
     }
     rocker.rotation.x = deg(angleDeg);
+  }
+
+  function setIndexPawlPhase(value) {
+    const t = THREE.MathUtils.clamp(Number(value) || 0, 0, 1);
+    indexPawl.rotation.x = indexPawl.userData.baseRotationX + deg(28 * Math.sin(t * Math.PI));
   }
 
   function setPlatenIndex(value) {
@@ -1589,13 +1610,19 @@ export function createSelectricModel() {
         spaceBackspaceDegreesPerOperation: 180,
         carrierReturnIndexDegreesPerOperation: 360,
         shiftDegreesPerTransition: 180,
-        tabUsesPoweredCam: false
+        tabUsesPoweredCam: false,
+        shiftInterlocksCharacterCycle: true
       },
       shaftTiming: {
         cycleShaftDegPerCharacter: 180,
         filterShaftDegPerCharacter: 180,
         printShaftDegPerCharacter: 360,
         printSleeveDegPerCharacter: 360
+      },
+      shift: {
+        hemisphere: state.shiftHemisphere,
+        angleDeg: state.shiftAngleDeg,
+        transitionCamDeg: 180
       },
       printRocker: {
         motion: 'revolute',
@@ -1630,10 +1657,12 @@ export function createSelectricModel() {
     setKeyPress,
     setBackspaceLinkage,
     setCarrierX,
+    setShiftTransition,
     setTypeball,
     setRibbonLift,
     feedRibbon,
     setPrintApproach,
+    setIndexPawlPhase,
     setPlatenIndex,
     setMotorPhase,
     setOperationalCam,

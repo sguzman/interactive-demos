@@ -96,6 +96,7 @@ const runtime = {
   cycleDurationMs: 1250,
   debugCycleHold: null,
   operation: null,
+  serviceOperation: null,
   eventLog: [],
   lastRecordedCycle: 'C0_REST'
 };
@@ -154,6 +155,7 @@ function resetMechanicalState() {
   runtime.ribbonFeedCommitted = false;
   runtime.debugCycleHold = null;
   runtime.operation = null;
+  runtime.serviceOperation = null;
   runtime.eventLog = [];
   runtime.lastRecordedCycle = 'C0_REST';
   runtime.pendingCharacter = 'a';
@@ -171,7 +173,7 @@ function resetMechanicalState() {
 }
 
 function startCharacterCycle(character = runtime.pendingCharacter) {
-  if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation) return;
+  if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
   runtime.pendingCharacter = character || 'a';
   runtime.selectionTarget = selectionForCharacter(runtime.pendingCharacter);
   setCycleState('C1_TRIP');
@@ -200,7 +202,7 @@ function nextDefaultTabStop() {
 }
 
 function beginCarrierOperation(type, destination, durationMs, includesIndex = false) {
-  if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation) return false;
+  if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
   const from = model.state.carrierX;
   runtime.operation = {
     type,
@@ -252,6 +254,53 @@ function runCarrierOperation(now) {
     model.setOperationalCam(null, 0);
     model.setBackspaceLinkage(0);
     runtime.operation = null;
+  }
+  syncUi();
+}
+
+function beginServiceOperation(type, durationMs, payload = {}) {
+  if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
+  runtime.serviceOperation = {
+    type,
+    startedAt: performance.now(),
+    durationMs: Math.max(160, durationMs),
+    committed: false,
+    ...payload
+  };
+  runtime.lastAction = type;
+  recordEvent(type === 'shift' ? 'SHIFT_OPERATION_STARTED' : 'INDEX_OPERATION_STARTED');
+  syncUi();
+  return true;
+}
+
+function runServiceOperation(now) {
+  const op = runtime.serviceOperation;
+  if (!op) return;
+  const t = THREE.MathUtils.clamp((now - op.startedAt) / op.durationMs, 0, 1);
+
+  if (op.type === 'shift') {
+    model.setOperationalCam('shift', t);
+    model.setShiftTransition(op.fromShift, op.toShift, t);
+  } else if (op.type === 'index') {
+    model.setOperationalCam('index', t);
+    model.setIndexPawlPhase(t);
+    if (!op.committed && t >= 0.58) {
+      singleIndex();
+      op.committed = true;
+      recordEvent('INDEX_ONE_RATCHET_TOOTH');
+    }
+  }
+
+  if (t >= 1) {
+    if (op.type === 'shift') {
+      model.setShiftTransition(op.toShift, op.toShift, 1);
+      recordEvent('SHIFT_OPERATION_COMPLETE', { hemisphere: op.toShift });
+    } else {
+      model.setIndexPawlPhase(0);
+      recordEvent('INDEX_OPERATION_COMPLETE');
+    }
+    model.setOperationalCam(null, 0);
+    runtime.serviceOperation = null;
   }
   syncUi();
 }
@@ -339,7 +388,7 @@ function runCycle(now) {
 }
 
 ui.powerBtn.addEventListener('click', () => {
-  if (runtime.cycle !== 'C0_REST' || runtime.operation) return;
+  if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
   runtime.powered = !runtime.powered;
   runtime.lastAction = runtime.powered ? 'power-on' : 'power-off';
   recordEvent(runtime.powered ? 'POWER_ON' : 'POWER_OFF');
@@ -352,11 +401,9 @@ ui.coverBtn.addEventListener('click', () => {
   syncUi();
 });
 ui.shiftBtn.addEventListener('click', () => {
-  if (!runtime.powered || runtime.cycle !== 'C0_REST') return;
-  const next = model.state.shiftHemisphere ? 0 : 1;
-  model.setTypeball(model.state.tiltBand, model.state.rotateUnit, next);
-  runtime.lastAction = 'shift-toggle';
-  syncUi();
+  const fromShift = model.state.shiftHemisphere;
+  const toShift = fromShift ? 0 : 1;
+  beginServiceOperation('shift', 420, { fromShift, toShift });
 });
 ui.spaceBtn.addEventListener('click', () => {
   runtime.pendingCharacter = ' ';
@@ -376,11 +423,7 @@ ui.returnBtn.addEventListener('click', () => {
   beginCarrierOperation('carrier-return', destination, 360 + distance * 2.4, true);
 });
 ui.indexBtn.addEventListener('click', () => {
-  if (!runtime.powered || runtime.cycle !== 'C0_REST') return;
-  runtime.lastAction = 'paper-index';
-  singleIndex();
-  recordEvent('INDEX_ONE_RATCHET_TOOTH');
-  syncUi();
+  beginServiceOperation('index', 560);
 });
 ui.resetBtn.addEventListener('click', resetMechanicalState);
 ui.explode.addEventListener('input', () => {
@@ -480,6 +523,7 @@ function snapshot() {
     powered: runtime.powered,
     cycle: runtime.cycle,
     operation: runtime.operation ? { type: runtime.operation.type, from: runtime.operation.from, to: runtime.operation.to } : null,
+    serviceOperation: runtime.serviceOperation ? { type: runtime.serviceOperation.type } : null,
     line: runtime.line,
     lastAction: runtime.lastAction,
     pendingCharacter: runtime.pendingCharacter,
@@ -493,6 +537,7 @@ function snapshot() {
       tiltBand: model.state.tiltBand,
       rotateUnit: model.state.rotateUnit,
       shiftHemisphere: model.state.shiftHemisphere,
+      shiftAngleDeg: model.state.shiftAngleDeg,
       selectorInputs: { ...model.state.selectorInputs },
       mappingClass: 'P5 deterministic key-to-slot presentation; not a specific IBM typeball layout'
     },
@@ -513,7 +558,7 @@ window.__selectricDebug = {
   get state() { return snapshot(); },
   setPower(value) {
     const next = Boolean(value);
-    if (runtime.cycle !== 'C0_REST' || runtime.operation) return false;
+    if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
     runtime.powered = next;
     syncUi();
     return true;
@@ -573,6 +618,7 @@ function animate(now) {
   if (runtime.powered) model.setMotorPhase(now * 0.00022);
   runCycle(now);
   runCarrierOperation(now);
+  runServiceOperation(now);
   orbit.update();
   renderer.render(scene, camera);
 }

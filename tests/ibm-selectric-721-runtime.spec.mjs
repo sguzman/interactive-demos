@@ -70,6 +70,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.operationalCams.spaceBackspaceDegreesPerOperation).toBe(180);
   expect(initial.geometry.operationalCams.carrierReturnIndexDegreesPerOperation).toBe(360);
   expect(initial.geometry.operationalCams.tabUsesPoweredCam).toBe(false);
+  expect(initial.geometry.operationalCams.shiftInterlocksCharacterCycle).toBe(true);
   expect(initial.geometry.marginStops.leftTerminatesCarrierReturn).toBe(true);
   expect(initial.geometry.marginStops.rightLineLockInterface).toBe(true);
   expect(initial.geometry.backspace.mechanism).toBe('dedicated-powered-reverse-linkage');
@@ -177,13 +178,18 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
 
   const beforeShift = backed.selection.shiftHemisphere;
   await page.evaluate(() => window.__selectricDebug.shift());
+  await page.waitForFunction(() => window.__selectricDebug.state.serviceOperation === null, null, { timeout: 5000 });
   const shifted = await page.evaluate(() => window.__selectricDebug.state);
   expect(shifted.selection.shiftHemisphere).toBe(1 - beforeShift);
+  expect(shifted.selection.shiftAngleDeg).toBeCloseTo(shifted.selection.shiftHemisphere * 180, 6);
+  expect(shifted.events.some(event => event.name === 'SHIFT_OPERATION_COMPLETE')).toBe(true);
 
   await page.evaluate(() => window.__selectricDebug.index());
+  await page.waitForFunction(() => window.__selectricDebug.state.serviceOperation === null, null, { timeout: 5000 });
   const indexed = await page.evaluate(() => window.__selectricDebug.state);
   expect(indexed.line).toBe(1);
   expect(indexed.platenIndex).toBeCloseTo(Math.PI * 2 / 27, 6);
+  expect(indexed.events.some(event => event.name === 'INDEX_OPERATION_COMPLETE')).toBe(true);
 
   const beforeTab = indexed.carrierX;
   await page.evaluate(() => window.__selectricDebug.tab());
