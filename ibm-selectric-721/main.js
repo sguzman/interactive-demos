@@ -66,6 +66,7 @@ const ui = {
   paperReleaseBtn: document.querySelector('#paperReleaseBtn'),
   paperBailBtn: document.querySelector('#paperBailBtn'),
   ribbonModeBtn: document.querySelector('#ribbonModeBtn'),
+  ribbonLoadBtn: document.querySelector('#ribbonLoadBtn'),
   copyControlBtn: document.querySelector('#copyControlBtn'),
   platenVariableBtn: document.querySelector('#platenVariableBtn'),
   resetBtn: document.querySelector('#resetBtn'),
@@ -78,6 +79,7 @@ const ui = {
   shiftState: document.querySelector('#shiftState'),
   ribbonState: document.querySelector('#ribbonState'),
   ribbonModeState: document.querySelector('#ribbonModeState'),
+  ribbonLoadState: document.querySelector('#ribbonLoadState'),
   feedState: document.querySelector('#feedState'),
   paperBailState: document.querySelector('#paperBailState'),
   copyControlState: document.querySelector('#copyControlState'),
@@ -199,6 +201,7 @@ function syncUi() {
   ui.shiftState.textContent = model.state.shiftHemisphere ? 'UPPER HEMISPHERE' : 'LOWER HEMISPHERE';
   ui.ribbonState.textContent = Math.round(model.state.ribbonLift * 100) + '%';
   ui.ribbonModeState.textContent = model.state.ribbonPrintMode.toUpperCase();
+  ui.ribbonLoadState.textContent = model.state.ribbonLoadState ? 'THREADING / LOAD' : 'OFF';
   ui.feedState.textContent = model.state.feedRollsEngaged ? 'ENGAGED' : 'RELEASED';
   ui.paperBailState.textContent = model.state.paperBailEngaged ? 'AGAINST PLATEN' : 'RELEASED';
   ui.copyControlState.textContent = String(model.state.copyControlSetting + 1) + ' / 5';
@@ -212,6 +215,7 @@ function syncUi() {
   ui.paperReleaseBtn.textContent = model.state.feedRollsEngaged ? 'Release paper feed' : 'Engage paper feed';
   ui.paperBailBtn.textContent = model.state.paperBailEngaged ? 'Release paper bail' : 'Engage paper bail';
   ui.ribbonModeBtn.textContent = 'Ribbon: ' + model.state.ribbonPrintMode;
+  ui.ribbonLoadBtn.textContent = model.state.ribbonLoadState ? 'Ribbon load: on' : 'Ribbon load: off';
   ui.copyControlBtn.textContent = 'Copy control ' + (model.state.copyControlSetting + 1) + '/5';
   ui.platenVariableBtn.textContent = model.state.platenVariableEngaged ? 'Lock platen variable' : 'Free platen variable';
 }
@@ -235,6 +239,7 @@ function resetMechanicalState() {
   model.setKeyboardCode(0);
   model.setCarrierX(0);
   model.setTypeball(0, 0, 0);
+  model.setRibbonLoadState(false);
   model.setRibbonMode('middle');
   model.setRibbonLift(0);
   model.resetRibbonTransport();
@@ -566,6 +571,13 @@ ui.ribbonModeBtn.addEventListener('click', () => {
   recordEvent('RIBBON_MODE_' + next.toUpperCase());
   syncUi();
 });
+ui.ribbonLoadBtn.addEventListener('click', () => {
+  if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
+  model.setRibbonLoadState(!model.state.ribbonLoadState);
+  runtime.lastAction = model.state.ribbonLoadState ? 'ribbon-load-on' : 'ribbon-load-off';
+  recordEvent(model.state.ribbonLoadState ? 'RIBBON_LOAD_POSITION' : 'RIBBON_LOAD_RELEASED');
+  syncUi();
+});
 ui.copyControlBtn.addEventListener('click', () => {
   if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
   model.setCopyControl((model.state.copyControlSetting + 1) % 5);
@@ -699,6 +711,7 @@ function snapshot() {
     },
     ribbonLift: model.state.ribbonLift,
     ribbonPrintMode: model.state.ribbonPrintMode,
+    ribbonLoadState: model.state.ribbonLoadState,
     ribbonFeedSuppressedCount: model.state.ribbonFeedSuppressedCount,
     fineAlignment: {
       tiltDetent: model.state.tiltDetent,
@@ -757,6 +770,13 @@ window.__selectricDebug = {
     return true;
   },
   cycleRibbonMode: () => ui.ribbonModeBtn.click(),
+  setRibbonLoadState: active => {
+    if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
+    model.setRibbonLoadState(active);
+    syncUi();
+    return true;
+  },
+  toggleRibbonLoad: () => ui.ribbonLoadBtn.click(),
   primeRibbonAutoReverse: () => model.primeRibbonAutoReverse(),
   space: () => ui.spaceBtn.click(),
   tab: () => ui.tabBtn.click(),
