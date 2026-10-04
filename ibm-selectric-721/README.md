@@ -17,7 +17,7 @@ This is a source-aware mechanical reconstruction of an original IBM Selectric Mo
 
 The browser model currently includes:
 
-- product shell / keyboard / platen / 27-tooth representative ratchet / four-front-plus-four-rear feed rollers / common-shaft coupled paper release / five-position copy-control carriage motion / two-stable-state two-roller paper bail / platen-variable decoupling / paper;
+- product shell / keyboard / platen / 27-tooth representative ratchet / single-vs-double line-spacing selector (one or two ratchet teeth per index) / four-front-plus-four-rear feed rollers / common-shaft coupled paper release / five-position copy-control carriage motion / two-stable-state two-roller paper bail / platen-variable decoupling / paper;
 - D6 print shaft, current IBM 1164740 bearing family, IBM 1164739 gear envelope and market-unfrozen item-51 C-clip presentation;
 - IBM 1124109 fixed 12P rack with repeated pitch geometry;
 - carrier translating over the 215.9 mm writing line;
@@ -62,7 +62,7 @@ The Playwright smoke test checks:
 - space / backspace, including stored-space interlock release after an active character cycle;
 - adjustable margin-stop positions, right-margin line lock and carrier return to the live left stop;
 - shift hemisphere;
-- one-tooth 27T paper index;
+- one-tooth single and two-tooth double 27T paper indexing;
 - tab capture on the writing lattice;
 - carrier return to left margin plus one index;
 - browser error absence.
