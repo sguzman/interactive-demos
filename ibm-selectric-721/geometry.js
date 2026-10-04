@@ -372,22 +372,34 @@ export function createSelectricModel() {
 
   const serviceCoverPivot = new THREE.Group();
   serviceCoverPivot.name = 'top service cover hinge presentation';
-  serviceCoverPivot.position.set(0, 83, -55);
+  serviceCoverPivot.position.set(0, 122, -142);
   shellAssembly.add(serviceCoverPivot);
 
-  const upperCover = loftPrism([
-    { z: 36, halfWidth: 160, bottomY: 69, topY: 84 },
-    { z: 8, halfWidth: 163, bottomY: 73, topY: 102 },
-    { z: -22, halfWidth: 164, bottomY: 78, topY: 121 },
-    { z: -55, halfWidth: 162, bottomY: 83, topY: 137 }
-  ], shellMat, 'top service cover / front shoulder loft');
-  upperCover.position.set(0, -83, 55);
-  addPickable(upperCover, COMPONENTS.shell, pickables);
-  serviceCoverPivot.add(upperCover);
+  const frontFascia = loftPrism([
+    { z: 38, halfWidth: 160, bottomY: 69, topY: 84 },
+    { z: 12, halfWidth: 163, bottomY: 73, topY: 98 },
+    { z: -16, halfWidth: 164, bottomY: 79, topY: 111 }
+  ], shellMat, 'service cover front fascia');
+  frontFascia.position.set(0, -122, 142);
+  addPickable(frontFascia, COMPONENTS.shell, pickables);
+  serviceCoverPivot.add(frontFascia);
+
+  for (const sign of [-1, 1]) {
+    const shoulder = box(45, 52, 120, shellMat, sign < 0 ? 'left service-cover shoulder' : 'right service-cover shoulder');
+    shoulder.position.set(sign * 142, -10, 63);
+    shoulder.rotation.x = deg(-7);
+    addPickable(shoulder, COMPONENTS.shell, pickables);
+    serviceCoverPivot.add(shoulder);
+  }
+
+  const rearBridge = box(292, 19, 18, shellMat, 'service-cover rear bridge');
+  rearBridge.position.set(0, 1, -3);
+  addPickable(rearBridge, COMPONENTS.shell, pickables);
+  serviceCoverPivot.add(rearBridge);
 
   const badgeMat = material(0x233b55, 0.28, 0.42);
   const badge = box(30, 8, 2, badgeMat, 'IBM badge');
-  badge.position.set(0, 31, 41);
+  badge.position.set(0, -19, 144);
   badge.rotation.x = deg(-38);
   addPickable(badge, COMPONENTS.shell, pickables);
   serviceCoverPivot.add(badge);
@@ -1065,7 +1077,7 @@ export function createSelectricModel() {
       serviceCoverOpen: state.serviceCoverOpen,
       pickableCount: pickables.length,
       supportTopology: 'D6 front + Level-2 upper/lower rack shoes',
-      shellTopology: 'extruded rounded side-cheek profile + upper service-cover loft + explicit carrier opening',
+      shellTopology: 'extruded rounded side-cheek profile + hinged fascia/shoulder service-cover frame + explicit carrier/platen opening',
       keyboardCodeChannels: 6,
       keyboardCode: state.keyboardCode,
       selectorInputs: { ...state.selectorInputs },
