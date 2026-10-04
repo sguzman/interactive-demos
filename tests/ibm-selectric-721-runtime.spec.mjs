@@ -224,6 +224,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const variableFree = await page.evaluate(() => window.__selectricDebug.state);
   expect(variableFree.platenVariableEngaged).toBe(true);
   expect(variableFree.geometry.paperFeed.platenRatchetCoupled).toBe(false);
+  expect(variableFree.geometry.paperFeed.platenPhaseCueCount).toBe(2);
+  expect(variableFree.geometry.paperFeed.platenPhaseCueClass).toContain('P5 visible rotational cue');
+  expect(variableFree.geometry.paperFeed.platenPhaseCueAngleRad).toBeCloseTo(variableFree.geometry.paperFeed.platenPhysicalAngleRad, 8);
   expect(await page.locator('#platenForwardBtn').isEnabled()).toBe(true);
   const paperBeforeManual = variableFree.paperAdvanceMm;
   await page.locator('#platenForwardBtn').click();
@@ -232,6 +235,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(afterManualPlaten.platenIndex).toBe(ratchetBeforeVariable);
   expect(afterManualPlaten.geometry.paperFeed.manualPlatenAngle).toBeCloseTo(manualStep, 8);
   expect(afterManualPlaten.geometry.paperFeed.platenPhysicalAngleRad).toBeCloseTo(ratchetBeforeVariable + manualStep, 8);
+  expect(afterManualPlaten.geometry.paperFeed.platenPhaseCueAngleRad).toBeCloseTo(ratchetBeforeVariable + manualStep, 8);
   expect(afterManualPlaten.paperAdvanceMm - paperBeforeManual).toBeCloseTo(18.1864 * manualStep, 8);
   expect(afterManualPlaten.geometry.paperFeed.paperAdvanceMm).toBeCloseTo(afterManualPlaten.paperAdvanceMm, 8);
   expect(afterManualPlaten.geometry.paperFeed.feedRollPhaseRad).toBeCloseTo(afterManualPlaten.paperAdvanceMm / 6.2, 8);
@@ -244,6 +248,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(variableRecoupled.geometry.paperFeed.variableOffsetPersistsWhenRecoupled).toBe(true);
   expect(variableRecoupled.geometry.paperFeed.manualPlatenAngle).toBeCloseTo(manualStep, 8);
   expect(variableRecoupled.geometry.paperFeed.platenPhysicalAngleRad).toBeCloseTo(ratchetBeforeVariable + manualStep, 8);
+  expect(variableRecoupled.geometry.paperFeed.platenPhaseCueAngleRad).toBeCloseTo(variableRecoupled.geometry.paperFeed.platenPhysicalAngleRad, 8);
   expect(await page.locator('#platenForwardBtn').isDisabled()).toBe(true);
 
   // Restore zero variable offset without disturbing the ratchet phase.

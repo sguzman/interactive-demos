@@ -1117,12 +1117,31 @@ export function createSelectricModel() {
   addPickable(platen, COMPONENTS.platen, pickables);
   paperFeedCarriage.add(platen);
 
+  const platenKnobPivots = [];
   for (const x of [-159, 159]) {
+    const pivot = new THREE.Group();
+    pivot.name = x < 0 ? 'left platen knob phase pivot' : 'right platen knob phase pivot';
+    pivot.position.set(x, P4.platen.y, P4.platen.z);
+
     const knob = shaft(28, 14, shellDark, x < 0 ? 'left platen knob' : 'right platen knob');
-    knob.position.set(x, P4.platen.y, P4.platen.z);
-    knob.userData.component = COMPONENTS.platen;
-    pickables.push(knob);
-    paperFeedCarriage.add(knob);
+    addPickable(knob, COMPONENTS.platen, pickables);
+    pivot.add(knob);
+
+    const phaseCue = box(8.5, 1.2, 1.8, metal, x < 0 ? 'left platen phase cue' : 'right platen phase cue');
+    phaseCue.position.set(0, 13.2, 0);
+    addPickable(phaseCue, COMPONENTS.platen, pickables);
+    pivot.add(phaseCue);
+
+    paperFeedCarriage.add(pivot);
+    platenKnobPivots.push(pivot);
+  }
+
+  function setPlatenPhysicalAngle(angle) {
+    const a = Number(angle) || 0;
+    platen.rotation.x = a;
+    platenKnobPivots.forEach(pivot => {
+      pivot.rotation.x = a;
+    });
   }
 
   const paper = makePaper(pickables);
@@ -2273,7 +2292,7 @@ export function createSelectricModel() {
     if (!state.platenVariableEngaged) return false;
     const rotation = Number(delta) || 0;
     state.manualPlatenAngle += rotation;
-    platen.rotation.x = state.platenIndex + state.manualPlatenAngle;
+    setPlatenPhysicalAngle(state.platenIndex + state.manualPlatenAngle);
     if (state.feedRollsEngaged) {
       const deltaPaperMm = rotation * CANONICAL.platen.radiusMm;
       state.paperAdvanceMm += deltaPaperMm;
@@ -2286,7 +2305,7 @@ export function createSelectricModel() {
 
   function resetPlatenVariableOffset() {
     state.manualPlatenAngle = 0;
-    platen.rotation.x = state.platenIndex;
+    setPlatenPhysicalAngle(state.platenIndex);
   }
 
   function setLineSpacingMode(value) {
@@ -2309,7 +2328,7 @@ export function createSelectricModel() {
     const next = Number(value) || 0;
     const delta = next - state.platenIndex;
     state.platenIndex = next;
-    platen.rotation.x = next + state.manualPlatenAngle;
+    setPlatenPhysicalAngle(next + state.manualPlatenAngle);
     ratchetGroup.rotation.x = next;
     if (state.feedRollsEngaged) {
       const deltaPaperMm = delta * CANONICAL.platen.radiusMm;
@@ -2527,6 +2546,9 @@ export function createSelectricModel() {
         platenRatchetCoupled: !state.platenVariableEngaged,
         manualPlatenAngle: state.manualPlatenAngle,
         platenPhysicalAngleRad: state.platenIndex + state.manualPlatenAngle,
+        platenPhaseCueAngleRad: platenKnobPivots[0].rotation.x,
+        platenPhaseCueCount: platenKnobPivots.length,
+        platenPhaseCueClass: 'P5 visible rotational cue; follows physical platen while ratchet may decouple',
         variableOffsetPersistsWhenRecoupled: true,
         paperAdvanceMm: state.paperAdvanceMm,
         paperAdvanceClass: 'P2 platen arc length while feed rolls are engaged',
