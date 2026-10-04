@@ -31,6 +31,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.d6CurrentSet.clipMarketFrozen).toBe(false);
   expect(initial.geometry.platenRatchet.outerDiameterMm).toBeCloseTo(30.1498, 6);
   expect(initial.geometry.platenRatchet.teeth).toBe(27);
+  expect(initial.geometry.platenRatchet.lineSpacingModes).toEqual(['single', 'double']);
+  expect(initial.geometry.platenRatchet.singleIndexTeeth).toBe(1);
+  expect(initial.geometry.platenRatchet.doubleIndexTeeth).toBe(2);
+  expect(initial.geometry.platenRatchet.activeIndexTeeth).toBe(1);
+  expect(initial.lineSpacingTeeth).toBe(1);
   expect(initial.geometry.paperFeed.frontRollers).toBe(4);
   expect(initial.geometry.paperFeed.rearRollers).toBe(4);
   expect(initial.geometry.paperFeed.bailRollers).toBe(2);
@@ -379,8 +384,22 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(indexed.line).toBe(1);
   expect(indexed.platenIndex).toBeCloseTo(Math.PI * 2 / 27, 6);
   expect(indexed.events.some(event => event.name === 'INDEX_OPERATION_COMPLETE')).toBe(true);
+  expect(indexed.events.some(event => event.name === 'INDEX_RATCHET_ADVANCE' && event.teeth === 1)).toBe(true);
 
-  const beforeTab = indexed.carrierX;
+  const doubleMode = await page.evaluate(() => window.__selectricDebug.setLineSpacing(2));
+  expect(doubleMode).toBe(true);
+  const beforeDoubleIndex = await page.evaluate(() => window.__selectricDebug.state);
+  await page.evaluate(() => window.__selectricDebug.index());
+  await page.waitForFunction(() => window.__selectricDebug.state.serviceOperation === null, null, { timeout: 5000 });
+  const doubleIndexed = await page.evaluate(() => window.__selectricDebug.state);
+  expect(doubleIndexed.lineSpacingTeeth).toBe(2);
+  expect(doubleIndexed.line - beforeDoubleIndex.line).toBe(2);
+  expect(doubleIndexed.platenIndex - beforeDoubleIndex.platenIndex).toBeCloseTo(Math.PI * 4 / 27, 6);
+  expect(doubleIndexed.geometry.platenRatchet.activeIndexTeeth).toBe(2);
+  expect(doubleIndexed.events.some(event => event.name === 'INDEX_RATCHET_ADVANCE' && event.teeth === 2)).toBe(true);
+  await page.evaluate(() => window.__selectricDebug.setLineSpacing(1));
+
+  const beforeTab = doubleIndexed.carrierX;
   await page.evaluate(() => window.__selectricDebug.tab());
   await page.waitForFunction(() => window.__selectricDebug.state.operation === null, null, { timeout: 5000 });
   const tabbed = await page.evaluate(() => window.__selectricDebug.state);
