@@ -29,7 +29,7 @@ The browser model currently includes:
 - distinct coarse selection and carrier-local tilt/rotate fine-alignment detents, with source-order-preserving P5 engagement/release phasing;
 - 7X1 gearless tilt and rotate tape presentation driven by the source-backed normalized 1:2 tilt weighting, staged 1:2:2 rotate weighting and signed five-unit balance, with a carrier-sweep constant-length presentation path;
 - cycle and operational shafts, cams, motor and belt cues;
-- fabric-ribbon lift;
+- fabric-ribbon lift plus source-ordered bidirectional feed and automatic reversal; the browser uses an explicitly P5 compressed spool-end threshold while preserving the OEM trigger -> feed/reverse-plate pivot -> pawl/check transfer sequence;
 - paper output that records typed characters;
 - deterministic character-cycle ordering through code setup, selection, fine align, impact, escapement and clutch check;
 - fixed escapement/margin/tab rack families, physical left/right margin stops, opposed carrier cords, common escapement-shaft drums, mainspring cue, spring-loaded right tension arm, sustained carrier-return clutch/pinion drive and non-propulsive tab governor;
@@ -57,6 +57,7 @@ The Playwright smoke test checks:
 - current carrier-support and print-sleeve topology metadata;
 - one character = one 12-CPI carrier pitch;
 - impact before escapement advance;
+- automatic fabric-ribbon reversal transfers feed direction through the animated reverse sequence;
 - explosion independence;
 - space / backspace;
 - shift hemisphere;
