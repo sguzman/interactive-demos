@@ -46,6 +46,78 @@ function setAssemblyExplosion(group, amount) {
   group.position.copy(group.userData.basePosition).addScaledVector(group.userData.explodeVector, amount);
 }
 
+function loftPrism(stations, mat, name) {
+  const vertices = [];
+  const indices = [];
+  for (const station of stations) {
+    vertices.push(
+      -station.halfWidth, station.bottomY, station.z,
+       station.halfWidth, station.bottomY, station.z,
+       station.halfWidth, station.topY, station.z,
+      -station.halfWidth, station.topY, station.z
+    );
+  }
+  const quad = (a,b,c,d) => indices.push(a,b,c, a,c,d);
+  for (let i = 0; i < stations.length - 1; i += 1) {
+    const a = i * 4, b = (i + 1) * 4;
+    quad(a, b, b+1, a+1);
+    quad(a+1, b+1, b+2, a+2);
+    quad(a+2, b+2, b+3, a+3);
+    quad(a+3, b+3, b, a);
+  }
+  quad(0,1,2,3);
+  const e = (stations.length - 1) * 4;
+  quad(e+3,e+2,e+1,e);
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  const loftMat = mat.clone();
+  loftMat.side = THREE.DoubleSide;
+  const mesh = new THREE.Mesh(geometry, loftMat);
+  mesh.name = name;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function loftSidePanel(sign, stations, mat, name) {
+  const vertices = [];
+  const indices = [];
+  for (const station of stations) {
+    const ox = sign * station.outerX;
+    const ix = sign * station.innerX;
+    vertices.push(
+      ox, station.bottomY, station.z,
+      ox, station.topY, station.z,
+      ix, station.topY - station.innerDrop, station.z,
+      ix, station.bottomY + 3, station.z
+    );
+  }
+  const quad = (a,b,c,d) => indices.push(a,b,c, a,c,d);
+  for (let i = 0; i < stations.length - 1; i += 1) {
+    const a = i * 4, b = (i + 1) * 4;
+    quad(a,b,b+1,a+1);
+    quad(a+1,b+1,b+2,a+2);
+    quad(a+2,b+2,b+3,a+3);
+    quad(a+3,b+3,b,a);
+  }
+  quad(0,1,2,3);
+  const e=(stations.length-1)*4;
+  quad(e+3,e+2,e+1,e);
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices,3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  const panelMat = mat.clone();
+  panelMat.side = THREE.DoubleSide;
+  const mesh = new THREE.Mesh(geometry,panelMat);
+  mesh.name=name;
+  mesh.castShadow=true;
+  mesh.receiveShadow=true;
+  return mesh;
+}
+
 function dynamicTube(color, radius, name, component, pickables) {
   const mesh = new THREE.Mesh(
     new THREE.BufferGeometry(),
@@ -278,17 +350,37 @@ export function createSelectricModel() {
   addPickable(base, COMPONENTS.shell, pickables);
   shellAssembly.add(base);
 
-  const leftCheek = box(25, 118, 270, shellMat, 'left shell cheek');
-  leftCheek.position.set(-177, 75, -18);
+  const cheekStations = [
+    { z: 150, outerX: 181, innerX: 151, bottomY: 22, topY: 47, innerDrop: 5 },
+    { z: 118, outerX: 183, innerX: 154, bottomY: 22, topY: 66, innerDrop: 8 },
+    { z: 72, outerX: 184, innerX: 157, bottomY: 22, topY: 88, innerDrop: 12 },
+    { z: 26, outerX: 184, innerX: 159, bottomY: 22, topY: 111, innerDrop: 16 },
+    { z: -28, outerX: 181, innerX: 158, bottomY: 22, topY: 137, innerDrop: 17 },
+    { z: -78, outerX: 177, innerX: 154, bottomY: 22, topY: 148, innerDrop: 13 },
+    { z: -138, outerX: 174, innerX: 151, bottomY: 22, topY: 125, innerDrop: 9 }
+  ];
+  const leftCheek = loftSidePanel(-1, cheekStations, shellMat, 'left continuous shell cheek');
   addPickable(leftCheek, COMPONENTS.shell, pickables);
   shellAssembly.add(leftCheek);
-
-  const rightCheek = leftCheek.clone();
-  rightCheek.name = 'right shell cheek';
-  rightCheek.position.x = 177;
-  rightCheek.userData.component = COMPONENTS.shell;
-  pickables.push(rightCheek);
+  const rightCheek = loftSidePanel(1, cheekStations, shellMat, 'right continuous shell cheek');
+  addPickable(rightCheek, COMPONENTS.shell, pickables);
   shellAssembly.add(rightCheek);
+
+  const upperCover = loftPrism([
+    { z: 36, halfWidth: 160, bottomY: 69, topY: 84 },
+    { z: 8, halfWidth: 163, bottomY: 73, topY: 102 },
+    { z: -22, halfWidth: 164, bottomY: 78, topY: 121 },
+    { z: -55, halfWidth: 162, bottomY: 83, topY: 137 }
+  ], shellMat, 'top service cover / front shoulder loft');
+  addPickable(upperCover, COMPONENTS.shell, pickables);
+  shellAssembly.add(upperCover);
+
+  const badgeMat = material(0x233b55, 0.28, 0.42);
+  const badge = box(30, 8, 2, badgeMat, 'IBM badge');
+  badge.position.set(0, 114, -14);
+  badge.rotation.x = deg(-38);
+  addPickable(badge, COMPONENTS.shell, pickables);
+  shellAssembly.add(badge);
 
   const rearCowl = box(330, 72, 72, shellMat, 'rear cowl');
   rearCowl.position.set(0, 83, -118);
@@ -301,6 +393,31 @@ export function createSelectricModel() {
   rearLip.rotation.x = deg(-10);
   addPickable(rearLip, COMPONENTS.shell, pickables);
   shellAssembly.add(rearLip);
+
+  const ruler = box(268, 6, 5, metal, '12-CPI writing-position rule');
+  ruler.position.set(0, 82, 30);
+  addPickable(ruler, COMPONENTS.horizontalMotion, pickables);
+  shellAssembly.add(ruler);
+
+  const tickGeometry = new THREE.BoxGeometry(0.42, 4.2, 1.0);
+  const tickMaterial = material(0x252a2b, 0.15, 0.5);
+  const ticks = new THREE.InstancedMesh(tickGeometry, tickMaterial, CANONICAL.nominalPositions);
+  ticks.name = 'writing-position rule ticks';
+  const tickMatrix = new THREE.Matrix4();
+  for (let i = 0; i < CANONICAL.nominalPositions; i += 1) {
+    const x = (i - (CANONICAL.nominalPositions - 1) / 2) * CANONICAL.pitchMm;
+    const tickScale = new THREE.Vector3(1, i % 10 === 0 ? 1.55 : i % 5 === 0 ? 1.25 : 0.85, 1);
+    tickMatrix.compose(new THREE.Vector3(x, 84, 27.2), new THREE.Quaternion(), tickScale);
+    ticks.setMatrixAt(i, tickMatrix);
+  }
+  ticks.userData.component = COMPONENTS.horizontalMotion;
+  pickables.push(ticks);
+  shellAssembly.add(ticks);
+
+  const indicator = box(3.5, 8, 4, material(0xa64032, 0.1, 0.52), 'writing-position indicator');
+  indicator.position.set(0, 85, 25.5);
+  addPickable(indicator, COMPONENTS.horizontalMotion, pickables);
+  shellAssembly.add(indicator);
 
   const keyboardAssembly = makeAssembly('keyboard assembly', new THREE.Vector3(0, -18, 78));
   assemblies.push(keyboardAssembly);
@@ -549,6 +666,19 @@ export function createSelectricModel() {
 
   const paper = makePaper(pickables);
   platenAssembly.add(paper.mesh);
+
+  const bailBar = shaft(266, 2.8, metal, 'paper bail bar');
+  bailBar.position.set(0, P4.platen.y + 27, P4.platen.z + 4);
+  addPickable(bailBar, COMPONENTS.platen, pickables);
+  platenAssembly.add(bailBar);
+  for (const x of [-82, 0, 82]) {
+    const roller = new THREE.Mesh(new THREE.CylinderGeometry(5.5, 5.5, 12, 20), rubber);
+    roller.rotation.z = Math.PI / 2;
+    roller.position.set(x, P4.platen.y + 24, P4.platen.z + 1);
+    roller.name = 'paper bail roller';
+    addPickable(roller, COMPONENTS.platen, pickables);
+    platenAssembly.add(roller);
+  }
 
   const ribbonAssembly = makeAssembly('ribbon assembly', new THREE.Vector3(0, 18, 10));
   assemblies.push(ribbonAssembly);
@@ -831,7 +961,7 @@ export function createSelectricModel() {
     const size = new THREE.Vector3();
     bounds.getSize(size);
     return {
-      revision: 'selectric-public-foundation-v2',
+      revision: 'selectric-public-foundation-v3',
       finite: [size.x, size.y, size.z].every(Number.isFinite),
       bounds: { width: size.x, height: size.y, depth: size.z },
       carrierX: state.carrierX,
@@ -840,6 +970,7 @@ export function createSelectricModel() {
       explosion: state.explosion,
       pickableCount: pickables.length,
       supportTopology: 'D6 front + Level-2 upper/lower rack shoes',
+      shellTopology: 'longitudinal side-cheek loft + upper service-cover loft + explicit carrier opening',
       keyboardCodeChannels: 6,
       keyboardCode: state.keyboardCode,
       selectorInputs: { ...state.selectorInputs },
