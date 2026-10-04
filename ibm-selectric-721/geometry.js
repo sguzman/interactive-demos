@@ -382,6 +382,7 @@ export function createSelectricModel() {
     cordPhase: 0,
     serviceCoverOpen: 0,
     selectorInputs: { T1: 0, T2: 0, R1: 0, R2: 0, R2A: 0, fiveUnit: 0 },
+    selectionNormalized: { qTilt: 0, q1: 0, q2: 0, qSigned: 0 },
     ribbonFeedStep: 0,
     ribbonFeedApproxRatchetTeeth: 0,
     ribbonFeedDirection: 1,
@@ -1136,24 +1137,63 @@ export function createSelectricModel() {
   selectionAssembly.add(fiveUnitBail);
 
   const tiltDifferential = new THREE.Group();
-  tiltDifferential.position.set(-72, 68, -35);
+  tiltDifferential.position.set(-76, 68, -35);
   selectionAssembly.add(tiltDifferential);
-  const tiltArmA = box(52, 4, 6, metal, 'tilt differential lever');
+  const tiltLeverSpan = 60;
+  const tiltArmA = box(tiltLeverSpan, 4, 6, metal, 'tilt differential lever · normalized span 3');
   addPickable(tiltArmA, COMPONENTS.selection, pickables);
   tiltDifferential.add(tiltArmA);
-  const tiltLink = box(4, 36, 5, darkMetal, 'tilt differential output link');
-  tiltLink.position.set(20, 16, 0);
+  const tiltT2Input = box(4, 28, 5, darkMetal, 'T2 input at normalized x=0');
+  tiltT2Input.position.set(-tiltLeverSpan / 2, 14, 0);
+  tiltT2Input.userData.baseY = tiltT2Input.position.y;
+  addPickable(tiltT2Input, COMPONENTS.selection, pickables);
+  tiltDifferential.add(tiltT2Input);
+  const tiltT1Input = box(4, 28, 5, darkMetal, 'T1 input at normalized x=3');
+  tiltT1Input.position.set(tiltLeverSpan / 2, 14, 0);
+  tiltT1Input.userData.baseY = tiltT1Input.position.y;
+  addPickable(tiltT1Input, COMPONENTS.selection, pickables);
+  tiltDifferential.add(tiltT1Input);
+  const tiltLink = box(4, 36, 5, darkMetal, 'tilt output link at normalized x=1');
+  tiltLink.position.set(-tiltLeverSpan / 6, 16, 0);
+  tiltLink.userData.baseY = tiltLink.position.y;
   addPickable(tiltLink, COMPONENTS.selection, pickables);
   tiltDifferential.add(tiltLink);
 
+  const rotateFirst = new THREE.Group();
+  rotateFirst.position.set(12, 56, -34);
+  selectionAssembly.add(rotateFirst);
+  const rotateFirstSpan = 54;
+  const rotateFirstLever = box(rotateFirstSpan, 4, 6, metal, 'rotate first lever · normalized span 3');
+  addPickable(rotateFirstLever, COMPONENTS.selection, pickables);
+  rotateFirst.add(rotateFirstLever);
+  const rotateFirstLink = box(4, 28, 5, darkMetal, 'rotate q1 link at normalized x=2');
+  rotateFirstLink.position.set(rotateFirstSpan / 6, 14, 0);
+  rotateFirstLink.userData.baseY = rotateFirstLink.position.y;
+  addPickable(rotateFirstLink, COMPONENTS.selection, pickables);
+  rotateFirst.add(rotateFirstLink);
+
+  const rotateSecond = new THREE.Group();
+  rotateSecond.position.set(68, 68, -38);
+  selectionAssembly.add(rotateSecond);
+  const rotateSecondSpan = 58;
+  const rotateSecondLever = box(rotateSecondSpan, 4, 6, metal, 'rotate second lever · normalized span 5');
+  addPickable(rotateSecondLever, COMPONENTS.selection, pickables);
+  rotateSecond.add(rotateSecondLever);
+  const rotateSecondLink = box(4, 30, 5, darkMetal, 'rotate q2 link at normalized x=3');
+  rotateSecondLink.position.set(rotateSecondSpan * 0.1, 15, 0);
+  rotateSecondLink.userData.baseY = rotateSecondLink.position.y;
+  addPickable(rotateSecondLink, COMPONENTS.selection, pickables);
+  rotateSecond.add(rotateSecondLink);
+
   const rotateBalance = new THREE.Group();
-  rotateBalance.position.set(56, 68, -35);
+  rotateBalance.position.set(108, 77, -42);
   selectionAssembly.add(rotateBalance);
-  const rotateArm = box(62, 4, 6, metal, 'rotate balance lever');
+  const rotateArm = box(54, 4, 6, metal, 'rotate signed balance lever · normalized span 2');
   addPickable(rotateArm, COMPONENTS.selection, pickables);
   rotateBalance.add(rotateArm);
-  const rotateBellcrank = box(5, 34, 5, darkMetal, 'rotate bellcrank output');
-  rotateBellcrank.position.set(-18, 15, 0);
+  const rotateBellcrank = box(5, 34, 5, darkMetal, 'rotate balance midpoint output');
+  rotateBellcrank.position.set(0, 15, 0);
+  rotateBellcrank.userData.baseY = rotateBellcrank.position.y;
   addPickable(rotateBellcrank, COMPONENTS.selection, pickables);
   rotateBalance.add(rotateBellcrank);
 
@@ -1175,6 +1215,12 @@ export function createSelectricModel() {
     const positive = rotatePositiveInputs(compensation);
     state.selectorInputs = { T1, T2, ...positive, fiveUnit };
 
+    const qTilt = (T1 + 2 * T2) / 3;
+    const q1 = (positive.R1 + 2 * positive.R2) / 3;
+    const q2 = (3 * q1 + 2 * positive.R2A) / 5;
+    const qSigned = q2 - fiveUnit;
+    state.selectionNormalized = { qTilt, q1, q2, qSigned };
+
     selectorLatches.T1.position.y = selectorLatches.T1.userData.baseY - T1 * 7;
     selectorLatches.T2.position.y = selectorLatches.T2.userData.baseY - T2 * 7;
     selectorLatches.R1.position.y = selectorLatches.R1.userData.baseY - positive.R1 * 7;
@@ -1182,8 +1228,12 @@ export function createSelectricModel() {
     selectorLatches.R2A.position.y = selectorLatches.R2A.userData.baseY - positive.R2A * 7;
     fiveUnitBail.position.y = fiveUnitBail.userData.baseY - fiveUnit * 8;
 
-    tiltDifferential.rotation.z = deg((tiltBand - 1.5) * 6.5);
-    rotateBalance.rotation.z = deg(rotateUnit * 3.2);
+    tiltT1Input.position.y = tiltT1Input.userData.baseY - T1 * 8;
+    tiltT2Input.position.y = tiltT2Input.userData.baseY - T2 * 8;
+    tiltLink.position.y = tiltLink.userData.baseY - qTilt * 12;
+    rotateFirstLink.position.y = rotateFirstLink.userData.baseY - q1 * 10;
+    rotateSecondLink.position.y = rotateSecondLink.userData.baseY - q2 * 10;
+    rotateBellcrank.position.y = rotateBellcrank.userData.baseY - qSigned * 10;
   }
 
   const carrierAssembly = makeAssembly('carrier assembly', new THREE.Vector3(-92, 102, -8));
@@ -1442,20 +1492,51 @@ export function createSelectricModel() {
   addPickable(carrierRotatePulley, COMPONENTS.selection, pickables);
   carrierMotion.add(carrierRotatePulley);
 
+  function selectionTapePointsAt(x) {
+    const qTilt = state.selectionNormalized.qTilt;
+    const qSigned = state.selectionNormalized.qSigned;
+    const shiftOffset = state.shiftAngleDeg / 180 * 8;
+
+    const tilt = [
+      new THREE.Vector3(-143, 59 - qTilt * 9, -31),
+      new THREE.Vector3(-143, 91, -42),
+      new THREE.Vector3(x - 22, 91, -42),
+      new THREE.Vector3(x + 22, 91, -42),
+      new THREE.Vector3(143, 91, -42),
+      new THREE.Vector3(143, 59, -31)
+    ];
+
+    const rotate = [
+      new THREE.Vector3(-143, 60 - qSigned * 9, -29),
+      new THREE.Vector3(-143, 88, -46),
+      new THREE.Vector3(x - 22, 88, -46),
+      new THREE.Vector3(x + 22, 88, -46),
+      new THREE.Vector3(143, 88, -46),
+      new THREE.Vector3(143, 60 + shiftOffset, -29)
+    ];
+    return { tilt, rotate };
+  }
+
+  function polylineLength(points) {
+    let length = 0;
+    for (let i = 1; i < points.length; i += 1) length += points[i].distanceTo(points[i - 1]);
+    return length;
+  }
+
+  function selectionTapeInvariantError() {
+    const xs = [-CANONICAL.writingLineMm / 2, 0, CANONICAL.writingLineMm / 2];
+    const tiltLengths = xs.map(x => polylineLength(selectionTapePointsAt(x).tilt));
+    const rotateLengths = xs.map(x => polylineLength(selectionTapePointsAt(x).rotate));
+    return {
+      tiltMm: Math.max(...tiltLengths) - Math.min(...tiltLengths),
+      rotateMm: Math.max(...rotateLengths) - Math.min(...rotateLengths)
+    };
+  }
+
   function updateSelectionTapes() {
-    const x = state.carrierX;
-    tiltTape.update([
-      new THREE.Vector3(-143, 59, -31),
-      new THREE.Vector3(-143, 75, -48),
-      new THREE.Vector3(x - 21, 91, -42),
-      new THREE.Vector3(143, 75, -48)
-    ]);
-    rotateTape.update([
-      new THREE.Vector3(143, 59, -31),
-      new THREE.Vector3(143, 75, -48),
-      new THREE.Vector3(x + 21, 91, -42),
-      new THREE.Vector3(-143, 75, -48)
-    ]);
+    const points = selectionTapePointsAt(state.carrierX);
+    tiltTape.update(points.tilt);
+    rotateTape.update(points.rotate);
   }
 
   function setKeyboardCode(code) {
@@ -1525,6 +1606,7 @@ export function createSelectricModel() {
     state.shiftHemisphere = shiftHemisphere ? 1 : 0;
     state.shiftAngleDeg = state.shiftHemisphere * 180;
     applyTypeElementOrientation();
+    updateSelectionTapes();
   }
 
   function setShiftTransition(fromHemisphere, toHemisphere, progress) {
@@ -1534,6 +1616,7 @@ export function createSelectricModel() {
     state.shiftAngleDeg = THREE.MathUtils.lerp(from * 180, to * 180, t);
     if (t >= 1) state.shiftHemisphere = to;
     applyTypeElementOrientation();
+    updateSelectionTapes();
   }
 
   function setRibbonLift(value) {
@@ -1659,6 +1742,15 @@ export function createSelectricModel() {
       keyboardCodeChannels: 6,
       keyboardCode: state.keyboardCode,
       selectorInputs: { ...state.selectorInputs },
+      selectionNormalized: { ...state.selectionNormalized },
+      selectionDifferential: {
+        tiltEquation: 'qTilt=(T1+2*T2)/3',
+        rotateQ1Equation: 'q1=(R1+2*R2)/3',
+        rotateQ2Equation: 'q2=(3*q1+2*R2A)/5',
+        signedEquation: 'qSigned=q2-fiveUnit',
+        rotateUnitsEquation: 'rotateUnits=5*qSigned',
+        tapeCarrierInvariantErrorMm: selectionTapeInvariantError()
+      },
       cordPhase: state.cordPhase,
       writingLineRacks: ['1124109 escapement', '1164743 margin', '1164102/6519354 tab'],
       returnTabDrive: {

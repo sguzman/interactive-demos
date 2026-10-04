@@ -26,7 +26,7 @@ The browser model currently includes:
 - IBM 1141628 print sleeve;
 - ribbon-lift -> IBM 1164240 -> IBM 1124174 cam-stack order;
 - 88-position structural type-element model;
-- 7X1 gearless tilt and rotate tape presentation;
+- 7X1 gearless tilt and rotate tape presentation driven by the source-backed normalized 1:2 tilt weighting, staged 1:2:2 rotate weighting and signed five-unit balance, with a carrier-sweep constant-length presentation path;
 - cycle and operational shafts, cams, motor and belt cues;
 - fabric-ribbon lift;
 - paper output that records typed characters;
