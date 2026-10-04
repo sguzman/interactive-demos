@@ -110,6 +110,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.typeElement.bandLatitudesP4).toEqual([-0.58, -0.2, 0.2, 0.58]);
   expect(initial.geometry.typeElement.bandTiltAnglesDegP4).toHaveLength(4);
   expect(initial.geometry.typeElement.selectionOrientationClass).toContain('structural lattice alignment');
+  expect(initial.geometry.typeElement.printFacingOffsetDegP4).toBe(180);
+  expect(initial.geometry.typeElement.printFacingTarget).toContain('-Z toward platen');
   expect(initial.geometry.typeElement.glyphFaceGeometry).toContain('unresolved');
   expect(initial.geometry.operationalCams.spaceBackspaceDegreesPerOperation).toBe(180);
   expect(initial.geometry.operationalCams.carrierReturnIndexDegreesPerOperation).toBe(360);

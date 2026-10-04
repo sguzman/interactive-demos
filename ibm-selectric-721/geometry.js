@@ -3,6 +3,7 @@ import { CANONICAL, P4, COMPONENTS } from './spec.js';
 
 const deg = THREE.MathUtils.degToRad;
 const TYPE_BAND_LATITUDES_P4 = [-0.58, -0.20, 0.20, 0.58];
+const TYPE_PRINT_FACING_OFFSET_DEG_P4 = 180;
 
 function typeBandNormalTiltRadP4(band) {
   const index = THREE.MathUtils.clamp(Math.round(Number(band) || 0), 0, TYPE_BAND_LATITUDES_P4.length - 1);
@@ -2033,7 +2034,11 @@ export function createSelectricModel() {
     // 22 structural positions around each band = 11 base rotate coordinates plus the
     // independent 180° shift hemisphere. The public key-to-slot assignment remains P5,
     // but the visible ball now lands on the same structural lattice as its 88 slug cues.
-    typeElement.rotation.y = deg(-state.rotateUnit * rotateSlotStepDegP4 + state.shiftAngleDeg);
+    typeElement.rotation.y = deg(
+      TYPE_PRINT_FACING_OFFSET_DEG_P4 -
+      state.rotateUnit * rotateSlotStepDegP4 +
+      state.shiftAngleDeg
+    );
   }
 
   function setTypeball(tiltBand, rotateUnit, shiftHemisphere = state.shiftHemisphere) {
@@ -2480,7 +2485,9 @@ export function createSelectricModel() {
           rotate: THREE.MathUtils.radToDeg(typeElement.rotation.y)
         },
         selectedStructuralSlotP4: ((state.rotateUnit + state.shiftHemisphere * 11) % CANONICAL.typeElement.positionsPerBand + CANONICAL.typeElement.positionsPerBand) % CANONICAL.typeElement.positionsPerBand,
-        selectionOrientationClass: 'P4 structural lattice alignment; exact keyboard/typeball glyph assignment remains P5',
+        printFacingOffsetDegP4: TYPE_PRINT_FACING_OFFSET_DEG_P4,
+        printFacingTarget: '-Z toward platen in the public reconstruction coordinate frame',
+        selectionOrientationClass: 'P4 structural lattice alignment and print-facing anchor; exact keyboard/typeball glyph assignment remains P5',
         glyphFaceGeometry: 'unresolved; repeated structural slug cues only'
       },
       selectionDifferential: {
