@@ -1341,21 +1341,125 @@ export function createSelectricModel() {
   const returnCord = dynamicTube(0xb8b2a4, 1.05, 'carrier-return cord', COMPONENTS.horizontalMotion, pickables);
   horizontalAssembly.add(escapementCord.mesh, returnCord.mesh);
 
+  const escapementCordDrumPointP4 = new THREE.Vector3(
+    72,
+    P4.cordSystem.shaftY,
+    P4.cordSystem.shaftZ - 9
+  );
+  const escapementCordGuidePointP4 = new THREE.Vector3(P4.cordSystem.rightPulleyX - 18, 60, -36);
+  const tensionArmPulleyLocalP4 = new THREE.Vector3(0, 20, -20);
+  const cordHalfTravelP4 = CANONICAL.writingLineMm / 2;
+
+  function tensionArmPulleyPointP4(angleRad) {
+    const localY = tensionArmPulleyLocalP4.y;
+    const localZ = tensionArmPulleyLocalP4.z;
+    return new THREE.Vector3(
+      P4.cordSystem.rightPulleyX,
+      P4.cordSystem.shaftY + localY * Math.cos(angleRad) - localZ * Math.sin(angleRad),
+      P4.cordSystem.shaftZ + localY * Math.sin(angleRad) + localZ * Math.cos(angleRad)
+    );
+  }
+
+  function escapementCordCarrierPointP4(carrierX) {
+    return new THREE.Vector3(carrierX + 24, 82, -48);
+  }
+
+  function escapementCordFreeSpanMmP4(carrierX, armAngleRad) {
+    const pulleyPoint = tensionArmPulleyPointP4(armAngleRad);
+    return (
+      escapementCordDrumPointP4.distanceTo(escapementCordGuidePointP4) +
+      escapementCordGuidePointP4.distanceTo(pulleyPoint) +
+      pulleyPoint.distanceTo(escapementCordCarrierPointP4(carrierX))
+    );
+  }
+
+  const escapementCordReferenceSpanMmP4 = escapementCordFreeSpanMmP4(0, 0);
+  const escapementCordLeftSpanDeltaMmP4 =
+    escapementCordFreeSpanMmP4(-cordHalfTravelP4, 0) - escapementCordReferenceSpanMmP4;
+  const escapementCordRightSpanDeltaMmP4 =
+    escapementCordFreeSpanMmP4(cordHalfTravelP4, 0) - escapementCordReferenceSpanMmP4;
+  // P4 effective payout balances the two end-of-line residuals before the spring arm absorbs
+  // the remaining geometric nonlinearity. It is a constructive cord/drum coupling, not an OEM ratio.
+  const escapementCordDrumPayoutRatioP4 =
+    (escapementCordLeftSpanDeltaMmP4 - escapementCordRightSpanDeltaMmP4) /
+    (2 * cordHalfTravelP4);
+
+  function compensatedEscapementCordErrorMmP4(carrierX, armAngleRad) {
+    return (
+      escapementCordFreeSpanMmP4(carrierX, armAngleRad) +
+      carrierX * escapementCordDrumPayoutRatioP4 -
+      escapementCordReferenceSpanMmP4
+    );
+  }
+
+  function solveTensionArmAngleRadP4(carrierX) {
+    const minAngle = deg(-25);
+    const maxAngle = deg(10);
+    const samples = 140;
+    const roots = [];
+    let previousAngle = minAngle;
+    let previousError = compensatedEscapementCordErrorMmP4(carrierX, previousAngle);
+    for (let i = 1; i <= samples; i += 1) {
+      const angle = THREE.MathUtils.lerp(minAngle, maxAngle, i / samples);
+      const error = compensatedEscapementCordErrorMmP4(carrierX, angle);
+      if (previousError === 0 || error === 0 || previousError * error < 0) {
+        let lo = previousAngle;
+        let hi = angle;
+        let loError = previousError;
+        for (let iteration = 0; iteration < 32; iteration += 1) {
+          const mid = (lo + hi) / 2;
+          const midError = compensatedEscapementCordErrorMmP4(carrierX, mid);
+          if (loError === 0 || loError * midError <= 0) {
+            hi = mid;
+          } else {
+            lo = mid;
+            loError = midError;
+          }
+        }
+        roots.push((lo + hi) / 2);
+      }
+      previousAngle = angle;
+      previousError = error;
+    }
+    if (roots.length) {
+      return roots.reduce((best, candidate) =>
+        Math.abs(candidate) < Math.abs(best) ? candidate : best
+      );
+    }
+
+    let bestAngle = 0;
+    let bestError = Math.abs(compensatedEscapementCordErrorMmP4(carrierX, bestAngle));
+    for (let i = 0; i <= samples; i += 1) {
+      const angle = THREE.MathUtils.lerp(minAngle, maxAngle, i / samples);
+      const error = Math.abs(compensatedEscapementCordErrorMmP4(carrierX, angle));
+      if (error < bestError) {
+        bestAngle = angle;
+        bestError = error;
+      }
+    }
+    return bestAngle;
+  }
+
+  const tensionArmSweepSamplesP4 = Array.from({ length: 33 }, (_, index) => {
+    const carrierX = THREE.MathUtils.lerp(-cordHalfTravelP4, cordHalfTravelP4, index / 32);
+    return THREE.MathUtils.radToDeg(solveTensionArmAngleRadP4(carrierX));
+  });
+  const tensionArmSweepRangeDegP4 = [
+    Math.min(...tensionArmSweepSamplesP4),
+    Math.max(...tensionArmSweepSamplesP4)
+  ];
+
   function updateCordGeometry(carrierX) {
-    const normalized = (carrierX + CANONICAL.writingLineMm / 2) / CANONICAL.writingLineMm;
-    state.tensionArmAngleDeg = THREE.MathUtils.lerp(-5, 5, normalized);
-    tensionArm.rotation.x = deg(state.tensionArmAngleDeg);
-    const armAngle = tensionArm.rotation.x;
-    const localY = 20;
-    const localZ = -20;
-    const tensionY = P4.cordSystem.shaftY + localY * Math.cos(armAngle) - localZ * Math.sin(armAngle);
-    const tensionZ = P4.cordSystem.shaftZ + localY * Math.sin(armAngle) + localZ * Math.cos(armAngle);
+    const armAngle = solveTensionArmAngleRadP4(carrierX);
+    state.tensionArmAngleDeg = THREE.MathUtils.radToDeg(armAngle);
+    tensionArm.rotation.x = armAngle;
+    const tensionPoint = tensionArmPulleyPointP4(armAngle);
 
     escapementCord.update([
-      new THREE.Vector3(72, P4.cordSystem.shaftY, P4.cordSystem.shaftZ - 9),
-      new THREE.Vector3(P4.cordSystem.rightPulleyX - 18, 60, -36),
-      new THREE.Vector3(P4.cordSystem.rightPulleyX, tensionY, tensionZ),
-      new THREE.Vector3(carrierX + 24, 82, -48)
+      escapementCordDrumPointP4,
+      escapementCordGuidePointP4,
+      tensionPoint,
+      escapementCordCarrierPointP4(carrierX)
     ]);
     returnCord.update([
       new THREE.Vector3(-22, P4.cordSystem.shaftY, P4.cordSystem.shaftZ - 9),
@@ -1364,7 +1468,7 @@ export function createSelectricModel() {
       new THREE.Vector3(carrierX - 24, 78, -45)
     ]);
     const travel = carrierX + CANONICAL.writingLineMm / 2;
-    state.cordPhase = travel / Math.max(P4.cordSystem.drumRadius, 1);
+    state.cordPhase = travel * escapementCordDrumPayoutRatioP4 / Math.max(P4.cordSystem.drumRadius, 1);
     escapementDrum.rotation.x = state.cordPhase;
     returnDrum.rotation.x = -state.cordPhase;
   }
@@ -2956,7 +3060,16 @@ export function createSelectricModel() {
         opposedDrumWinding: true,
         mainspringSuppliesRightwardCarrierEnergy: true,
         rightTensionArmSpiralSprings: 2,
-        tensionArmAngleDeg: state.tensionArmAngleDeg
+        tensionArmAngleDeg: state.tensionArmAngleDeg,
+        tensionArmSweepRangeDegP4: [...tensionArmSweepRangeDegP4],
+        effectiveDrumPayoutRatioP4: escapementCordDrumPayoutRatioP4,
+        freeSpanMmP4: escapementCordFreeSpanMmP4(state.carrierX, tensionArm.rotation.x),
+        referenceSpanMmP4: escapementCordReferenceSpanMmP4,
+        compensatedLengthErrorMmP4: compensatedEscapementCordErrorMmP4(
+          state.carrierX,
+          tensionArm.rotation.x
+        ),
+        tensionModelClass: 'P4 solved spring-arm compensation keeps the visible escapement-cord centerline length consistent with reconstructed drum payout across carrier travel; exact IBM arm pivots, wrap arcs and cord diameter remain unresolved'
       },
       marginStops: {
         leftPhysical: true,
