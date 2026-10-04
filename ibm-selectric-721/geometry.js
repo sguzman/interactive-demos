@@ -157,40 +157,61 @@ function makeKeyboard(keysMat, darkMat, pickables) {
   addPickable(frontApron, COMPONENTS.shell, pickables);
   group.add(frontApron);
 
+  function addLabeledKey(label, x, y, z, width = 18, depth = 17, name = null) {
+    const key = box(width, 8, depth, keysMat, name || ('key-' + label));
+    key.position.set(x, y, z);
+    key.rotation.x = deg(-8);
+    key.userData.component = COMPONENTS.keyboard;
+    pickables.push(key);
+
+    const labelMaterial = new THREE.MeshBasicMaterial({
+      map: keyLabelTexture(label),
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    const label = new THREE.Mesh(new THREE.PlaneGeometry(Math.max(12, width - 4), 7.4), labelMaterial);
+    label.rotation.x = -Math.PI / 2;
+    label.position.y = 4.15;
+    label.name = 'key label ' + label;
+    key.add(label);
+    group.add(key);
+    return key;
+  }
+
   const rows = [
-    ['1','2','3','4','5','6','7','8','9','0'],
-    ['Q','W','E','R','T','Y','U','I','O','P','-','='],
-    ['A','S','D','F','G','H','J','K','L',';',"\'"],
-    ['Z','X','C','V','B','N','M',',','.','/'],
-    ['TAB','LOCK','SHIFT','SPACE','SPACE','SPACE','RETURN','BKSP']
+    ['1','2','3','4','5','6','7','8','9','0','-','='],
+    ['Q','W','E','R','T','Y','U','I','O','P'],
+    ['A','S','D','F','G','H','J','K','L',';'],
+    ['Z','X','C','V','B','N','M',',','.','/']
   ];
-  const rowZ = [118, 95, 73, 51, 31];
+  const rowZ = [116, 92, 69, 47];
   rows.forEach((labels, row) => {
     const count = labels.length;
-    const spacing = row === 0 ? 25 : 24;
-    const offset = row % 2 ? spacing * 0.32 : 0;
+    const spacing = row === 0 ? 22.5 : 24;
+    const offset = row === 1 ? 3 : row === 2 ? 9 : 15;
     for (let i = 0; i < count; i += 1) {
-      const key = box(18, 8, 17, keysMat, `key-r${row}-${i}`);
-      key.position.set((i - (count - 1) / 2) * spacing + offset, 55 - row * 2.4, rowZ[row]);
-      key.rotation.x = deg(-8);
-      key.userData.component = COMPONENTS.keyboard;
-      pickables.push(key);
-
-      const labelMaterial = new THREE.MeshBasicMaterial({
-        map: keyLabelTexture(labels[i]),
-        transparent: true,
-        depthWrite: false,
-        side: THREE.DoubleSide
-      });
-      const label = new THREE.Mesh(new THREE.PlaneGeometry(14.2, 7.4), labelMaterial);
-      label.rotation.x = -Math.PI / 2;
-      label.position.y = 4.15;
-      label.name = 'key label ' + labels[i];
-      key.add(label);
-
-      group.add(key);
+      addLabeledKey(
+        labels[i],
+        (i - (count - 1) / 2) * spacing + offset,
+        55 - row * 2.8,
+        rowZ[row]
+      );
     }
   });
+
+  addLabeledKey('TAB', -145, 49, 92, 24);
+  addLabeledKey('CLR', -145, 46, 68, 24);
+  addLabeledKey('LOCK', -145, 43, 46, 24);
+  addLabeledKey('SHIFT', -145, 40, 24, 28);
+
+  addLabeledKey('BKSP', 145, 49, 92, 28);
+  addLabeledKey('RETURN', 145, 46, 65, 32);
+  addLabeledKey('SHIFT', 145, 41, 32, 28);
+
+  const spacebar = addLabeledKey('', 0, 39, 23, 112, 18, 'spacebar');
+  spacebar.position.x = -2;
+
   return group;
 }
 
