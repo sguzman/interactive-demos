@@ -717,20 +717,67 @@ export function createSelectricModel() {
   addPickable(motor, COMPONENTS.drive, pickables);
   driveAssembly.add(motor);
 
-  const drivePulley = pulley(18, 10, darkMetal, 'motor drive pulley');
+  const motorPitchRadiusP4 = 7.0;
+  const cyclePitchRadiusP4 = motorPitchRadiusP4 * CANONICAL.drive.positiveBeltReduction;
+
+  const drivePulley = pulley(motorPitchRadiusP4, 10, darkMetal, '8-tooth motor positive-drive pulley');
   drivePulley.position.set(-145, 39, 42);
   addPickable(drivePulley, COMPONENTS.drive, pickables);
   driveAssembly.add(drivePulley);
-  const cyclePulley = pulley(22, 11, darkMetal, 'cycle clutch pulley');
+
+  const motorToothGeo = new THREE.BoxGeometry(10.8, 2.1, 3.2);
+  const motorTeeth = new THREE.InstancedMesh(motorToothGeo, metal, CANONICAL.drive.motorPulleyTeeth);
+  motorTeeth.name = '8 motor-pulley tooth cues';
+  const driveToothMatrix = new THREE.Matrix4();
+  const driveToothQuat = new THREE.Quaternion();
+  const driveToothScale = new THREE.Vector3(1, 1, 1);
+  for (let i = 0; i < CANONICAL.drive.motorPulleyTeeth; i += 1) {
+    const a = i * Math.PI * 2 / CANONICAL.drive.motorPulleyTeeth;
+    driveToothQuat.setFromEuler(new THREE.Euler(a, 0, 0));
+    driveToothMatrix.compose(
+      new THREE.Vector3(-145, 39 + Math.cos(a) * motorPitchRadiusP4, 42 + Math.sin(a) * motorPitchRadiusP4),
+      driveToothQuat,
+      driveToothScale
+    );
+    motorTeeth.setMatrixAt(i, driveToothMatrix);
+  }
+  motorTeeth.userData.component = COMPONENTS.drive;
+  motorTeeth.castShadow = true;
+  pickables.push(motorTeeth);
+  driveAssembly.add(motorTeeth);
+
+  const cyclePulley = pulley(cyclePitchRadiusP4, 11, darkMetal, 'derived 29-tooth cycle-clutch pulley');
   cyclePulley.position.set(-145, P4.cycleShaft.y, P4.cycleShaft.z);
   addPickable(cyclePulley, COMPONENTS.drive, pickables);
   driveAssembly.add(cyclePulley);
-  const driveBelt = dynamicTube(0x222221, 2.2, 'motor belt', COMPONENTS.drive, pickables);
+
+  const cycleToothGeo = new THREE.BoxGeometry(11.8, 2.0, 3.0);
+  const cycleTeeth = new THREE.InstancedMesh(cycleToothGeo, metal, CANONICAL.drive.cycleClutchPulleyTeethDerived);
+  cycleTeeth.name = '29 cycle-clutch-pulley tooth cues';
+  const cycleToothMatrix = new THREE.Matrix4();
+  const cycleToothQuat = new THREE.Quaternion();
+  for (let i = 0; i < CANONICAL.drive.cycleClutchPulleyTeethDerived; i += 1) {
+    const a = i * Math.PI * 2 / CANONICAL.drive.cycleClutchPulleyTeethDerived;
+    cycleToothQuat.setFromEuler(new THREE.Euler(a, 0, 0));
+    cycleToothMatrix.compose(
+      new THREE.Vector3(-145, P4.cycleShaft.y + Math.cos(a) * cyclePitchRadiusP4, P4.cycleShaft.z + Math.sin(a) * cyclePitchRadiusP4),
+      cycleToothQuat,
+      driveToothScale
+    );
+    cycleTeeth.setMatrixAt(i, cycleToothMatrix);
+  }
+  cycleTeeth.userData.component = COMPONENTS.drive;
+  cycleTeeth.castShadow = true;
+  pickables.push(cycleTeeth);
+  driveAssembly.add(cycleTeeth);
+
+  const driveBelt = dynamicTube(0x222221, 2.2, 'positive-drive belt presentation', COMPONENTS.drive, pickables);
   driveBelt.update([
-    new THREE.Vector3(-145, 39, 58),
-    new THREE.Vector3(-145, 44, 48),
-    new THREE.Vector3(-145, P4.cycleShaft.y, P4.cycleShaft.z + 19),
-    new THREE.Vector3(-145, 39, 58)
+    new THREE.Vector3(-145, 39 + motorPitchRadiusP4, 42),
+    new THREE.Vector3(-145, P4.cycleShaft.y + cyclePitchRadiusP4, P4.cycleShaft.z),
+    new THREE.Vector3(-145, P4.cycleShaft.y - cyclePitchRadiusP4, P4.cycleShaft.z),
+    new THREE.Vector3(-145, 39 - motorPitchRadiusP4, 42),
+    new THREE.Vector3(-145, 39 + motorPitchRadiusP4, 42)
   ]);
   driveAssembly.add(driveBelt.mesh);
 
@@ -1421,6 +1468,13 @@ export function createSelectricModel() {
         exactLinearFeedMm: 'unresolved'
       },
       sleeveCamOrder: ['ribbon-lift', '1164240-feed-detent', '1124174-print-restoring'],
+      primaryDrive: {
+        motorPulleyTeeth: CANONICAL.drive.motorPulleyTeeth,
+        cycleClutchPulleyTeeth: CANONICAL.drive.cycleClutchPulleyTeethDerived,
+        reduction: CANONICAL.drive.positiveBeltReduction,
+        pitchRadiusRatio: cyclePitchRadiusP4 / motorPitchRadiusP4,
+        beltPitchAndAbsolutePulleyDiameters: 'unresolved'
+      },
       powerPresentation: {
         operationalShaftContinuousWhenPowered: true,
         serviceCamsStationaryUntilSelected: true,

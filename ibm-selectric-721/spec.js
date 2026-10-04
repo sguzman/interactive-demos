@@ -62,6 +62,11 @@ export const CANONICAL = Object.freeze({
     rackPartNumbers: ['1164102', '6519354'],
     stopBarPartNumber: '1124073'
   },
+  drive: {
+    motorPulleyTeeth: 8,
+    cycleClutchPulleyTeethDerived: 29,
+    positiveBeltReduction: 3.625
+  },
   timing: {
     cycleShaftDegPerCharacter: 180,
     printShaftDegPerCharacter: 360
