@@ -273,7 +273,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(afterManualPlaten.paperAdvanceMm - paperBeforeManual).toBeCloseTo(18.1864 * manualStep, 8);
   expect(afterManualPlaten.geometry.paperFeed.paperAdvanceMm).toBeCloseTo(afterManualPlaten.paperAdvanceMm, 8);
   expect(afterManualPlaten.geometry.paperFeed.feedRollPhaseRad).toBeCloseTo(afterManualPlaten.paperAdvanceMm / 6.2, 8);
-  expect(afterManualPlaten.geometry.paperFeed.feedRollRotationClass).toContain('P4 roller-radius');
+  expect(afterManualPlaten.geometry.paperFeed.feedRollRotationClass).toContain('P4 accumulated contact rotation');
   expect(afterManualPlaten.events.some(event => event.name === 'MANUAL_PLATEN_STEP')).toBe(true);
 
   await page.evaluate(() => window.__selectricDebug.togglePlatenVariable());
