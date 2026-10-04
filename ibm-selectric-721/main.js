@@ -17,7 +17,7 @@ scene.background = new THREE.Color(0x0c0e0f);
 scene.fog = new THREE.Fog(0x0c0e0f, 520, 900);
 
 const camera = new THREE.PerspectiveCamera(33, 1, 0.1, 1600);
-camera.position.set(420, 270, 470);
+camera.position.set(350, 235, 505);
 
 const orbit = new OrbitControls(camera, renderer.domElement);
 orbit.enableDamping = true;
@@ -362,7 +362,7 @@ ui.explode.addEventListener('input', () => {
 });
 
 const presets = {
-  product: { position: [420, 270, 470], target: [0, 77, -8] },
+  product: { position: [350, 235, 505], target: [0, 78, -4] },
   carrier: { position: [275, 175, 230], target: [0, 100, -58] },
   selection: { position: [330, 175, 250], target: [0, 72, -32] },
   power: { position: [350, 150, 315], target: [-45, 50, 20] },
