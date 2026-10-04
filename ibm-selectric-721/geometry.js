@@ -2479,7 +2479,7 @@ export function createSelectricModel() {
     );
     const selectedSlugAlignmentErrorDegP4 = THREE.MathUtils.radToDeg(Math.acos(selectedSlugAlignmentDotP4));
     return {
-      revision: 'selectric-public-foundation-v3',
+      revision: 'selectric-integrated-public-build',
       finite: [size.x, size.y, size.z].every(Number.isFinite),
       bounds: { width: size.x, height: size.y, depth: size.z },
       carrierX: state.carrierX,
