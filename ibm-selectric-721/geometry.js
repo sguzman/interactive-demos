@@ -1175,6 +1175,27 @@ export function createSelectricModel() {
   addPickable(detentRoller, COMPONENTS.platenRatchet, pickables);
   paperFeedCarriage.add(detentRoller);
 
+  const lineSpacingSelectorPivot = new THREE.Group();
+  lineSpacingSelectorPivot.name = 'single-double line-spacing selector pivot';
+  lineSpacingSelectorPivot.position.set(P4.platen.length / 2 - 43, P4.platen.y + 17, P4.platen.z + 22);
+  paperFeedCarriage.add(lineSpacingSelectorPivot);
+
+  const lineSpacingSelectorArm = box(5, 28, 5, metal, 'line-spacing selector arm');
+  lineSpacingSelectorArm.position.set(0, 12, 0);
+  addPickable(lineSpacingSelectorArm, COMPONENTS.paperFeed, pickables);
+  lineSpacingSelectorPivot.add(lineSpacingSelectorArm);
+
+  const lineSpacingSelectorKnob = box(14, 7, 11, shellDark, 'line-spacing selector knob');
+  lineSpacingSelectorKnob.position.set(0, 27, 1);
+  addPickable(lineSpacingSelectorKnob, COMPONENTS.paperFeed, pickables);
+  lineSpacingSelectorPivot.add(lineSpacingSelectorKnob);
+
+  const lineSpacingSelectorLink = box(4, 18, 4, darkMetal, 'line-spacing selector pawl-stop link cue');
+  lineSpacingSelectorLink.position.set(-7, 2, -4);
+  lineSpacingSelectorLink.rotation.x = deg(-18);
+  addPickable(lineSpacingSelectorLink, COMPONENTS.platenRatchet, pickables);
+  lineSpacingSelectorPivot.add(lineSpacingSelectorLink);
+
   const variableRelease = box(18, 7, 9, metal, 'platen variable-release coupling');
   variableRelease.position.set(-P4.platen.length / 2 + 17, P4.platen.y, P4.platen.z);
   addPickable(variableRelease, COMPONENTS.paperFeed, pickables);
@@ -2129,6 +2150,11 @@ export function createSelectricModel() {
 
   function setLineSpacingMode(value) {
     state.lineSpacingTeeth = Number(value) === 2 ? 2 : 1;
+    // Source material establishes a selector that switches one-vs-two ratchet-tooth indexing.
+    // Exact external lever coordinates/travel remain unresolved, so only the mode distinction is causal;
+    // this visible selector angle is explicitly P5.
+    lineSpacingSelectorPivot.rotation.z = deg(state.lineSpacingTeeth === 2 ? 13 : -13);
+    lineSpacingSelectorLink.position.y = state.lineSpacingTeeth === 2 ? 4.5 : 2;
     return state.lineSpacingTeeth;
   }
 
@@ -2306,6 +2332,9 @@ export function createSelectricModel() {
         singleIndexTeeth: 1,
         doubleIndexTeeth: 2,
         activeIndexTeeth: state.lineSpacingTeeth,
+        selectorEmbodied: true,
+        selectorAngleDegP5: state.lineSpacingTeeth === 2 ? 13 : -13,
+        selectorTravelClass: 'P5 visible selector travel; one-vs-two-tooth function source-backed, exact external coordinates unresolved',
         indexPawlStrokeClass: 'P5 presentation amplitude; one-vs-two-tooth function source-backed'
       },
       paperFeed: {

@@ -444,6 +444,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.waitForFunction(() => window.__selectricDebug.state.serviceOperation === null, null, { timeout: 5000 });
   const indexed = await page.evaluate(() => window.__selectricDebug.state);
   expect(indexed.line).toBe(1);
+  expect(indexed.geometry.platenRatchet.selectorEmbodied).toBe(true);
+  expect(indexed.geometry.platenRatchet.selectorAngleDegP5).toBe(-13);
+  expect(indexed.geometry.platenRatchet.selectorTravelClass).toContain('exact external coordinates unresolved');
   expect(indexed.paperAdvanceMm - paperBeforeSingleIndex).toBeCloseTo(indexed.geometry.platenRatchet.paperAdvancePerRatchetToothMm, 8);
   expect(indexed.platenIndex).toBeCloseTo(Math.PI * 2 / 27, 6);
   expect(indexed.events.some(event => event.name === 'INDEX_OPERATION_COMPLETE')).toBe(true);
@@ -463,6 +466,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     8
   );
   expect(doubleIndexed.geometry.platenRatchet.activeIndexTeeth).toBe(2);
+  expect(doubleIndexed.geometry.platenRatchet.selectorAngleDegP5).toBe(13);
   expect(doubleIndexed.events.some(event => event.name === 'INDEX_RATCHET_ADVANCE' && event.teeth === 2)).toBe(true);
   await page.evaluate(() => window.__selectricDebug.setLineSpacing(1));
 

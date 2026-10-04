@@ -17,7 +17,7 @@ This is a source-aware mechanical reconstruction of an original IBM Selectric Mo
 
 The browser model currently includes:
 
-- product shell / keyboard / platen / 27-tooth representative ratchet / single-vs-double line-spacing selector (one or two ratchet teeth per index) / P2 paper advance derived from platen arc length while feed rolls are engaged / four-front-plus-four-rear feed rollers with visible P4 phase cues driven from the same paper-advance state / common-shaft coupled paper release / five-position copy-control carriage motion / two-stable-state paper bail with independently adjustable P5 roller positions / platen-variable decoupling with manual rotation and persistent re-coupled phase offset / paper;
+- product shell / keyboard / platen / 27-tooth representative ratchet / visibly embodied single-vs-double line-spacing selector (one or two ratchet teeth per index; selector travel P5 while mode/function is source-backed) / P2 paper advance derived from platen arc length while feed rolls are engaged / four-front-plus-four-rear feed rollers with visible P4 phase cues driven from the same paper-advance state / common-shaft coupled paper release / five-position copy-control carriage motion / two-stable-state paper bail with independently adjustable P5 roller positions / platen-variable decoupling with manual rotation and persistent re-coupled phase offset / paper;
 - D6 print shaft, current IBM 1164740 bearing family, IBM 1164739 gear envelope and market-unfrozen item-51 C-clip presentation;
 - IBM 1124109 fixed 12P rack with repeated pitch geometry;
 - carrier translating over the 215.9 mm writing line, with the writing-position pointer parented to the carrier so it tracks the fixed 12-CPI rule;
@@ -63,7 +63,7 @@ The Playwright smoke test checks:
 - adjustable margin-stop positions, including public set-left / set-right-at-carrier / reset controls, right-margin line lock and carrier return to the live left stop;
 - programmable tab-stop set/clear plus capture at the next active stop;
 - shift hemisphere;
-- one-tooth single and two-tooth double 27T paper indexing, including P2 physical sheet advance from platen radius × rotation;
+- one-tooth single and two-tooth double 27T paper indexing, including the visibly embodied selector state and P2 physical sheet advance from platen radius × rotation;
 - paper-release decoupling: platen rotation leaves sheet position and feed-roll phase unchanged while both feed-roll banks are released;
 - paper-bail roller adjustment: two rollers remain independently movable laterally, with exact travel explicitly P5;
 - platen-variable manual rotation: public +/- controls leave ratchet phase fixed while free, advance paper only when feed is engaged, and preserve the new platen phase offset after re-coupling;
