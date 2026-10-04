@@ -155,8 +155,39 @@ function selectorCodeFor(tilt, rotate) {
 function selectionForCharacter(character) {
   const raw = String(character || 'a');
   const shiftedPairs = {
-    '!':'1', '@':'2', '#':'3', '
+    '!': '1', '@': '2', '#': '3', '$': '4', '%': '5', '^': '6', '&': '7', '*': '8',
+    '(': '9', ')': '0', '_': '-', '+': '=', '{': '[', '}': ']', '|': '\\',
+    ':': ';', '"': "'", '<': ',', '>': '.', '?': '/'
+  };
+  const isUpperLetter = /^[A-Z]$/.test(raw);
+  const isShiftedPunctuation = Object.prototype.hasOwnProperty.call(shiftedPairs, raw);
+  const shift = isUpperLetter || isShiftedPunctuation ? 1 : 0;
+  const baseCharacter = isShiftedPunctuation ? shiftedPairs[raw] : raw.toLowerCase();
+  const cp = baseCharacter.codePointAt(0) || 97;
 
+  // P5 layout assignment, but preserving the real 44 positions/hemisphere structure.
+  const baseSlot = (cp * 37 + 11) % 44;
+  const tilt = Math.floor(baseSlot / 11);
+  const rotate = (baseSlot % 11) - 5;
+  const slot = baseSlot + shift * 44;
+  const code6 = selectorCodeFor(tilt, rotate);
+  return { tilt, rotate, shift, slot, code6, baseSlot };
+}
+
+function requestCharacter(character = runtime.pendingCharacter) {
+  if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
+  const target = selectionForCharacter(character || 'a');
+  if (target.shift !== model.state.shiftHemisphere) {
+    runtime.queuedCharacter = character || 'a';
+    return beginServiceOperation('shift', 420, {
+      fromShift: model.state.shiftHemisphere,
+      toShift: target.shift,
+      autoCharacter: true
+    });
+  }
+  startCharacterCycle(character || 'a');
+  return true;
+}
 function syncUi() {
   ui.powerState.textContent = runtime.powered ? 'RUNNING' : 'OFF / LOCKED';
   ui.powerBtn.textContent = runtime.powered ? 'Power off' : 'Power on';
@@ -225,21 +256,6 @@ function startCharacterCycle(character = runtime.pendingCharacter) {
   runtime.ribbonFeedCommitted = false;
   runtime.lastAction = 'character-cycle';
   syncUi();
-}
-
-function requestCharacter(character = runtime.pendingCharacter) {
-  if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
-  const target = selectionForCharacter(character || 'a');
-  if (target.shift !== model.state.shiftHemisphere) {
-    runtime.queuedCharacter = character || 'a';
-    return beginServiceOperation('shift', 420, {
-      fromShift: model.state.shiftHemisphere,
-      toShift: target.shift,
-      autoCharacter: true
-    });
-  }
-  startCharacterCycle(character || 'a');
-  return true;
 }
 
 function advanceCarrier(delta) {
@@ -617,7 +633,7 @@ window.addEventListener('keydown', event => {
     ui.returnBtn.click();
   } else if (event.key === 'Shift') {
     return;
-  } else if (event.key.length === 1 && /[a-z0-9.,;:'!?_+=@#$%^&*(){}|"<>\/-]/i.test(event.key)) {
+  } else if (event.key.length === 1) {
     requestCharacter(event.key);
   }
 });
