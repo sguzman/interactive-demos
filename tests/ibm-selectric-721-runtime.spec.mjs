@@ -117,6 +117,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.evaluate(() => window.__selectricDebug.setExplosion(0.55));
   const exploded = await page.evaluate(() => window.__selectricDebug.state);
   expect(exploded.explosion).toBeCloseTo(0.55, 6);
+  expect(exploded.geometry.explosionClass).toContain('assembly-separation');
   expect(exploded.carrierX).toBeCloseTo(beforeExplosion.carrierX, 6);
   expect(exploded.line).toBe(beforeExplosion.line);
   await page.screenshot({ path: 'test-results/selectric-exploded.png', fullPage: true });

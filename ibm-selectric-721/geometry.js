@@ -392,7 +392,7 @@ export function createSelectricModel() {
   const ribbonMat = material(0x171716, 0.01, 0.82);
   const shoeMat = material(0xd5d0bd, 0.02, 0.78);
 
-  const shellAssembly = makeAssembly('shell assembly', new THREE.Vector3(0, 48, 150));
+  const shellAssembly = makeAssembly('shell assembly', new THREE.Vector3(0, 150, -135));
   assemblies.push(shellAssembly);
   root.add(shellAssembly);
 
@@ -493,13 +493,13 @@ export function createSelectricModel() {
   addPickable(indicator, COMPONENTS.horizontalMotion, pickables);
   shellAssembly.add(indicator);
 
-  const keyboardAssembly = makeAssembly('keyboard assembly', new THREE.Vector3(0, -42, 128));
+  const keyboardAssembly = makeAssembly('keyboard assembly', new THREE.Vector3(0, -46, 155));
   assemblies.push(keyboardAssembly);
   keyboardAssembly.add(makeKeyboard(keyMat, shellDark, pickables));
   root.add(keyboardAssembly);
 
   const selectorBailMaterials = [];
-  const keyboardMechanismAssembly = makeAssembly('keyboard code mechanism', new THREE.Vector3(0, -68, 54));
+  const keyboardMechanismAssembly = makeAssembly('keyboard code mechanism', new THREE.Vector3(0, -78, 62));
   assemblies.push(keyboardMechanismAssembly);
   root.add(keyboardMechanismAssembly);
 
@@ -563,7 +563,7 @@ export function createSelectricModel() {
   addPickable(latchBail, COMPONENTS.keyboardMechanism, pickables);
   keyboardMechanismAssembly.add(latchBail);
 
-  const frameAssembly = makeAssembly('primary frame', new THREE.Vector3(0, 4, -96));
+  const frameAssembly = makeAssembly('primary frame', new THREE.Vector3(0, -24, -92));
   assemblies.push(frameAssembly);
   root.add(frameAssembly);
 
@@ -620,7 +620,7 @@ export function createSelectricModel() {
 
   frameAssembly.add(makeRack(rackMat, darkMetal, pickables));
 
-  const driveAssembly = makeAssembly('drive assembly', new THREE.Vector3(-72, -28, 54));
+  const driveAssembly = makeAssembly('drive assembly', new THREE.Vector3(-108, -34, 38));
   assemblies.push(driveAssembly);
   root.add(driveAssembly);
 
@@ -677,7 +677,7 @@ export function createSelectricModel() {
   ]);
   driveAssembly.add(driveBelt.mesh);
 
-  const horizontalAssembly = makeAssembly('writing-line racks and cords', new THREE.Vector3(62, 12, -52));
+  const horizontalAssembly = makeAssembly('writing-line racks and cords', new THREE.Vector3(104, 8, -62));
   assemblies.push(horizontalAssembly);
   root.add(horizontalAssembly);
 
@@ -756,7 +756,7 @@ export function createSelectricModel() {
     returnDrum.rotation.x = -state.cordPhase;
   }
 
-  const platenAssembly = makeAssembly('platen / paper assembly', new THREE.Vector3(0, 86, -112));
+  const platenAssembly = makeAssembly('platen / paper assembly', new THREE.Vector3(0, 112, -126));
   assemblies.push(platenAssembly);
   root.add(platenAssembly);
 
@@ -824,7 +824,7 @@ export function createSelectricModel() {
     platenAssembly.add(roller);
   }
 
-  const selectionAssembly = makeAssembly('selection transmission', new THREE.Vector3(70, -22, 72));
+  const selectionAssembly = makeAssembly('selection transmission', new THREE.Vector3(98, -40, 42));
   assemblies.push(selectionAssembly);
   root.add(selectionAssembly);
 
@@ -911,7 +911,7 @@ export function createSelectricModel() {
     rotateBalance.rotation.z = deg(rotateUnit * 3.2);
   }
 
-  const carrierAssembly = makeAssembly('carrier assembly', new THREE.Vector3(-64, 72, 48));
+  const carrierAssembly = makeAssembly('carrier assembly', new THREE.Vector3(-92, 102, -8));
   assemblies.push(carrierAssembly);
   root.add(carrierAssembly);
 
