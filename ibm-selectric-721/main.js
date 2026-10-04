@@ -694,7 +694,7 @@ ui.explode.addEventListener('input', () => {
 const presets = {
   product: { position: [350, 235, 505], target: [0, 78, -4], cover: 0 },
   carrier: { position: [285, 190, 245], target: [0, 101, -58], cover: 1 },
-  selection: { position: [300, 120, 255], target: [0, 55, -18], cover: 1 },
+  selection: { position: [0, 155, 330], target: [0, 72, -34], cover: 1 },
   power: { position: [380, 170, 345], target: [-40, 54, 12], cover: 1 },
   rack: { position: [330, 155, 125], target: [0, 84, -66], cover: 1 },
   exploded: { position: [500, 330, 600], target: [0, 78, -18], cover: 0 }
