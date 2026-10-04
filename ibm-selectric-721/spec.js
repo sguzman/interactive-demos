@@ -183,7 +183,7 @@ export const COMPONENTS = Object.freeze({
     name: 'Carrier',
     category: 'print transport',
     provenance: 'P4 constructive geometry',
-    description: 'Carrier rides the D6/front support and rack/shoe rear support and translates across the 8.5-inch writing line.'
+    description: 'Carrier rides the D6/front support and rack/shoe rear support and translates across the 8.5-inch writing line. The public geometry uses an open P4 frame so sleeve, rocker, ribbon and rear-support interfaces remain inspectable.'
   },
   sleeve: {
     name: 'Print sleeve · IBM 1141628',

@@ -1078,10 +1078,33 @@ export function createSelectricModel() {
   carrierMotion.name = 'carrier mechanical transform';
   carrierAssembly.add(carrierMotion);
 
-  const carrierBody = box(P4.carrier.width, P4.carrier.height, P4.carrier.depth, darkMetal, 'carrier');
-  carrierBody.position.set(0, P4.carrier.y, P4.carrier.z);
-  addPickable(carrierBody, COMPONENTS.carrier, pickables);
-  carrierMotion.add(carrierBody);
+  const carrierHalfW = P4.carrier.width / 2;
+  const carrierHalfD = P4.carrier.depth / 2;
+  for (const sign of [-1, 1]) {
+    const sidePlate = box(6.5, P4.carrier.height, P4.carrier.depth, darkMetal, sign < 0 ? 'carrier left side plate' : 'carrier right side plate');
+    sidePlate.position.set(sign * (carrierHalfW - 3.25), P4.carrier.y, P4.carrier.z);
+    addPickable(sidePlate, COMPONENTS.carrier, pickables);
+    carrierMotion.add(sidePlate);
+  }
+  const carrierFrontBridge = box(P4.carrier.width - 10, 6, 7, darkMetal, 'carrier front bridge');
+  carrierFrontBridge.position.set(0, P4.carrier.y + 4, P4.carrier.z + carrierHalfD - 3.5);
+  addPickable(carrierFrontBridge, COMPONENTS.carrier, pickables);
+  carrierMotion.add(carrierFrontBridge);
+
+  const carrierRearBridge = box(P4.carrier.width - 10, 6, 7, darkMetal, 'carrier rear bridge');
+  carrierRearBridge.position.set(0, P4.carrier.y + 4, P4.carrier.z - carrierHalfD + 3.5);
+  addPickable(carrierRearBridge, COMPONENTS.carrier, pickables);
+  carrierMotion.add(carrierRearBridge);
+
+  const carrierLowerBridge = box(P4.carrier.width - 10, 5, P4.carrier.depth - 12, metal, 'carrier lower crossmember');
+  carrierLowerBridge.position.set(0, P4.carrier.y - P4.carrier.height / 2 + 2.5, P4.carrier.z);
+  addPickable(carrierLowerBridge, COMPONENTS.carrier, pickables);
+  carrierMotion.add(carrierLowerBridge);
+
+  const carrierTopBrace = box(P4.carrier.width - 18, 3.5, 8, metal, 'carrier top brace');
+  carrierTopBrace.position.set(0, P4.carrier.y + P4.carrier.height / 2 - 2, P4.carrier.z + 2);
+  addPickable(carrierTopBrace, COMPONENTS.carrier, pickables);
+  carrierMotion.add(carrierTopBrace);
 
   const ribbonAssembly = new THREE.Group();
   ribbonAssembly.name = 'carrier-parented new-style fabric ribbon assembly';
@@ -1478,6 +1501,7 @@ export function createSelectricModel() {
       explosionClass: 'P5 assembly-separation presentation; not service motion',
       pickableCount: pickables.length,
       supportTopology: 'D6 front + Level-2 upper/lower rack shoes',
+      carrierEmbodiment: 'open P4 frame with side plates and crossmembers; not a solid presentation block',
       shellTopology: 'extruded rounded side-cheek profile + full-width hinged hood ending ahead of platen',
       keyboardActuation: {
         character: state.keyboardPressCharacter,
