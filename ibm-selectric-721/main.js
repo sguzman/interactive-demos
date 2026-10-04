@@ -57,6 +57,7 @@ const ui = {
   typeBtn: document.querySelector('#typeBtn'),
   shiftBtn: document.querySelector('#shiftBtn'),
   spaceBtn: document.querySelector('#spaceBtn'),
+  tabBtn: document.querySelector('#tabBtn'),
   backspaceBtn: document.querySelector('#backspaceBtn'),
   returnBtn: document.querySelector('#returnBtn'),
   indexBtn: document.querySelector('#indexBtn'),
@@ -172,6 +173,17 @@ function advanceCarrier(delta) {
   syncUi();
 }
 
+function singleIndex() {
+  runtime.line += 1;
+  model.setPlatenIndex(model.state.platenIndex + Math.PI * 2 / CANONICAL.platen.representativeRatchetTeeth);
+}
+
+function nextDefaultTabStop() {
+  const currentIndex = Math.max(0, Math.round((model.state.carrierX + CANONICAL.writingLineMm / 2) / CANONICAL.pitchMm));
+  const nextIndex = Math.min(CANONICAL.nominalPositions - 1, (Math.floor(currentIndex / 8) + 1) * 8);
+  return -CANONICAL.writingLineMm / 2 + nextIndex * CANONICAL.pitchMm;
+}
+
 function runCycle(now) {
   if (runtime.cycle === 'C0_REST') return;
   const t = Math.min(1, (now - runtime.cycleStart) / runtime.cycleDurationMs);
@@ -248,6 +260,14 @@ ui.spaceBtn.addEventListener('click', () => {
   runtime.pendingCharacter = ' ';
   advanceCarrier(CANONICAL.pitchMm);
 });
+ui.tabBtn.addEventListener('click', () => {
+  if (runtime.cycle !== 'C0_REST') return;
+  runtime.lastAction = 'tab';
+  const destination = nextDefaultTabStop();
+  model.setCarrierX(destination);
+  recordEvent('TAB_CAPTURE', { destination });
+  syncUi();
+});
 ui.backspaceBtn.addEventListener('click', () => {
   if (runtime.cycle !== 'C0_REST') return;
   runtime.lastAction = 'backspace';
@@ -255,15 +275,17 @@ ui.backspaceBtn.addEventListener('click', () => {
 });
 ui.returnBtn.addEventListener('click', () => {
   if (runtime.cycle !== 'C0_REST') return;
-  runtime.lastAction = 'carriage-return';
+  runtime.lastAction = 'carrier-return';
   model.setCarrierX(-CANONICAL.writingLineMm / 2);
+  singleIndex();
+  recordEvent('CARRIER_RETURN_TERMINATED_AT_LEFT_MARGIN');
   syncUi();
 });
 ui.indexBtn.addEventListener('click', () => {
   if (runtime.cycle !== 'C0_REST') return;
   runtime.lastAction = 'paper-index';
-  runtime.line += 1;
-  model.setPlatenIndex(model.state.platenIndex + Math.PI / 12);
+  singleIndex();
+  recordEvent('INDEX_ONE_RATCHET_TOOTH');
   syncUi();
 });
 ui.resetBtn.addEventListener('click', resetMechanicalState);
@@ -314,6 +336,9 @@ window.addEventListener('keydown', event => {
   if (event.key === ' ') {
     event.preventDefault();
     ui.spaceBtn.click();
+  } else if (event.key === 'Tab') {
+    event.preventDefault();
+    ui.tabBtn.click();
   } else if (event.key === 'Backspace') {
     event.preventDefault();
     ui.backspaceBtn.click();
@@ -366,6 +391,7 @@ window.__selectricDebug = {
   get state() { return snapshot(); },
   typeCharacter: char => startCharacterCycle(char || 'a'),
   space: () => ui.spaceBtn.click(),
+  tab: () => ui.tabBtn.click(),
   backspace: () => ui.backspaceBtn.click(),
   carriageReturn: () => ui.returnBtn.click(),
   index: () => ui.indexBtn.click(),

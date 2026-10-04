@@ -253,7 +253,8 @@ export function createSelectricModel() {
     printApproach: 0,
     platenIndex: 0,
     cyclePhase: 0,
-    keyboardCode: 0
+    keyboardCode: 0,
+    cordPhase: 0
   };
 
   const shellMat = material(0xb8b4a8, 0.03, 0.76);
@@ -449,6 +450,85 @@ export function createSelectricModel() {
   ]);
   driveAssembly.add(driveBelt.mesh);
 
+  const horizontalAssembly = makeAssembly('writing-line racks and cords', new THREE.Vector3(0, 10, -26));
+  assemblies.push(horizontalAssembly);
+  root.add(horizontalAssembly);
+
+  const marginRack = box(P4.writingLineRacks.length, 4, 5, rackMat, 'IBM 1164743 margin rack');
+  marginRack.position.set(0, P4.writingLineRacks.marginY, P4.writingLineRacks.marginZ);
+  addPickable(marginRack, COMPONENTS.horizontalMotion, pickables);
+  horizontalAssembly.add(marginRack);
+
+  const tabRack = box(P4.writingLineRacks.length, 4, 5, darkMetal, 'IBM 1164102/6519354 7X1 tab rack family');
+  tabRack.position.set(0, P4.writingLineRacks.tabY, P4.writingLineRacks.tabZ);
+  addPickable(tabRack, COMPONENTS.horizontalMotion, pickables);
+  horizontalAssembly.add(tabRack);
+
+  const tabStopBar = box(P4.writingLineRacks.length, 3.5, 4, metal, 'IBM 1124073 tab stop bar');
+  tabStopBar.position.set(0, P4.writingLineRacks.tabY - 5, P4.writingLineRacks.tabZ + 1);
+  addPickable(tabStopBar, COMPONENTS.horizontalMotion, pickables);
+  horizontalAssembly.add(tabStopBar);
+
+  for (let stop = 8; stop < CANONICAL.nominalPositions; stop += 8) {
+    const tabStop = box(2.2, 9, 7, metal, 'presentation tab stop');
+    tabStop.position.set(
+      -CANONICAL.writingLineMm / 2 + stop * CANONICAL.pitchMm,
+      P4.writingLineRacks.tabY + 5,
+      P4.writingLineRacks.tabZ
+    );
+    addPickable(tabStop, COMPONENTS.horizontalMotion, pickables);
+    horizontalAssembly.add(tabStop);
+  }
+
+  const escapementShaft = shaft(270, 3.8, darkMetal, 'escapement / cord-drum shaft');
+  escapementShaft.position.set(0, P4.cordSystem.shaftY, P4.cordSystem.shaftZ);
+  addPickable(escapementShaft, COMPONENTS.horizontalMotion, pickables);
+  horizontalAssembly.add(escapementShaft);
+
+  const escapementDrum = pulley(P4.cordSystem.drumRadius, 18, metal, 'escapement / tab cord drum');
+  escapementDrum.position.set(72, P4.cordSystem.shaftY, P4.cordSystem.shaftZ);
+  addPickable(escapementDrum, COMPONENTS.horizontalMotion, pickables);
+  horizontalAssembly.add(escapementDrum);
+
+  const returnDrum = pulley(P4.cordSystem.drumRadius, 18, darkMetal, 'carrier-return cord drum');
+  returnDrum.position.set(-22, P4.cordSystem.shaftY, P4.cordSystem.shaftZ);
+  addPickable(returnDrum, COMPONENTS.horizontalMotion, pickables);
+  horizontalAssembly.add(returnDrum);
+
+  for (const [x, z, name] of [
+    [P4.cordSystem.leftPulleyX, -36, 'left return pulley 1'],
+    [P4.cordSystem.leftPulleyX, -58, 'left return pulley 2'],
+    [P4.cordSystem.rightPulleyX, -36, 'right escapement guide pulley']
+  ]) {
+    const guidePulley = pulley(7, 5.5, metal, name);
+    guidePulley.position.set(x, 60, z);
+    addPickable(guidePulley, COMPONENTS.horizontalMotion, pickables);
+    horizontalAssembly.add(guidePulley);
+  }
+
+  const escapementCord = dynamicTube(0xd1b88c, 1.05, 'escapement / tab cord', COMPONENTS.horizontalMotion, pickables);
+  const returnCord = dynamicTube(0xb8b2a4, 1.05, 'carrier-return cord', COMPONENTS.horizontalMotion, pickables);
+  horizontalAssembly.add(escapementCord.mesh, returnCord.mesh);
+
+  function updateCordGeometry(carrierX) {
+    escapementCord.update([
+      new THREE.Vector3(72, P4.cordSystem.shaftY, P4.cordSystem.shaftZ - 9),
+      new THREE.Vector3(P4.cordSystem.rightPulleyX, 60, -36),
+      new THREE.Vector3(P4.cordSystem.rightPulleyX, 72, -58),
+      new THREE.Vector3(carrierX + 24, 82, -48)
+    ]);
+    returnCord.update([
+      new THREE.Vector3(-22, P4.cordSystem.shaftY, P4.cordSystem.shaftZ - 9),
+      new THREE.Vector3(P4.cordSystem.leftPulleyX, 60, -36),
+      new THREE.Vector3(P4.cordSystem.leftPulleyX, 60, -58),
+      new THREE.Vector3(carrierX - 24, 78, -45)
+    ]);
+    const travel = carrierX + CANONICAL.writingLineMm / 2;
+    state.cordPhase = travel / Math.max(P4.cordSystem.drumRadius, 1);
+    escapementDrum.rotation.x = state.cordPhase;
+    returnDrum.rotation.x = -state.cordPhase;
+  }
+
   const platenAssembly = makeAssembly('platen / paper assembly', new THREE.Vector3(0, 28, -58));
   assemblies.push(platenAssembly);
   root.add(platenAssembly);
@@ -629,6 +709,7 @@ export function createSelectricModel() {
     state.carrierX = THREE.MathUtils.clamp(x, -CANONICAL.writingLineMm / 2, CANONICAL.writingLineMm / 2);
     carrierMotion.position.x = state.carrierX;
     updateSelectionTapes();
+    updateCordGeometry(state.carrierX);
   }
 
   function setTypeball(tiltBand, rotateUnit, shiftHemisphere = state.shiftHemisphere) {
@@ -691,6 +772,8 @@ export function createSelectricModel() {
       supportTopology: 'D6 front + Level-2 upper/lower rack shoes',
       keyboardCodeChannels: 6,
       keyboardCode: state.keyboardCode,
+      cordPhase: state.cordPhase,
+      writingLineRacks: ['1124109 escapement', '1164743 margin', '1164102/6519354 tab'],
       sleeveCamOrder: ['ribbon-lift', '1164240-feed-detent', '1124174-print-restoring'],
       provenance: CANONICAL.provenance
     };

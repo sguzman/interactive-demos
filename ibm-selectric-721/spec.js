@@ -55,6 +55,13 @@ export const CANONICAL = Object.freeze({
     springSuppressedPlayMm: [0.0508, 0.1524]
   },
   bracketClearanceMm: [0.254, 0.3048],
+  margin: {
+    rackPartNumber: '1164743'
+  },
+  tab: {
+    rackPartNumbers: ['1164102', '6519354'],
+    stopBarPartNumber: '1124073'
+  },
   timing: {
     cycleShaftDegPerCharacter: 180,
     printShaftDegPerCharacter: 360
@@ -76,6 +83,8 @@ export const P4 = Object.freeze({
   ribbon: { yRest: 101, yLift: 113, z: -73 },
   keyboard: { y: 43, z: 78 },
   motor: { x: -116, y: 39, z: 42 },
+  writingLineRacks: { marginY: 68, marginZ: -80, tabY: 61, tabZ: -86, length: 245 },
+  cordSystem: { shaftY: 55, shaftZ: -8, drumRadius: 10, leftPulleyX: -142, rightPulleyX: 142 },
   shell: { baseY: 12, keyboardDeckY: 44, rearDeckY: 88 },
   carrierLocal: {
     sleeveLength: 57,
@@ -172,6 +181,12 @@ export const COMPONENTS = Object.freeze({
     category: 'inking',
     provenance: 'active fabric-ribbon branch + P4 path',
     description: 'Twin-spool fabric ribbon presentation with lift coupled to the fine-align/print portion of the character cycle.'
+  },
+  horizontalMotion: {
+    name: 'Writing-line racks / cords',
+    category: 'horizontal transport',
+    provenance: 'exact rack identities + source-grounded cord topology + P4 path geometry',
+    description: 'Fixed margin/tab racks and opposed carrier cords share the writing coordinate. Rightward motion is mainspring-powered; carrier return winds the return cord and tightens the mainspring.'
   },
   drive: {
     name: 'Drive / operational shafts',

@@ -31,7 +31,8 @@ The browser model currently includes:
 - fabric-ribbon lift;
 - paper output that records typed characters;
 - deterministic character-cycle ordering through code setup, selection, fine align, impact, escapement and clutch check;
-- space, backspace, carriage return, shift hemisphere and paper index;
+- fixed escapement/margin/tab rack families and opposed carrier-cord presentation;
+- space, backspace, mainspring-style tab destination, carrier return + index, shift hemisphere and paper index;
 - assembled / exploded inspection and click-to-inspect provenance.
 
 ## Provenance boundary
@@ -56,8 +57,9 @@ The Playwright smoke test checks:
 - explosion independence;
 - space / backspace;
 - shift hemisphere;
-- paper index;
-- carriage return;
+- one-tooth 27T paper index;
+- tab capture on the writing lattice;
+- carrier return to left margin plus one index;
 - browser error absence.
 
 This remains an active build. Visual/mechanical refinement continues before Taria can close the public-projection milestone.

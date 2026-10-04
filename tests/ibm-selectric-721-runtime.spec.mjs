@@ -82,11 +82,22 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.evaluate(() => window.__selectricDebug.index());
   const indexed = await page.evaluate(() => window.__selectricDebug.state);
   expect(indexed.line).toBe(1);
-  expect(indexed.platenIndex).not.toBe(0);
+  expect(indexed.platenIndex).toBeCloseTo(Math.PI * 2 / 27, 6);
 
+  const beforeTab = indexed.carrierX;
+  await page.evaluate(() => window.__selectricDebug.tab());
+  const tabbed = await page.evaluate(() => window.__selectricDebug.state);
+  expect(tabbed.carrierX).toBeGreaterThan(beforeTab);
+  expect(tabbed.events.some(event => event.name === 'TAB_CAPTURE')).toBe(true);
+
+  const lineBeforeReturn = tabbed.line;
+  const platenBeforeReturn = tabbed.platenIndex;
   await page.evaluate(() => window.__selectricDebug.carriageReturn());
   const returned = await page.evaluate(() => window.__selectricDebug.state);
   expect(returned.carrierX).toBeCloseTo(-returned.geometry.writingLineMm / 2, 5);
+  expect(returned.line).toBe(lineBeforeReturn + 1);
+  expect(returned.platenIndex - platenBeforeReturn).toBeCloseTo(Math.PI * 2 / 27, 6);
+  expect(returned.geometry.writingLineRacks).toContain('1164743 margin');
 
   expect(errors).toEqual([]);
 });
