@@ -70,7 +70,9 @@ const ui = {
   paperBailBtn: document.querySelector('#paperBailBtn'),
   ribbonModeBtn: document.querySelector('#ribbonModeBtn'),
   ribbonLoadBtn: document.querySelector('#ribbonLoadBtn'),
-  marginBtn: document.querySelector('#marginBtn'),
+  marginLeftBtn: document.querySelector('#marginLeftBtn'),
+  marginRightBtn: document.querySelector('#marginRightBtn'),
+  marginResetBtn: document.querySelector('#marginResetBtn'),
   copyControlBtn: document.querySelector('#copyControlBtn'),
   platenVariableBtn: document.querySelector('#platenVariableBtn'),
   platenBackBtn: document.querySelector('#platenBackBtn'),
@@ -235,9 +237,6 @@ function syncUi() {
   ui.paperBailBtn.textContent = model.state.paperBailEngaged ? 'Release paper bail' : 'Engage paper bail';
   ui.ribbonModeBtn.textContent = 'Ribbon: ' + model.state.ribbonPrintMode;
   ui.ribbonLoadBtn.textContent = model.state.ribbonLoadState ? 'Ribbon load: on' : 'Ribbon load: off';
-  ui.marginBtn.textContent = model.state.leftMarginInsetColumns || model.state.rightMarginInsetColumns
-    ? 'Margins: inset'
-    : 'Margins: full';
   ui.copyControlBtn.textContent = 'Copy control ' + (model.state.copyControlSetting + 1) + '/5';
   ui.platenVariableBtn.textContent = model.state.platenVariableEngaged ? 'Lock platen variable' : 'Free platen variable';
   ui.platenBackBtn.disabled = !model.state.platenVariableEngaged;
@@ -679,15 +678,31 @@ ui.ribbonLoadBtn.addEventListener('click', () => {
   recordEvent(model.state.ribbonLoadState ? 'RIBBON_LOAD_POSITION' : 'RIBBON_LOAD_RELEASED');
   syncUi();
 });
-ui.marginBtn.addEventListener('click', () => {
+function setMarginAtCarrier(side) {
+  if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
+  const index = carrierColumnIndex();
+  const maxIndex = CANONICAL.nominalPositions - 1;
+  if (side === 'left') {
+    model.setMarginInsets(index, model.state.rightMarginInsetColumns);
+    runtime.lastAction = 'left-margin-set';
+    recordEvent('LEFT_MARGIN_SET', { index, x: model.state.leftMarginX });
+  } else if (side === 'right') {
+    model.setMarginInsets(model.state.leftMarginInsetColumns, maxIndex - index);
+    runtime.lastAction = 'right-margin-set';
+    recordEvent('RIGHT_MARGIN_SET', { index, x: model.state.rightMarginX });
+  } else {
+    return false;
+  }
+  syncUi();
+  return true;
+}
+ui.marginLeftBtn.addEventListener('click', () => setMarginAtCarrier('left'));
+ui.marginRightBtn.addEventListener('click', () => setMarginAtCarrier('right'));
+ui.marginResetBtn.addEventListener('click', () => {
   if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
-  const inset = model.state.leftMarginInsetColumns || model.state.rightMarginInsetColumns ? 0 : 12;
-  model.setMarginInsets(inset, inset);
-  runtime.lastAction = inset ? 'margins-inset' : 'margins-full';
-  recordEvent('MARGIN_STOPS_ADJUSTED', {
-    leftInsetColumns: model.state.leftMarginInsetColumns,
-    rightInsetColumns: model.state.rightMarginInsetColumns
-  });
+  model.setMarginInsets(0, 0);
+  runtime.lastAction = 'margins-reset';
+  recordEvent('MARGINS_RESET');
   syncUi();
 });
 

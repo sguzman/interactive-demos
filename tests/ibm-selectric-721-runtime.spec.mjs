@@ -522,6 +522,25 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(customTabbed.carrierX).toBeCloseTo(expectedCustomStopX, 5);
   expect(customTabbed.events.some(event => event.name === 'TAB_CAPTURE')).toBe(true);
 
+  // Margin-stop controls use the current carrier column instead of a fixed demo inset.
+  await page.locator('#marginLeftBtn').click();
+  const leftMarginAtCarrier = await page.evaluate(() => window.__selectricDebug.state);
+  expect(leftMarginAtCarrier.margins.leftInsetColumns).toBe(4);
+  expect(leftMarginAtCarrier.margins.leftX).toBeCloseTo(customTabbed.carrierX, 5);
+  expect(leftMarginAtCarrier.events.some(event => event.name === 'LEFT_MARGIN_SET')).toBe(true);
+
+  await page.locator('#marginResetBtn').click();
+  const marginsReset = await page.evaluate(() => window.__selectricDebug.state);
+  expect(marginsReset.margins.leftInsetColumns).toBe(0);
+  expect(marginsReset.margins.rightInsetColumns).toBe(0);
+
+  await page.locator('#marginRightBtn').click();
+  const rightMarginAtCarrier = await page.evaluate(() => window.__selectricDebug.state);
+  expect(rightMarginAtCarrier.margins.rightInsetColumns).toBe(97);
+  expect(rightMarginAtCarrier.margins.rightX).toBeCloseTo(customTabbed.carrierX, 5);
+  expect(rightMarginAtCarrier.events.some(event => event.name === 'RIGHT_MARGIN_SET')).toBe(true);
+  await page.locator('#marginResetBtn').click();
+
   await page.evaluate(() => window.__selectricDebug.setTabStopAt(4, false));
   const clearedStop = await page.evaluate(() => window.__selectricDebug.state);
   expect(clearedStop.tabStops).toEqual([10]);
