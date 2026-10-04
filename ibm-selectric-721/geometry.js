@@ -396,7 +396,10 @@ export function createSelectricModel() {
     carrierReturnDrivePhase: 0,
     tabGovernorPhase: 0,
     tiltDetent: 0,
-    rotateDetent: 0
+    rotateDetent: 0,
+    feedRollsEngaged: true,
+    platenVariableEngaged: false,
+    manualPlatenAngle: 0
   };
 
   const shellMat = material(0xb8b4a8, 0.03, 0.76);
@@ -1046,6 +1049,8 @@ export function createSelectricModel() {
   ratchetGroup.add(ratchetTeeth);
 
   const feedRollXs = [-90, -30, 30, 90];
+  const frontFeedRollers = [];
+  const rearFeedRollers = [];
   const rearFeedShaft = shaft(242, 2.4, metal, 'rear paper-feed actuating shaft');
   rearFeedShaft.position.set(0, P4.platen.y - 17, P4.platen.z - 12);
   addPickable(rearFeedShaft, COMPONENTS.paperFeed, pickables);
@@ -1059,13 +1064,19 @@ export function createSelectricModel() {
   for (const x of feedRollXs) {
     const rearRoller = pulley(6.2, 15, rubber, 'rear molded rubber feed roller');
     rearRoller.position.set(x, P4.platen.y - 11, P4.platen.z - 12);
+    rearRoller.userData.baseY = rearRoller.position.y;
+    rearRoller.userData.baseZ = rearRoller.position.z;
     addPickable(rearRoller, COMPONENTS.paperFeed, pickables);
     platenAssembly.add(rearRoller);
+    rearFeedRollers.push(rearRoller);
 
     const frontRoller = pulley(6.2, 15, rubber, 'front molded rubber feed roller');
     frontRoller.position.set(x, P4.platen.y - 12, P4.platen.z + 16);
+    frontRoller.userData.baseY = frontRoller.position.y;
+    frontRoller.userData.baseZ = frontRoller.position.z;
     addPickable(frontRoller, COMPONENTS.paperFeed, pickables);
     platenAssembly.add(frontRoller);
+    frontFeedRollers.push(frontRoller);
   }
 
   const paperDeflector = box(238, 2.2, 42, shellDark, 'paper deflector beneath platen');
@@ -1729,6 +1740,30 @@ export function createSelectricModel() {
     rocker.rotation.x = deg(angleDeg);
   }
 
+  function setPaperRelease(released) {
+    state.feedRollsEngaged = !Boolean(released);
+    const release = state.feedRollsEngaged ? 0 : 1;
+    rearFeedRollers.forEach(roller => {
+      roller.position.y = roller.userData.baseY - release * 4.5;
+      roller.position.z = roller.userData.baseZ - release * 4.0;
+    });
+    frontFeedRollers.forEach(roller => {
+      roller.position.y = roller.userData.baseY - release * 4.5;
+      roller.position.z = roller.userData.baseZ + release * 4.0;
+    });
+  }
+
+  function setPlatenVariable(engaged) {
+    state.platenVariableEngaged = Boolean(engaged);
+  }
+
+  function rotatePlatenManually(delta) {
+    if (!state.platenVariableEngaged) return false;
+    state.manualPlatenAngle += Number(delta) || 0;
+    platen.rotation.x = state.platenIndex + state.manualPlatenAngle;
+    return true;
+  }
+
   function setIndexPawlPhase(value) {
     const t = THREE.MathUtils.clamp(Number(value) || 0, 0, 1);
     indexPawl.rotation.x = indexPawl.userData.baseRotationX + deg(28 * Math.sin(t * Math.PI));
@@ -1736,6 +1771,7 @@ export function createSelectricModel() {
 
   function setPlatenIndex(value) {
     state.platenIndex = value;
+    state.manualPlatenAngle = 0;
     platen.rotation.x = value;
     ratchetGroup.rotation.x = value;
   }
@@ -1873,6 +1909,11 @@ export function createSelectricModel() {
         rearRollers: 4,
         bailRollers: 2,
         frontRearReleaseCoupled: true,
+        feedRollsEngaged: state.feedRollsEngaged,
+        releaseTravel: 'P5 presentation; exact metric travel unresolved',
+        platenVariableEngaged: state.platenVariableEngaged,
+        platenRatchetCoupled: !state.platenVariableEngaged,
+        manualPlatenAngle: state.manualPlatenAngle,
         exactCenters: 'unresolved-P4'
       },
       ribbon: {
@@ -1954,6 +1995,8 @@ export function createSelectricModel() {
   setTypeball(0, 0, 0);
   setRibbonLift(0);
   setFineAlignment(0, 0);
+  setPaperRelease(false);
+  setPlatenVariable(false);
   setPrintApproach(0);
   setMotorPhase(0);
   setOperationalCam(null, 0);
@@ -1976,6 +2019,9 @@ export function createSelectricModel() {
     setRibbonLift,
     feedRibbon,
     setFineAlignment,
+    setPaperRelease,
+    setPlatenVariable,
+    rotatePlatenManually,
     setPrintApproach,
     setIndexPawlPhase,
     setPlatenIndex,

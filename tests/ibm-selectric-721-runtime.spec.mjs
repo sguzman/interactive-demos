@@ -99,6 +99,26 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(poweredOff.carrierX).toBeCloseTo(carrierBeforePowerOff, 6);
   await page.evaluate(() => window.__selectricDebug.setPower(true));
 
+  await page.evaluate(() => window.__selectricDebug.togglePaperRelease());
+  const feedReleased = await page.evaluate(() => window.__selectricDebug.state);
+  expect(feedReleased.feedRollsEngaged).toBe(false);
+  expect(feedReleased.geometry.paperFeed.frontRearReleaseCoupled).toBe(true);
+  await page.evaluate(() => window.__selectricDebug.togglePaperRelease());
+  const feedEngaged = await page.evaluate(() => window.__selectricDebug.state);
+  expect(feedEngaged.feedRollsEngaged).toBe(true);
+
+  const ratchetBeforeVariable = feedEngaged.platenIndex;
+  await page.evaluate(() => window.__selectricDebug.togglePlatenVariable());
+  const variableFree = await page.evaluate(() => window.__selectricDebug.state);
+  expect(variableFree.platenVariableEngaged).toBe(true);
+  expect(variableFree.geometry.paperFeed.platenRatchetCoupled).toBe(false);
+  const manualMoved = await page.evaluate(() => window.__selectricDebug.rotatePlatenManually(Math.PI / 9));
+  expect(manualMoved).toBe(true);
+  const afterManualPlaten = await page.evaluate(() => window.__selectricDebug.state);
+  expect(afterManualPlaten.platenIndex).toBe(ratchetBeforeVariable);
+  expect(afterManualPlaten.geometry.paperFeed.manualPlatenAngle).toBeCloseTo(Math.PI / 9, 8);
+  await page.evaluate(() => window.__selectricDebug.togglePlatenVariable());
+
   const coverCarrier = initial.carrierX;
   await page.evaluate(() => window.__selectricDebug.setServiceCover(1));
   const coverOpen = await page.evaluate(() => window.__selectricDebug.state);

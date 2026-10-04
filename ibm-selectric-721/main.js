@@ -63,6 +63,8 @@ const ui = {
   backspaceBtn: document.querySelector('#backspaceBtn'),
   returnBtn: document.querySelector('#returnBtn'),
   indexBtn: document.querySelector('#indexBtn'),
+  paperReleaseBtn: document.querySelector('#paperReleaseBtn'),
+  platenVariableBtn: document.querySelector('#platenVariableBtn'),
   resetBtn: document.querySelector('#resetBtn'),
   explode: document.querySelector('#explode'),
   explodeValue: document.querySelector('#explodeValue'),
@@ -72,6 +74,8 @@ const ui = {
   selectionState: document.querySelector('#selectionState'),
   shiftState: document.querySelector('#shiftState'),
   ribbonState: document.querySelector('#ribbonState'),
+  feedState: document.querySelector('#feedState'),
+  platenVariableState: document.querySelector('#platenVariableState'),
   lineState: document.querySelector('#lineState'),
   characterState: document.querySelector('#characterState'),
   codeState: document.querySelector('#codeState'),
@@ -137,12 +141,16 @@ function syncUi() {
   ui.selectionState.textContent = 'T' + model.state.tiltBand.toFixed(1) + ' · R' + model.state.rotateUnit.toFixed(1);
   ui.shiftState.textContent = model.state.shiftHemisphere ? 'UPPER HEMISPHERE' : 'LOWER HEMISPHERE';
   ui.ribbonState.textContent = Math.round(model.state.ribbonLift * 100) + '%';
+  ui.feedState.textContent = model.state.feedRollsEngaged ? 'ENGAGED' : 'RELEASED';
+  ui.platenVariableState.textContent = model.state.platenVariableEngaged ? 'FREE' : 'COUPLED';
   ui.lineState.textContent = String(runtime.line);
   ui.characterState.textContent = runtime.pendingCharacter === ' ' ? 'SPACE' : runtime.pendingCharacter;
   ui.codeState.textContent = model.state.keyboardCode.toString(2).padStart(6, '0');
   ui.explodeValue.textContent = Math.round(model.state.explosion * 100) + '%';
   ui.shiftBtn.textContent = model.state.shiftHemisphere ? 'Shift: upper' : 'Shift: lower';
   ui.coverBtn.textContent = model.state.serviceCoverOpen > 0.5 ? 'Close service cover' : 'Open service cover';
+  ui.paperReleaseBtn.textContent = model.state.feedRollsEngaged ? 'Release paper feed' : 'Engage paper feed';
+  ui.platenVariableBtn.textContent = model.state.platenVariableEngaged ? 'Lock platen variable' : 'Free platen variable';
 }
 
 function resetMechanicalState() {
@@ -165,6 +173,8 @@ function resetMechanicalState() {
   model.setTypeball(0, 0, 0);
   model.setRibbonLift(0);
   model.setFineAlignment(0, 0);
+  model.setPaperRelease(false);
+  model.setPlatenVariable(false);
   model.setPrintApproach(0);
   model.setPlatenIndex(0);
   model.setCyclePhase(0);
@@ -448,6 +458,20 @@ ui.returnBtn.addEventListener('click', () => {
 ui.indexBtn.addEventListener('click', () => {
   beginServiceOperation('index', 560);
 });
+ui.paperReleaseBtn.addEventListener('click', () => {
+  if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
+  model.setPaperRelease(model.state.feedRollsEngaged);
+  runtime.lastAction = model.state.feedRollsEngaged ? 'paper-feed-engaged' : 'paper-feed-released';
+  recordEvent(model.state.feedRollsEngaged ? 'PAPER_FEED_ENGAGED' : 'PAPER_FEED_RELEASED');
+  syncUi();
+});
+ui.platenVariableBtn.addEventListener('click', () => {
+  if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
+  model.setPlatenVariable(!model.state.platenVariableEngaged);
+  runtime.lastAction = model.state.platenVariableEngaged ? 'platen-variable-free' : 'platen-variable-coupled';
+  recordEvent(model.state.platenVariableEngaged ? 'PLATEN_VARIABLE_FREE' : 'PLATEN_VARIABLE_COUPLED');
+  syncUi();
+});
 ui.resetBtn.addEventListener('click', resetMechanicalState);
 ui.explode.addEventListener('input', () => {
   const amount = Number(ui.explode.value) / 100;
@@ -575,6 +599,8 @@ function snapshot() {
     cyclePhase: model.state.cyclePhase,
     explosion: model.state.explosion,
     serviceCoverOpen: model.state.serviceCoverOpen,
+    feedRollsEngaged: model.state.feedRollsEngaged,
+    platenVariableEngaged: model.state.platenVariableEngaged,
     geometry: model.geometryDiagnostics(),
     events: runtime.eventLog.map(event => ({ ...event })),
     profile: CANONICAL.profile
@@ -611,6 +637,13 @@ window.__selectricDebug = {
   backspace: () => ui.backspaceBtn.click(),
   carriageReturn: () => ui.returnBtn.click(),
   index: () => ui.indexBtn.click(),
+  togglePaperRelease: () => ui.paperReleaseBtn.click(),
+  togglePlatenVariable: () => ui.platenVariableBtn.click(),
+  rotatePlatenManually: delta => {
+    const moved = model.rotatePlatenManually(delta);
+    syncUi();
+    return moved;
+  },
   shift: () => ui.shiftBtn.click(),
   toggleServiceCover: () => ui.coverBtn.click(),
   setServiceCover: value => {

@@ -38,6 +38,8 @@
         <button id="backspaceBtn" class="secondary">Backspace</button>
         <button id="returnBtn" class="secondary">Carrier return + index</button>
         <button id="indexBtn" class="secondary">Paper index</button>
+        <button id="paperReleaseBtn" class="secondary">Release paper feed</button>
+        <button id="platenVariableBtn" class="secondary">Free platen variable</button>
         <button id="resetBtn" class="secondary">Reset</button>
       </div>
 
@@ -51,6 +53,8 @@
         <div><span>Selection</span><output id="selectionState">T0 · R0</output></div>
         <div><span>Shift</span><output id="shiftState">LOWER HEMISPHERE</output></div>
         <div><span>Ribbon lift</span><output id="ribbonState">0%</output></div>
+        <div><span>Paper feed</span><output id="feedState">ENGAGED</output></div>
+        <div><span>Platen variable</span><output id="platenVariableState">COUPLED</output></div>
         <div><span>Line</span><output id="lineState">0</output></div>
         <div><span>Character</span><output id="characterState">a</output></div>
         <div><span>6-channel code</span><output id="codeState">000000</output></div>
@@ -67,6 +71,7 @@
 
       <p class="note"><strong>Power note:</strong> the operational shaft receives a deliberately slowed P5 continuous-motion presentation while powered. Power-off blocks ordinary character and powered operational actions rather than merely freezing the display.</p>
       <p class="note"><strong>Cover note:</strong> the hinged service-cover motion is a P5 presentation path kept separate from exploded inspection and from the live mechanical state. Opening it exposes the carrier/type-element region without moving the frame.</p>
+      <p class="note"><strong>Paper-path note:</strong> paper release moves the front and rear feed-roll banks together. Platen variable is a distinct coupling state: when free, manual platen rotation no longer moves the ratchet. Release travel and hidden paper-feed centers remain P4/P5 rather than factory dimensions.</p>
       <p class="note"><strong>Horizontal-motion note:</strong> tab stops are shown on the 12-CPI writing lattice with a P5 default every eight positions. Tab travel is mainspring-propelled in the real mechanism; the public action now sweeps to the next default stop while the cord/drum geometry updates from the same carrier coordinate. Carrier return terminates at the left margin and performs one 27-tooth-profile index step.</p>
       <p class="note"><strong>Selection note:</strong> keyboard characters use a deterministic P5 mapping into the 4 × 22 type-element slot structure so the mechanism can be exercised before one exact physical typeball layout is frozen. The mechanical selection ranges themselves are canonical: tilt bands 0–3, rotate units −5…+5, plus the independent 180° shift hemisphere.</p>
       <p class="note">Exact factory geometry is not claimed for unresolved hidden sections. P4 parts preserve the active branch, known dimensions, service topology and mechanical relationships while the reconstruction is refined.</p>

@@ -152,8 +152,8 @@ export const COMPONENTS = Object.freeze({
   paperFeed: {
     name: 'Paper feed / bail system',
     category: 'paper transport',
-    provenance: 'source-grounded topology + P4 centers and local dimensions',
-    description: 'Four front and four rear feed rollers couple paper to the platen through a deflector path; the bail has two laterally adjustable rollers. Exact roller diameters and centers remain unresolved.'
+    provenance: 'source-grounded topology/state coupling + P4 centers and local dimensions',
+    description: 'Four front and four rear feed rollers couple paper to the platen through a deflector path; the bail has two laterally adjustable rollers. Paper release disengages both feed-roll banks together. Exact roller diameters, centers and release travel remain unresolved.'
   },
   printShaft: {
     name: 'Print shaft · IBM 1164736',
