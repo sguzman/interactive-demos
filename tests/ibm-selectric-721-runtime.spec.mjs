@@ -218,7 +218,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const copyNormal = await page.evaluate(() => window.__selectricDebug.state);
   expect(copyNormal.copyControlOffsetZ).toBe(0);
 
-  const ratchetBeforeVariable = feedEngaged.platenIndex;
+  const ratchetBeforeVariable = (await page.evaluate(() => window.__selectricDebug.state)).platenIndex;
   expect(await page.locator('#platenForwardBtn').isDisabled()).toBe(true);
   await page.evaluate(() => window.__selectricDebug.togglePlatenVariable());
   const variableFree = await page.evaluate(() => window.__selectricDebug.state);
