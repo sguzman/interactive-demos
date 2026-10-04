@@ -385,6 +385,7 @@ export function createSelectricModel() {
     ribbonFeedSuppressedCount: 0,
     printApproach: 0,
     platenIndex: 0,
+    lineSpacingTeeth: 1,
     cyclePhase: 0,
     keyboardCode: 0,
     cordPhase: 0,
@@ -2042,9 +2043,15 @@ export function createSelectricModel() {
     return true;
   }
 
+  function setLineSpacingMode(value) {
+    state.lineSpacingTeeth = Number(value) === 2 ? 2 : 1;
+    return state.lineSpacingTeeth;
+  }
+
   function setIndexPawlPhase(value) {
     const t = THREE.MathUtils.clamp(Number(value) || 0, 0, 1);
-    indexPawl.rotation.x = indexPawl.userData.baseRotationX + deg(28 * Math.sin(t * Math.PI));
+    const strokeScaleP5 = state.lineSpacingTeeth === 2 ? 1.24 : 1;
+    indexPawl.rotation.x = indexPawl.userData.baseRotationX + deg(28 * strokeScaleP5 * Math.sin(t * Math.PI));
   }
 
   function setPlatenIndex(value) {
@@ -2187,7 +2194,12 @@ export function createSelectricModel() {
       platenRatchet: {
         outerDiameterMm: CANONICAL.platen.ratchetDiameterMm,
         teeth: CANONICAL.platen.representativeRatchetTeeth,
-        toothProfile: 'P4'
+        toothProfile: 'P4',
+        lineSpacingModes: ['single', 'double'],
+        singleIndexTeeth: 1,
+        doubleIndexTeeth: 2,
+        activeIndexTeeth: state.lineSpacingTeeth,
+        indexPawlStrokeClass: 'P5 presentation amplitude; one-vs-two-tooth function source-backed'
       },
       paperFeed: {
         frontRollers: 4,
@@ -2323,6 +2335,7 @@ export function createSelectricModel() {
   setCopyControl(0);
   setPlatenVariable(false);
   setPrintApproach(0);
+  setLineSpacingMode(1);
   setMotorPhase(0);
   setOperationalCam(null, 0);
   setCyclePhase(0);
@@ -2356,6 +2369,7 @@ export function createSelectricModel() {
     setPlatenVariable,
     rotatePlatenManually,
     setPrintApproach,
+    setLineSpacingMode,
     setIndexPawlPhase,
     setPlatenIndex,
     setMotorPhase,
