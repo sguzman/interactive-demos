@@ -475,6 +475,7 @@ export function createSelectricModel() {
     platenIndex: 0,
     paperAdvanceMm: 0,
     feedRollPhaseRad: 0,
+    bailRollPhaseRad: 0,
     lineSpacingTeeth: 1,
     cyclePhase: 0,
     keyboardCode: 0,
@@ -1221,11 +1222,21 @@ export function createSelectricModel() {
 
   const paperBailRollers = {};
   for (const [side, x] of [['left', -74], ['right', 74]]) {
+    const pivot = new THREE.Group();
+    pivot.name = side + ' paper bail roller rotational pivot';
+    pivot.position.set(x, -3, -3);
+
     const roller = pulley(5.5, 12, rubber, side + ' laterally adjustable paper bail roller');
-    roller.position.set(x, -3, -3);
     addPickable(roller, COMPONENTS.paperFeed, pickables);
-    paperBailPivot.add(roller);
-    paperBailRollers[side] = roller;
+    pivot.add(roller);
+
+    const phaseCue = box(6.7, 1.0, 1.5, metal, side + ' paper bail roller phase cue');
+    phaseCue.position.set(0, 5.45, 0);
+    addPickable(phaseCue, COMPONENTS.paperFeed, pickables);
+    pivot.add(phaseCue);
+
+    paperBailPivot.add(pivot);
+    paperBailRollers[side] = pivot;
   }
 
   for (const sign of [-1, 1]) {
@@ -2197,6 +2208,16 @@ export function createSelectricModel() {
     frontFeedRollers.forEach(roller => { roller.rotation.x = -state.feedRollPhaseRad; });
   }
 
+  function advanceBailRollersFromPaper(deltaPaperMm) {
+    if (!state.paperBailEngaged) return;
+    // Bail-roller radius is reconstructed P4. Accumulate only while the bail is actually against
+    // the sheet so releasing/re-engaging it does not teleport its visible phase.
+    state.bailRollPhaseRad -= (Number(deltaPaperMm) || 0) / 5.5;
+    Object.values(paperBailRollers).forEach(roller => {
+      roller.rotation.x = state.bailRollPhaseRad;
+    });
+  }
+
   function setPaperRelease(released) {
     state.feedRollsEngaged = !Boolean(released);
     const release = state.feedRollsEngaged ? 0 : 1;
@@ -2254,9 +2275,11 @@ export function createSelectricModel() {
     state.manualPlatenAngle += rotation;
     platen.rotation.x = state.platenIndex + state.manualPlatenAngle;
     if (state.feedRollsEngaged) {
-      state.paperAdvanceMm += rotation * CANONICAL.platen.radiusMm;
+      const deltaPaperMm = rotation * CANONICAL.platen.radiusMm;
+      state.paperAdvanceMm += deltaPaperMm;
       paper.setAdvance(state.paperAdvanceMm);
       updateFeedRollRotation();
+      advanceBailRollersFromPaper(deltaPaperMm);
     }
     return true;
   }
@@ -2289,9 +2312,11 @@ export function createSelectricModel() {
     platen.rotation.x = next + state.manualPlatenAngle;
     ratchetGroup.rotation.x = next;
     if (state.feedRollsEngaged) {
-      state.paperAdvanceMm += delta * CANONICAL.platen.radiusMm;
+      const deltaPaperMm = delta * CANONICAL.platen.radiusMm;
+      state.paperAdvanceMm += deltaPaperMm;
       paper.setAdvance(state.paperAdvanceMm);
       updateFeedRollRotation();
+      advanceBailRollersFromPaper(deltaPaperMm);
     }
   }
 
@@ -2341,8 +2366,12 @@ export function createSelectricModel() {
 
   function clearPaper() {
     state.paperAdvanceMm = 0;
+    state.bailRollPhaseRad = 0;
     paper.setAdvance(0);
     updateFeedRollRotation();
+    Object.values(paperBailRollers).forEach(roller => {
+      roller.rotation.x = 0;
+    });
     paper.clear();
   }
 
@@ -2476,7 +2505,10 @@ export function createSelectricModel() {
           rightNormalizedP5: state.paperBailRollerPositionsP5.right,
           leftX: paperBailRollers.left.position.x,
           rightX: paperBailRollers.right.position.x,
-          travelClass: 'P5 lateral presentation range; source-backed adjustability, exact travel unresolved'
+          travelClass: 'P5 lateral presentation range; source-backed adjustability, exact travel unresolved',
+          rollPhaseRad: state.bailRollPhaseRad,
+          rollRadiusMmP4: 5.5,
+          rollCoupling: 'passive paper-contact rotation while bail is against platen; P4 radius, exact roller section unresolved'
         },
         frontRearReleaseCoupled: true,
         feedRollsEngaged: state.feedRollsEngaged,

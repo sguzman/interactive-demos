@@ -174,6 +174,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
 
   const initialBailAdjustment = bailEngaged.geometry.paperFeed.bailRollerAdjustment;
   expect(initialBailAdjustment.independentlyAdjustable).toBe(true);
+  expect(initialBailAdjustment.rollPhaseRad).toBeCloseTo(0, 8);
+  expect(initialBailAdjustment.rollRadiusMmP4).toBeCloseTo(5.5, 8);
+  expect(initialBailAdjustment.rollCoupling).toContain('passive paper-contact rotation');
   expect(initialBailAdjustment.leftNormalizedP5).toBeCloseTo(0.4, 8);
   expect(initialBailAdjustment.rightNormalizedP5).toBeCloseTo(0.4, 8);
   expect(initialBailAdjustment.travelClass).toContain('exact travel unresolved');
@@ -184,6 +187,25 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(bailAdjusted.geometry.paperFeed.bailRollerAdjustment.leftX).toBeGreaterThan(initialBailAdjustment.leftX);
   expect(bailAdjusted.geometry.paperFeed.bailRollerAdjustment.rightX).toBeCloseTo(rightBailX, 8);
   await page.evaluate(() => window.__selectricDebug.setPaperBailRollerPosition('left', 0.4));
+
+  // With the bail against the sheet, physical paper travel passively rotates both bail rollers.
+  // Releasing the bail freezes their phase even while the feed system continues to advance paper.
+  const bailPhaseBeforeIndex = (await page.evaluate(() => window.__selectricDebug.state)).geometry.paperFeed.bailRollerAdjustment.rollPhaseRad;
+  const bailPaperBeforeIndex = (await page.evaluate(() => window.__selectricDebug.state)).paperAdvanceMm;
+  await page.evaluate(() => window.__selectricDebug.index());
+  await page.waitForFunction(() => window.__selectricDebug.state.serviceOperation === null, null, { timeout: 5000 });
+  const bailRolled = await page.evaluate(() => window.__selectricDebug.state);
+  const bailPaperDelta = bailRolled.paperAdvanceMm - bailPaperBeforeIndex;
+  expect(bailRolled.geometry.paperFeed.bailRollerAdjustment.rollPhaseRad - bailPhaseBeforeIndex).toBeCloseTo(-bailPaperDelta / 5.5, 8);
+
+  await page.evaluate(() => window.__selectricDebug.togglePaperBail());
+  const bailPhaseReleased = (await page.evaluate(() => window.__selectricDebug.state)).geometry.paperFeed.bailRollerAdjustment.rollPhaseRad;
+  await page.evaluate(() => window.__selectricDebug.index());
+  await page.waitForFunction(() => window.__selectricDebug.state.serviceOperation === null, null, { timeout: 5000 });
+  const bailReleasedAfterIndex = await page.evaluate(() => window.__selectricDebug.state);
+  expect(bailReleasedAfterIndex.paperBailEngaged).toBe(false);
+  expect(bailReleasedAfterIndex.geometry.paperFeed.bailRollerAdjustment.rollPhaseRad).toBeCloseTo(bailPhaseReleased, 8);
+  await page.evaluate(() => window.__selectricDebug.togglePaperBail());
 
   const carrierBeforeCopyControl = feedEngaged.carrierX;
   await page.evaluate(() => window.__selectricDebug.setCopyControl(4));
