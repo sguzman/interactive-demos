@@ -768,3 +768,15 @@ window.__selectricDebug = {
 
 function animate(now) {
   requestAnimationFrame(animate);
+  resize();
+  if (runtime.powered) model.setMotorPhase(now * 0.00022);
+  runCycle(now);
+  runCarrierOperation(now);
+  runServiceOperation(now);
+  orbit.update();
+  renderer.render(scene, camera);
+}
+
+resetMechanicalState();
+ui.loading.hidden = true;
+requestAnimationFrame(animate);
