@@ -52,6 +52,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.ribbon.reverseThresholdClass).toContain('P5 compressed');
   expect(initial.geometry.ribbon.reverseState).toBe('feeding');
   expect(initial.geometry.ribbon.reverseCount).toBe(0);
+  expect(initial.ribbonPrintMode).toBe('middle');
+  expect(initial.geometry.ribbon.printModes).toEqual(['stencil', 'low', 'middle', 'high']);
+  expect(initial.geometry.ribbon.liftHeightClass).toContain('exact OEM lift heights unresolved');
+  expect(initial.geometry.ribbon.stencilRibbonAtPrintPoint).toBe(true);
   expect(initial.geometry.shaftTiming.cycleShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.filterShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.printShaftDegPerCharacter).toBe(360);
@@ -149,6 +153,23 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(afterManualPlaten.platenIndex).toBe(ratchetBeforeVariable);
   expect(afterManualPlaten.geometry.paperFeed.manualPlatenAngle).toBeCloseTo(Math.PI / 9, 8);
   await page.evaluate(() => window.__selectricDebug.togglePlatenVariable());
+
+  const feedStepsBeforeStencil = (await page.evaluate(() => window.__selectricDebug.state)).ribbonFeedStep;
+  const stencilSelected = await page.evaluate(() => window.__selectricDebug.setRibbonMode('stencil'));
+  expect(stencilSelected).toBe(true);
+  const stencilReady = await page.evaluate(() => window.__selectricDebug.state);
+  expect(stencilReady.ribbonPrintMode).toBe('stencil');
+  expect(stencilReady.geometry.ribbon.stencilRibbonAtPrintPoint).toBe(false);
+  expect(stencilReady.geometry.ribbon.stencilFeedSuppressed).toBe(true);
+  await page.evaluate(() => window.__selectricDebug.typeCharacter('q'));
+  await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
+  const stencilTyped = await page.evaluate(() => window.__selectricDebug.state);
+  expect(stencilTyped.ribbonFeedStep).toBe(feedStepsBeforeStencil);
+  expect(stencilTyped.ribbonFeedSuppressedCount).toBe(1);
+  expect(stencilTyped.ribbonLift).toBe(0);
+  expect(stencilTyped.events.some(event => event.name === 'RIBBON_STENCIL_FEED_SUPPRESSED')).toBe(true);
+  await page.evaluate(() => window.__selectricDebug.setRibbonMode('middle'));
+  await page.evaluate(() => window.__selectricDebug.reset());
 
   const coverCarrier = initial.carrierX;
   await page.evaluate(() => window.__selectricDebug.setServiceCover(1));
