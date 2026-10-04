@@ -2,6 +2,19 @@ import * as THREE from 'three';
 import { CANONICAL, P4, COMPONENTS } from './spec.js';
 
 const deg = THREE.MathUtils.degToRad;
+const TYPE_BAND_LATITUDES_P4 = [-0.58, -0.20, 0.20, 0.58];
+
+function typeBandNormalTiltRadP4(band) {
+  const index = THREE.MathUtils.clamp(Math.round(Number(band) || 0), 0, TYPE_BAND_LATITUDES_P4.length - 1);
+  const lat = TYPE_BAND_LATITUDES_P4[index];
+  const bodyRadius = CANONICAL.typeElement.structuralRadiusP4Mm;
+  const bodyYRadius = bodyRadius * 0.90;
+  const y = lat * bodyYRadius;
+  const radial = bodyRadius * Math.sqrt(Math.max(0, 1 - (y * y) / (bodyYRadius * bodyYRadius)));
+  const normalY = y / (bodyYRadius * bodyYRadius);
+  const normalZ = radial / (bodyRadius * bodyRadius);
+  return Math.atan2(normalY, normalZ);
+}
 
 function material(color, metalness = 0.12, roughness = 0.68) {
   return new THREE.MeshStandardMaterial({ color, metalness, roughness });
@@ -308,9 +321,8 @@ function makeTypeElement(ballMat, darkMetal, pickables) {
   let index = 0;
   const bodyRadius = CANONICAL.typeElement.structuralRadiusP4Mm;
   const bodyYRadius = bodyRadius * 0.90;
-  const bandLatitudes = [-0.58, -0.20, 0.20, 0.58];
   for (let band = 0; band < CANONICAL.typeElement.bands; band += 1) {
-    const lat = bandLatitudes[band];
+    const lat = TYPE_BAND_LATITUDES_P4[band];
     const y = lat * bodyYRadius;
     const radial = bodyRadius * Math.sqrt(Math.max(0, 1 - (y * y) / (bodyYRadius * bodyYRadius)));
     for (let slot = 0; slot < CANONICAL.typeElement.positionsPerBand; slot += 1) {
@@ -2016,8 +2028,12 @@ export function createSelectricModel() {
 
   function applyTypeElementOrientation() {
     updateSelectionDrive(state.tiltBand, state.rotateUnit);
-    typeElement.rotation.x = deg(state.tiltBand * 7.5);
-    typeElement.rotation.y = deg(state.rotateUnit * 10 + state.shiftAngleDeg);
+    const rotateSlotStepDegP4 = 360 / CANONICAL.typeElement.positionsPerBand;
+    typeElement.rotation.x = typeBandNormalTiltRadP4(state.tiltBand);
+    // 22 structural positions around each band = 11 base rotate coordinates plus the
+    // independent 180° shift hemisphere. The public key-to-slot assignment remains P5,
+    // but the visible ball now lands on the same structural lattice as its 88 slug cues.
+    typeElement.rotation.y = deg(-state.rotateUnit * rotateSlotStepDegP4 + state.shiftAngleDeg);
   }
 
   function setTypeball(tiltBand, rotateUnit, shiftHemisphere = state.shiftHemisphere) {
@@ -2456,6 +2472,15 @@ export function createSelectricModel() {
         positionsPerBand: CANONICAL.typeElement.positionsPerBand,
         structuralRadiusP4Mm: CANONICAL.typeElement.structuralRadiusP4Mm,
         slugOrientation: 'P4 surface-normal tangent frames on structural ellipsoid',
+        rotateSlotStepDegP4: 360 / CANONICAL.typeElement.positionsPerBand,
+        bandLatitudesP4: [...TYPE_BAND_LATITUDES_P4],
+        bandTiltAnglesDegP4: TYPE_BAND_LATITUDES_P4.map((_, band) => THREE.MathUtils.radToDeg(typeBandNormalTiltRadP4(band))),
+        orientationDegP4: {
+          tilt: THREE.MathUtils.radToDeg(typeElement.rotation.x),
+          rotate: THREE.MathUtils.radToDeg(typeElement.rotation.y)
+        },
+        selectedStructuralSlotP4: ((state.rotateUnit + state.shiftHemisphere * 11) % CANONICAL.typeElement.positionsPerBand + CANONICAL.typeElement.positionsPerBand) % CANONICAL.typeElement.positionsPerBand,
+        selectionOrientationClass: 'P4 structural lattice alignment; exact keyboard/typeball glyph assignment remains P5',
         glyphFaceGeometry: 'unresolved; repeated structural slug cues only'
       },
       selectionDifferential: {

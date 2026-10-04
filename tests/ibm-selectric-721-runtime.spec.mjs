@@ -106,6 +106,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.typeElement.bands).toBe(4);
   expect(initial.geometry.typeElement.positionsPerBand).toBe(22);
   expect(initial.geometry.typeElement.slugOrientation).toContain('surface-normal');
+  expect(initial.geometry.typeElement.rotateSlotStepDegP4).toBeCloseTo(360 / 22, 10);
+  expect(initial.geometry.typeElement.bandLatitudesP4).toEqual([-0.58, -0.2, 0.2, 0.58]);
+  expect(initial.geometry.typeElement.bandTiltAnglesDegP4).toHaveLength(4);
+  expect(initial.geometry.typeElement.selectionOrientationClass).toContain('structural lattice alignment');
   expect(initial.geometry.typeElement.glyphFaceGeometry).toContain('unresolved');
   expect(initial.geometry.operationalCams.spaceBackspaceDegreesPerOperation).toBe(180);
   expect(initial.geometry.operationalCams.carrierReturnIndexDegreesPerOperation).toBe(360);
@@ -367,6 +371,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
 
   const lowerTilt = typed.selection.tiltBand;
   const lowerRotate = typed.selection.rotateUnit;
+  const lowerTypeElementTiltDeg = typed.geometry.typeElement.orientationDegP4.tilt;
+  const lowerTypeElementRotateDeg = typed.geometry.typeElement.orientationDegP4.rotate;
   await page.evaluate(() => window.__selectricDebug.typeCharacter('Q'));
   await page.waitForFunction(
     () => window.__selectricDebug.state.serviceOperation === null && window.__selectricDebug.state.cycle === 'C0_REST',
@@ -377,6 +383,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(uppercaseTyped.selection.shiftHemisphere).toBe(1);
   expect(uppercaseTyped.selection.tiltBand).toBe(lowerTilt);
   expect(uppercaseTyped.selection.rotateUnit).toBe(lowerRotate);
+  expect(uppercaseTyped.geometry.typeElement.orientationDegP4.tilt).toBeCloseTo(lowerTypeElementTiltDeg, 8);
+  expect(Math.abs(uppercaseTyped.geometry.typeElement.orientationDegP4.rotate - lowerTypeElementRotateDeg)).toBeCloseTo(180, 8);
+  expect(uppercaseTyped.geometry.typeElement.selectedStructuralSlotP4).toBe(
+    (typed.geometry.typeElement.selectedStructuralSlotP4 + 11) % 22
+  );
   expect(uppercaseTyped.events.some(event => event.name === 'SHIFT_OPERATION_COMPLETE')).toBe(true);
 
   await page.evaluate(() => window.__selectricDebug.typeCharacter('q'));

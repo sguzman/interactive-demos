@@ -213,7 +213,7 @@ export const COMPONENTS = Object.freeze({
     name: 'Selectric type element',
     category: 'selection / print',
     provenance: 'IBM overall scale + convergent P4 functional-CAD seed',
-    description: 'Four bands × 22 positions = 88-character structural model with boss, skirt and repeated surface-normal type-slug cues tangent to the P4 structural ellipsoid; glyph-face sections remain unresolved and this is not factory CAD.'
+    description: 'Four bands × 22 positions = 88-character structural model with boss, skirt and repeated surface-normal type-slug cues tangent to the P4 structural ellipsoid. Visible tilt/rotate orientation now lands on that same 4×22 structural lattice (11 base rotate coordinates plus the independent 180° shift hemisphere); exact keyboard/glyph assignment and glyph-face sections remain unresolved, so this is not factory CAD.'
   },
   selection: {
     name: 'Selection transmission',
