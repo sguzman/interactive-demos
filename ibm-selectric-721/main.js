@@ -63,6 +63,7 @@ const ui = {
   backspaceBtn: document.querySelector('#backspaceBtn'),
   returnBtn: document.querySelector('#returnBtn'),
   indexBtn: document.querySelector('#indexBtn'),
+  lineSpacingBtn: document.querySelector('#lineSpacingBtn'),
   paperReleaseBtn: document.querySelector('#paperReleaseBtn'),
   paperBailBtn: document.querySelector('#paperBailBtn'),
   ribbonModeBtn: document.querySelector('#ribbonModeBtn'),
@@ -86,6 +87,7 @@ const ui = {
   paperBailState: document.querySelector('#paperBailState'),
   copyControlState: document.querySelector('#copyControlState'),
   platenVariableState: document.querySelector('#platenVariableState'),
+  lineSpacingState: document.querySelector('#lineSpacingState'),
   lineState: document.querySelector('#lineState'),
   characterState: document.querySelector('#characterState'),
   codeState: document.querySelector('#codeState'),
@@ -216,6 +218,7 @@ function syncUi() {
   ui.paperBailState.textContent = model.state.paperBailEngaged ? 'AGAINST PLATEN' : 'RELEASED';
   ui.copyControlState.textContent = String(model.state.copyControlSetting + 1) + ' / 5';
   ui.platenVariableState.textContent = model.state.platenVariableEngaged ? 'FREE' : 'COUPLED';
+  ui.lineSpacingState.textContent = (model.state.lineSpacingTeeth === 2 ? 'DOUBLE' : 'SINGLE') + ' · ' + model.state.lineSpacingTeeth + (model.state.lineSpacingTeeth === 1 ? ' TOOTH' : ' TEETH');
   ui.lineState.textContent = String(runtime.line);
   ui.characterState.textContent = runtime.pendingCharacter === ' ' ? 'SPACE' : runtime.pendingCharacter;
   ui.codeState.textContent = model.state.keyboardCode.toString(2).padStart(6, '0');
@@ -231,6 +234,7 @@ function syncUi() {
     : 'Margins: full';
   ui.copyControlBtn.textContent = 'Copy control ' + (model.state.copyControlSetting + 1) + '/5';
   ui.platenVariableBtn.textContent = model.state.platenVariableEngaged ? 'Lock platen variable' : 'Free platen variable';
+  ui.lineSpacingBtn.textContent = 'Line spacing: ' + (model.state.lineSpacingTeeth === 2 ? 'double' : 'single');
 }
 
 function resetMechanicalState() {
@@ -263,6 +267,7 @@ function resetMechanicalState() {
   model.setPaperBail(true);
   model.setCopyControl(0);
   model.setPlatenVariable(false);
+  model.setLineSpacingMode(1);
   model.setPrintApproach(0);
   model.setPlatenIndex(0);
   model.setCyclePhase(0);
@@ -295,8 +300,13 @@ function advanceCarrier(delta) {
 }
 
 function singleIndex() {
-  runtime.line += 1;
-  model.setPlatenIndex(model.state.platenIndex + Math.PI * 2 / CANONICAL.platen.representativeRatchetTeeth);
+  const teeth = model.state.lineSpacingTeeth;
+  runtime.line += teeth;
+  model.setPlatenIndex(
+    model.state.platenIndex +
+    teeth * Math.PI * 2 / CANONICAL.platen.representativeRatchetTeeth
+  );
+  return teeth;
 }
 
 function nextDefaultTabStop() {
@@ -320,8 +330,8 @@ function beginCarrierOperation(type, destination, durationMs, includesIndex = fa
   };
   runtime.lastAction = type;
   if (includesIndex) {
-    singleIndex();
-    recordEvent('RETURN_INDEX_STARTED');
+    const teeth = singleIndex();
+    recordEvent('RETURN_INDEX_STARTED', { teeth });
   }
   const startEvent = {
     tab: 'TAB_RELEASE',
@@ -402,9 +412,9 @@ function runServiceOperation(now) {
     model.setOperationalCam('index', t);
     model.setIndexPawlPhase(t);
     if (!op.committed && t >= 0.58) {
-      singleIndex();
+      const teeth = singleIndex();
       op.committed = true;
-      recordEvent('INDEX_ONE_RATCHET_TOOTH');
+      recordEvent('INDEX_RATCHET_ADVANCE', { teeth });
     }
   }
 
@@ -594,6 +604,13 @@ ui.returnBtn.addEventListener('click', () => {
 });
 ui.indexBtn.addEventListener('click', () => {
   beginServiceOperation('index', 560);
+});
+ui.lineSpacingBtn.addEventListener('click', () => {
+  if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
+  const teeth = model.setLineSpacingMode(model.state.lineSpacingTeeth === 1 ? 2 : 1);
+  runtime.lastAction = teeth === 2 ? 'line-spacing-double' : 'line-spacing-single';
+  recordEvent('LINE_SPACING_CHANGED', { teeth });
+  syncUi();
 });
 ui.paperReleaseBtn.addEventListener('click', () => {
   if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
@@ -791,6 +808,7 @@ function snapshot() {
     ribbonReverseCount: model.state.ribbonReverseCount,
     printApproach: model.state.printApproach,
     platenIndex: model.state.platenIndex,
+    lineSpacingTeeth: model.state.lineSpacingTeeth,
     cyclePhase: model.state.cyclePhase,
     explosion: model.state.explosion,
     serviceCoverOpen: model.state.serviceCoverOpen,
@@ -848,6 +866,12 @@ window.__selectricDebug = {
   setMarginInsets(leftColumns, rightColumns) {
     if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
     model.setMarginInsets(leftColumns, rightColumns);
+    syncUi();
+    return true;
+  },
+  setLineSpacing(teeth) {
+    if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
+    model.setLineSpacingMode(teeth);
     syncUi();
     return true;
   },
