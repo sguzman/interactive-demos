@@ -294,6 +294,7 @@ function resetMechanicalState() {
   model.setPrintApproach(0);
   model.setPlatenIndex(0);
   model.setCyclePhase(0);
+  model.setInspectionCutaway('none');
   model.setServiceCover(0);
   model.clearPaper();
   syncUi();
@@ -784,6 +785,7 @@ ui.platenForwardBtn.addEventListener('click', () => stepManualPlaten(1));
 ui.resetBtn.addEventListener('click', resetMechanicalState);
 ui.explode.addEventListener('input', () => {
   const amount = Number(ui.explode.value) / 100;
+  model.setInspectionCutaway('none');
   model.setExplosion(amount);
   if (amount >= 0.20) {
     const preset = presets.exploded;
@@ -819,6 +821,7 @@ document.querySelectorAll('[data-view]').forEach(button => {
     document.querySelectorAll('[data-view]').forEach(other => other.classList.toggle('active', other === button));
     const preset = presets[button.dataset.view];
     if (!preset) return;
+    model.setInspectionCutaway(button.dataset.view === 'power' ? 'powerframe' : 'none');
     model.setServiceCover(preset.cover);
     camera.position.fromArray(preset.position);
     orbit.target.fromArray(preset.target);
@@ -1043,6 +1046,7 @@ window.__selectricDebug = {
   reset: resetMechanicalState,
   setExplosion(value) {
     const amount = THREE.MathUtils.clamp(Number(value) || 0, 0, 1);
+    model.setInspectionCutaway('none');
     model.setExplosion(amount);
     ui.explode.value = String(Math.round(model.state.explosion * 100));
     if (amount >= 0.20) {
