@@ -77,5 +77,30 @@
       "Guide": "Works-derived · source-class aware · provenance-aware",
       "Hosting": "GitHub Pages"
     }
+  },
+  {
+    "slug": "ibm-selectric-721",
+    "title": "IBM Selectric 721 — The Typewriter That Computes Mechanically",
+    "summary": "Type a character, inspect the carrier and type element, follow tilt/rotate selection into print impact and escapement, and explode the machine into its major mechanical systems.",
+    "kind": "Three.js · Typewriter · Mechanical Computing",
+    "status": "active",
+    "maturity": "Constructive public foundation · deterministic character-cycle smoke passing",
+    "path": "./ibm-selectric-721/",
+    "tags": [
+      "3D",
+      "typewriter",
+      "mechanical",
+      "mechanical-computing",
+      "printing",
+      "simulation",
+      "exploded-view"
+    ],
+    "facts": {
+      "Specimen": "IBM Selectric Model 721 · 7X1 · 12 CPI representative",
+      "Explore": "Selection · type element · print · escapement · carrier · paper",
+      "Model": "Source-aware constructive reconstruction",
+      "Provenance": "Exact anchors + explicit P4 geometry",
+      "Hosting": "GitHub Pages"
+    }
   }
 ]

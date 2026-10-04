@@ -1,5 +1,5 @@
 {
-  "version": 7,
+  "version": 8,
   "authority": "public-projection-registry",
   "canonicalEngineeringAuthority": "internal engineering corpus",
   "projections": [
@@ -113,6 +113,34 @@
       "revisionBoundary": "DMG-01 retail identity spans multiple board and component revisions; later Game Boy family models require explicit lineage labels.",
       "geometryStatus": "g4-review-in-progress-user-qa-open",
       "geometryTask": "ENG-DMG-022"
+    },
+    {
+      "demoSlug": "ibm-selectric-721",
+      "engineeringSpecimenId": "specimen:ibm-selectric-721",
+      "publicPath": "./ibm-selectric-721/",
+      "modelClass": "causal educational reconstruction / constructive mechanical geometry",
+      "examinedMaturity": "public foundation with deterministic character-cycle, carrier, ribbon, paper-index and exploded-state behavior",
+      "authorityRule": "Public implementation state is authoritative here; technical claims and provenance remain authoritative in the internal Engineering corpus after explicit ingestion.",
+      "canonicalVisibility": "private",
+      "publicCanonicalIdentifier": "specimen:ibm-selectric-721",
+      "engineeringSyncDate": "2026-10-03",
+      "engineeringResearchState": "ENG-SEL-022 remains active. The public projection has begun from the source-grounded geometry substrate using exact anchors plus explicitly labeled P4 reconstruction where production dimensions remain unresolved.",
+      "provenanceScheme": [
+        "P0 primary / authoritative",
+        "P1 measurement",
+        "P2 derived",
+        "P3 audited secondary",
+        "P4 reconstruction",
+        "P5 presentation"
+      ],
+      "publicationBoundary": "Original IBM Selectric Model 721, 7X1, fabric ribbon, later/new-style Series 72 representative, single-pitch 12 CPI profile. Reconstructed hidden dimensions are not IBM production CAD.",
+      "readerJourney": [
+        "gallery",
+        "interactive specimen"
+      ],
+      "publicUx": "product overview + assembled/exploded inspection + carrier/typeball + selection + powerframe views + deterministic print/space/backspace/return/index controls",
+      "geometryStatus": "public-foundation-active",
+      "geometryTask": "ENG-SEL-022"
     }
   ]
 }
