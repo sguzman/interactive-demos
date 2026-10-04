@@ -170,19 +170,37 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(copyNormal.copyControlOffsetZ).toBe(0);
 
   const ratchetBeforeVariable = feedEngaged.platenIndex;
+  expect(await page.locator('#platenForwardBtn').isDisabled()).toBe(true);
   await page.evaluate(() => window.__selectricDebug.togglePlatenVariable());
   const variableFree = await page.evaluate(() => window.__selectricDebug.state);
   expect(variableFree.platenVariableEngaged).toBe(true);
   expect(variableFree.geometry.paperFeed.platenRatchetCoupled).toBe(false);
+  expect(await page.locator('#platenForwardBtn').isEnabled()).toBe(true);
   const paperBeforeManual = variableFree.paperAdvanceMm;
-  const manualMoved = await page.evaluate(() => window.__selectricDebug.rotatePlatenManually(Math.PI / 9));
-  expect(manualMoved).toBe(true);
+  await page.locator('#platenForwardBtn').click();
   const afterManualPlaten = await page.evaluate(() => window.__selectricDebug.state);
+  const manualStep = Math.PI * 2 / 27;
   expect(afterManualPlaten.platenIndex).toBe(ratchetBeforeVariable);
-  expect(afterManualPlaten.geometry.paperFeed.manualPlatenAngle).toBeCloseTo(Math.PI / 9, 8);
-  expect(afterManualPlaten.paperAdvanceMm - paperBeforeManual).toBeCloseTo(18.1864 * Math.PI / 9, 8);
+  expect(afterManualPlaten.geometry.paperFeed.manualPlatenAngle).toBeCloseTo(manualStep, 8);
+  expect(afterManualPlaten.geometry.paperFeed.platenPhysicalAngleRad).toBeCloseTo(ratchetBeforeVariable + manualStep, 8);
+  expect(afterManualPlaten.paperAdvanceMm - paperBeforeManual).toBeCloseTo(18.1864 * manualStep, 8);
   expect(afterManualPlaten.geometry.paperFeed.paperAdvanceMm).toBeCloseTo(afterManualPlaten.paperAdvanceMm, 8);
+  expect(afterManualPlaten.events.some(event => event.name === 'MANUAL_PLATEN_STEP')).toBe(true);
+
   await page.evaluate(() => window.__selectricDebug.togglePlatenVariable());
+  const variableRecoupled = await page.evaluate(() => window.__selectricDebug.state);
+  expect(variableRecoupled.platenVariableEngaged).toBe(false);
+  expect(variableRecoupled.geometry.paperFeed.variableOffsetPersistsWhenRecoupled).toBe(true);
+  expect(variableRecoupled.geometry.paperFeed.manualPlatenAngle).toBeCloseTo(manualStep, 8);
+  expect(variableRecoupled.geometry.paperFeed.platenPhysicalAngleRad).toBeCloseTo(ratchetBeforeVariable + manualStep, 8);
+  expect(await page.locator('#platenForwardBtn').isDisabled()).toBe(true);
+
+  // Restore zero variable offset without disturbing the ratchet phase.
+  await page.evaluate(() => window.__selectricDebug.togglePlatenVariable());
+  await page.locator('#platenBackBtn').click();
+  await page.evaluate(() => window.__selectricDebug.togglePlatenVariable());
+  const variableRestored = await page.evaluate(() => window.__selectricDebug.state);
+  expect(variableRestored.geometry.paperFeed.manualPlatenAngle).toBeCloseTo(0, 8);
 
   const loadSelected = await page.evaluate(() => window.__selectricDebug.setRibbonLoadState(true));
   expect(loadSelected).toBe(true);

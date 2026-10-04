@@ -2088,6 +2088,11 @@ export function createSelectricModel() {
     return true;
   }
 
+  function resetPlatenVariableOffset() {
+    state.manualPlatenAngle = 0;
+    platen.rotation.x = state.platenIndex;
+  }
+
   function setLineSpacingMode(value) {
     state.lineSpacingTeeth = Number(value) === 2 ? 2 : 1;
     return state.lineSpacingTeeth;
@@ -2103,8 +2108,7 @@ export function createSelectricModel() {
     const next = Number(value) || 0;
     const delta = next - state.platenIndex;
     state.platenIndex = next;
-    state.manualPlatenAngle = 0;
-    platen.rotation.x = next;
+    platen.rotation.x = next + state.manualPlatenAngle;
     ratchetGroup.rotation.x = next;
     if (state.feedRollsEngaged) {
       state.paperAdvanceMm += delta * CANONICAL.platen.radiusMm;
@@ -2291,6 +2295,8 @@ export function createSelectricModel() {
         platenVariableEngaged: state.platenVariableEngaged,
         platenRatchetCoupled: !state.platenVariableEngaged,
         manualPlatenAngle: state.manualPlatenAngle,
+        platenPhysicalAngleRad: state.platenIndex + state.manualPlatenAngle,
+        variableOffsetPersistsWhenRecoupled: true,
         paperAdvanceMm: state.paperAdvanceMm,
         paperAdvanceClass: 'P2 platen arc length while feed rolls are engaged',
         exactCenters: 'unresolved-P4'
@@ -2440,6 +2446,7 @@ export function createSelectricModel() {
     setCopyControl,
     setPlatenVariable,
     rotatePlatenManually,
+    resetPlatenVariableOffset,
     setPrintApproach,
     setLineSpacingMode,
     setIndexPawlPhase,

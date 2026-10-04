@@ -73,6 +73,8 @@ const ui = {
   marginBtn: document.querySelector('#marginBtn'),
   copyControlBtn: document.querySelector('#copyControlBtn'),
   platenVariableBtn: document.querySelector('#platenVariableBtn'),
+  platenBackBtn: document.querySelector('#platenBackBtn'),
+  platenForwardBtn: document.querySelector('#platenForwardBtn'),
   resetBtn: document.querySelector('#resetBtn'),
   explode: document.querySelector('#explode'),
   explodeValue: document.querySelector('#explodeValue'),
@@ -238,6 +240,8 @@ function syncUi() {
     : 'Margins: full';
   ui.copyControlBtn.textContent = 'Copy control ' + (model.state.copyControlSetting + 1) + '/5';
   ui.platenVariableBtn.textContent = model.state.platenVariableEngaged ? 'Lock platen variable' : 'Free platen variable';
+  ui.platenBackBtn.disabled = !model.state.platenVariableEngaged;
+  ui.platenForwardBtn.disabled = !model.state.platenVariableEngaged;
   ui.lineSpacingBtn.textContent = 'Line spacing: ' + (model.state.lineSpacingTeeth === 2 ? 'double' : 'single');
 }
 
@@ -272,6 +276,7 @@ function resetMechanicalState() {
   model.setPaperBail(true);
   model.setCopyControl(0);
   model.setPlatenVariable(false);
+  model.resetPlatenVariableOffset();
   model.setLineSpacingMode(1);
   model.setPrintApproach(0);
   model.setPlatenIndex(0);
@@ -700,6 +705,22 @@ ui.platenVariableBtn.addEventListener('click', () => {
   recordEvent(model.state.platenVariableEngaged ? 'PLATEN_VARIABLE_FREE' : 'PLATEN_VARIABLE_COUPLED');
   syncUi();
 });
+function stepManualPlaten(direction) {
+  if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
+  const step = Math.PI * 2 / CANONICAL.platen.representativeRatchetTeeth;
+  const moved = model.rotatePlatenManually(Math.sign(direction || 0) * step);
+  if (!moved) return false;
+  runtime.lastAction = direction < 0 ? 'manual-platen-back' : 'manual-platen-forward';
+  recordEvent('MANUAL_PLATEN_STEP', {
+    direction: direction < 0 ? -1 : 1,
+    angleRad: model.state.manualPlatenAngle,
+    paperAdvanceMm: model.state.paperAdvanceMm
+  });
+  syncUi();
+  return true;
+}
+ui.platenBackBtn.addEventListener('click', () => stepManualPlaten(-1));
+ui.platenForwardBtn.addEventListener('click', () => stepManualPlaten(1));
 ui.resetBtn.addEventListener('click', resetMechanicalState);
 ui.explode.addEventListener('input', () => {
   const amount = Number(ui.explode.value) / 100;
