@@ -127,6 +127,22 @@ function dynamicTube(color, radius, name, component, pickables) {
   };
 }
 
+function keyLabelTexture(label) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 160;
+  canvas.height = 80;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#f0eee5';
+  ctx.font = label.length > 4 ? '700 19px ui-sans-serif, sans-serif' : '700 28px ui-sans-serif, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, canvas.width / 2, canvas.height / 2 + 1);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
 function makeKeyboard(keysMat, darkMat, pickables) {
   const group = new THREE.Group();
   const deck = box(340, 17, 142, darkMat, 'keyboard deck');
@@ -141,9 +157,16 @@ function makeKeyboard(keysMat, darkMat, pickables) {
   addPickable(frontApron, COMPONENTS.shell, pickables);
   group.add(frontApron);
 
-  const rowCounts = [10, 12, 11, 10, 8];
+  const rows = [
+    ['1','2','3','4','5','6','7','8','9','0'],
+    ['Q','W','E','R','T','Y','U','I','O','P','-','='],
+    ['A','S','D','F','G','H','J','K','L',';',"\'"],
+    ['Z','X','C','V','B','N','M',',','.','/'],
+    ['TAB','LOCK','SHIFT','SPACE','SPACE','SPACE','RETURN','BKSP']
+  ];
   const rowZ = [118, 95, 73, 51, 31];
-  rowCounts.forEach((count, row) => {
+  rows.forEach((labels, row) => {
+    const count = labels.length;
     const spacing = row === 0 ? 25 : 24;
     const offset = row % 2 ? spacing * 0.32 : 0;
     for (let i = 0; i < count; i += 1) {
@@ -152,6 +175,19 @@ function makeKeyboard(keysMat, darkMat, pickables) {
       key.rotation.x = deg(-8);
       key.userData.component = COMPONENTS.keyboard;
       pickables.push(key);
+
+      const labelMaterial = new THREE.MeshBasicMaterial({
+        map: keyLabelTexture(labels[i]),
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const label = new THREE.Mesh(new THREE.PlaneGeometry(14.2, 7.4), labelMaterial);
+      label.rotation.x = -Math.PI / 2;
+      label.position.y = 4.15;
+      label.name = 'key label ' + labels[i];
+      key.add(label);
+
       group.add(key);
     }
   });
