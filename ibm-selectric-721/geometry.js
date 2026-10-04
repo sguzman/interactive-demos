@@ -377,6 +377,7 @@ export function createSelectricModel() {
     ribbonLift: 0,
     ribbonLiftCommand: 0,
     ribbonPrintMode: 'middle',
+    ribbonLoadState: false,
     ribbonFeedSuppressedCount: 0,
     printApproach: 0,
     platenIndex: 0,
@@ -1812,9 +1813,19 @@ export function createSelectricModel() {
     return next;
   }
 
+  function setRibbonLoadState(active) {
+    state.ribbonLoadState = Boolean(active);
+    setRibbonLift(state.ribbonLiftCommand);
+    return state.ribbonLoadState;
+  }
+
   function setRibbonLift(value) {
     state.ribbonLiftCommand = THREE.MathUtils.clamp(value, 0, 1);
-    state.ribbonLift = state.ribbonLiftCommand * ribbonLiftScaleForMode();
+    // Threading/load is deliberately a separate service pose above the highest print lift.
+    // Its amplitude is P5 because the OEM geometry source establishes ordering, not height.
+    state.ribbonLift = state.ribbonLoadState
+      ? 1.24
+      : state.ribbonLiftCommand * ribbonLiftScaleForMode();
     updateRibbonPath(state.ribbonLift);
   }
 
@@ -2176,6 +2187,10 @@ export function createSelectricModel() {
         mediaWidthMm: P4.ribbon.widthMm,
         printMode: state.ribbonPrintMode,
         printModes: ['stencil', 'low', 'middle', 'high'],
+        loadState: state.ribbonLoadState,
+        loadStateDistinctFromHighPrintLift: true,
+        loadLiftNormalizedP5: 1.24,
+        loadLiftClass: 'P5 threading pose above high print lift; exact OEM load height unresolved',
         liftCommand: state.ribbonLiftCommand,
         actualLiftNormalizedP5: state.ribbonLift,
         liftHeightClass: 'P5 relative display heights; exact OEM lift heights unresolved',
@@ -2263,6 +2278,7 @@ export function createSelectricModel() {
   setTabGovernor(0);
   setCarrierX(state.carrierX);
   setTypeball(0, 0, 0);
+  setRibbonLoadState(false);
   setRibbonMode('middle');
   setRibbonLift(0);
   resetRibbonTransport();
@@ -2291,6 +2307,7 @@ export function createSelectricModel() {
     setShiftTransition,
     setTypeball,
     setRibbonMode,
+    setRibbonLoadState,
     setRibbonLift,
     feedRibbon,
     setRibbonReversePhase,
