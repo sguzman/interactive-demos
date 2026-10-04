@@ -671,6 +671,7 @@ export function createSelectricModel() {
     keyboardCode: 0,
     cordPhase: 0,
     serviceCoverOpen: 0,
+    inspectionCutaway: 'none',
     selectorInputs: { T1: 0, T2: 0, R1: 0, R2: 0, R2A: 0, fiveUnit: 0 },
     selectionNormalized: { qTilt: 0, q1: 0, q2: 0, qSigned: 0 },
     ribbonFeedStep: 0,
@@ -2750,6 +2751,13 @@ export function createSelectricModel() {
     serviceCoverPivot.rotation.x = deg(-52) * state.serviceCoverOpen;
   }
 
+  function setInspectionCutaway(mode = 'none') {
+    state.inspectionCutaway = mode === 'powerframe' ? 'powerframe' : 'none';
+    const isolatePowerframe = state.inspectionCutaway === 'powerframe';
+    shellAssembly.visible = !isolatePowerframe;
+    keyboardAssembly.visible = !isolatePowerframe;
+  }
+
   function setExplosion(value) {
     state.explosion = THREE.MathUtils.clamp(value, 0, 1);
     assemblies.forEach(group => setAssemblyExplosion(group, state.explosion));
@@ -2819,6 +2827,12 @@ export function createSelectricModel() {
       writingLineMm: CANONICAL.writingLineMm,
       explosion: state.explosion,
       serviceCoverOpen: state.serviceCoverOpen,
+      inspectionCutaway: {
+        mode: state.inspectionCutaway,
+        shellVisible: shellAssembly.visible,
+        keyboardVisible: keyboardAssembly.visible,
+        powerframeIsolationClass: 'P5 inspection-only occluder removal; mechanical geometry and assembly coordinates unchanged'
+      },
       explosionClass: 'P5 assembly-separation presentation; not service motion',
       pickableCount: pickables.length,
       supportTopology: 'D6 front + Level-2 upper/lower rack shoes',
@@ -3159,6 +3173,7 @@ export function createSelectricModel() {
   setOperationalCam(null, 0);
   setCyclePhase(0);
   setServiceCover(0);
+  setInspectionCutaway('none');
   setExplosion(0);
 
   return {
@@ -3200,6 +3215,7 @@ export function createSelectricModel() {
     setOperationalCam,
     setCyclePhase,
     setServiceCover,
+    setInspectionCutaway,
     setExplosion,
     stampCharacter,
     clearPaper,
