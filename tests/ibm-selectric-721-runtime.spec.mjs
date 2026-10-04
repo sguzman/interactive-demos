@@ -40,6 +40,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
 
   const initialCarrier = initial.carrierX;
   await page.evaluate(() => window.__selectricDebug.typeCharacter('q'));
+  await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C5_PRINT_IMPACT', null, { timeout: 5000 });
+  await page.screenshot({ path: 'test-results/selectric-impact.png', fullPage: true });
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
 
   const typed = await page.evaluate(() => window.__selectricDebug.state);
@@ -63,6 +65,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(escapement).toBeGreaterThan(impact);
 
   await page.screenshot({ path: 'test-results/selectric-assembled.png', fullPage: true });
+  await page.locator('[data-view="carrier"]').click();
+  await page.screenshot({ path: 'test-results/selectric-carrier-view.png', fullPage: true });
+  await page.locator('[data-view="selection"]').click();
+  await page.screenshot({ path: 'test-results/selectric-selection-view.png', fullPage: true });
+  await page.locator('[data-view="product"]').click();
 
   const beforeExplosion = await page.evaluate(() => ({
     carrierX: window.__selectricDebug.state.carrierX,
