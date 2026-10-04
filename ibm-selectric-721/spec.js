@@ -212,14 +212,14 @@ export const COMPONENTS = Object.freeze({
   typeball: {
     name: 'Selectric type element',
     category: 'selection / print',
-    provenance: 'IBM overall scale + convergent P4 functional-CAD seed',
-    description: 'Four bands × 22 positions = 88-character structural model with boss, skirt and repeated surface-normal type-slug cues tangent to the P4 structural ellipsoid. Visible tilt/rotate orientation now lands on that same 4×22 structural lattice (11 base rotate coordinates plus the independent 180° shift hemisphere); exact keyboard/glyph assignment and glyph-face sections remain unresolved, so this is not factory CAD.'
+    provenance: 'IBM 1⅜-inch overall-diameter anchor + convergent P4 functional-CAD seed + P4 cap/latch surface reconstruction',
+    description: 'Four bands × 22 positions = 88-character structural model constrained by the 34.925 mm nominal diameter, with a recognizable black interchangeable-element top cap/release-latch cue and chrome-like skirt plus repeated surface-normal type-slug cues tangent to the P4 structural ellipsoid. Visible tilt/rotate orientation lands on that same 4×22 structural lattice (11 base rotate coordinates plus the independent 180° shift hemisphere); exact cap sections, keyboard/glyph assignment and glyph-face sections remain unresolved, so this is not factory CAD.'
   },
   selection: {
     name: 'Selection transmission',
     category: 'mechanical information processing',
-    provenance: 'source-grounded weighted differential topology + width-specific 7X1 identities + P4 linkage/path geometry',
-    description: 'Two weighted tilt inputs, three positive rotate inputs plus the five-unit negative baseline drive gearless-tilt and rotate tape paths. Tape geometry updates with carrier travel while type-element selection remains invariant under carrier x.'
+    provenance: 'source-grounded weighted differential topology + width-specific 7X1 identities + P4 linkage/flat-tape guide geometry',
+    description: 'Two weighted tilt inputs, three positive rotate inputs plus the five-unit negative baseline drive gearless-tilt and rotate tape paths. The public reconstruction now uses flat tape strips over separate stationary and carrier-local P4 guide lanes with tangent offsets instead of round cords through decorative pulley centers; tape length remains invariant under carrier x while exact production sheave coordinates remain unresolved.'
   },
   ribbon: {
     name: 'Fabric ribbon system',
