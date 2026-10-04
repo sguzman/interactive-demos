@@ -119,12 +119,12 @@
       "engineeringSpecimenId": "specimen:ibm-selectric-721",
       "publicPath": "./ibm-selectric-721/",
       "modelClass": "causal educational reconstruction / constructive mechanical geometry",
-      "examinedMaturity": "public foundation with deterministic character-cycle, carrier, ribbon, paper-index and exploded-state behavior",
+      "examinedMaturity": "integrated public mechanical build with deterministic selection, print, ribbon, paper-feed, margin, tab, return and index behavior",
       "authorityRule": "Public implementation state is authoritative here; technical claims and provenance remain authoritative in the internal Engineering corpus after explicit ingestion.",
       "canonicalVisibility": "private",
       "publicCanonicalIdentifier": "specimen:ibm-selectric-721",
-      "engineeringSyncDate": "2026-10-03",
-      "engineeringResearchState": "ENG-SEL-022 remains active. The public projection has begun from the source-grounded geometry substrate using exact anchors plus explicitly labeled P4 reconstruction where production dimensions remain unresolved.",
+      "engineeringSyncDate": "2026-10-04",
+      "engineeringResearchState": "ENG-SEL-022 remains active, but the public projection is now an integrated mechanical build rather than a foundation stub. Exact/source-derived anchors coexist with explicitly labeled P4 geometry and P5 presentation for unresolved hidden dimensions, motions and capacities.",
       "provenanceScheme": [
         "P0 primary / authoritative",
         "P1 measurement",
@@ -138,8 +138,8 @@
         "gallery",
         "interactive specimen"
       ],
-      "publicUx": "product overview + assembled/exploded inspection + carrier/typeball + selection + powerframe views + deterministic print/space/backspace/return/index controls",
-      "geometryStatus": "public-foundation-active",
+      "publicUx": "product overview + assembled/exploded inspection + carrier/typeball + selection + rack/support + powerframe views + deterministic print/shift/space/backspace/return/index + single/double line spacing + paper release/bail/copy-control/platen-variable + ribbon mode/load/auto-reverse + live margins/line-lock + programmable tab-stop controls",
+      "geometryStatus": "integrated-public-build-active",
       "geometryTask": "ENG-SEL-022"
     }
   ]
