@@ -137,6 +137,13 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const feedReleased = await page.evaluate(() => window.__selectricDebug.state);
   expect(feedReleased.feedRollsEngaged).toBe(false);
   expect(feedReleased.geometry.paperFeed.frontRearReleaseCoupled).toBe(true);
+  const releasedPaperAdvance = feedReleased.paperAdvanceMm;
+  await page.evaluate(() => window.__selectricDebug.togglePlatenVariable());
+  await page.evaluate(() => window.__selectricDebug.rotatePlatenManually(Math.PI / 18));
+  const releasedManualTurn = await page.evaluate(() => window.__selectricDebug.state);
+  expect(releasedManualTurn.paperAdvanceMm).toBeCloseTo(releasedPaperAdvance, 8);
+  await page.evaluate(() => window.__selectricDebug.rotatePlatenManually(-Math.PI / 18));
+  await page.evaluate(() => window.__selectricDebug.togglePlatenVariable());
   await page.evaluate(() => window.__selectricDebug.togglePaperRelease());
   const feedEngaged = await page.evaluate(() => window.__selectricDebug.state);
   expect(feedEngaged.feedRollsEngaged).toBe(true);
