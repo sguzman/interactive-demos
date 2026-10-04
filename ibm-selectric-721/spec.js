@@ -144,6 +144,12 @@ export const COMPONENTS = Object.freeze({
     provenance: 'IBM shared Selectric diameter + OEM 7X1 representative 27T profile + P4 tooth shape',
     description: '30.1498 mm ratchet outer diameter with 27 equal angular positions. The public tooth shape is reconstructive; one normal index advances one tooth.'
   },
+  paperFeed: {
+    name: 'Paper feed / bail system',
+    category: 'paper transport',
+    provenance: 'source-grounded topology + P4 centers and local dimensions',
+    description: 'Four front and four rear feed rollers couple paper to the platen through a deflector path; the bail has two laterally adjustable rollers. Exact roller diameters and centers remain unresolved.'
+  },
   printShaft: {
     name: 'Print shaft · IBM 1164736',
     category: 'primary frame',

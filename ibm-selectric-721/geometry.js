@@ -824,18 +824,61 @@ export function createSelectricModel() {
   pickables.push(ratchetTeeth);
   ratchetGroup.add(ratchetTeeth);
 
+  const feedRollXs = [-90, -30, 30, 90];
+  const rearFeedShaft = shaft(242, 2.4, metal, 'rear paper-feed actuating shaft');
+  rearFeedShaft.position.set(0, P4.platen.y - 17, P4.platen.z - 12);
+  addPickable(rearFeedShaft, COMPONENTS.paperFeed, pickables);
+  platenAssembly.add(rearFeedShaft);
+
+  const frontFeedShaft = shaft(242, 2.4, metal, 'front paper-feed actuating shaft');
+  frontFeedShaft.position.set(0, P4.platen.y - 18, P4.platen.z + 18);
+  addPickable(frontFeedShaft, COMPONENTS.paperFeed, pickables);
+  platenAssembly.add(frontFeedShaft);
+
+  for (const x of feedRollXs) {
+    const rearRoller = pulley(6.2, 15, rubber, 'rear molded rubber feed roller');
+    rearRoller.position.set(x, P4.platen.y - 11, P4.platen.z - 12);
+    addPickable(rearRoller, COMPONENTS.paperFeed, pickables);
+    platenAssembly.add(rearRoller);
+
+    const frontRoller = pulley(6.2, 15, rubber, 'front molded rubber feed roller');
+    frontRoller.position.set(x, P4.platen.y - 12, P4.platen.z + 16);
+    addPickable(frontRoller, COMPONENTS.paperFeed, pickables);
+    platenAssembly.add(frontRoller);
+  }
+
+  const paperDeflector = box(238, 2.2, 42, shellDark, 'paper deflector beneath platen');
+  paperDeflector.position.set(0, P4.platen.y - 23, P4.platen.z + 1);
+  paperDeflector.rotation.x = deg(-5);
+  addPickable(paperDeflector, COMPONENTS.paperFeed, pickables);
+  platenAssembly.add(paperDeflector);
+
   const bailBar = shaft(266, 2.8, metal, 'paper bail bar');
   bailBar.position.set(0, P4.platen.y + 27, P4.platen.z + 4);
-  addPickable(bailBar, COMPONENTS.platen, pickables);
+  addPickable(bailBar, COMPONENTS.paperFeed, pickables);
   platenAssembly.add(bailBar);
-  for (const x of [-82, 0, 82]) {
-    const roller = new THREE.Mesh(new THREE.CylinderGeometry(5.5, 5.5, 12, 20), rubber);
-    roller.rotation.z = Math.PI / 2;
+  for (const x of [-74, 74]) {
+    const roller = pulley(5.5, 12, rubber, 'laterally adjustable paper bail roller');
     roller.position.set(x, P4.platen.y + 24, P4.platen.z + 1);
-    roller.name = 'paper bail roller';
-    addPickable(roller, COMPONENTS.platen, pickables);
+    addPickable(roller, COMPONENTS.paperFeed, pickables);
     platenAssembly.add(roller);
   }
+
+  const indexPawl = box(5, 20, 4, darkMetal, 'platen index pawl');
+  indexPawl.position.set(P4.platen.length / 2 - 20, P4.platen.y - 2, P4.platen.z + 15);
+  indexPawl.rotation.x = deg(-22);
+  addPickable(indexPawl, COMPONENTS.platenRatchet, pickables);
+  platenAssembly.add(indexPawl);
+
+  const detentRoller = pulley(4.5, 5, metal, 'platen detent roller');
+  detentRoller.position.set(P4.platen.length / 2 - 20, P4.platen.y + 13, P4.platen.z + 8);
+  addPickable(detentRoller, COMPONENTS.platenRatchet, pickables);
+  platenAssembly.add(detentRoller);
+
+  const variableRelease = box(18, 7, 9, metal, 'platen variable-release coupling');
+  variableRelease.position.set(-P4.platen.length / 2 + 17, P4.platen.y, P4.platen.z);
+  addPickable(variableRelease, COMPONENTS.paperFeed, pickables);
+  platenAssembly.add(variableRelease);
 
   const selectionAssembly = makeAssembly('selection transmission', new THREE.Vector3(98, -40, 42));
   assemblies.push(selectionAssembly);
@@ -1236,6 +1279,13 @@ export function createSelectricModel() {
         outerDiameterMm: CANONICAL.platen.ratchetDiameterMm,
         teeth: CANONICAL.platen.representativeRatchetTeeth,
         toothProfile: 'P4'
+      },
+      paperFeed: {
+        frontRollers: 4,
+        rearRollers: 4,
+        bailRollers: 2,
+        frontRearReleaseCoupled: true,
+        exactCenters: 'unresolved-P4'
       },
       ribbon: {
         parent: 'carrier',

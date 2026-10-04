@@ -31,6 +31,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.d6CurrentSet.clipMarketFrozen).toBe(false);
   expect(initial.geometry.platenRatchet.outerDiameterMm).toBeCloseTo(30.1498, 6);
   expect(initial.geometry.platenRatchet.teeth).toBe(27);
+  expect(initial.geometry.paperFeed.frontRollers).toBe(4);
+  expect(initial.geometry.paperFeed.rearRollers).toBe(4);
+  expect(initial.geometry.paperFeed.bailRollers).toBe(2);
+  expect(initial.geometry.paperFeed.frontRearReleaseCoupled).toBe(true);
   expect(initial.geometry.ribbon.parent).toBe('carrier');
   expect(initial.geometry.ribbon.mediaWidthMm).toBeCloseTo(14.2875, 6);
   expect(initial.geometry.shaftTiming.cycleShaftDegPerCharacter).toBe(180);
