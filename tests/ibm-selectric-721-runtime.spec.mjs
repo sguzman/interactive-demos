@@ -46,7 +46,12 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.ribbon.mediaWidthMm).toBeCloseTo(14.2875, 6);
   expect(initial.geometry.ribbon.nominalRatchetTeethPerCharacter).toBeCloseTo(2.5, 8);
   expect(initial.geometry.ribbon.path).toEqual(['left-spool','left-guide','print-point','right-guide','right-spool']);
-  expect(initial.geometry.ribbon.reverseTopology).toContain('feed-pawl transfer');
+  expect(initial.geometry.ribbon.reverseTopology).toContain('lost supply-core loop');
+  expect(initial.geometry.ribbon.reverseTopology).toContain('pawl/check transfer');
+  expect(initial.geometry.ribbon.reverseIsAnimatedSequence).toBe(true);
+  expect(initial.geometry.ribbon.reverseThresholdClass).toContain('P5 compressed');
+  expect(initial.geometry.ribbon.reverseState).toBe('feeding');
+  expect(initial.geometry.ribbon.reverseCount).toBe(0);
   expect(initial.geometry.shaftTiming.cycleShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.filterShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.printShaftDegPerCharacter).toBe(360);
@@ -220,6 +225,24 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(lowercaseRestored.selection.shiftHemisphere).toBe(0);
   expect(lowercaseRestored.selection.tiltBand).toBe(lowerTilt);
   expect(lowercaseRestored.selection.rotateUnit).toBe(lowerRotate);
+
+  const ribbonDirectionBeforeReverse = lowercaseRestored.ribbonFeedDirection;
+  const primedReverse = await page.evaluate(() => window.__selectricDebug.primeRibbonAutoReverse());
+  expect(primedReverse).toBe(true);
+  await page.evaluate(() => window.__selectricDebug.typeCharacter('q'));
+  await page.waitForFunction(
+    () => window.__selectricDebug.state.cycle === 'C0_REST',
+    null,
+    { timeout: 5000 }
+  );
+  const ribbonReversed = await page.evaluate(() => window.__selectricDebug.state);
+  expect(ribbonReversed.ribbonFeedDirection).toBe(-ribbonDirectionBeforeReverse);
+  expect(ribbonReversed.ribbonReverseCount).toBe(1);
+  expect(ribbonReversed.ribbonReverseState).toBe('feeding');
+  expect(ribbonReversed.ribbonReversePhase).toBe(0);
+  expect(ribbonReversed.geometry.ribbon.feedStrokeInDirection).toBe(0);
+  expect(ribbonReversed.events.some(event => event.name === 'RIBBON_AUTO_REVERSE')).toBe(true);
+
   expect(typed.printApproach).toBe(0);
   expect(typed.cyclePhase).toBe(0);
   expect(typed.selection.tiltBand).toBeGreaterThanOrEqual(0);
