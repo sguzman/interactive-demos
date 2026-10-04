@@ -1046,6 +1046,12 @@ window.__selectricDebug = {
     return moved;
   },
   shift: () => ui.shiftBtn.click(),
+  setOperationalCam(action, phase = 0) {
+    if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
+    model.setOperationalCam(action, phase);
+    syncUi();
+    return true;
+  },
   toggleServiceCover: () => ui.coverBtn.click(),
   setServiceCover: value => {
     model.setServiceCover(value);
