@@ -94,6 +94,7 @@ const runtime = {
   pendingCharacter: 'a',
   selectionTarget: { tilt: 0, rotate: 0, shift: 0 },
   cycleDurationMs: 1250,
+  debugCycleHold: null,
   operation: null,
   eventLog: [],
   lastRecordedCycle: 'C0_REST'
@@ -151,6 +152,7 @@ function resetMechanicalState() {
   runtime.cycleAdvanceCommitted = false;
   runtime.cycleImpactCommitted = false;
   runtime.ribbonFeedCommitted = false;
+  runtime.debugCycleHold = null;
   runtime.operation = null;
   runtime.eventLog = [];
   runtime.lastRecordedCycle = 'C0_REST';
@@ -233,7 +235,9 @@ function runCarrierOperation(now) {
 
 function runCycle(now) {
   if (runtime.cycle === 'C0_REST') return;
-  const t = Math.min(1, (now - runtime.cycleStart) / runtime.cycleDurationMs);
+  const t = runtime.debugCycleHold === null
+    ? Math.min(1, (now - runtime.cycleStart) / runtime.cycleDurationMs)
+    : THREE.MathUtils.clamp(runtime.debugCycleHold, 0, 0.999);
   model.setCyclePhase(t);
 
   if (t < 0.12) {
@@ -457,6 +461,21 @@ window.__selectricDebug = {
     if (runtime.cycle !== 'C0_REST' || runtime.operation) return false;
     runtime.powered = next;
     syncUi();
+    return true;
+  },
+  holdCharacterAt(char = 'a', progress = 0.62) {
+    if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation) return false;
+    startCharacterCycle(char);
+    runtime.debugCycleHold = THREE.MathUtils.clamp(Number(progress) || 0, 0, 0.999);
+    runCycle(performance.now());
+    syncUi();
+    return true;
+  },
+  releaseCharacterHold() {
+    if (runtime.debugCycleHold === null || runtime.cycle === 'C0_REST') return false;
+    const held = runtime.debugCycleHold;
+    runtime.debugCycleHold = null;
+    runtime.cycleStart = performance.now() - held * runtime.cycleDurationMs;
     return true;
   },
   typeCharacter: char => startCharacterCycle(char || 'a'),

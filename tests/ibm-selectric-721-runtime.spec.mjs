@@ -62,9 +62,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.evaluate(() => window.__selectricDebug.setServiceCover(0));
 
   const initialCarrier = initial.carrierX;
-  await page.evaluate(() => window.__selectricDebug.typeCharacter('q'));
-  await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C5_PRINT_IMPACT', null, { timeout: 5000 });
+  await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.62));
+  await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C5_PRINT_IMPACT', null, { timeout: 1500 });
   await page.screenshot({ path: 'test-results/selectric-impact.png', fullPage: true });
+  await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
 
   const typed = await page.evaluate(() => window.__selectricDebug.state);
