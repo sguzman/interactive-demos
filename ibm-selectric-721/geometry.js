@@ -503,6 +503,7 @@ export function createSelectricModel() {
     printApproach: 0,
     platenIndex: 0,
     paperAdvanceMm: 0,
+    manualPaperAlignmentMmP5: 0,
     feedRollPhaseRad: 0,
     bailRollPhaseRad: 0,
     lineSpacingTeeth: 1,
@@ -2279,11 +2280,16 @@ export function createSelectricModel() {
     rocker.rotation.x = deg(angleDeg);
   }
 
-  function updateFeedRollRotation() {
-    // Roller radius is reconstructed P4, so this is a visual kinematic cue rather than an OEM angle claim.
-    state.feedRollPhaseRad = state.paperAdvanceMm / 6.2;
+  function applyFeedRollRotation() {
     rearFeedRollers.forEach(roller => { roller.rotation.x = state.feedRollPhaseRad; });
     frontFeedRollers.forEach(roller => { roller.rotation.x = -state.feedRollPhaseRad; });
+  }
+
+  function advanceFeedRollersFromPaper(deltaPaperMm) {
+    // Roller radius is reconstructed P4. Accumulation matters because a released sheet can be
+    // manually repositioned without turning the disengaged feed rolls.
+    state.feedRollPhaseRad += (Number(deltaPaperMm) || 0) / 6.2;
+    applyFeedRollRotation();
   }
 
   function advanceBailRollersFromPaper(deltaPaperMm) {
@@ -2320,6 +2326,19 @@ export function createSelectricModel() {
   function setPaperBail(engaged) {
     state.paperBailEngaged = Boolean(engaged);
     paperBailPivot.rotation.x = state.paperBailEngaged ? 0 : deg(31);
+  }
+
+  function repositionPaperManually(deltaMm) {
+    if (state.feedRollsEngaged) return false;
+    const delta = Number(deltaMm) || 0;
+    if (!delta) return false;
+    state.paperAdvanceMm += delta;
+    state.manualPaperAlignmentMmP5 += delta;
+    paper.setAdvance(state.paperAdvanceMm);
+    // The released feed rolls remain stationary. Bail rollers are separate passive contacts and
+    // follow sheet motion only when the bail itself is against the platen.
+    advanceBailRollersFromPaper(delta);
+    return true;
   }
 
   function setPaperBailRollerPosition(side, value) {
@@ -2360,7 +2379,7 @@ export function createSelectricModel() {
       const deltaPaperMm = rotation * CANONICAL.platen.radiusMm;
       state.paperAdvanceMm += deltaPaperMm;
       paper.setAdvance(state.paperAdvanceMm);
-      updateFeedRollRotation();
+      advanceFeedRollersFromPaper(deltaPaperMm);
       advanceBailRollersFromPaper(deltaPaperMm);
     }
     return true;
@@ -2397,7 +2416,7 @@ export function createSelectricModel() {
       const deltaPaperMm = delta * CANONICAL.platen.radiusMm;
       state.paperAdvanceMm += deltaPaperMm;
       paper.setAdvance(state.paperAdvanceMm);
-      updateFeedRollRotation();
+      advanceFeedRollersFromPaper(deltaPaperMm);
       advanceBailRollersFromPaper(deltaPaperMm);
     }
   }
@@ -2448,9 +2467,11 @@ export function createSelectricModel() {
 
   function clearPaper() {
     state.paperAdvanceMm = 0;
+    state.manualPaperAlignmentMmP5 = 0;
+    state.feedRollPhaseRad = 0;
     state.bailRollPhaseRad = 0;
     paper.setAdvance(0);
-    updateFeedRollRotation();
+    applyFeedRollRotation();
     Object.values(paperBailRollers).forEach(roller => {
       roller.rotation.x = 0;
     });
@@ -2627,6 +2648,9 @@ export function createSelectricModel() {
         feedRollsEngaged: state.feedRollsEngaged,
         releaseLatchedStateRepresented: true,
         releaseTravel: 'P5 presentation; exact metric travel unresolved',
+        manualPaperAlignmentMmP5: state.manualPaperAlignmentMmP5,
+        manualPaperAlignmentAvailable: !state.feedRollsEngaged,
+        manualPaperAlignmentClass: 'P5 public alignment increment while feed rolls are released; exact operator handling/travel is unresolved',
         copyControl: {
           positions: 5,
           setting: state.copyControlSetting,
@@ -2662,7 +2686,7 @@ export function createSelectricModel() {
           wrapClass: 'P4 platen-contact presentation; exact hidden wrap/contact arc unresolved'
         },
         feedRollPhaseRad: state.feedRollPhaseRad,
-        feedRollRotationClass: 'P4 roller-radius kinematic presentation driven from paper advance; exact roller radius unresolved',
+        feedRollRotationClass: 'P4 accumulated contact rotation from coupled paper travel only; released manual sheet alignment does not rotate feed rolls; exact roller radius unresolved',
         exactCenters: 'unresolved-P4'
       },
       ribbon: {
@@ -2812,6 +2836,7 @@ export function createSelectricModel() {
     setFineAlignment,
     setPaperRelease,
     setPaperBail,
+    repositionPaperManually,
     setPaperBailRollerPosition,
     setCopyControl,
     setPlatenVariable,

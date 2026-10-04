@@ -67,6 +67,8 @@ const ui = {
   indexBtn: document.querySelector('#indexBtn'),
   lineSpacingBtn: document.querySelector('#lineSpacingBtn'),
   paperReleaseBtn: document.querySelector('#paperReleaseBtn'),
+  paperAlignBackBtn: document.querySelector('#paperAlignBackBtn'),
+  paperAlignForwardBtn: document.querySelector('#paperAlignForwardBtn'),
   paperBailBtn: document.querySelector('#paperBailBtn'),
   bailLeft: document.querySelector('#bailLeft'),
   bailRight: document.querySelector('#bailRight'),
@@ -242,6 +244,8 @@ function syncUi() {
   ui.shiftBtn.textContent = model.state.shiftHemisphere ? 'Shift: upper' : 'Shift: lower';
   ui.coverBtn.textContent = model.state.serviceCoverOpen > 0.5 ? 'Close service cover' : 'Open service cover';
   ui.paperReleaseBtn.textContent = model.state.feedRollsEngaged ? 'Release paper feed' : 'Engage paper feed';
+  ui.paperAlignBackBtn.disabled = model.state.feedRollsEngaged;
+  ui.paperAlignForwardBtn.disabled = model.state.feedRollsEngaged;
   ui.paperBailBtn.textContent = model.state.paperBailEngaged ? 'Release paper bail' : 'Engage paper bail';
   ui.ribbonModeBtn.textContent = 'Ribbon: ' + model.state.ribbonPrintMode;
   ui.ribbonLoadBtn.textContent = model.state.ribbonLoadState ? 'Ribbon load: on' : 'Ribbon load: off';
@@ -664,6 +668,22 @@ ui.paperReleaseBtn.addEventListener('click', () => {
   recordEvent(model.state.feedRollsEngaged ? 'PAPER_FEED_ENGAGED' : 'PAPER_FEED_RELEASED');
   syncUi();
 });
+function stepManualPaper(direction) {
+  if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
+  const deltaMmP5 = Math.sign(direction || 0) * 2;
+  const moved = model.repositionPaperManually(deltaMmP5);
+  if (!moved) return false;
+  runtime.lastAction = direction < 0 ? 'paper-align-back' : 'paper-align-forward';
+  recordEvent('MANUAL_PAPER_REPOSITION', {
+    direction: direction < 0 ? -1 : 1,
+    deltaMmP5,
+    paperAdvanceMm: model.state.paperAdvanceMm
+  });
+  syncUi();
+  return true;
+}
+ui.paperAlignBackBtn.addEventListener('click', () => stepManualPaper(-1));
+ui.paperAlignForwardBtn.addEventListener('click', () => stepManualPaper(1));
 ui.paperBailBtn.addEventListener('click', () => {
   if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
   model.setPaperBail(!model.state.paperBailEngaged);
@@ -988,6 +1008,13 @@ window.__selectricDebug = {
   carriageReturn: () => ui.returnBtn.click(),
   index: () => ui.indexBtn.click(),
   togglePaperRelease: () => ui.paperReleaseBtn.click(),
+  repositionPaperManually(deltaMm) {
+    if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
+    const moved = model.repositionPaperManually(deltaMm);
+    syncUi();
+    return moved;
+  },
+  stepPaperAlignment: direction => direction < 0 ? ui.paperAlignBackBtn.click() : ui.paperAlignForwardBtn.click(),
   togglePaperBail: () => ui.paperBailBtn.click(),
   setPaperBailRollerPosition(side, normalized) {
     if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
