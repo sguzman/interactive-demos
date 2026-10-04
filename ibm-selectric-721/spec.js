@@ -173,8 +173,8 @@ export const COMPONENTS = Object.freeze({
   selection: {
     name: 'Selection transmission',
     category: 'mechanical information processing',
-    provenance: 'source-grounded topology + width-specific 7X1 identities + P4 path geometry',
-    description: 'Gearless-tilt 7X1 tape/pulley presentation. Tape geometry updates with carrier travel while type-element selection remains invariant under carrier x.'
+    provenance: 'source-grounded weighted differential topology + width-specific 7X1 identities + P4 linkage/path geometry',
+    description: 'Two weighted tilt inputs, three positive rotate inputs plus the five-unit negative baseline drive gearless-tilt and rotate tape paths. Tape geometry updates with carrier travel while type-element selection remains invariant under carrier x.'
   },
   ribbon: {
     name: 'Fabric ribbon system',

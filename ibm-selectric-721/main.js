@@ -405,6 +405,7 @@ function snapshot() {
       tiltBand: model.state.tiltBand,
       rotateUnit: model.state.rotateUnit,
       shiftHemisphere: model.state.shiftHemisphere,
+      selectorInputs: { ...model.state.selectorInputs },
       mappingClass: 'P5 deterministic key-to-slot presentation; not a specific IBM typeball layout'
     },
     ribbonLift: model.state.ribbonLift,

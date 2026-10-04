@@ -254,7 +254,8 @@ export function createSelectricModel() {
     platenIndex: 0,
     cyclePhase: 0,
     keyboardCode: 0,
-    cordPhase: 0
+    cordPhase: 0,
+    selectorInputs: { T1: 0, T2: 0, R1: 0, R2: 0, R2A: 0, fiveUnit: 0 }
   };
 
   const shellMat = material(0xb8b4a8, 0.03, 0.76);
@@ -584,6 +585,74 @@ export function createSelectricModel() {
   const rotateTape = dynamicTube(0x647f9b, 0.9, 'IBM 1134811 7X1 rotate tape presentation', COMPONENTS.selection, pickables);
   selectionAssembly.add(tiltTape.mesh, rotateTape.mesh);
 
+  const selectorLatchNames = ['T1', 'T2', 'R1', 'R2', 'R2A'];
+  const selectorLatches = {};
+  selectorLatchNames.forEach((name, index) => {
+    const latch = box(8, 28, 4.2, metal, name + ' selector latch');
+    latch.position.set(-60 + index * 30, 54, -24);
+    latch.userData.baseY = latch.position.y;
+    addPickable(latch, COMPONENTS.selection, pickables);
+    selectionAssembly.add(latch);
+    selectorLatches[name] = latch;
+  });
+
+  const fiveUnitBail = box(54, 5, 9, darkMetal, 'five-unit bail');
+  fiveUnitBail.position.set(58, 45, -31);
+  fiveUnitBail.userData.baseY = fiveUnitBail.position.y;
+  addPickable(fiveUnitBail, COMPONENTS.selection, pickables);
+  selectionAssembly.add(fiveUnitBail);
+
+  const tiltDifferential = new THREE.Group();
+  tiltDifferential.position.set(-72, 68, -35);
+  selectionAssembly.add(tiltDifferential);
+  const tiltArmA = box(52, 4, 6, metal, 'tilt differential lever');
+  addPickable(tiltArmA, COMPONENTS.selection, pickables);
+  tiltDifferential.add(tiltArmA);
+  const tiltLink = box(4, 36, 5, darkMetal, 'tilt differential output link');
+  tiltLink.position.set(20, 16, 0);
+  addPickable(tiltLink, COMPONENTS.selection, pickables);
+  tiltDifferential.add(tiltLink);
+
+  const rotateBalance = new THREE.Group();
+  rotateBalance.position.set(56, 68, -35);
+  selectionAssembly.add(rotateBalance);
+  const rotateArm = box(62, 4, 6, metal, 'rotate balance lever');
+  addPickable(rotateArm, COMPONENTS.selection, pickables);
+  rotateBalance.add(rotateArm);
+  const rotateBellcrank = box(5, 34, 5, darkMetal, 'rotate bellcrank output');
+  rotateBellcrank.position.set(-18, 15, 0);
+  addPickable(rotateBellcrank, COMPONENTS.selection, pickables);
+  rotateBalance.add(rotateBellcrank);
+
+  function rotatePositiveInputs(units) {
+    const u = Math.max(0, Math.min(5, Math.trunc(units)));
+    if (u === 0) return { R1: 0, R2: 0, R2A: 0 };
+    if (u === 1) return { R1: 1, R2: 0, R2A: 0 };
+    if (u === 2) return { R1: 0, R2: 1, R2A: 0 };
+    if (u === 3) return { R1: 1, R2: 1, R2A: 0 };
+    if (u === 4) return { R1: 0, R2: 1, R2A: 1 };
+    return { R1: 1, R2: 1, R2A: 1 };
+  }
+
+  function updateSelectionDrive(tiltBand, rotateUnit) {
+    const T1 = tiltBand & 1 ? 1 : 0;
+    const T2 = tiltBand & 2 ? 1 : 0;
+    const fiveUnit = rotateUnit < 0 ? 1 : 0;
+    const compensation = fiveUnit ? rotateUnit + 5 : rotateUnit;
+    const positive = rotatePositiveInputs(compensation);
+    state.selectorInputs = { T1, T2, ...positive, fiveUnit };
+
+    selectorLatches.T1.position.y = selectorLatches.T1.userData.baseY - T1 * 7;
+    selectorLatches.T2.position.y = selectorLatches.T2.userData.baseY - T2 * 7;
+    selectorLatches.R1.position.y = selectorLatches.R1.userData.baseY - positive.R1 * 7;
+    selectorLatches.R2.position.y = selectorLatches.R2.userData.baseY - positive.R2 * 7;
+    selectorLatches.R2A.position.y = selectorLatches.R2A.userData.baseY - positive.R2A * 7;
+    fiveUnitBail.position.y = fiveUnitBail.userData.baseY - fiveUnit * 8;
+
+    tiltDifferential.rotation.z = deg((tiltBand - 1.5) * 6.5);
+    rotateBalance.rotation.z = deg(rotateUnit * 3.2);
+  }
+
   const carrierAssembly = makeAssembly('carrier assembly', new THREE.Vector3(0, 34, 20));
   assemblies.push(carrierAssembly);
   root.add(carrierAssembly);
@@ -716,6 +785,7 @@ export function createSelectricModel() {
     state.tiltBand = THREE.MathUtils.clamp(tiltBand, 0, 3);
     state.rotateUnit = THREE.MathUtils.clamp(rotateUnit, -5, 5);
     state.shiftHemisphere = shiftHemisphere ? 1 : 0;
+    updateSelectionDrive(state.tiltBand, state.rotateUnit);
     typeElement.rotation.x = deg(state.tiltBand * 7.5);
     typeElement.rotation.y = deg(state.rotateUnit * 10 + state.shiftHemisphere * 180);
   }
@@ -772,6 +842,7 @@ export function createSelectricModel() {
       supportTopology: 'D6 front + Level-2 upper/lower rack shoes',
       keyboardCodeChannels: 6,
       keyboardCode: state.keyboardCode,
+      selectorInputs: { ...state.selectorInputs },
       cordPhase: state.cordPhase,
       writingLineRacks: ['1124109 escapement', '1164743 margin', '1164102/6519354 tab'],
       sleeveCamOrder: ['ribbon-lift', '1164240-feed-detent', '1124174-print-restoring'],

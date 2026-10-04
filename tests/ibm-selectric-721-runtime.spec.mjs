@@ -40,6 +40,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(typed.selection.tiltBand).toBeLessThanOrEqual(3);
   expect(typed.selection.rotateUnit).toBeGreaterThanOrEqual(-5);
   expect(typed.selection.rotateUnit).toBeLessThanOrEqual(5);
+  expect(Object.keys(typed.selection.selectorInputs).sort()).toEqual(['R1','R2','R2A','T1','T2','fiveUnit'].sort());
+  expect(typed.selection.selectorInputs.T1 + 2 * typed.selection.selectorInputs.T2).toBe(typed.selection.tiltBand);
+  if (typed.selection.rotateUnit < 0) expect(typed.selection.selectorInputs.fiveUnit).toBe(1);
   expect(typed.selection.mappingClass).toContain('P5');
 
   const names = typed.events.map(event => event.name);
