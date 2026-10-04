@@ -81,40 +81,30 @@ function loftPrism(stations, mat, name) {
   return mesh;
 }
 
-function loftSidePanel(sign, stations, mat, name) {
-  const vertices = [];
-  const indices = [];
-  for (const station of stations) {
-    const ox = sign * station.outerX;
-    const ix = sign * station.innerX;
-    vertices.push(
-      ox, station.bottomY, station.z,
-      ox, station.topY, station.z,
-      ix, station.topY - station.innerDrop, station.z,
-      ix, station.bottomY + 3, station.z
-    );
-  }
-  const quad = (a,b,c,d) => indices.push(a,b,c, a,c,d);
-  for (let i = 0; i < stations.length - 1; i += 1) {
-    const a = i * 4, b = (i + 1) * 4;
-    quad(a,b,b+1,a+1);
-    quad(a+1,b+1,b+2,a+2);
-    quad(a+2,b+2,b+3,a+3);
-    quad(a+3,b+3,b,a);
-  }
-  quad(0,1,2,3);
-  const e=(stations.length-1)*4;
-  quad(e+3,e+2,e+1,e);
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices,3));
-  geometry.setIndex(indices);
+function extrudedSideCheek(profile, innerX, outerX, mat, name) {
+  const shape = new THREE.Shape();
+  profile.forEach((point, index) => {
+    const localX = -point.z;
+    if (index === 0) shape.moveTo(localX, point.y);
+    else shape.lineTo(localX, point.y);
+  });
+  shape.closePath();
+  const thickness = outerX - innerX;
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: thickness,
+    steps: 1,
+    bevelEnabled: true,
+    bevelThickness: 1.8,
+    bevelSize: 1.8,
+    bevelSegments: 3,
+    curveSegments: 3
+  });
+  geometry.rotateY(Math.PI / 2);
   geometry.computeVertexNormals();
-  const panelMat = mat.clone();
-  panelMat.side = THREE.DoubleSide;
-  const mesh = new THREE.Mesh(geometry,panelMat);
-  mesh.name=name;
-  mesh.castShadow=true;
-  mesh.receiveShadow=true;
+  const mesh = new THREE.Mesh(geometry, mat);
+  mesh.name = name;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
   return mesh;
 }
 
@@ -336,7 +326,7 @@ export function createSelectricModel() {
 
   const shellMat = material(0xb8b4a8, 0.03, 0.76);
   const shellDark = material(0x4e514f, 0.12, 0.72);
-  const keyMat = material(0xe5e1d4, 0.02, 0.66);
+  const keyMat = material(0x252826, 0.03, 0.72);
   const metal = material(0x9fa7aa, 0.66, 0.34);
   const darkMetal = material(0x363c40, 0.72, 0.31);
   const rackMat = material(0x686f72, 0.63, 0.38);
@@ -354,21 +344,31 @@ export function createSelectricModel() {
   addPickable(base, COMPONENTS.shell, pickables);
   shellAssembly.add(base);
 
-  const cheekStations = [
-    { z: 150, outerX: 181, innerX: 151, bottomY: 22, topY: 47, innerDrop: 5 },
-    { z: 118, outerX: 183, innerX: 154, bottomY: 22, topY: 66, innerDrop: 8 },
-    { z: 72, outerX: 184, innerX: 157, bottomY: 22, topY: 88, innerDrop: 12 },
-    { z: 26, outerX: 184, innerX: 159, bottomY: 22, topY: 111, innerDrop: 16 },
-    { z: -28, outerX: 181, innerX: 158, bottomY: 22, topY: 137, innerDrop: 17 },
-    { z: -78, outerX: 177, innerX: 154, bottomY: 22, topY: 148, innerDrop: 13 },
-    { z: -138, outerX: 174, innerX: 151, bottomY: 22, topY: 125, innerDrop: 9 }
+  const cheekProfile = [
+    { z: 162, y: 22 },
+    { z: 162, y: 42 },
+    { z: 150, y: 50 },
+    { z: 128, y: 56 },
+    { z: 103, y: 66 },
+    { z: 76, y: 78 },
+    { z: 52, y: 91 },
+    { z: 32, y: 106 },
+    { z: 15, y: 119 },
+    { z: -16, y: 135 },
+    { z: -55, y: 147 },
+    { z: -102, y: 148 },
+    { z: -143, y: 132 },
+    { z: -163, y: 102 },
+    { z: -166, y: 22 }
   ];
-  const leftCheek = loftSidePanel(-1, cheekStations, shellMat, 'left continuous shell cheek');
-  addPickable(leftCheek, COMPONENTS.shell, pickables);
-  shellAssembly.add(leftCheek);
-  const rightCheek = loftSidePanel(1, cheekStations, shellMat, 'right continuous shell cheek');
+  const rightCheek = extrudedSideCheek(cheekProfile, 156, 182, shellMat, 'right rounded shell cheek');
+  rightCheek.position.x = 156;
   addPickable(rightCheek, COMPONENTS.shell, pickables);
   shellAssembly.add(rightCheek);
+  const leftCheek = extrudedSideCheek(cheekProfile, 156, 182, shellMat, 'left rounded shell cheek');
+  leftCheek.position.x = -182;
+  addPickable(leftCheek, COMPONENTS.shell, pickables);
+  shellAssembly.add(leftCheek);
 
   const serviceCoverPivot = new THREE.Group();
   serviceCoverPivot.name = 'top service cover hinge presentation';
@@ -1065,7 +1065,7 @@ export function createSelectricModel() {
       serviceCoverOpen: state.serviceCoverOpen,
       pickableCount: pickables.length,
       supportTopology: 'D6 front + Level-2 upper/lower rack shoes',
-      shellTopology: 'longitudinal side-cheek loft + upper service-cover loft + explicit carrier opening',
+      shellTopology: 'extruded rounded side-cheek profile + upper service-cover loft + explicit carrier opening',
       keyboardCodeChannels: 6,
       keyboardCode: state.keyboardCode,
       selectorInputs: { ...state.selectorInputs },
