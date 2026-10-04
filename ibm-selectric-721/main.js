@@ -232,6 +232,7 @@ function resetMechanicalState() {
   model.setCarrierX(0);
   model.setTypeball(0, 0, 0);
   model.setRibbonLift(0);
+  model.resetRibbonTransport();
   model.setFineAlignment(0, 0);
   model.setPaperRelease(false);
   model.setPaperBail(true);
@@ -411,6 +412,12 @@ function runCycle(now) {
     model.feedRibbon();
     runtime.ribbonFeedCommitted = true;
     recordEvent('RIBBON_FEED_COMPLETE_EXCEPT_PAWL_RESTORE');
+  }
+  if (t >= 0.66) {
+    const reverseCommitted = model.setRibbonReversePhase((t - 0.66) / 0.23);
+    if (reverseCommitted) {
+      recordEvent('RIBBON_AUTO_REVERSE', { direction: model.state.ribbonFeedDirection });
+    }
   }
   if (t >= impactThreshold && !runtime.cycleImpactCommitted) {
     model.stampCharacter(runtime.pendingCharacter, runtime.line);
@@ -679,6 +686,10 @@ function snapshot() {
       rotateDetent: model.state.rotateDetent
     },
     ribbonFeedStep: model.state.ribbonFeedStep,
+    ribbonFeedDirection: model.state.ribbonFeedDirection,
+    ribbonReverseState: model.state.ribbonReverseState,
+    ribbonReversePhase: model.state.ribbonReversePhase,
+    ribbonReverseCount: model.state.ribbonReverseCount,
     printApproach: model.state.printApproach,
     platenIndex: model.state.platenIndex,
     cyclePhase: model.state.cyclePhase,
@@ -720,6 +731,7 @@ window.__selectricDebug = {
     return true;
   },
   typeCharacter: char => requestCharacter(char || 'a'),
+  primeRibbonAutoReverse: () => model.primeRibbonAutoReverse(),
   space: () => ui.spaceBtn.click(),
   tab: () => ui.tabBtn.click(),
   backspace: () => ui.backspaceBtn.click(),
