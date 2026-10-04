@@ -89,6 +89,7 @@ const runtime = {
   pendingCharacter: 'a',
   selectionTarget: { tilt: 0, rotate: 0, shift: 0 },
   cycleDurationMs: 1250,
+  operation: null,
   eventLog: [],
   lastRecordedCycle: 'C0_REST'
 };
@@ -141,6 +142,7 @@ function resetMechanicalState() {
   runtime.cycleStart = 0;
   runtime.cycleAdvanceCommitted = false;
   runtime.cycleImpactCommitted = false;
+  runtime.operation = null;
   runtime.eventLog = [];
   runtime.lastRecordedCycle = 'C0_REST';
   runtime.pendingCharacter = 'a';
@@ -157,7 +159,7 @@ function resetMechanicalState() {
 }
 
 function startCharacterCycle(character = runtime.pendingCharacter) {
-  if (runtime.cycle !== 'C0_REST') return;
+  if (runtime.cycle !== 'C0_REST' || runtime.operation) return;
   runtime.pendingCharacter = character || 'a';
   runtime.selectionTarget = selectionForCharacter(runtime.pendingCharacter);
   setCycleState('C1_TRIP');
@@ -182,6 +184,40 @@ function nextDefaultTabStop() {
   const currentIndex = Math.max(0, Math.round((model.state.carrierX + CANONICAL.writingLineMm / 2) / CANONICAL.pitchMm));
   const nextIndex = Math.min(CANONICAL.nominalPositions - 1, (Math.floor(currentIndex / 8) + 1) * 8);
   return -CANONICAL.writingLineMm / 2 + nextIndex * CANONICAL.pitchMm;
+}
+
+function beginCarrierOperation(type, destination, durationMs, includesIndex = false) {
+  if (runtime.cycle !== 'C0_REST' || runtime.operation) return false;
+  const from = model.state.carrierX;
+  runtime.operation = {
+    type,
+    from,
+    to: THREE.MathUtils.clamp(destination, -CANONICAL.writingLineMm / 2, CANONICAL.writingLineMm / 2),
+    startedAt: performance.now(),
+    durationMs: Math.max(120, durationMs)
+  };
+  runtime.lastAction = type;
+  if (includesIndex) {
+    singleIndex();
+    recordEvent('RETURN_INDEX_STARTED');
+  }
+  recordEvent(type === 'tab' ? 'TAB_RELEASE' : 'CARRIER_RETURN_CLUTCH_ENGAGED', { destination: runtime.operation.to });
+  syncUi();
+  return true;
+}
+
+function runCarrierOperation(now) {
+  const op = runtime.operation;
+  if (!op) return;
+  const t = THREE.MathUtils.clamp((now - op.startedAt) / op.durationMs, 0, 1);
+  const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  model.setCarrierX(THREE.MathUtils.lerp(op.from, op.to, eased));
+  if (t >= 1) {
+    if (op.type === 'tab') recordEvent('TAB_CAPTURE', { destination: op.to });
+    else recordEvent('CARRIER_RETURN_TERMINATED_AT_LEFT_MARGIN');
+    runtime.operation = null;
+  }
+  syncUi();
 }
 
 function runCycle(now) {
@@ -255,31 +291,25 @@ ui.shiftBtn.addEventListener('click', () => {
   syncUi();
 });
 ui.spaceBtn.addEventListener('click', () => {
-  if (runtime.cycle !== 'C0_REST') return;
+  if (runtime.cycle !== 'C0_REST' || runtime.operation) return;
   runtime.lastAction = 'space';
   runtime.pendingCharacter = ' ';
   advanceCarrier(CANONICAL.pitchMm);
 });
 ui.tabBtn.addEventListener('click', () => {
-  if (runtime.cycle !== 'C0_REST') return;
-  runtime.lastAction = 'tab';
   const destination = nextDefaultTabStop();
-  model.setCarrierX(destination);
-  recordEvent('TAB_CAPTURE', { destination });
-  syncUi();
+  const distance = Math.abs(destination - model.state.carrierX);
+  beginCarrierOperation('tab', destination, 280 + distance * 3.2, false);
 });
 ui.backspaceBtn.addEventListener('click', () => {
-  if (runtime.cycle !== 'C0_REST') return;
+  if (runtime.cycle !== 'C0_REST' || runtime.operation) return;
   runtime.lastAction = 'backspace';
   advanceCarrier(-CANONICAL.pitchMm);
 });
 ui.returnBtn.addEventListener('click', () => {
-  if (runtime.cycle !== 'C0_REST') return;
-  runtime.lastAction = 'carrier-return';
-  model.setCarrierX(-CANONICAL.writingLineMm / 2);
-  singleIndex();
-  recordEvent('CARRIER_RETURN_TERMINATED_AT_LEFT_MARGIN');
-  syncUi();
+  const destination = -CANONICAL.writingLineMm / 2;
+  const distance = Math.abs(model.state.carrierX - destination);
+  beginCarrierOperation('carrier-return', destination, 360 + distance * 2.4, true);
 });
 ui.indexBtn.addEventListener('click', () => {
   if (runtime.cycle !== 'C0_REST') return;
@@ -365,6 +395,7 @@ function snapshot() {
   return {
     running: true,
     cycle: runtime.cycle,
+    operation: runtime.operation ? { type: runtime.operation.type, from: runtime.operation.from, to: runtime.operation.to } : null,
     line: runtime.line,
     lastAction: runtime.lastAction,
     pendingCharacter: runtime.pendingCharacter,
@@ -408,6 +439,7 @@ function animate(now) {
   requestAnimationFrame(animate);
   resize();
   runCycle(now);
+  runCarrierOperation(now);
   orbit.update();
   renderer.render(scene, camera);
 }

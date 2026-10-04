@@ -86,18 +86,23 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
 
   const beforeTab = indexed.carrierX;
   await page.evaluate(() => window.__selectricDebug.tab());
+  await page.waitForFunction(() => window.__selectricDebug.state.operation === null, null, { timeout: 5000 });
   const tabbed = await page.evaluate(() => window.__selectricDebug.state);
   expect(tabbed.carrierX).toBeGreaterThan(beforeTab);
+  expect(tabbed.events.some(event => event.name === 'TAB_RELEASE')).toBe(true);
   expect(tabbed.events.some(event => event.name === 'TAB_CAPTURE')).toBe(true);
 
   const lineBeforeReturn = tabbed.line;
   const platenBeforeReturn = tabbed.platenIndex;
   await page.evaluate(() => window.__selectricDebug.carriageReturn());
+  await page.waitForFunction(() => window.__selectricDebug.state.operation === null, null, { timeout: 5000 });
   const returned = await page.evaluate(() => window.__selectricDebug.state);
   expect(returned.carrierX).toBeCloseTo(-returned.geometry.writingLineMm / 2, 5);
   expect(returned.line).toBe(lineBeforeReturn + 1);
   expect(returned.platenIndex - platenBeforeReturn).toBeCloseTo(Math.PI * 2 / 27, 6);
   expect(returned.geometry.writingLineRacks).toContain('1164743 margin');
+  expect(returned.events.some(event => event.name === 'CARRIER_RETURN_CLUTCH_ENGAGED')).toBe(true);
+  expect(returned.events.some(event => event.name === 'CARRIER_RETURN_TERMINATED_AT_LEFT_MARGIN')).toBe(true);
 
   expect(errors).toEqual([]);
 });
