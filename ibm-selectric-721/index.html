@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Interactive constructive engineering reconstruction of an IBM Selectric Model 721 typewriter." />
+  <title>IBM Selectric 721 — Interactive Engineering Specimen</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script type="importmap">
+  {"imports":{"three":"../vendor/three/three.module.min.js","three/addons/":"../vendor/three/addons/"}}
+  </script>
+</head>
+<body>
+<div id="app">
+  <canvas id="scene"></canvas>
+
+  <header class="topbar panel">
+    <a class="gallery-link" href="../">← Gallery</a>
+    <div class="identity">
+      <div class="eyebrow">INTERACTIVE ENGINEERING SPECIMEN · CONSTRUCTIVE MECHANICAL RECONSTRUCTION</div>
+      <h1>IBM Selectric 721</h1>
+      <p>keypress → mechanical selection → type element → print impact → escapement → carrier advance</p>
+    </div>
+    <span class="status">FOUNDATION BUILD</span>
+  </header>
+
+  <aside class="controls panel" aria-label="Selectric controls">
+    <section>
+      <div class="section-title">Use the typewriter</div>
+      <p class="intro"><strong>7X1 · 12 CPI · fabric ribbon.</strong> This first public geometry tranche carries the sourced product envelope, platen and type-element metrics into one inspectable machine while unresolved hidden dimensions remain explicitly P4 reconstruction.</p>
+      <div class="action-grid">
+        <button id="typeBtn">Type test character</button>
+        <button id="spaceBtn" class="secondary">Space</button>
+        <button id="backspaceBtn" class="secondary">Backspace</button>
+        <button id="returnBtn" class="secondary">Carriage return</button>
+        <button id="indexBtn" class="secondary">Paper index</button>
+        <button id="resetBtn" class="secondary">Reset</button>
+      </div>
+
+      <label class="range-row" for="explode"><span>Exploded inspection</span><output id="explodeValue">0%</output></label>
+      <input id="explode" type="range" min="0" max="100" value="0" />
+
+      <div class="state-grid">
+        <div><span>Carrier</span><output id="carrierState">—</output></div>
+        <div><span>Cycle</span><output id="cycleState">IDLE</output></div>
+        <div><span>Selection</span><output id="selectionState">T 0 · R 0</output></div>
+        <div><span>Ribbon lift</span><output id="ribbonState">0%</output></div>
+        <div><span>Line</span><output id="lineState">0</output></div>
+      </div>
+
+      <div class="section-title sub">Inspection view</div>
+      <div class="view-grid">
+        <button class="secondary active" data-view="product">Product</button>
+        <button class="secondary" data-view="carrier">Carrier / typeball</button>
+        <button class="secondary" data-view="selection">Selection</button>
+        <button class="secondary" data-view="power">Powerframe</button>
+      </div>
+
+      <p class="note">Exact factory geometry is not claimed for unresolved hidden sections. P4 parts preserve the active branch, known dimensions, service topology and mechanical relationships while the reconstruction is refined.</p>
+    </section>
+  </aside>
+
+  <aside class="inspector panel">
+    <div class="inspector-topline">
+      <div class="eyebrow" id="partCategory">PRODUCT</div>
+      <span class="provenance" id="partProvenance">P4 reconstruction</span>
+    </div>
+    <h2 id="partName">IBM Selectric 721</h2>
+    <p id="partDescription">Orbit the model, explode the major assemblies, run a test print cycle, or click a component to inspect its provenance boundary.</p>
+  </aside>
+
+  <div class="legend panel">
+    <span>known metric anchors + explicit P4 reconstruction</span>
+    <span>12 CPI pitch = 2.1167 mm</span>
+  </div>
+
+  <div id="loading">Building Selectric geometry…</div>
+</div>
+<script type="module" src="./main.js"></script>
+</body>
+</html>
