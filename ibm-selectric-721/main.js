@@ -112,6 +112,7 @@ const runtime = {
   operation: null,
   serviceOperation: null,
   queuedCharacter: null,
+  storedSpace: false,
   eventLog: [],
   lastRecordedCycle: 'C0_REST'
 };
@@ -244,6 +245,7 @@ function resetMechanicalState() {
   runtime.operation = null;
   runtime.serviceOperation = null;
   runtime.queuedCharacter = null;
+  runtime.storedSpace = false;
   runtime.eventLog = [];
   runtime.lastRecordedCycle = 'C0_REST';
   runtime.pendingCharacter = 'a';
@@ -526,6 +528,15 @@ function runCycle(now) {
     model.setPrintApproach(0);
     model.setKeyPress(null, 0);
     model.setCyclePhase(0);
+    if (runtime.storedSpace) {
+      runtime.storedSpace = false;
+      if (model.state.carrierX >= model.state.rightMarginX - 1e-6) {
+        recordEvent('RIGHT_MARGIN_LINE_LOCK', { rightMarginX: model.state.rightMarginX, storedSpace: true });
+      } else {
+        recordEvent('SPACE_INTERLOCK_RELEASED');
+        beginCarrierOperation('space', model.state.carrierX + CANONICAL.pitchMm, 220, false);
+      }
+    }
   }
   syncUi();
 }
@@ -549,7 +560,23 @@ ui.shiftBtn.addEventListener('click', () => {
   beginServiceOperation('shift', 420, { fromShift, toShift });
 });
 ui.spaceBtn.addEventListener('click', () => {
+  if (!runtime.powered) return;
   runtime.pendingCharacter = ' ';
+  if (runtime.cycle !== 'C0_REST' && !runtime.operation && !runtime.serviceOperation) {
+    if (!runtime.storedSpace) {
+      runtime.storedSpace = true;
+      runtime.lastAction = 'space-stored';
+      recordEvent('SPACE_STORED_BY_FILTER_SHAFT_INTERLOCK');
+      syncUi();
+    }
+    return;
+  }
+  if (model.state.carrierX >= model.state.rightMarginX - 1e-6) {
+    runtime.lastAction = 'right-margin-line-lock';
+    recordEvent('RIGHT_MARGIN_LINE_LOCK', { rightMarginX: model.state.rightMarginX, space: true });
+    syncUi();
+    return;
+  }
   beginCarrierOperation('space', model.state.carrierX + CANONICAL.pitchMm, 220, false);
 });
 ui.tabBtn.addEventListener('click', () => {
@@ -727,6 +754,7 @@ function snapshot() {
     line: runtime.line,
     lastAction: runtime.lastAction,
     pendingCharacter: runtime.pendingCharacter,
+    storedSpace: runtime.storedSpace,
     keyboardCode: model.state.keyboardCode,
     keyboardCodeBitOrder: ['T1','T2','R1','R2','R2A','fiveUnit'],
     keyboardPress: {
