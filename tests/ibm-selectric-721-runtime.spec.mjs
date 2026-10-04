@@ -145,6 +145,14 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.operationalCams.carrierReturnIndexDegreesPerOperation).toBe(360);
   expect(initial.geometry.operationalCams.tabUsesPoweredCam).toBe(false);
   expect(initial.geometry.operationalCams.shiftInterlocksCharacterCycle).toBe(true);
+  expect(initial.geometry.operationalCams.followersEmbodied).toBe(true);
+  expect(initial.geometry.operationalCams.followerLiftP5).toEqual({
+    spaceBackspace: 0,
+    returnIndex: 0,
+    shift: 0
+  });
+  expect(initial.geometry.operationalCams.selectedFollower).toBe('none');
+  expect(initial.geometry.operationalCams.followerTravelClass).toContain('selected service-cam phase');
   expect(initial.geometry.returnTabDrive.carrierReturnFiniteTriggerThenSustained).toBe(true);
   expect(initial.geometry.returnTabDrive.carrierReturnSpringClutch).toBe(true);
   expect(initial.geometry.returnTabDrive.tabPropulsion).toBe('mainspring');
@@ -172,6 +180,35 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.backspace.mechanism).toBe('dedicated-powered-reverse-linkage');
   expect(initial.geometry.backspace.rackFamily).toEqual(['1124568', '6519139']);
   expect(initial.geometry.backspace.displacementMm).toBeCloseTo(-initial.geometry.pitchMm, 8);
+
+  // Each clutched service cam now has a visible follower tied to that cam's live phase.
+  await page.evaluate(() => window.__selectricDebug.setOperationalCam('space', 0.5));
+  const spaceFollower = await page.evaluate(() => window.__selectricDebug.state);
+  expect(spaceFollower.geometry.operationalCams.selectedFollower).toBe('space/backspace');
+  expect(spaceFollower.geometry.operationalCams.followerLiftP5.spaceBackspace).toBeCloseTo(1, 8);
+  expect(spaceFollower.geometry.operationalCams.followerLiftP5.returnIndex).toBeCloseTo(0, 8);
+  expect(spaceFollower.geometry.operationalCams.followerLiftP5.shift).toBeCloseTo(0, 8);
+
+  await page.evaluate(() => window.__selectricDebug.setOperationalCam('carrier-return', 0.5));
+  const returnFollower = await page.evaluate(() => window.__selectricDebug.state);
+  expect(returnFollower.geometry.operationalCams.selectedFollower).toBe('carrier-return/index');
+  expect(returnFollower.geometry.operationalCams.followerLiftP5.returnIndex).toBeCloseTo(1, 8);
+  expect(returnFollower.geometry.operationalCams.followerLiftP5.spaceBackspace).toBeCloseTo(0, 8);
+
+  await page.evaluate(() => window.__selectricDebug.setOperationalCam('shift', 0.5));
+  const shiftFollower = await page.evaluate(() => window.__selectricDebug.state);
+  expect(shiftFollower.geometry.operationalCams.selectedFollower).toBe('shift');
+  expect(shiftFollower.geometry.operationalCams.followerLiftP5.shift).toBeCloseTo(1, 8);
+  expect(shiftFollower.geometry.operationalCams.followerLiftP5.returnIndex).toBeCloseTo(0, 8);
+
+  await page.evaluate(() => window.__selectricDebug.setOperationalCam(null, 0));
+  const followersRestored = await page.evaluate(() => window.__selectricDebug.state);
+  expect(followersRestored.geometry.operationalCams.selectedFollower).toBe('none');
+  expect(followersRestored.geometry.operationalCams.followerLiftP5).toEqual({
+    spaceBackspace: 0,
+    returnIndex: 0,
+    shift: 0
+  });
 
   const carrierBeforePowerOff = initial.carrierX;
   await page.evaluate(() => window.__selectricDebug.setPower(false));
