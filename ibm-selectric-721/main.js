@@ -240,6 +240,26 @@ function runCycle(now) {
     : THREE.MathUtils.clamp(runtime.debugCycleHold, 0, 0.999);
   model.setCyclePhase(t);
 
+  // Milestone side effects are cumulative rather than branch-local so a slow browser cannot
+  // skip ribbon feed, impact, or escapement merely because one rendered frame jumps phases.
+  const ribbonFeedThreshold = 0.43 + 0.11 * 0.35;
+  const impactThreshold = 0.54 + 0.12 * 0.95;
+  if (t >= ribbonFeedThreshold && !runtime.ribbonFeedCommitted) {
+    model.feedRibbon();
+    runtime.ribbonFeedCommitted = true;
+    recordEvent('RIBBON_FEED_COMPLETE_EXCEPT_PAWL_RESTORE');
+  }
+  if (t >= impactThreshold && !runtime.cycleImpactCommitted) {
+    model.stampCharacter(runtime.pendingCharacter, runtime.line);
+    runtime.cycleImpactCommitted = true;
+    recordEvent('PRINT_IMPACT', { character: runtime.pendingCharacter });
+  }
+  if (t >= 0.73 && !runtime.cycleAdvanceCommitted) {
+    advanceCarrier(CANONICAL.pitchMm);
+    runtime.cycleAdvanceCommitted = true;
+    recordEvent('ESCAPEMENT_ADVANCE');
+  }
+
   if (t < 0.12) {
     setCycleState('C1_TRIP');
     model.setKeyboardCode(0);
@@ -260,32 +280,17 @@ function runCycle(now) {
     model.setTypeball(runtime.selectionTarget.tilt, runtime.selectionTarget.rotate, runtime.selectionTarget.shift);
     model.setRibbonLift(k);
     model.setPrintApproach(k * 0.55);
-    if (!runtime.ribbonFeedCommitted && k > 0.35) {
-      model.feedRibbon();
-      runtime.ribbonFeedCommitted = true;
-      recordEvent('RIBBON_FEED_COMPLETE_EXCEPT_PAWL_RESTORE');
-    }
   } else if (t < 0.66) {
     setCycleState('C5_PRINT_IMPACT');
     const k = (t - 0.54) / 0.12;
     model.setRibbonLift(1);
     model.setPrintApproach(Math.min(1, 0.55 + k * 0.45));
-    if (!runtime.cycleImpactCommitted && k > 0.95) {
-      model.stampCharacter(runtime.pendingCharacter, runtime.line);
-      runtime.cycleImpactCommitted = true;
-      recordEvent('PRINT_IMPACT', { character: runtime.pendingCharacter });
-    }
   } else if (t < 0.91) {
     setCycleState('C6_ESCAPEMENT_RIBBON_RESTORE');
     model.setKeyboardCode(0);
     const k = 1 - (t - 0.66) / 0.25;
     model.setRibbonLift(Math.max(0, k));
     model.setPrintApproach(Math.max(0, k));
-    if (!runtime.cycleAdvanceCommitted && t > 0.73) {
-      advanceCarrier(CANONICAL.pitchMm);
-      runtime.cycleAdvanceCommitted = true;
-      recordEvent('ESCAPEMENT_ADVANCE');
-    }
   } else {
     setCycleState('C7_CLUTCH_DISENGAGE_CHECK');
     model.setKeyboardCode(0);
