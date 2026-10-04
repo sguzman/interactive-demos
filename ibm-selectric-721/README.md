@@ -29,7 +29,7 @@ The browser model currently includes:
 - distinct coarse selection and carrier-local tilt/rotate fine-alignment detents, with source-order-preserving P5 engagement/release phasing;
 - 7X1 gearless tilt and rotate tape presentation driven by the source-backed normalized 1:2 tilt weighting, staged 1:2:2 rotate weighting and signed five-unit balance, with a carrier-sweep constant-length presentation path;
 - cycle and operational shafts, cams, motor and a P4 motor-to-cycle positive-drive belt solved onto the external tangents of the reconstructed 8T/29T pitch circles rather than routed through arbitrary top/bottom points; exact belt pitch and absolute pulley diameters remain unresolved;
-- new-style fabric-ribbon lift with stencil / low / middle / high print states, a distinct threading/load pose, stencil feed lockout/centering, source-ordered bidirectional feed, compressed P5 supply/take-up roll fullness transfer, and automatic reversal; unresolved heights/capacity remain explicitly P5 while the OEM trigger -> feed/reverse-plate pivot -> pawl/check transfer sequence is preserved;
+- new-style fabric-ribbon lift with stencil / low / middle / high print states, a distinct threading/load pose, stencil feed lockout/centering plus no-ink paper-output behavior while mechanical impact remains live, source-ordered bidirectional feed, compressed P5 supply/take-up roll fullness transfer, and automatic reversal; unresolved heights/capacity remain explicitly P5 while the OEM trigger -> feed/reverse-plate pivot -> pawl/check transfer sequence is preserved;
 - paper output that records typed characters, with paper-local vertical stamp placement now driven by the live sheet advance instead of a fixed logical-line pixel step, plus an explicit P4 paper-wrap surface registered to the platen so the visible sheet reaches the print region without claiming an exact hidden contact arc;
 - deterministic character-cycle ordering through code setup, selection, fine align, impact, escapement and clutch check;
 - fixed escapement/margin/tab rack families, runtime-adjustable left/right margin stops settable at the live carrier column on the 12-CPI pitch, live right-margin line lock, programmable tab stops with set/clear behavior, opposed carrier cords, common escapement-shaft drums, mainspring cue, spring-loaded right tension arm, sustained carrier-return clutch/pinion drive and non-propulsive tab governor;
@@ -57,7 +57,7 @@ The Playwright smoke test checks:
 - current carrier-support and print-sleeve topology metadata;
 - one character = one 12-CPI carrier pitch, with the writing-position pointer following the same carrier coordinate;
 - impact before escapement advance;
-- ribbon selector modes, stencil feed lockout/centering, distinct load pose, supply/take-up roll fullness transfer, and automatic fabric-ribbon reversal through the animated reverse sequence;
+- ribbon selector modes, stencil feed lockout/centering, stencil impact without an ink record on ordinary paper output, distinct load pose, supply/take-up roll fullness transfer, and automatic fabric-ribbon reversal through the animated reverse sequence;
 - explosion independence;
 - space / backspace, including stored-space interlock release after an active character cycle;
 - adjustable margin-stop positions, including public set-left / set-right-at-carrier / reset controls, right-margin line lock and carrier return to the live left stop;

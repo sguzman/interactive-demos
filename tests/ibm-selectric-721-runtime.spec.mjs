@@ -327,7 +327,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(stencilTyped.ribbonFeedStep).toBe(feedStepsBeforeStencil);
   expect(stencilTyped.ribbonFeedSuppressedCount).toBe(1);
   expect(stencilTyped.ribbonLift).toBe(0);
+  expect(stencilTyped.geometry.paperFeed.paperPath.inkSuppressedInStencil).toBe(true);
+  expect(stencilTyped.geometry.paperFeed.paperPath.stampLayout.lastStamp).toBe(null);
   expect(stencilTyped.events.some(event => event.name === 'RIBBON_STENCIL_FEED_SUPPRESSED')).toBe(true);
+  expect(stencilTyped.events.some(event => event.name === 'PRINT_IMPACT' && event.inked === false)).toBe(true);
+  expect(stencilTyped.events.some(event => event.name === 'STENCIL_IMPACT_NO_INK')).toBe(true);
   await page.evaluate(() => window.__selectricDebug.setRibbonMode('middle'));
   await page.evaluate(() => window.__selectricDebug.reset());
 

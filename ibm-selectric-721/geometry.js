@@ -2585,7 +2585,11 @@ export function createSelectricModel() {
   }
 
   function stampCharacter(character) {
+    // Stencil mode deliberately moves the ribbon out of the print point. The mechanical
+    // impact still occurs, but an ordinary paper output texture should not receive an ink mark.
+    if (state.ribbonPrintMode === 'stencil') return false;
     paper.stamp(character, state.carrierX, state.paperAdvanceMm);
+    return true;
   }
 
   function clearPaper() {
@@ -2807,7 +2811,9 @@ export function createSelectricModel() {
           wrapEndAngleDegP4: paper.wrapEndAngleDegP4,
           wrapSpanDegP4: paper.wrapSpanDegP4,
           wrapClass: 'P4 platen-contact presentation; exact hidden wrap/contact arc unresolved',
-          stampLayout: paper.stampDiagnostics()
+          stampLayout: paper.stampDiagnostics(),
+          inkSuppressedInStencil: state.ribbonPrintMode === 'stencil',
+          inkRecordCoupling: 'low/middle/high fabric-ribbon states record ink on the paper texture; stencil preserves impact but suppresses the ink record'
         },
         feedRollPhaseRad: state.feedRollPhaseRad,
         feedRollRotationClass: 'P4 accumulated contact rotation from coupled paper travel only; released manual sheet alignment does not rotate feed rolls; exact roller radius unresolved',

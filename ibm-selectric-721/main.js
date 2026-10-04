@@ -498,9 +498,10 @@ function runCycle(now) {
     }
   }
   if (t >= impactThreshold && !runtime.cycleImpactCommitted) {
-    model.stampCharacter(runtime.pendingCharacter);
+    const inked = model.stampCharacter(runtime.pendingCharacter);
     runtime.cycleImpactCommitted = true;
-    recordEvent('PRINT_IMPACT', { character: runtime.pendingCharacter });
+    recordEvent('PRINT_IMPACT', { character: runtime.pendingCharacter, inked });
+    if (!inked) recordEvent('STENCIL_IMPACT_NO_INK', { character: runtime.pendingCharacter });
   }
   if (t >= 0.73 && !runtime.cycleAdvanceCommitted) {
     advanceCarrier(CANONICAL.pitchMm);
