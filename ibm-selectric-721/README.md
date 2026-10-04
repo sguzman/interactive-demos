@@ -64,6 +64,7 @@ The Playwright smoke test checks:
 - programmable tab-stop set/clear plus capture at the next active stop;
 - shift hemisphere;
 - one-tooth single and two-tooth double 27T paper indexing, including P2 physical sheet advance from platen radius × rotation;
+- paper-release decoupling: platen rotation leaves sheet position unchanged while both feed-roll banks are released;
 - tab capture on the writing lattice;
 - carrier return to left margin plus one index;
 - browser error absence.
