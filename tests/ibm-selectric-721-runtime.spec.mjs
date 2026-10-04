@@ -525,6 +525,13 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(typed.geometry.selectionNormalized.qSigned).toBeCloseTo(typed.selection.rotateUnit / 5, 8);
   expect(typed.geometry.selectionDifferential.tapeCarrierInvariantErrorMm.tiltMm).toBeLessThan(1e-8);
   expect(typed.geometry.selectionDifferential.tapeCarrierInvariantErrorMm.rotateMm).toBeLessThan(1e-8);
+  expect(typed.geometry.selectionDifferential.tapePresentation.crossSection).toContain('flat strip');
+  expect(typed.geometry.selectionDifferential.tapePresentation.widthMmP4).toBeCloseTo(3.2, 8);
+  expect(typed.geometry.selectionDifferential.tapePresentation.thicknessMmP4).toBeCloseTo(0.55, 8);
+  expect(typed.geometry.selectionDifferential.tapePresentation.stationaryGuidePulleys).toBe(4);
+  expect(typed.geometry.selectionDifferential.tapePresentation.carrierGuidePulleys).toBe(4);
+  expect(typed.geometry.selectionDifferential.tapePresentation.tangentLaneOffsetsApplied).toBe(true);
+  expect(typed.geometry.selectionDifferential.tapePresentation.geometryClass).toContain('non-intersecting guide lanes');
   expect(typed.selection.selectorInputs.T1 + 2 * typed.selection.selectorInputs.T2).toBe(typed.selection.tiltBand);
   if (typed.selection.rotateUnit < 0) expect(typed.selection.selectorInputs.fiveUnit).toBe(1);
   expect(typed.selection.mappingClass).toContain('P5');
