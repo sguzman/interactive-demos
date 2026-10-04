@@ -65,6 +65,7 @@ const ui = {
   indexBtn: document.querySelector('#indexBtn'),
   paperReleaseBtn: document.querySelector('#paperReleaseBtn'),
   paperBailBtn: document.querySelector('#paperBailBtn'),
+  ribbonModeBtn: document.querySelector('#ribbonModeBtn'),
   copyControlBtn: document.querySelector('#copyControlBtn'),
   platenVariableBtn: document.querySelector('#platenVariableBtn'),
   resetBtn: document.querySelector('#resetBtn'),
@@ -76,6 +77,7 @@ const ui = {
   selectionState: document.querySelector('#selectionState'),
   shiftState: document.querySelector('#shiftState'),
   ribbonState: document.querySelector('#ribbonState'),
+  ribbonModeState: document.querySelector('#ribbonModeState'),
   feedState: document.querySelector('#feedState'),
   paperBailState: document.querySelector('#paperBailState'),
   copyControlState: document.querySelector('#copyControlState'),
@@ -196,6 +198,7 @@ function syncUi() {
   ui.selectionState.textContent = 'T' + model.state.tiltBand.toFixed(1) + ' · R' + model.state.rotateUnit.toFixed(1);
   ui.shiftState.textContent = model.state.shiftHemisphere ? 'UPPER HEMISPHERE' : 'LOWER HEMISPHERE';
   ui.ribbonState.textContent = Math.round(model.state.ribbonLift * 100) + '%';
+  ui.ribbonModeState.textContent = model.state.ribbonPrintMode.toUpperCase();
   ui.feedState.textContent = model.state.feedRollsEngaged ? 'ENGAGED' : 'RELEASED';
   ui.paperBailState.textContent = model.state.paperBailEngaged ? 'AGAINST PLATEN' : 'RELEASED';
   ui.copyControlState.textContent = String(model.state.copyControlSetting + 1) + ' / 5';
@@ -208,6 +211,7 @@ function syncUi() {
   ui.coverBtn.textContent = model.state.serviceCoverOpen > 0.5 ? 'Close service cover' : 'Open service cover';
   ui.paperReleaseBtn.textContent = model.state.feedRollsEngaged ? 'Release paper feed' : 'Engage paper feed';
   ui.paperBailBtn.textContent = model.state.paperBailEngaged ? 'Release paper bail' : 'Engage paper bail';
+  ui.ribbonModeBtn.textContent = 'Ribbon: ' + model.state.ribbonPrintMode;
   ui.copyControlBtn.textContent = 'Copy control ' + (model.state.copyControlSetting + 1) + '/5';
   ui.platenVariableBtn.textContent = model.state.platenVariableEngaged ? 'Lock platen variable' : 'Free platen variable';
 }
@@ -231,6 +235,7 @@ function resetMechanicalState() {
   model.setKeyboardCode(0);
   model.setCarrierX(0);
   model.setTypeball(0, 0, 0);
+  model.setRibbonMode('middle');
   model.setRibbonLift(0);
   model.resetRibbonTransport();
   model.setFineAlignment(0, 0);
@@ -409,9 +414,11 @@ function runCycle(now) {
   const ribbonFeedThreshold = 0.43 + 0.11 * 0.35;
   const impactThreshold = 0.54 + 0.12 * 0.95;
   if (t >= ribbonFeedThreshold && !runtime.ribbonFeedCommitted) {
-    model.feedRibbon();
+    const ribbonFed = model.feedRibbon();
     runtime.ribbonFeedCommitted = true;
-    recordEvent('RIBBON_FEED_COMPLETE_EXCEPT_PAWL_RESTORE');
+    recordEvent(
+      ribbonFed ? 'RIBBON_FEED_COMPLETE_EXCEPT_PAWL_RESTORE' : 'RIBBON_STENCIL_FEED_SUPPRESSED'
+    );
   }
   if (t >= 0.66) {
     const reverseCommitted = model.setRibbonReversePhase((t - 0.66) / 0.23);
@@ -549,6 +556,16 @@ ui.paperBailBtn.addEventListener('click', () => {
   recordEvent(model.state.paperBailEngaged ? 'PAPER_BAIL_ENGAGED' : 'PAPER_BAIL_RELEASED');
   syncUi();
 });
+ui.ribbonModeBtn.addEventListener('click', () => {
+  if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
+  const modes = ['low', 'middle', 'high', 'stencil'];
+  const current = modes.indexOf(model.state.ribbonPrintMode);
+  const next = modes[(current + 1 + modes.length) % modes.length];
+  model.setRibbonMode(next);
+  runtime.lastAction = 'ribbon-mode-' + next;
+  recordEvent('RIBBON_MODE_' + next.toUpperCase());
+  syncUi();
+});
 ui.copyControlBtn.addEventListener('click', () => {
   if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
   model.setCopyControl((model.state.copyControlSetting + 1) % 5);
@@ -681,6 +698,8 @@ function snapshot() {
       mappingClass: 'P5 deterministic key-to-slot presentation; not a specific IBM typeball layout'
     },
     ribbonLift: model.state.ribbonLift,
+    ribbonPrintMode: model.state.ribbonPrintMode,
+    ribbonFeedSuppressedCount: model.state.ribbonFeedSuppressedCount,
     fineAlignment: {
       tiltDetent: model.state.tiltDetent,
       rotateDetent: model.state.rotateDetent
@@ -731,6 +750,13 @@ window.__selectricDebug = {
     return true;
   },
   typeCharacter: char => requestCharacter(char || 'a'),
+  setRibbonMode: mode => {
+    if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
+    model.setRibbonMode(mode);
+    syncUi();
+    return true;
+  },
+  cycleRibbonMode: () => ui.ribbonModeBtn.click(),
   primeRibbonAutoReverse: () => model.primeRibbonAutoReverse(),
   space: () => ui.spaceBtn.click(),
   tab: () => ui.tabBtn.click(),
