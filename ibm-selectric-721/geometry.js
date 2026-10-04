@@ -4,6 +4,7 @@ import { CANONICAL, P4, COMPONENTS } from './spec.js';
 const deg = THREE.MathUtils.degToRad;
 const TYPE_BAND_LATITUDES_P4 = [-0.58, -0.20, 0.20, 0.58];
 const TYPE_PRINT_FACING_OFFSET_DEG_P4 = 180;
+const TYPE_SLUG_DEPTH_P4_MM = 1.35;
 
 function typeBandNormalTiltRadP4(band) {
   const index = THREE.MathUtils.clamp(Math.round(Number(band) || 0), 0, TYPE_BAND_LATITUDES_P4.length - 1);
@@ -31,6 +32,19 @@ function typeSlugNormalP4(band, slot) {
     y / (bodyYRadius * bodyYRadius),
     Math.cos(a) * radial / (bodyRadius * bodyRadius)
   ).normalize();
+}
+
+function typeSlugFaceCenterP4(band, slot) {
+  const bandIndex = THREE.MathUtils.clamp(Math.round(Number(band) || 0), 0, TYPE_BAND_LATITUDES_P4.length - 1);
+  const slotIndex = ((Math.round(Number(slot) || 0) % CANONICAL.typeElement.positionsPerBand) + CANONICAL.typeElement.positionsPerBand) % CANONICAL.typeElement.positionsPerBand;
+  const lat = TYPE_BAND_LATITUDES_P4[bandIndex];
+  const bodyRadius = CANONICAL.typeElement.structuralRadiusP4Mm;
+  const bodyYRadius = bodyRadius * 0.90;
+  const y = lat * bodyYRadius;
+  const radial = bodyRadius * Math.sqrt(Math.max(0, 1 - (y * y) / (bodyYRadius * bodyYRadius)));
+  const a = slotIndex * Math.PI * 2 / CANONICAL.typeElement.positionsPerBand;
+  const surface = new THREE.Vector3(Math.sin(a) * radial, y, Math.cos(a) * radial);
+  return surface.addScaledVector(typeSlugNormalP4(bandIndex, slotIndex), TYPE_SLUG_DEPTH_P4_MM * 0.5);
 }
 
 function material(color, metalness = 0.12, roughness = 0.68) {
@@ -403,7 +417,7 @@ function makeTypeElement(ballMat, darkMetal, pickables) {
   addPickable(skirt, COMPONENTS.typeball, pickables);
   group.add(skirt);
 
-  const slugDepth = 1.35;
+  const slugDepth = TYPE_SLUG_DEPTH_P4_MM;
   const slugGeo = new THREE.BoxGeometry(2.9, 2.6, slugDepth);
   const slugs = new THREE.InstancedMesh(slugGeo, darkMetal, CANONICAL.typeElement.characterCount);
   slugs.name = '88 surface-normal type slug cues';
@@ -2663,6 +2677,13 @@ export function createSelectricModel() {
     const selectedSlugWorldNormalP4 = typeSlugNormalP4(state.tiltBand, selectedStructuralSlotP4)
       .applyEuler(typeElement.rotation)
       .normalize();
+    const selectedSlugFaceWorldP4 = typeElement.localToWorld(
+      typeSlugFaceCenterP4(state.tiltBand, selectedStructuralSlotP4)
+    );
+    const platenCenterWorldP4 = new THREE.Vector3();
+    platen.getWorldPosition(platenCenterWorldP4);
+    const platenFrontSurfaceZP4 = platenCenterWorldP4.z + CANONICAL.platen.radiusMm;
+    const selectedSlugPlatenClearanceAlongZMmP4 = selectedSlugFaceWorldP4.z - platenFrontSurfaceZP4;
     const printFacingTargetP4 = new THREE.Vector3(0, 0, -1);
     const selectedSlugAlignmentDotP4 = THREE.MathUtils.clamp(
       selectedSlugWorldNormalP4.dot(printFacingTargetP4),
@@ -2718,6 +2739,11 @@ export function createSelectricModel() {
           x: selectedSlugWorldNormalP4.x,
           y: selectedSlugWorldNormalP4.y,
           z: selectedSlugWorldNormalP4.z
+        },
+        selectedSlugFaceWorldP4: {
+          x: selectedSlugFaceWorldP4.x,
+          y: selectedSlugFaceWorldP4.y,
+          z: selectedSlugFaceWorldP4.z
         },
         printFacingOffsetDegP4: TYPE_PRINT_FACING_OFFSET_DEG_P4,
         printFacingTarget: '-Z toward platen in the public reconstruction coordinate frame',
@@ -2971,6 +2997,10 @@ export function createSelectricModel() {
         poweredEndpointClearanceMm: P4.printRocker.derivedPoweredEndpointClearanceMm,
         poweredEndpointAngleDeg: P4.printRocker.poweredEndpointAngleDeg,
         impactAngleDeg: P4.printRocker.impactAngleDeg,
+        currentAngleDeg: THREE.MathUtils.radToDeg(rocker.rotation.x),
+        platenFrontSurfaceZP4,
+        selectedSlugPlatenClearanceAlongZMmP4,
+        liveClearanceClass: 'P4 geometry check from selected slug face center to platen front surface along print-facing Z; small negative value at free-flight impact may represent paper/ribbon compression, not hidden-part interpenetration',
         freeFlightRepresented: true
       },
       provenance: CANONICAL.provenance

@@ -31,7 +31,7 @@ The browser model currently includes:
 - cycle and operational shafts, cams, motor and a P4 motor-to-cycle positive-drive belt solved onto the external tangents of the reconstructed 8T/29T pitch circles rather than routed through arbitrary top/bottom points; four explicitly P5 motion markers are advected along that solved loop from motor pitch-circle travel so the continuously moving belt is inspectable, while exact belt pitch and absolute pulley diameters remain unresolved;
 - new-style fabric-ribbon lift with stencil / low / middle / high print states, a distinct threading/load pose, carrier-local lift guides and bridge that physically follow the live ribbon path, stencil feed lockout/centering plus no-ink paper-output behavior while mechanical impact remains live, source-ordered bidirectional feed, compressed P5 supply/take-up roll fullness transfer, and automatic reversal; unresolved heights/capacity remain explicitly P5 while the OEM trigger -> feed/reverse-plate pivot -> pawl/check transfer sequence is preserved;
 - paper output that records typed characters, with paper-local vertical stamp placement now driven by the live sheet advance instead of a fixed logical-line pixel step, plus an explicit P4 paper-wrap surface registered to the platen so the visible sheet reaches the print region without claiming an exact hidden contact arc;
-- deterministic character-cycle ordering through code setup, selection, fine align, impact, escapement and clutch check;
+- deterministic character-cycle ordering through code setup, selection, fine align, impact, escapement and clutch check, with live geometry diagnostics measuring the selected slug face against the platen front surface so the print swing is checked for plausible approach instead of relying only on animation phase metadata;
 - fixed escapement/margin/tab rack families, runtime-adjustable left/right margin stops settable at the live carrier column on the 12-CPI pitch, live right-margin line lock, programmable tab stops with set/clear behavior, opposed carrier cords, common escapement-shaft drums, mainspring cue, spring-loaded right tension arm, sustained carrier-return clutch/pinion drive and non-propulsive tab governor;
 - dedicated 7X1 12P backspace rack/bellcrank presentation rather than reverse-escapement shorthand;
 - clutched 180° space/backspace service-cam actions, including filter-shaft-style storage of a space request made during an active character cycle and release immediately after character escapement; mainspring-style tab destination, carrier return + index, animated 180° shift-cam transition with character-cycle interlock, and animated 360° index-cam/pawl action;
@@ -56,7 +56,7 @@ The Playwright smoke test checks:
 - finite geometry;
 - current carrier-support and print-sleeve topology metadata;
 - one character = one 12-CPI carrier pitch, with the writing-position pointer following the same carrier coordinate;
-- impact before escapement advance;
+- impact before escapement advance, with the impact screenshot now captured after the actual PRINT_IMPACT threshold and a live selected-slug/platen clearance sanity bound;
 - ribbon selector modes, stencil feed lockout/centering, stencil impact without an ink record on ordinary paper output, distinct load pose, supply/take-up roll fullness transfer, and automatic fabric-ribbon reversal through the animated reverse sequence;
 - explosion independence;
 - space / backspace, including stored-space interlock release after an active character cycle;

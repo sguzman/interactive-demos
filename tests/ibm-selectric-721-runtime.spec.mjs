@@ -128,6 +128,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.typeElement.printFacingTarget).toContain('-Z toward platen');
   expect(initial.geometry.typeElement.selectedSlugAlignmentErrorDegP4).toBeLessThan(1e-7);
   expect(initial.geometry.typeElement.selectedSlugFacingVectorP4.z).toBeCloseTo(-1, 8);
+  expect(initial.geometry.printRocker.currentAngleDeg).toBeCloseTo(0, 8);
+  expect(initial.geometry.printRocker.selectedSlugPlatenClearanceAlongZMmP4).toBeGreaterThan(3);
+  expect(initial.geometry.printRocker.selectedSlugPlatenClearanceAlongZMmP4).toBeLessThan(9);
+  expect(initial.geometry.printRocker.liveClearanceClass).toContain('geometry check');
   expect(initial.geometry.typeElement.glyphFaceGeometry).toContain('unresolved');
   expect(initial.geometry.operationalCams.spaceBackspaceDegreesPerOperation).toBe(180);
   expect(initial.geometry.operationalCams.carrierReturnIndexDegreesPerOperation).toBe(360);
@@ -413,8 +417,19 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const afterKeyCycle = await page.evaluate(() => window.__selectricDebug.state);
   expect(afterKeyCycle.keyboardPress.depression).toBe(0);
 
-  await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.62));
-  await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C5_PRINT_IMPACT', null, { timeout: 1500 });
+  await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.659));
+  await page.waitForFunction(
+    () => window.__selectricDebug.state.cycle === 'C5_PRINT_IMPACT' &&
+      window.__selectricDebug.state.events.some(event => event.name === 'PRINT_IMPACT'),
+    null,
+    { timeout: 1500 }
+  );
+  const impactHeld = await page.evaluate(() => window.__selectricDebug.state);
+  expect(impactHeld.geometry.printRocker.currentAngleDeg).toBeLessThan(-17);
+  expect(impactHeld.geometry.printRocker.selectedSlugPlatenClearanceAlongZMmP4).toBeLessThan(
+    initial.geometry.printRocker.selectedSlugPlatenClearanceAlongZMmP4
+  );
+  expect(impactHeld.geometry.printRocker.selectedSlugPlatenClearanceAlongZMmP4).toBeGreaterThan(-2.5);
   await page.screenshot({ path: 'test-results/selectric-impact.png', fullPage: true });
   await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
