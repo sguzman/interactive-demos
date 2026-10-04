@@ -5,6 +5,8 @@ const deg = THREE.MathUtils.degToRad;
 const TYPE_BAND_LATITUDES_P4 = [-0.58, -0.20, 0.20, 0.58];
 const TYPE_PRINT_FACING_OFFSET_DEG_P4 = 180;
 const TYPE_SLUG_DEPTH_P4_MM = 1.35;
+const TYPE_TOP_CAP_RADIUS_P4_MM = 13.4;
+const TYPE_TOP_CAP_CENTER_Y_P4_MM = 14.0;
 
 function typeBandNormalTiltRadP4(band) {
   const index = THREE.MathUtils.clamp(Math.round(Number(band) || 0), 0, TYPE_BAND_LATITUDES_P4.length - 1);
@@ -437,14 +439,42 @@ function makeTypeElement(ballMat, darkMetal, pickables) {
     ),
     darkMetal
   );
-  boss.position.y = CANONICAL.typeElement.topAboveCenterP4Mm + 2.2;
-  boss.name = 'type element mounting boss';
+  // Keep the P4 mounting boss mostly inside the recognizable interchangeable-element cap.
+  // Earlier public geometry exposed it as a tall central knob, which did not read like a Selectric element.
+  boss.position.y = TYPE_TOP_CAP_CENTER_Y_P4_MM - 2.4;
+  boss.name = 'type element mounting boss beneath top cap';
   addPickable(boss, COMPONENTS.typeball, pickables);
   group.add(boss);
 
+  const capProfile = [
+    new THREE.Vector2(0, 2.2),
+    new THREE.Vector2(8.2, 2.05),
+    new THREE.Vector2(11.8, 1.35),
+    new THREE.Vector2(TYPE_TOP_CAP_RADIUS_P4_MM, 0.15),
+    new THREE.Vector2(13.1, -1.15),
+    new THREE.Vector2(0, -1.4)
+  ];
+  const topCap = new THREE.Mesh(new THREE.LatheGeometry(capProfile, 40), darkMetal);
+  topCap.position.y = TYPE_TOP_CAP_CENTER_Y_P4_MM;
+  topCap.name = 'P4 interchangeable-element black top cap';
+  addPickable(topCap, COMPONENTS.typeball, pickables);
+  group.add(topCap);
+
+  const capLatch = box(18.0, 2.2, 5.6, darkMetal, 'P4 type-element release latch');
+  capLatch.position.set(-0.6, TYPE_TOP_CAP_CENTER_Y_P4_MM + 2.65, 0.2);
+  addPickable(capLatch, COMPONENTS.typeball, pickables);
+  group.add(capLatch);
+
+  const capHinge = new THREE.Mesh(new THREE.CylinderGeometry(2.15, 2.15, 6.5, 18), darkMetal);
+  capHinge.rotation.x = Math.PI / 2;
+  capHinge.position.set(8.1, TYPE_TOP_CAP_CENTER_Y_P4_MM + 2.65, 0.2);
+  capHinge.name = 'P4 type-element latch hinge';
+  addPickable(capHinge, COMPONENTS.typeball, pickables);
+  group.add(capHinge);
+
   const skirt = new THREE.Mesh(
     new THREE.CylinderGeometry(15.2, 16.0, CANONICAL.typeElement.skirtHeightP4Mm, 44, 1, true),
-    darkMetal
+    ballMat
   );
   skirt.position.y = -13.8;
   skirt.name = 'type element detent skirt';
@@ -453,7 +483,10 @@ function makeTypeElement(ballMat, darkMetal, pickables) {
 
   const slugDepth = TYPE_SLUG_DEPTH_P4_MM;
   const slugGeo = new THREE.BoxGeometry(2.9, 2.6, slugDepth);
-  const slugs = new THREE.InstancedMesh(slugGeo, darkMetal, CANONICAL.typeElement.characterCount);
+  const slugMat = ballMat.clone();
+  slugMat.metalness = Math.max(slugMat.metalness, 0.68);
+  slugMat.roughness = Math.min(slugMat.roughness, 0.24);
+  const slugs = new THREE.InstancedMesh(slugGeo, slugMat, CANONICAL.typeElement.characterCount);
   slugs.name = '88 surface-normal type slug cues';
   const matrix = new THREE.Matrix4();
   const rotationMatrix = new THREE.Matrix4();
@@ -2851,7 +2884,12 @@ export function createSelectricModel() {
         characterCount: CANONICAL.typeElement.characterCount,
         bands: CANONICAL.typeElement.bands,
         positionsPerBand: CANONICAL.typeElement.positionsPerBand,
+        overallNominalDiameterMm: CANONICAL.typeElement.overallNominalDiameterMm,
         structuralRadiusP4Mm: CANONICAL.typeElement.structuralRadiusP4Mm,
+        topCapRadiusP4Mm: TYPE_TOP_CAP_RADIUS_P4_MM,
+        topCapCenterYP4Mm: TYPE_TOP_CAP_CENTER_Y_P4_MM,
+        topCapAndLatchPresentation: true,
+        slugFinishClass: 'chrome-like raised structural cues continuous with the element shell rather than black checkerboard blocks',
         slugOrientation: 'P4 surface-normal tangent frames on structural ellipsoid',
         rotateSlotStepDegP4: 360 / CANONICAL.typeElement.positionsPerBand,
         bandLatitudesP4: [...TYPE_BAND_LATITUDES_P4],
