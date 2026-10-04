@@ -171,6 +171,40 @@ function dynamicTube(color, radius, name, component, pickables) {
   };
 }
 
+function dynamicFlatTape(color, width, thickness, name, component, pickables) {
+  const group = new THREE.Group();
+  group.name = name;
+  const segments = [];
+  const xAxis = new THREE.Vector3(1, 0, 0);
+  const tapeMaterial = material(color, 0.32, 0.42);
+
+  return {
+    mesh: group,
+    widthMmP4: width,
+    thicknessMmP4: thickness,
+    update(points) {
+      const segmentCount = Math.max(0, points.length - 1);
+      while (segments.length < segmentCount) {
+        const segment = box(1, width, thickness, tapeMaterial, `${name} · flat segment ${segments.length + 1}`);
+        addPickable(segment, component, pickables);
+        group.add(segment);
+        segments.push(segment);
+      }
+      segments.forEach((segment, index) => {
+        segment.visible = index < segmentCount;
+        if (!segment.visible) return;
+        const a = points[index];
+        const b = points[index + 1];
+        const delta = new THREE.Vector3().subVectors(b, a);
+        const length = delta.length();
+        segment.position.copy(a).add(b).multiplyScalar(0.5);
+        segment.quaternion.setFromUnitVectors(xAxis, delta.clone().normalize());
+        segment.scale.set(length, 1, 1);
+      });
+    }
+  };
+}
+
 function openPositiveDriveBeltPathP4(x, motorCenter, motorRadius, cycleCenter, cycleRadius, arcSegments = 24) {
   const dy = cycleCenter.y - motorCenter.y;
   const dz = cycleCenter.z - motorCenter.z;
@@ -1599,19 +1633,75 @@ export function createSelectricModel() {
   assemblies.push(selectionAssembly);
   root.add(selectionAssembly);
 
-  for (const x of [-143, 143]) {
-    const p1 = pulley(11, 7, metal, x < 0 ? 'left selection pulley' : 'right selection pulley');
-    p1.position.set(x, 59, -31);
-    addPickable(p1, COMPONENTS.selection, pickables);
-    selectionAssembly.add(p1);
-    const p2 = pulley(8, 6, darkMetal, x < 0 ? 'left return pulley' : 'right return pulley');
-    p2.position.set(x, 75, -48);
-    addPickable(p2, COMPONENTS.selection, pickables);
-    selectionAssembly.add(p2);
+  const selectionTapeP4 = Object.freeze({
+    widthMm: 3.2,
+    thicknessMm: 0.55,
+    tilt: Object.freeze({
+      sideX: 143,
+      sideGuideY: 91,
+      sideGuideZ: -42,
+      sideGuideRadius: 5.2,
+      carrierHalfSpan: 22,
+      carrierGuideY: 91,
+      carrierGuideZ: -42,
+      carrierGuideRadius: 5.2,
+      tangentZ: -47.2,
+      actuatorY: 59,
+      actuatorZ: -31
+    }),
+    rotate: Object.freeze({
+      sideX: 133,
+      sideGuideY: 88,
+      sideGuideZ: -46,
+      sideGuideRadius: 4.8,
+      carrierHalfSpan: 13,
+      carrierGuideY: 88,
+      carrierGuideZ: -46,
+      carrierGuideRadius: 4.8,
+      tangentZ: -50.8,
+      actuatorY: 60,
+      actuatorZ: -29
+    })
+  });
+
+  for (const side of [-1, 1]) {
+    const tiltActuator = pulley(9.5, 6, metal, side < 0 ? 'left tilt selection pulley' : 'right tilt selection pulley');
+    tiltActuator.position.set(side * selectionTapeP4.tilt.sideX, selectionTapeP4.tilt.actuatorY, selectionTapeP4.tilt.actuatorZ);
+    addPickable(tiltActuator, COMPONENTS.selection, pickables);
+    selectionAssembly.add(tiltActuator);
+
+    const rotateActuator = pulley(8.5, 5.5, darkMetal, side < 0 ? 'left rotate selection pulley' : 'right rotate selection pulley');
+    rotateActuator.position.set(side * selectionTapeP4.rotate.sideX, selectionTapeP4.rotate.actuatorY, selectionTapeP4.rotate.actuatorZ);
+    addPickable(rotateActuator, COMPONENTS.selection, pickables);
+    selectionAssembly.add(rotateActuator);
+
+    const tiltGuide = pulley(selectionTapeP4.tilt.sideGuideRadius, 4.4, metal, side < 0 ? 'left P4 tilt tape guide sheave' : 'right P4 tilt tape guide sheave');
+    tiltGuide.position.set(side * selectionTapeP4.tilt.sideX, selectionTapeP4.tilt.sideGuideY, selectionTapeP4.tilt.sideGuideZ);
+    addPickable(tiltGuide, COMPONENTS.selection, pickables);
+    selectionAssembly.add(tiltGuide);
+
+    const rotateGuide = pulley(selectionTapeP4.rotate.sideGuideRadius, 4.0, darkMetal, side < 0 ? 'left P4 rotate tape guide sheave' : 'right P4 rotate tape guide sheave');
+    rotateGuide.position.set(side * selectionTapeP4.rotate.sideX, selectionTapeP4.rotate.sideGuideY, selectionTapeP4.rotate.sideGuideZ);
+    addPickable(rotateGuide, COMPONENTS.selection, pickables);
+    selectionAssembly.add(rotateGuide);
   }
 
-  const tiltTape = dynamicTube(0xb06c38, 0.9, 'IBM 1164314 7X1 gearless tilt tape presentation', COMPONENTS.selection, pickables);
-  const rotateTape = dynamicTube(0x647f9b, 0.9, 'IBM 1134811 7X1 rotate tape presentation', COMPONENTS.selection, pickables);
+  const tiltTape = dynamicFlatTape(
+    0xb06c38,
+    selectionTapeP4.widthMm,
+    selectionTapeP4.thicknessMm,
+    'IBM 1164314 7X1 gearless tilt tape · P4 flat-strip route',
+    COMPONENTS.selection,
+    pickables
+  );
+  const rotateTape = dynamicFlatTape(
+    0x647f9b,
+    selectionTapeP4.widthMm,
+    selectionTapeP4.thicknessMm,
+    'IBM 1134811 7X1 rotate tape · P4 flat-strip route',
+    COMPONENTS.selection,
+    pickables
+  );
   selectionAssembly.add(tiltTape.mesh, rotateTape.mesh);
 
   const selectorLatchNames = ['T1', 'T2', 'R1', 'R2', 'R2A'];
@@ -2082,15 +2172,38 @@ export function createSelectricModel() {
   addPickable(detentFollower, COMPONENTS.fineAlignment, pickables);
   carrierMotion.add(detentFollower);
 
-  const carrierTiltPulley = pulley(8.5, 5.5, metal, 'carrier gearless tilt pulley');
-  carrierTiltPulley.position.set(-21, 91, -42);
-  addPickable(carrierTiltPulley, COMPONENTS.selection, pickables);
-  carrierMotion.add(carrierTiltPulley);
+  const carrierTapeGuides = [];
+  for (const side of [-1, 1]) {
+    const tiltGuide = pulley(
+      selectionTapeP4.tilt.carrierGuideRadius,
+      4.4,
+      metal,
+      side < 0 ? 'left carrier P4 tilt tape guide' : 'right carrier P4 tilt tape guide'
+    );
+    tiltGuide.position.set(
+      side * selectionTapeP4.tilt.carrierHalfSpan,
+      selectionTapeP4.tilt.carrierGuideY,
+      selectionTapeP4.tilt.carrierGuideZ
+    );
+    addPickable(tiltGuide, COMPONENTS.selection, pickables);
+    carrierMotion.add(tiltGuide);
+    carrierTapeGuides.push(tiltGuide);
 
-  const carrierRotatePulley = pulley(8.5, 5.5, darkMetal, 'carrier rotate pulley');
-  carrierRotatePulley.position.set(21, 91, -42);
-  addPickable(carrierRotatePulley, COMPONENTS.selection, pickables);
-  carrierMotion.add(carrierRotatePulley);
+    const rotateGuide = pulley(
+      selectionTapeP4.rotate.carrierGuideRadius,
+      4.0,
+      darkMetal,
+      side < 0 ? 'left carrier P4 rotate tape guide' : 'right carrier P4 rotate tape guide'
+    );
+    rotateGuide.position.set(
+      side * selectionTapeP4.rotate.carrierHalfSpan,
+      selectionTapeP4.rotate.carrierGuideY,
+      selectionTapeP4.rotate.carrierGuideZ
+    );
+    addPickable(rotateGuide, COMPONENTS.selection, pickables);
+    carrierMotion.add(rotateGuide);
+    carrierTapeGuides.push(rotateGuide);
+  }
 
   function selectionTapePointsAt(x) {
     const qTilt = state.selectionNormalized.qTilt;
@@ -2098,21 +2211,21 @@ export function createSelectricModel() {
     const shiftOffset = state.shiftAngleDeg / 180 * 8;
 
     const tilt = [
-      new THREE.Vector3(-143, 59 - qTilt * 9, -31),
-      new THREE.Vector3(-143, 91, -42),
-      new THREE.Vector3(x - 22, 91, -42),
-      new THREE.Vector3(x + 22, 91, -42),
-      new THREE.Vector3(143, 91, -42),
-      new THREE.Vector3(143, 59, -31)
+      new THREE.Vector3(-selectionTapeP4.tilt.sideX, selectionTapeP4.tilt.actuatorY - qTilt * 9, selectionTapeP4.tilt.actuatorZ),
+      new THREE.Vector3(-selectionTapeP4.tilt.sideX, selectionTapeP4.tilt.sideGuideY, selectionTapeP4.tilt.tangentZ),
+      new THREE.Vector3(x - selectionTapeP4.tilt.carrierHalfSpan, selectionTapeP4.tilt.carrierGuideY, selectionTapeP4.tilt.tangentZ),
+      new THREE.Vector3(x + selectionTapeP4.tilt.carrierHalfSpan, selectionTapeP4.tilt.carrierGuideY, selectionTapeP4.tilt.tangentZ),
+      new THREE.Vector3(selectionTapeP4.tilt.sideX, selectionTapeP4.tilt.sideGuideY, selectionTapeP4.tilt.tangentZ),
+      new THREE.Vector3(selectionTapeP4.tilt.sideX, selectionTapeP4.tilt.actuatorY, selectionTapeP4.tilt.actuatorZ)
     ];
 
     const rotate = [
-      new THREE.Vector3(-143, 60 - qSigned * 9, -29),
-      new THREE.Vector3(-143, 88, -46),
-      new THREE.Vector3(x - 22, 88, -46),
-      new THREE.Vector3(x + 22, 88, -46),
-      new THREE.Vector3(143, 88, -46),
-      new THREE.Vector3(143, 60 + shiftOffset, -29)
+      new THREE.Vector3(-selectionTapeP4.rotate.sideX, selectionTapeP4.rotate.actuatorY - qSigned * 9, selectionTapeP4.rotate.actuatorZ),
+      new THREE.Vector3(-selectionTapeP4.rotate.sideX, selectionTapeP4.rotate.sideGuideY, selectionTapeP4.rotate.tangentZ),
+      new THREE.Vector3(x - selectionTapeP4.rotate.carrierHalfSpan, selectionTapeP4.rotate.carrierGuideY, selectionTapeP4.rotate.tangentZ),
+      new THREE.Vector3(x + selectionTapeP4.rotate.carrierHalfSpan, selectionTapeP4.rotate.carrierGuideY, selectionTapeP4.rotate.tangentZ),
+      new THREE.Vector3(selectionTapeP4.rotate.sideX, selectionTapeP4.rotate.sideGuideY, selectionTapeP4.rotate.tangentZ),
+      new THREE.Vector3(selectionTapeP4.rotate.sideX, selectionTapeP4.rotate.actuatorY + shiftOffset, selectionTapeP4.rotate.actuatorZ)
     ];
     return { tilt, rotate };
   }
@@ -2756,7 +2869,20 @@ export function createSelectricModel() {
         rotateQ2Equation: 'q2=(3*q1+2*R2A)/5',
         signedEquation: 'qSigned=q2-fiveUnit',
         rotateUnitsEquation: 'rotateUnits=5*qSigned',
-        tapeCarrierInvariantErrorMm: selectionTapeInvariantError()
+        tapeCarrierInvariantErrorMm: selectionTapeInvariantError(),
+        tapePresentation: {
+          crossSection: 'P4 flat strip rather than round cord',
+          widthMmP4: selectionTapeP4.widthMm,
+          thicknessMmP4: selectionTapeP4.thicknessMm,
+          stationaryGuidePulleys: 4,
+          carrierGuidePulleys: carrierTapeGuides.length,
+          tiltSideGuideX: selectionTapeP4.tilt.sideX,
+          rotateSideGuideX: selectionTapeP4.rotate.sideX,
+          tiltCarrierHalfSpan: selectionTapeP4.tilt.carrierHalfSpan,
+          rotateCarrierHalfSpan: selectionTapeP4.rotate.carrierHalfSpan,
+          tangentLaneOffsetsApplied: true,
+          geometryClass: 'P4 explicit non-intersecting guide lanes; source-backed tape identities and differential ratios preserved, exact production sheave coordinates unresolved'
+        }
       },
       cordPhase: state.cordPhase,
       writingLineRacks: ['1124109 escapement', '1164743 margin', '1164102/6519354 tab'],
