@@ -721,10 +721,14 @@ export function createSelectricModel() {
   const motorPitchRadiusP4 = 7.0;
   const cyclePitchRadiusP4 = motorPitchRadiusP4 * CANONICAL.drive.positiveBeltReduction;
 
+  const motorDriveRotor = new THREE.Group();
+  motorDriveRotor.name = 'motor positive-drive pulley rotor';
+  motorDriveRotor.position.set(-145, 39, 42);
+  driveAssembly.add(motorDriveRotor);
+
   const drivePulley = pulley(motorPitchRadiusP4, 10, darkMetal, '8-tooth motor positive-drive pulley');
-  drivePulley.position.set(-145, 39, 42);
   addPickable(drivePulley, COMPONENTS.drive, pickables);
-  driveAssembly.add(drivePulley);
+  motorDriveRotor.add(drivePulley);
 
   const motorToothGeo = new THREE.BoxGeometry(10.8, 2.1, 3.2);
   const motorTeeth = new THREE.InstancedMesh(motorToothGeo, metal, CANONICAL.drive.motorPulleyTeeth);
@@ -736,7 +740,7 @@ export function createSelectricModel() {
     const a = i * Math.PI * 2 / CANONICAL.drive.motorPulleyTeeth;
     driveToothQuat.setFromEuler(new THREE.Euler(a, 0, 0));
     driveToothMatrix.compose(
-      new THREE.Vector3(-145, 39 + Math.cos(a) * motorPitchRadiusP4, 42 + Math.sin(a) * motorPitchRadiusP4),
+      new THREE.Vector3(0, Math.cos(a) * motorPitchRadiusP4, Math.sin(a) * motorPitchRadiusP4),
       driveToothQuat,
       driveToothScale
     );
@@ -745,12 +749,16 @@ export function createSelectricModel() {
   motorTeeth.userData.component = COMPONENTS.drive;
   motorTeeth.castShadow = true;
   pickables.push(motorTeeth);
-  driveAssembly.add(motorTeeth);
+  motorDriveRotor.add(motorTeeth);
+
+  const cycleDriveRotor = new THREE.Group();
+  cycleDriveRotor.name = 'continuously rotating cycle-clutch pulley hub';
+  cycleDriveRotor.position.set(-145, P4.cycleShaft.y, P4.cycleShaft.z);
+  driveAssembly.add(cycleDriveRotor);
 
   const cyclePulley = pulley(cyclePitchRadiusP4, 11, darkMetal, 'derived 29-tooth cycle-clutch pulley');
-  cyclePulley.position.set(-145, P4.cycleShaft.y, P4.cycleShaft.z);
   addPickable(cyclePulley, COMPONENTS.drive, pickables);
-  driveAssembly.add(cyclePulley);
+  cycleDriveRotor.add(cyclePulley);
 
   const cycleToothGeo = new THREE.BoxGeometry(11.8, 2.0, 3.0);
   const cycleTeeth = new THREE.InstancedMesh(cycleToothGeo, metal, CANONICAL.drive.cycleClutchPulleyTeethDerived);
@@ -761,7 +769,7 @@ export function createSelectricModel() {
     const a = i * Math.PI * 2 / CANONICAL.drive.cycleClutchPulleyTeethDerived;
     cycleToothQuat.setFromEuler(new THREE.Euler(a, 0, 0));
     cycleToothMatrix.compose(
-      new THREE.Vector3(-145, P4.cycleShaft.y + Math.cos(a) * cyclePitchRadiusP4, P4.cycleShaft.z + Math.sin(a) * cyclePitchRadiusP4),
+      new THREE.Vector3(0, Math.cos(a) * cyclePitchRadiusP4, Math.sin(a) * cyclePitchRadiusP4),
       cycleToothQuat,
       driveToothScale
     );
@@ -770,7 +778,7 @@ export function createSelectricModel() {
   cycleTeeth.userData.component = COMPONENTS.drive;
   cycleTeeth.castShadow = true;
   pickables.push(cycleTeeth);
-  driveAssembly.add(cycleTeeth);
+  cycleDriveRotor.add(cycleTeeth);
 
   const driveBelt = dynamicTube(0x222221, 2.2, 'positive-drive belt presentation', COMPONENTS.drive, pickables);
   driveBelt.update([
@@ -1440,7 +1448,8 @@ export function createSelectricModel() {
   function setMotorPhase(value) {
     state.motorPhase = ((Number(value) || 0) % 1 + 1) % 1;
     operationalRotor.rotation.x = state.motorPhase * Math.PI * 2;
-    drivePulley.rotation.x = state.motorPhase * Math.PI * 2;
+    motorDriveRotor.rotation.x = state.motorPhase * Math.PI * 2;
+    cycleDriveRotor.rotation.x = state.motorPhase * Math.PI * 2 / CANONICAL.drive.positiveBeltReduction;
   }
 
   function setOperationalCam(action, phase = 0) {
@@ -1564,6 +1573,8 @@ export function createSelectricModel() {
         cycleClutchPulleyTeeth: CANONICAL.drive.cycleClutchPulleyTeethDerived,
         reduction: CANONICAL.drive.positiveBeltReduction,
         pitchRadiusRatio: cyclePitchRadiusP4 / motorPitchRadiusP4,
+        cycleClutchPulleyHubContinuous: true,
+        cycleShaftEventGated: true,
         beltPitchAndAbsolutePulleyDiameters: 'unresolved'
       },
       powerPresentation: {
