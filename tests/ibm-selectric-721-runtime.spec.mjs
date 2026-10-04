@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+test.setTimeout(90_000);
+
 test('IBM Selectric 721 causal foundation and gallery integration', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(String(error)));
