@@ -198,6 +198,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(feedEngaged.geometry.paperFeed.paperPath.platenWrapRepresented).toBe(true);
   expect(feedEngaged.geometry.paperFeed.paperPath.wrapSpanDegP4).toBeCloseTo(204, 8);
   expect(feedEngaged.geometry.paperFeed.paperPath.wrapClass).toContain('exact hidden wrap/contact arc unresolved');
+  expect(feedEngaged.geometry.paperFeed.paperPath.stampLayout.lastStamp).toBe(null);
+  expect(feedEngaged.geometry.paperFeed.paperPath.stampLayout.placementClass).toContain('no arbitrary logical-line pixel step');
 
   await page.evaluate(() => window.__selectricDebug.togglePaperBail());
   const bailReleased = await page.evaluate(() => window.__selectricDebug.state);
@@ -657,6 +659,38 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const clearedStop = await page.evaluate(() => window.__selectricDebug.state);
   expect(clearedStop.tabStops).toEqual([10]);
   await page.evaluate(() => window.__selectricDebug.setTabStops([8,16,24,32,40,48,56,64,72,80,88,96]));
+
+  // The printed record now follows the live physical sheet advance rather than an arbitrary
+  // logical-line pixel increment. One normal index must shift the next paper-local stamp by
+  // exactly that advance times the explicitly P5 canvas scale.
+  await page.evaluate(() => window.__selectricDebug.reset());
+  await page.evaluate(() => window.__selectricDebug.typeCharacter('q'));
+  await page.waitForFunction(
+    () => window.__selectricDebug.state.serviceOperation === null && window.__selectricDebug.state.cycle === 'C0_REST',
+    null,
+    { timeout: 7000 }
+  );
+  const firstPhysicalStamp = await page.evaluate(() => window.__selectricDebug.state);
+  const firstStamp = firstPhysicalStamp.geometry.paperFeed.paperPath.stampLayout.lastStamp;
+  expect(firstStamp.paperAdvanceMm).toBeCloseTo(0, 8);
+
+  await page.evaluate(() => window.__selectricDebug.index());
+  await page.waitForFunction(() => window.__selectricDebug.state.serviceOperation === null, null, { timeout: 5000 });
+  const afterStampIndex = await page.evaluate(() => window.__selectricDebug.state);
+  await page.evaluate(() => window.__selectricDebug.typeCharacter('q'));
+  await page.waitForFunction(
+    () => window.__selectricDebug.state.serviceOperation === null && window.__selectricDebug.state.cycle === 'C0_REST',
+    null,
+    { timeout: 7000 }
+  );
+  const secondPhysicalStamp = await page.evaluate(() => window.__selectricDebug.state);
+  const stampLayout = secondPhysicalStamp.geometry.paperFeed.paperPath.stampLayout;
+  const secondStamp = stampLayout.lastStamp;
+  expect(secondStamp.paperAdvanceMm).toBeCloseTo(afterStampIndex.paperAdvanceMm, 8);
+  expect(secondStamp.yPx - firstStamp.yPx).toBeCloseTo(
+    afterStampIndex.paperAdvanceMm * stampLayout.pixelsPerMmP5,
+    8
+  );
 
   expect(errors).toEqual([]);
 });

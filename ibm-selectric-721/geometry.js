@@ -465,9 +465,14 @@ function makePaper(pickables) {
   root.name = 'paper sheet + platen-wrap presentation';
 
   const mat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.96, metalness: 0, side: THREE.DoubleSide });
-  const sheet = new THREE.Mesh(new THREE.PlaneGeometry(260, 112), mat);
+  const sheetWidthMmP5 = 260;
+  const sheetHeightMmP5 = 112;
+  const sheet = new THREE.Mesh(new THREE.PlaneGeometry(sheetWidthMmP5, sheetHeightMmP5), mat);
   sheet.name = 'paper output sheet';
   const baseY = 169;
+  const stampOriginYPxP5 = 86;
+  const stampPixelsPerMmP5 = canvas.height / sheetHeightMmP5;
+  let lastStamp = null;
   const wrapRadiusMmP4 = CANONICAL.platen.radiusMm + 0.65;
   const backTangentZP4 = P4.platen.z - wrapRadiusMmP4;
   sheet.position.set(0, baseY, backTangentZP4);
@@ -529,20 +534,45 @@ function makePaper(pickables) {
     ctx.strokeStyle = '#dad2c1';
     ctx.lineWidth = 2;
     ctx.strokeRect(18, 18, canvas.width - 36, canvas.height - 36);
+    lastStamp = null;
     texture.needsUpdate = true;
   }
 
-  function stamp(character, carrierX, line) {
+  function stamp(character, carrierX, paperAdvanceMm) {
     const usableW = canvas.width - 120;
     const normalized = (carrierX + CANONICAL.writingLineMm / 2) / CANONICAL.writingLineMm;
     const x = 60 + THREE.MathUtils.clamp(normalized, 0, 1) * usableW;
-    const y = 86 + Math.max(0, line) * 45;
+    const liveAdvanceMm = Number(paperAdvanceMm) || 0;
+    // Marks are recorded in paper-local coordinates. As the physical sheet advances upward
+    // through the machine, the next impact lands farther down the sheet's local texture.
+    // The physical/paper-advance input can be P2 platen-derived; this browser texture scale is P5.
+    const yUnclamped = stampOriginYPxP5 + liveAdvanceMm * stampPixelsPerMmP5;
+    const y = THREE.MathUtils.clamp(yUnclamped, 28, canvas.height - 28);
     ctx.fillStyle = '#1a1b1a';
     ctx.font = 'bold 32px ui-monospace, monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(character || '•', x, y);
+    lastStamp = {
+      character: character || '•',
+      carrierX,
+      paperAdvanceMm: liveAdvanceMm,
+      xPx: x,
+      yPx: y,
+      unclampedYPx: yUnclamped
+    };
     texture.needsUpdate = true;
+  }
+
+  function stampDiagnostics() {
+    return {
+      sheetWidthMmP5,
+      sheetHeightMmP5,
+      originYPxP5: stampOriginYPxP5,
+      pixelsPerMmP5: stampPixelsPerMmP5,
+      lastStamp: lastStamp ? { ...lastStamp } : null,
+      placementClass: 'paper-local y from live sheet advance × P5 canvas scale; no arbitrary logical-line pixel step'
+    };
   }
 
   clear();
@@ -555,7 +585,8 @@ function makePaper(pickables) {
     wrapRadiusMmP4,
     wrapStartAngleDegP4: THREE.MathUtils.radToDeg(wrapStartAngleP4),
     wrapEndAngleDegP4: THREE.MathUtils.radToDeg(wrapEndAngleP4),
-    wrapSpanDegP4: THREE.MathUtils.radToDeg(wrapStartAngleP4 - wrapEndAngleP4)
+    wrapSpanDegP4: THREE.MathUtils.radToDeg(wrapStartAngleP4 - wrapEndAngleP4),
+    stampDiagnostics
   };
 }
 
@@ -2553,8 +2584,8 @@ export function createSelectricModel() {
     assemblies.forEach(group => setAssemblyExplosion(group, state.explosion));
   }
 
-  function stampCharacter(character, line) {
-    paper.stamp(character, state.carrierX, line);
+  function stampCharacter(character) {
+    paper.stamp(character, state.carrierX, state.paperAdvanceMm);
   }
 
   function clearPaper() {
@@ -2775,7 +2806,8 @@ export function createSelectricModel() {
           wrapStartAngleDegP4: paper.wrapStartAngleDegP4,
           wrapEndAngleDegP4: paper.wrapEndAngleDegP4,
           wrapSpanDegP4: paper.wrapSpanDegP4,
-          wrapClass: 'P4 platen-contact presentation; exact hidden wrap/contact arc unresolved'
+          wrapClass: 'P4 platen-contact presentation; exact hidden wrap/contact arc unresolved',
+          stampLayout: paper.stampDiagnostics()
         },
         feedRollPhaseRad: state.feedRollPhaseRad,
         feedRollRotationClass: 'P4 accumulated contact rotation from coupled paper travel only; released manual sheet alignment does not rotate feed rolls; exact roller radius unresolved',

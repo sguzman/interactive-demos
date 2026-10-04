@@ -498,7 +498,7 @@ function runCycle(now) {
     }
   }
   if (t >= impactThreshold && !runtime.cycleImpactCommitted) {
-    model.stampCharacter(runtime.pendingCharacter, runtime.line);
+    model.stampCharacter(runtime.pendingCharacter);
     runtime.cycleImpactCommitted = true;
     recordEvent('PRINT_IMPACT', { character: runtime.pendingCharacter });
   }
