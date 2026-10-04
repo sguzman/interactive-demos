@@ -409,6 +409,7 @@ export function createSelectricModel() {
     tensionArmAngleDeg: 0,
     carrierReturnDrivePhase: 0,
     tabGovernorPhase: 0,
+    tabStopIndices: [],
     tiltDetent: 0,
     rotateDetent: 0,
     feedRollsEngaged: true,
@@ -849,15 +850,18 @@ export function createSelectricModel() {
   addPickable(tabStopBar, COMPONENTS.horizontalMotion, pickables);
   horizontalAssembly.add(tabStopBar);
 
-  for (let stop = 8; stop < CANONICAL.nominalPositions; stop += 8) {
+  const tabStopMarkers = [];
+  for (let stop = 0; stop < CANONICAL.nominalPositions; stop += 1) {
     const tabStop = box(2.2, 9, 7, metal, 'presentation tab stop');
     tabStop.position.set(
       -CANONICAL.writingLineMm / 2 + stop * CANONICAL.pitchMm,
       P4.writingLineRacks.tabY + 5,
       P4.writingLineRacks.tabZ
     );
+    tabStop.visible = false;
     addPickable(tabStop, COMPONENTS.horizontalMotion, pickables);
     horizontalAssembly.add(tabStop);
+    tabStopMarkers.push(tabStop);
   }
 
   const escapementShaft = shaft(270, 3.8, darkMetal, 'escapement / cord-drum shaft');
@@ -1766,6 +1770,29 @@ export function createSelectricModel() {
     tabGovernorGroup.rotation.x = state.tabGovernorPhase * Math.PI * 4;
   }
 
+  function setTabStops(indices = []) {
+    const normalized = [...new Set(
+      (Array.isArray(indices) ? indices : [])
+        .map(value => Math.round(Number(value)))
+        .filter(value => Number.isFinite(value) && value > 0 && value < CANONICAL.nominalPositions)
+    )].sort((a, b) => a - b);
+    state.tabStopIndices = normalized;
+    const active = new Set(normalized);
+    tabStopMarkers.forEach((marker, index) => {
+      marker.visible = active.has(index);
+    });
+  }
+
+  function setTabStopAt(index, enabled = true) {
+    const nextIndex = Math.round(Number(index));
+    if (!Number.isFinite(nextIndex) || nextIndex <= 0 || nextIndex >= CANONICAL.nominalPositions) return false;
+    const next = new Set(state.tabStopIndices);
+    if (enabled) next.add(nextIndex);
+    else next.delete(nextIndex);
+    setTabStops([...next]);
+    return true;
+  }
+
   function setBackspaceLinkage(value) {
     state.backspaceLinkage = THREE.MathUtils.clamp(Number(value) || 0, 0, 1);
     const pulse = Math.sin(state.backspaceLinkage * Math.PI);
@@ -2154,7 +2181,11 @@ export function createSelectricModel() {
         tabPropulsion: 'mainspring',
         tabGovernorReference: 'operational-shaft',
         tabGovernorPropulsion: false,
-        tabGovernorPhase: state.tabGovernorPhase
+        tabGovernorPhase: state.tabGovernorPhase,
+        tabStopsProgrammable: true,
+        tabStopIndices: [...state.tabStopIndices],
+        defaultTabStopClass: 'P5 every-eight-column startup presentation; runtime set/clear is live',
+        exactSetClearLinkage: 'unresolved'
       },
       cordSystem: {
         commonEscapementShaft: true,
@@ -2322,6 +2353,7 @@ export function createSelectricModel() {
   setBackspaceLinkage(0);
   setCarrierReturnDrive(0);
   setTabGovernor(0);
+  setTabStops(Array.from({ length: Math.floor((CANONICAL.nominalPositions - 1) / 8) }, (_, index) => (index + 1) * 8));
   setMarginInsets(0, 0);
   setCarrierX(state.carrierX);
   setTypeball(0, 0, 0);
@@ -2351,6 +2383,8 @@ export function createSelectricModel() {
     setBackspaceLinkage,
     setCarrierReturnDrive,
     setTabGovernor,
+    setTabStops,
+    setTabStopAt,
     setMarginInsets,
     setCarrierX,
     setShiftTransition,

@@ -60,6 +60,8 @@ const ui = {
   coverBtn: document.querySelector('#coverBtn'),
   spaceBtn: document.querySelector('#spaceBtn'),
   tabBtn: document.querySelector('#tabBtn'),
+  tabSetBtn: document.querySelector('#tabSetBtn'),
+  tabClearBtn: document.querySelector('#tabClearBtn'),
   backspaceBtn: document.querySelector('#backspaceBtn'),
   returnBtn: document.querySelector('#returnBtn'),
   indexBtn: document.querySelector('#indexBtn'),
@@ -83,6 +85,7 @@ const ui = {
   ribbonModeState: document.querySelector('#ribbonModeState'),
   ribbonLoadState: document.querySelector('#ribbonLoadState'),
   marginState: document.querySelector('#marginState'),
+  tabStopsState: document.querySelector('#tabStopsState'),
   feedState: document.querySelector('#feedState'),
   paperBailState: document.querySelector('#paperBailState'),
   copyControlState: document.querySelector('#copyControlState'),
@@ -214,6 +217,7 @@ function syncUi() {
   ui.ribbonModeState.textContent = model.state.ribbonPrintMode.toUpperCase();
   ui.ribbonLoadState.textContent = model.state.ribbonLoadState ? 'THREADING / LOAD' : 'OFF';
   ui.marginState.textContent = model.state.leftMarginInsetColumns + ' / ' + model.state.rightMarginInsetColumns + ' COL';
+  ui.tabStopsState.textContent = String(model.state.tabStopIndices.length);
   ui.feedState.textContent = model.state.feedRollsEngaged ? 'ENGAGED' : 'RELEASED';
   ui.paperBailState.textContent = model.state.paperBailEngaged ? 'AGAINST PLATEN' : 'RELEASED';
   ui.copyControlState.textContent = String(model.state.copyControlSetting + 1) + ' / 5';
@@ -255,6 +259,7 @@ function resetMechanicalState() {
   runtime.pendingCharacter = 'a';
   runtime.selectionTarget = selectionForCharacter('a');
   model.setKeyboardCode(0);
+  model.setTabStops(Array.from({ length: Math.floor((CANONICAL.nominalPositions - 1) / 8) }, (_, index) => (index + 1) * 8));
   model.setMarginInsets(0, 0);
   model.setCarrierX(0);
   model.setTypeball(0, 0, 0);
@@ -309,13 +314,23 @@ function singleIndex() {
   return teeth;
 }
 
-function nextDefaultTabStop() {
-  const currentIndex = Math.max(0, Math.round((model.state.carrierX + CANONICAL.writingLineMm / 2) / CANONICAL.pitchMm));
-  const nextIndex = Math.min(CANONICAL.nominalPositions - 1, (Math.floor(currentIndex / 8) + 1) * 8);
-  return Math.min(
-    model.state.rightMarginX,
-    -CANONICAL.writingLineMm / 2 + nextIndex * CANONICAL.pitchMm
+function carrierColumnIndex() {
+  return THREE.MathUtils.clamp(
+    Math.round((model.state.carrierX + CANONICAL.writingLineMm / 2) / CANONICAL.pitchMm),
+    0,
+    CANONICAL.nominalPositions - 1
   );
+}
+
+function nextTabStop() {
+  const currentIndex = carrierColumnIndex();
+  const nextIndex = model.state.tabStopIndices.find(index => {
+    if (index <= currentIndex) return false;
+    const x = -CANONICAL.writingLineMm / 2 + index * CANONICAL.pitchMm;
+    return x <= model.state.rightMarginX + 1e-6;
+  });
+  if (nextIndex === undefined) return model.state.rightMarginX;
+  return -CANONICAL.writingLineMm / 2 + nextIndex * CANONICAL.pitchMm;
 }
 
 function beginCarrierOperation(type, destination, durationMs, includesIndex = false) {
@@ -590,9 +605,25 @@ ui.spaceBtn.addEventListener('click', () => {
   beginCarrierOperation('space', model.state.carrierX + CANONICAL.pitchMm, 220, false);
 });
 ui.tabBtn.addEventListener('click', () => {
-  const destination = nextDefaultTabStop();
+  const destination = nextTabStop();
   const distance = Math.abs(destination - model.state.carrierX);
   beginCarrierOperation('tab', destination, 280 + distance * 3.2, false);
+});
+ui.tabSetBtn.addEventListener('click', () => {
+  if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
+  const index = carrierColumnIndex();
+  if (!model.setTabStopAt(index, true)) return;
+  runtime.lastAction = 'tab-set';
+  recordEvent('TAB_STOP_SET', { index });
+  syncUi();
+});
+ui.tabClearBtn.addEventListener('click', () => {
+  if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
+  const index = carrierColumnIndex();
+  if (!model.setTabStopAt(index, false)) return;
+  runtime.lastAction = 'tab-clear';
+  recordEvent('TAB_STOP_CLEARED', { index });
+  syncUi();
 });
 ui.backspaceBtn.addEventListener('click', () => {
   beginCarrierOperation('backspace', model.state.carrierX - CANONICAL.pitchMm, 220, false);
@@ -785,6 +816,7 @@ function snapshot() {
       leftX: model.state.leftMarginX,
       rightX: model.state.rightMarginX
     },
+    tabStops: [...model.state.tabStopIndices],
     selection: {
       tiltBand: model.state.tiltBand,
       rotateUnit: model.state.rotateUnit,
@@ -874,6 +906,18 @@ window.__selectricDebug = {
     model.setLineSpacingMode(teeth);
     syncUi();
     return true;
+  },
+  setTabStops(indices) {
+    if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
+    model.setTabStops(indices);
+    syncUi();
+    return true;
+  },
+  setTabStopAt(index, enabled = true) {
+    if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
+    const changed = model.setTabStopAt(index, enabled);
+    syncUi();
+    return changed;
   },
   space: () => ui.spaceBtn.click(),
   tab: () => ui.tabBtn.click(),

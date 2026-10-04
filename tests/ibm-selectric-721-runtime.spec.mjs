@@ -103,6 +103,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.returnTabDrive.tabPropulsion).toBe('mainspring');
   expect(initial.geometry.returnTabDrive.tabGovernorReference).toBe('operational-shaft');
   expect(initial.geometry.returnTabDrive.tabGovernorPropulsion).toBe(false);
+  expect(initial.geometry.returnTabDrive.tabStopsProgrammable).toBe(true);
+  expect(initial.geometry.returnTabDrive.tabStopIndices).toEqual([8,16,24,32,40,48,56,64,72,80,88,96]);
+  expect(initial.geometry.returnTabDrive.defaultTabStopClass).toContain('P5 every-eight-column');
   expect(initial.geometry.cordSystem.commonEscapementShaft).toBe(true);
   expect(initial.geometry.cordSystem.opposedDrumWinding).toBe(true);
   expect(initial.geometry.cordSystem.mainspringSuppliesRightwardCarrierEnergy).toBe(true);
@@ -453,6 +456,25 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const returnedToLiveMargin = await page.evaluate(() => window.__selectricDebug.state);
   expect(returnedToLiveMargin.carrierX).toBeCloseTo(returnedToLiveMargin.margins.leftX, 5);
   await page.evaluate(() => window.__selectricDebug.setMarginInsets(0, 0));
+
+  // Tab stops are runtime-programmable. From the live left margin, a custom stop at column 4
+  // must capture before a later stop, and clearing it must immediately change the active set.
+  await page.evaluate(() => window.__selectricDebug.setTabStops([4, 10]));
+  const customStops = await page.evaluate(() => window.__selectricDebug.state);
+  expect(customStops.tabStops).toEqual([4, 10]);
+  expect(customStops.geometry.returnTabDrive.tabStopIndices).toEqual([4, 10]);
+
+  await page.evaluate(() => window.__selectricDebug.tab());
+  await page.waitForFunction(() => window.__selectricDebug.state.operation === null, null, { timeout: 5000 });
+  const customTabbed = await page.evaluate(() => window.__selectricDebug.state);
+  const expectedCustomStopX = -customTabbed.geometry.writingLineMm / 2 + 4 * customTabbed.geometry.pitchMm;
+  expect(customTabbed.carrierX).toBeCloseTo(expectedCustomStopX, 5);
+  expect(customTabbed.events.some(event => event.name === 'TAB_CAPTURE')).toBe(true);
+
+  await page.evaluate(() => window.__selectricDebug.setTabStopAt(4, false));
+  const clearedStop = await page.evaluate(() => window.__selectricDebug.state);
+  expect(clearedStop.tabStops).toEqual([10]);
+  await page.evaluate(() => window.__selectricDebug.setTabStops([8,16,24,32,40,48,56,64,72,80,88,96]));
 
   expect(errors).toEqual([]);
 });
