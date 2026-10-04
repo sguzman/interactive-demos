@@ -147,6 +147,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(keyDown.cycle).toBe('C1_TRIP');
   expect(keyDown.keyboardPress.character).toBe('Q');
   expect(keyDown.keyboardPress.depression).toBeGreaterThan(0.7);
+  expect(keyDown.keyboardCodeBitOrder).toEqual(['T1','T2','R1','R2','R2A','fiveUnit']);
   await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
 
@@ -167,6 +168,32 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(typed.fineAlignment.tiltDetent).toBe(0);
   expect(typed.fineAlignment.rotateDetent).toBe(0);
   expect(typed.events.some(event => event.name === 'RIBBON_FEED_COMPLETE_EXCEPT_PAWL_RESTORE')).toBe(true);
+  expect(typed.selection.shiftHemisphere).toBe(0);
+
+  const lowerTilt = typed.selection.tiltBand;
+  const lowerRotate = typed.selection.rotateUnit;
+  await page.evaluate(() => window.__selectricDebug.typeCharacter('Q'));
+  await page.waitForFunction(
+    () => window.__selectricDebug.state.serviceOperation === null && window.__selectricDebug.state.cycle === 'C0_REST',
+    null,
+    { timeout: 7000 }
+  );
+  const uppercaseTyped = await page.evaluate(() => window.__selectricDebug.state);
+  expect(uppercaseTyped.selection.shiftHemisphere).toBe(1);
+  expect(uppercaseTyped.selection.tiltBand).toBe(lowerTilt);
+  expect(uppercaseTyped.selection.rotateUnit).toBe(lowerRotate);
+  expect(uppercaseTyped.events.some(event => event.name === 'SHIFT_OPERATION_COMPLETE')).toBe(true);
+
+  await page.evaluate(() => window.__selectricDebug.typeCharacter('q'));
+  await page.waitForFunction(
+    () => window.__selectricDebug.state.serviceOperation === null && window.__selectricDebug.state.cycle === 'C0_REST',
+    null,
+    { timeout: 7000 }
+  );
+  const lowercaseRestored = await page.evaluate(() => window.__selectricDebug.state);
+  expect(lowercaseRestored.selection.shiftHemisphere).toBe(0);
+  expect(lowercaseRestored.selection.tiltBand).toBe(lowerTilt);
+  expect(lowercaseRestored.selection.rotateUnit).toBe(lowerRotate);
   expect(typed.printApproach).toBe(0);
   expect(typed.cyclePhase).toBe(0);
   expect(typed.selection.tiltBand).toBeGreaterThanOrEqual(0);

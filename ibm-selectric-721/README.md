@@ -44,7 +44,7 @@ Exact source-backed dimensions are retained where available.
 
 Unresolved hidden coordinates and sections use explicit P4 constructive reconstruction. The visible browser model is not IBM production CAD.
 
-The temporary browser key-to-typeball-slot map is P5 presentation. It exercises the canonical selection coordinate ranges—4 tilt bands, signed rotate units -5..+5, and the independent 180-degree shift hemisphere—without claiming one specific physical typeball character layout.
+The temporary browser key-to-typeball-slot map is P5 presentation. It now assigns 44 base tilt/rotate positions and pairs them across the two hemispheres, so lower/upper letter pairs preserve the same tilt/rotate coordinates and request the independent 180-degree shift mechanism when needed. The six public code bits are coherent with the modeled T1/T2/R1/R2/R2A/five-unit inputs. This still does not claim one specific factory typeball character layout.
 
 ## Deterministic QA
 
