@@ -263,6 +263,7 @@ function runCycle(now) {
   if (t < 0.12) {
     setCycleState('C1_TRIP');
     model.setKeyboardCode(0);
+    model.setKeyPress(runtime.pendingCharacter, Math.min(1, t / 0.07));
     model.setTypeball(0, 0, runtime.selectionTarget.shift);
     model.setRibbonLift(0);
     model.setPrintApproach(0);
@@ -270,30 +271,36 @@ function runCycle(now) {
     setCycleState('C2_CODE_SETUP');
     model.setKeyboardCode(runtime.selectionTarget.code6);
     const k = (t - 0.12) / 0.16;
+    model.setKeyPress(runtime.pendingCharacter, Math.max(0, 1 - k));
     model.setTypeball(runtime.selectionTarget.tilt * k, runtime.selectionTarget.rotate * k, runtime.selectionTarget.shift);
   } else if (t < 0.43) {
     setCycleState('C3_SELECTION_DRIVE');
+    model.setKeyPress(null, 0);
     model.setTypeball(runtime.selectionTarget.tilt, runtime.selectionTarget.rotate, runtime.selectionTarget.shift);
   } else if (t < 0.54) {
     setCycleState('C4_FINE_ALIGN');
+    model.setKeyPress(null, 0);
     const k = (t - 0.43) / 0.11;
     model.setTypeball(runtime.selectionTarget.tilt, runtime.selectionTarget.rotate, runtime.selectionTarget.shift);
     model.setRibbonLift(k);
     model.setPrintApproach(k * 0.55);
   } else if (t < 0.66) {
     setCycleState('C5_PRINT_IMPACT');
+    model.setKeyPress(null, 0);
     const k = (t - 0.54) / 0.12;
     model.setRibbonLift(1);
     model.setPrintApproach(Math.min(1, 0.55 + k * 0.45));
   } else if (t < 0.91) {
     setCycleState('C6_ESCAPEMENT_RIBBON_RESTORE');
     model.setKeyboardCode(0);
+    model.setKeyPress(null, 0);
     const k = 1 - (t - 0.66) / 0.25;
     model.setRibbonLift(Math.max(0, k));
     model.setPrintApproach(Math.max(0, k));
   } else {
     setCycleState('C7_CLUTCH_DISENGAGE_CHECK');
     model.setKeyboardCode(0);
+    model.setKeyPress(null, 0);
     model.setRibbonLift(0);
     model.setPrintApproach(0);
   }
@@ -302,6 +309,7 @@ function runCycle(now) {
     setCycleState('C0_REST');
     model.setRibbonLift(0);
     model.setPrintApproach(0);
+    model.setKeyPress(null, 0);
     model.setCyclePhase(0);
   }
   syncUi();
@@ -457,6 +465,10 @@ function snapshot() {
     lastAction: runtime.lastAction,
     pendingCharacter: runtime.pendingCharacter,
     keyboardCode: model.state.keyboardCode,
+    keyboardPress: {
+      character: model.state.keyboardPressCharacter,
+      depression: model.state.keyboardPress
+    },
     carrierX: model.state.carrierX,
     selection: {
       tiltBand: model.state.tiltBand,

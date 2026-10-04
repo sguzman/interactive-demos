@@ -145,6 +145,7 @@ function keyLabelTexture(label) {
 
 function makeKeyboard(keysMat, darkMat, pickables) {
   const group = new THREE.Group();
+  const keyMeshes = new Map();
   const deck = box(340, 17, 142, darkMat, 'keyboard deck');
   deck.position.set(0, P4.keyboard.y, P4.keyboard.z);
   deck.rotation.x = deg(-7);
@@ -162,6 +163,7 @@ function makeKeyboard(keysMat, darkMat, pickables) {
     key.position.set(x, y, z);
     key.rotation.x = deg(-8);
     key.userData.component = COMPONENTS.keyboard;
+    key.userData.baseY = y;
     pickables.push(key);
 
     const labelMaterial = new THREE.MeshBasicMaterial({
@@ -176,6 +178,8 @@ function makeKeyboard(keysMat, darkMat, pickables) {
     labelPlane.name = 'key label ' + keyText;
     key.add(labelPlane);
     group.add(key);
+    const mapKey = keyText === '' ? 'SPACE' : keyText.toUpperCase();
+    if (!keyMeshes.has(mapKey)) keyMeshes.set(mapKey, key);
     return key;
   }
 
@@ -212,6 +216,7 @@ function makeKeyboard(keysMat, darkMat, pickables) {
   const spacebar = addLabeledKey('', 0, 39, 23, 112, 18, 'spacebar');
   spacebar.position.x = -2;
 
+  group.keyMeshes = keyMeshes;
   return group;
 }
 
@@ -378,7 +383,9 @@ export function createSelectricModel() {
     selectorInputs: { T1: 0, T2: 0, R1: 0, R2: 0, R2A: 0, fiveUnit: 0 },
     ribbonFeedStep: 0,
     ribbonFeedDirection: 1,
-    motorPhase: 0
+    motorPhase: 0,
+    keyboardPressCharacter: null,
+    keyboardPress: 0
   };
 
   const shellMat = material(0xb8b4a8, 0.03, 0.76);
@@ -495,10 +502,13 @@ export function createSelectricModel() {
 
   const keyboardAssembly = makeAssembly('keyboard assembly', new THREE.Vector3(0, -46, 155));
   assemblies.push(keyboardAssembly);
-  keyboardAssembly.add(makeKeyboard(keyMat, shellDark, pickables));
+  const keyboardSurface = makeKeyboard(keyMat, shellDark, pickables);
+  keyboardAssembly.add(keyboardSurface);
   root.add(keyboardAssembly);
+  const keyMeshes = keyboardSurface.keyMeshes;
 
   const selectorBailMaterials = [];
+  const selectorBails = [];
   const keyboardMechanismAssembly = makeAssembly('keyboard code mechanism', new THREE.Vector3(0, -78, 62));
   assemblies.push(keyboardMechanismAssembly);
   root.add(keyboardMechanismAssembly);
@@ -542,8 +552,11 @@ export function createSelectricModel() {
     selectorBailMaterials.push(bailMat);
     const bail = box(286, 2.5, 4.2, bailMat, 'selector bail C' + (channel + 1));
     bail.position.set(0, 28 + channel * 4.0, -6 - channel * 5.0);
+    bail.userData.baseY = bail.position.y;
+    bail.userData.baseZ = bail.position.z;
     addPickable(bail, COMPONENTS.keyboardMechanism, pickables);
     keyboardMechanismAssembly.add(bail);
+    selectorBails.push(bail);
   }
 
   const filterShaftRotor = new THREE.Group();
@@ -1072,9 +1085,29 @@ export function createSelectricModel() {
     state.keyboardCode = Math.max(0, Math.min(63, Math.trunc(code) || 0));
     selectorBailMaterials.forEach((mat, index) => {
       const active = Boolean(state.keyboardCode & (1 << index));
-      mat.emissive.setHex(active ? 0x7a4a12 : 0x000000);
-      mat.emissiveIntensity = active ? 1.4 : 1;
+      mat.emissive.setHex(active ? 0x2d1b08 : 0x000000);
+      mat.emissiveIntensity = active ? 0.45 : 1;
+      const bail = selectorBails[index];
+      bail.position.y = bail.userData.baseY - (active ? 4.5 : 0);
+      bail.position.z = bail.userData.baseZ + (active ? 3.0 : 0);
     });
+  }
+
+  function normalizeKeyCharacter(character) {
+    if (character === null || character === undefined) return null;
+    if (character === ' ') return 'SPACE';
+    if (character === '\n' || character === '\r') return 'RETURN';
+    return String(character).toUpperCase();
+  }
+
+  function setKeyPress(character, value) {
+    state.keyboardPressCharacter = normalizeKeyCharacter(character);
+    state.keyboardPress = THREE.MathUtils.clamp(Number(value) || 0, 0, 1);
+    keyMeshes.forEach(key => {
+      key.position.y = key.userData.baseY;
+    });
+    const activeKey = state.keyboardPressCharacter ? keyMeshes.get(state.keyboardPressCharacter) : null;
+    if (activeKey) activeKey.position.y = activeKey.userData.baseY - state.keyboardPress * 4.2;
   }
 
   function setCarrierX(x) {
@@ -1178,9 +1211,15 @@ export function createSelectricModel() {
       writingLineMm: CANONICAL.writingLineMm,
       explosion: state.explosion,
       serviceCoverOpen: state.serviceCoverOpen,
+      explosionClass: 'P5 assembly-separation presentation; not service motion',
       pickableCount: pickables.length,
       supportTopology: 'D6 front + Level-2 upper/lower rack shoes',
-      shellTopology: 'extruded rounded side-cheek profile + hinged fascia/shoulder service-cover frame + explicit carrier/platen opening',
+      shellTopology: 'extruded rounded side-cheek profile + full-width hinged hood ending ahead of platen',
+      keyboardActuation: {
+        character: state.keyboardPressCharacter,
+        depression: state.keyboardPress,
+        travelClass: 'P5 presentation preserving keypress-before-code-sampling order'
+      },
       keyboardCodeChannels: 6,
       keyboardCode: state.keyboardCode,
       selectorInputs: { ...state.selectorInputs },
@@ -1230,6 +1269,7 @@ export function createSelectricModel() {
   }
 
   setKeyboardCode(0);
+  setKeyPress(null, 0);
   setCarrierX(state.carrierX);
   setTypeball(0, 0, 0);
   setRibbonLift(0);
@@ -1244,6 +1284,7 @@ export function createSelectricModel() {
     pickables,
     state,
     setKeyboardCode,
+    setKeyPress,
     setCarrierX,
     setTypeball,
     setRibbonLift,

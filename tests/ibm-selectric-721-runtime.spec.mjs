@@ -23,7 +23,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.finite).toBe(true);
   expect(initial.geometry.revision).toBe('selectric-public-foundation-v3');
   expect(initial.geometry.supportTopology).toContain('Level-2');
-  expect(initial.geometry.shellTopology).toContain('service-cover frame');
+  expect(initial.geometry.shellTopology).toContain('hinged hood');
+  expect(initial.geometry.explosionClass).toContain('assembly-separation');
   expect(initial.geometry.d6CurrentSet.shaft).toBe('1164736');
   expect(initial.geometry.d6CurrentSet.bearings).toBe('1164740');
   expect(initial.geometry.d6CurrentSet.gear).toBe('1164739');
@@ -72,6 +73,17 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.evaluate(() => window.__selectricDebug.setServiceCover(0));
 
   const initialCarrier = initial.carrierX;
+  await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.06));
+  const keyDown = await page.evaluate(() => window.__selectricDebug.state);
+  expect(keyDown.cycle).toBe('C1_TRIP');
+  expect(keyDown.keyboardPress.character).toBe('Q');
+  expect(keyDown.keyboardPress.depression).toBeGreaterThan(0.7);
+  await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
+  await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
+
+  const afterKeyCycle = await page.evaluate(() => window.__selectricDebug.state);
+  expect(afterKeyCycle.keyboardPress.depression).toBe(0);
+
   await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.62));
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C5_PRINT_IMPACT', null, { timeout: 1500 });
   await page.screenshot({ path: 'test-results/selectric-impact.png', fullPage: true });
@@ -79,9 +91,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
 
   const typed = await page.evaluate(() => window.__selectricDebug.state);
-  expect(typed.carrierX - initialCarrier).toBeCloseTo(typed.geometry.pitchMm, 5);
+  expect(typed.carrierX - initialCarrier).toBeCloseTo(typed.geometry.pitchMm * 2, 5);
   expect(typed.ribbonLift).toBe(0);
-  expect(typed.ribbonFeedStep).toBe(1);
+  expect(typed.ribbonFeedStep).toBe(2);
   expect(typed.events.some(event => event.name === 'RIBBON_FEED_COMPLETE_EXCEPT_PAWL_RESTORE')).toBe(true);
   expect(typed.printApproach).toBe(0);
   expect(typed.cyclePhase).toBe(0);
