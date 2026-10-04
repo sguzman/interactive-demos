@@ -392,6 +392,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
 
   const initialCarrier = initial.carrierX;
 
+  // Fine-alignment screenshots should actually expose the selection hardware instead of
+  // documenting a closed product shell.
+  await page.locator('[data-view="selection"]').click();
+  await expect.poll(async () => page.evaluate(() => window.__selectricDebug.state.serviceCoverOpen)).toBe(1);
   await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.50));
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C4_FINE_ALIGN', null, { timeout: 1500 });
   const fineAligned = await page.evaluate(() => window.__selectricDebug.state);
@@ -401,6 +405,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.screenshot({ path: 'test-results/selectric-fine-align.png', fullPage: true });
   await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
+  await page.locator('[data-view="product"]').click();
+  await expect.poll(async () => page.evaluate(() => window.__selectricDebug.state.serviceCoverOpen)).toBe(0);
   const afterFineAlignCycle = await page.evaluate(() => window.__selectricDebug.state);
   expect(afterFineAlignCycle.fineAlignment.tiltDetent).toBe(0);
   expect(afterFineAlignCycle.fineAlignment.rotateDetent).toBe(0);
@@ -417,6 +423,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const afterKeyCycle = await page.evaluate(() => window.__selectricDebug.state);
   expect(afterKeyCycle.keyboardPress.depression).toBe(0);
 
+  // Likewise, actual impact QA uses the existing ribbon/print inspection camera with the
+  // service cover open so the print-point geometry is visible in the artifact.
+  await page.locator('[data-view="ribbon"]').click();
+  await expect.poll(async () => page.evaluate(() => window.__selectricDebug.state.serviceCoverOpen)).toBe(1);
   await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.659));
   await page.waitForFunction(
     () => window.__selectricDebug.state.cycle === 'C5_PRINT_IMPACT' &&
@@ -433,6 +443,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.screenshot({ path: 'test-results/selectric-impact.png', fullPage: true });
   await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
+  await page.locator('[data-view="product"]').click();
+  await expect.poll(async () => page.evaluate(() => window.__selectricDebug.state.serviceCoverOpen)).toBe(0);
 
   const typed = await page.evaluate(() => window.__selectricDebug.state);
   expect(typed.carrierX - initialCarrier).toBeCloseTo(typed.geometry.pitchMm * 3, 5);
