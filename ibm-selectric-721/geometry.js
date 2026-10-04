@@ -1367,6 +1367,22 @@ export function createSelectricModel() {
   addPickable(copyControlLever, COMPONENTS.paperFeed, pickables);
   copyControlLeverPivot.add(copyControlLever);
 
+  const copyControlDetentPlate = new THREE.Group();
+  copyControlDetentPlate.name = 'five-position copy-control detent presentation';
+  copyControlDetentPlate.position.copy(copyControlLeverPivot.position);
+  platenAssembly.add(copyControlDetentPlate);
+  const copyControlDetentMarkers = [];
+  for (let setting = 0; setting < 5; setting += 1) {
+    const angle = deg(-setting * 8);
+    const radiusP5 = 35;
+    const marker = box(4.2, 5.4, 2.2, metal, 'copy-control detent marker ' + (setting + 1));
+    marker.position.set(7.5, Math.cos(angle) * radiusP5, Math.sin(angle) * radiusP5);
+    marker.rotation.x = angle;
+    addPickable(marker, COMPONENTS.paperFeed, pickables);
+    copyControlDetentPlate.add(marker);
+    copyControlDetentMarkers.push(marker);
+  }
+
   for (const x of [-P4.platen.length / 2 - 3, P4.platen.length / 2 + 3]) {
     const eccentric = new THREE.Mesh(new THREE.CylinderGeometry(7, 7, 5, 24), metal);
     eccentric.rotation.z = Math.PI / 2;
@@ -2282,6 +2298,10 @@ export function createSelectricModel() {
     paperFeedCarriage.position.z = state.copyControlOffsetZ;
     copyControlLeverPivot.rotation.x = deg(-next * 8);
     copyControlShaft.rotation.x = deg(next * 12);
+    copyControlDetentMarkers.forEach((marker, index) => {
+      const scale = index === next ? 1.35 : 1;
+      marker.scale.set(scale, scale, scale);
+    });
   }
 
   function setPlatenVariable(engaged) {
@@ -2539,6 +2559,9 @@ export function createSelectricModel() {
           normalForwardSetting: 0,
           offsetZ: state.copyControlOffsetZ,
           offsetClass: 'P5 presentation; exact five offsets unresolved',
+          detentMarkerCount: copyControlDetentMarkers.length,
+          activeDetentSetting: state.copyControlSetting,
+          detentPresentationClass: 'P5 visible five-position marker arc; source-backed discrete count, exact lever angles/marker geometry unresolved',
           movesPlatenAndEntirePaperFeedCarriage: true,
           movesCarrierTypehead: false
         },
