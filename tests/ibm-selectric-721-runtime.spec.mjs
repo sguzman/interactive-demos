@@ -43,6 +43,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.shaftTiming.cycleShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.filterShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.printShaftDegPerCharacter).toBe(360);
+  expect(initial.geometry.fineAlignment.coarseSelectionSeparate).toBe(true);
+  expect(initial.geometry.fineAlignment.tiltSeatsBeforeRotateInPresentation).toBe(true);
+  expect(initial.geometry.fineAlignment.exactPivotsAndTimingDegrees).toBe('unresolved');
   expect(initial.geometry.printRocker.motion).toBe('revolute');
   expect(initial.geometry.printRocker.restClearanceMm).toBeGreaterThanOrEqual(6.604);
   expect(initial.geometry.printRocker.restClearanceMm).toBeLessThanOrEqual(6.858);
@@ -105,6 +108,20 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.evaluate(() => window.__selectricDebug.setServiceCover(0));
 
   const initialCarrier = initial.carrierX;
+
+  await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.50));
+  await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C4_FINE_ALIGN', null, { timeout: 1500 });
+  const fineAligned = await page.evaluate(() => window.__selectricDebug.state);
+  expect(fineAligned.fineAlignment.tiltDetent).toBeGreaterThan(0.9);
+  expect(fineAligned.fineAlignment.rotateDetent).toBeGreaterThan(0.7);
+  expect(fineAligned.fineAlignment.tiltDetent).toBeGreaterThanOrEqual(fineAligned.fineAlignment.rotateDetent);
+  await page.screenshot({ path: 'test-results/selectric-fine-align.png', fullPage: true });
+  await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
+  await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
+  const afterFineAlignCycle = await page.evaluate(() => window.__selectricDebug.state);
+  expect(afterFineAlignCycle.fineAlignment.tiltDetent).toBe(0);
+  expect(afterFineAlignCycle.fineAlignment.rotateDetent).toBe(0);
+
   await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.06));
   const keyDown = await page.evaluate(() => window.__selectricDebug.state);
   expect(keyDown.cycle).toBe('C1_TRIP');
@@ -123,10 +140,12 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
 
   const typed = await page.evaluate(() => window.__selectricDebug.state);
-  expect(typed.carrierX - initialCarrier).toBeCloseTo(typed.geometry.pitchMm * 2, 5);
+  expect(typed.carrierX - initialCarrier).toBeCloseTo(typed.geometry.pitchMm * 3, 5);
   expect(typed.ribbonLift).toBe(0);
-  expect(typed.ribbonFeedStep).toBe(2);
-  expect(typed.geometry.ribbon.approximateRatchetTeethAdvanced).toBeCloseTo(5, 8);
+  expect(typed.ribbonFeedStep).toBe(3);
+  expect(typed.geometry.ribbon.approximateRatchetTeethAdvanced).toBeCloseTo(7.5, 8);
+  expect(typed.fineAlignment.tiltDetent).toBe(0);
+  expect(typed.fineAlignment.rotateDetent).toBe(0);
   expect(typed.events.some(event => event.name === 'RIBBON_FEED_COMPLETE_EXCEPT_PAWL_RESTORE')).toBe(true);
   expect(typed.printApproach).toBe(0);
   expect(typed.cyclePhase).toBe(0);

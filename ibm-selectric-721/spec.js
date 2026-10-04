@@ -203,6 +203,12 @@ export const COMPONENTS = Object.freeze({
     provenance: 'source-grounded parentage + P4 section',
     description: 'Carrier-parented bracket above the fixed rack. The active Level-2 bracket/tab clearance constraint remains 0.254–0.3048 mm.'
   },
+  fineAlignment: {
+    name: 'Tilt / rotate fine-alignment detents',
+    category: 'selection / print alignment',
+    provenance: 'OEM service-theory topology and ordering + P4 local geometry + P5 animation phasing',
+    description: 'Coarse tilt/rotate selection deliberately hands off to carrier-local detents before impact. Tilt detenting seats first in the modeled causal sequence; rotate detenting follows. Exact pivots, notch dimensions and event angles remain unresolved.'
+  },
   typeball: {
     name: 'Selectric type element',
     category: 'selection / print',

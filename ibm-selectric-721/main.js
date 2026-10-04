@@ -164,6 +164,7 @@ function resetMechanicalState() {
   model.setCarrierX(0);
   model.setTypeball(0, 0, 0);
   model.setRibbonLift(0);
+  model.setFineAlignment(0, 0);
   model.setPrintApproach(0);
   model.setPlatenIndex(0);
   model.setCyclePhase(0);
@@ -348,28 +349,35 @@ function runCycle(now) {
     model.setKeyPress(runtime.pendingCharacter, Math.min(1, t / 0.07));
     model.setTypeball(0, 0, runtime.selectionTarget.shift);
     model.setRibbonLift(0);
+    model.setFineAlignment(0, 0);
     model.setPrintApproach(0);
   } else if (t < 0.28) {
     setCycleState('C2_CODE_SETUP');
     model.setKeyboardCode(runtime.selectionTarget.code6);
     const k = (t - 0.12) / 0.16;
     model.setKeyPress(runtime.pendingCharacter, Math.max(0, 1 - k));
+    model.setFineAlignment(0, 0);
     model.setTypeball(runtime.selectionTarget.tilt * k, runtime.selectionTarget.rotate * k, runtime.selectionTarget.shift);
   } else if (t < 0.43) {
     setCycleState('C3_SELECTION_DRIVE');
     model.setKeyPress(null, 0);
+    model.setFineAlignment(0, 0);
     model.setTypeball(runtime.selectionTarget.tilt, runtime.selectionTarget.rotate, runtime.selectionTarget.shift);
   } else if (t < 0.54) {
     setCycleState('C4_FINE_ALIGN');
     model.setKeyPress(null, 0);
     const k = (t - 0.43) / 0.11;
+    const tiltSeat = THREE.MathUtils.clamp(k / 0.58, 0, 1);
+    const rotateSeat = THREE.MathUtils.clamp((k - 0.20) / 0.62, 0, 1);
     model.setTypeball(runtime.selectionTarget.tilt, runtime.selectionTarget.rotate, runtime.selectionTarget.shift);
+    model.setFineAlignment(tiltSeat, rotateSeat);
     model.setRibbonLift(k);
     model.setPrintApproach(k * 0.55);
   } else if (t < 0.66) {
     setCycleState('C5_PRINT_IMPACT');
     model.setKeyPress(null, 0);
     const k = (t - 0.54) / 0.12;
+    model.setFineAlignment(1, 1);
     model.setRibbonLift(1);
     model.setPrintApproach(Math.min(1, 0.55 + k * 0.45));
   } else if (t < 0.91) {
@@ -377,12 +385,16 @@ function runCycle(now) {
     model.setKeyboardCode(0);
     model.setKeyPress(null, 0);
     const k = 1 - (t - 0.66) / 0.25;
+    const tiltHold = THREE.MathUtils.clamp((k - 0.34) / 0.66, 0, 1);
+    const rotateHold = THREE.MathUtils.clamp((k - 0.46) / 0.54, 0, 1);
+    model.setFineAlignment(tiltHold, rotateHold);
     model.setRibbonLift(Math.max(0, k));
     model.setPrintApproach(Math.max(0, k));
   } else {
     setCycleState('C7_CLUTCH_DISENGAGE_CHECK');
     model.setKeyboardCode(0);
     model.setKeyPress(null, 0);
+    model.setFineAlignment(0, 0);
     model.setRibbonLift(0);
     model.setPrintApproach(0);
   }
@@ -390,6 +402,7 @@ function runCycle(now) {
   if (t >= 1) {
     setCycleState('C0_REST');
     model.setRibbonLift(0);
+    model.setFineAlignment(0, 0);
     model.setPrintApproach(0);
     model.setKeyPress(null, 0);
     model.setCyclePhase(0);
@@ -552,6 +565,10 @@ function snapshot() {
       mappingClass: 'P5 deterministic key-to-slot presentation; not a specific IBM typeball layout'
     },
     ribbonLift: model.state.ribbonLift,
+    fineAlignment: {
+      tiltDetent: model.state.tiltDetent,
+      rotateDetent: model.state.rotateDetent
+    },
     ribbonFeedStep: model.state.ribbonFeedStep,
     printApproach: model.state.printApproach,
     platenIndex: model.state.platenIndex,

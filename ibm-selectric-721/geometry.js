@@ -394,7 +394,9 @@ export function createSelectricModel() {
     backspaceLinkage: 0,
     tensionArmAngleDeg: 0,
     carrierReturnDrivePhase: 0,
-    tabGovernorPhase: 0
+    tabGovernorPhase: 0,
+    tiltDetent: 0,
+    rotateDetent: 0
   };
 
   const shellMat = material(0xb8b4a8, 0.03, 0.76);
@@ -1482,6 +1484,67 @@ export function createSelectricModel() {
   typeElement.position.set(0, typeLocalY, typeLocalZ);
   rocker.add(typeElement);
 
+  const tiltRing = new THREE.Mesh(
+    new THREE.TorusGeometry(18.3, 1.8, 8, 36),
+    metal
+  );
+  tiltRing.rotation.x = Math.PI / 2;
+  tiltRing.position.set(0, typeLocalY - 9.2, typeLocalZ + 0.5);
+  tiltRing.name = 'tilt ring with four detent-notch cues';
+  addPickable(tiltRing, COMPONENTS.fineAlignment, pickables);
+  rocker.add(tiltRing);
+
+  for (let band = 0; band < 4; band += 1) {
+    const notch = box(4.5, 2.0, 2.5, darkMetal, 'tilt-ring detent notch cue band ' + band);
+    const a = band * Math.PI / 2;
+    notch.position.set(
+      Math.sin(a) * 18.2,
+      typeLocalY - 9.2,
+      typeLocalZ + Math.cos(a) * 18.2
+    );
+    notch.rotation.y = a;
+    addPickable(notch, COMPONENTS.fineAlignment, pickables);
+    rocker.add(notch);
+  }
+
+  const skirtNotchCue = box(4.2, 3.8, 2.0, metal, 'type-element skirt rotate-detent notch cue');
+  skirtNotchCue.position.set(0, -13.8, CANONICAL.typeElement.structuralRadiusP4Mm - 0.6);
+  addPickable(skirtNotchCue, COMPONENTS.fineAlignment, pickables);
+  typeElement.add(skirtNotchCue);
+
+  const tiltDetentPivot = new THREE.Group();
+  tiltDetentPivot.name = 'tilt detent pivot';
+  tiltDetentPivot.position.set(-23, P4.typeball.y - 11, P4.typeball.zRest + 17);
+  carrierMotion.add(tiltDetentPivot);
+  const tiltDetentArm = box(5, 30, 5, metal, 'tilt detent arm');
+  tiltDetentArm.position.set(0, 12, -5);
+  tiltDetentArm.rotation.x = deg(-14);
+  addPickable(tiltDetentArm, COMPONENTS.fineAlignment, pickables);
+  tiltDetentPivot.add(tiltDetentArm);
+  const tiltDetentTip = box(5.5, 5.5, 8, darkMetal, 'tilt detent V-tip cue');
+  tiltDetentTip.position.set(0, 27, -11);
+  addPickable(tiltDetentTip, COMPONENTS.fineAlignment, pickables);
+  tiltDetentPivot.add(tiltDetentTip);
+
+  const rotateDetentPivot = new THREE.Group();
+  rotateDetentPivot.name = 'rotate detent pivot';
+  rotateDetentPivot.position.set(23, P4.typeball.y - 14, P4.typeball.zRest + 15);
+  carrierMotion.add(rotateDetentPivot);
+  const rotateDetentArm = box(5, 28, 5, metal, 'rotate detent arm');
+  rotateDetentArm.position.set(0, 11, -5);
+  rotateDetentArm.rotation.x = deg(-12);
+  addPickable(rotateDetentArm, COMPONENTS.fineAlignment, pickables);
+  rotateDetentPivot.add(rotateDetentArm);
+  const rotateDetentTip = box(5.2, 5.2, 8, darkMetal, 'rotate detent skirt-contact cue');
+  rotateDetentTip.position.set(0, 25, -10);
+  addPickable(rotateDetentTip, COMPONENTS.fineAlignment, pickables);
+  rotateDetentPivot.add(rotateDetentTip);
+
+  const detentFollower = box(20, 5, 6, darkMetal, 'print-sleeve detent cam follower cue');
+  detentFollower.position.set(0, P4.printShaft.y + 16, P4.printShaft.z + 8);
+  addPickable(detentFollower, COMPONENTS.fineAlignment, pickables);
+  carrierMotion.add(detentFollower);
+
   const carrierTiltPulley = pulley(8.5, 5.5, metal, 'carrier gearless tilt pulley');
   carrierTiltPulley.position.set(-21, 91, -42);
   addPickable(carrierTiltPulley, COMPONENTS.selection, pickables);
@@ -1634,6 +1697,16 @@ export function createSelectricModel() {
     ribbonRatchets[1].rotation.y += presentationStep * 1.8;
     feedPlate.position.z = -45 + (state.ribbonFeedStep % 2 ? 2.5 : 0);
     feedPawl.rotation.z = deg(12 + (state.ribbonFeedStep % 2 ? 8 : 0));
+  }
+
+  function setFineAlignment(tiltValue, rotateValue = tiltValue) {
+    state.tiltDetent = THREE.MathUtils.clamp(Number(tiltValue) || 0, 0, 1);
+    state.rotateDetent = THREE.MathUtils.clamp(Number(rotateValue) || 0, 0, 1);
+
+    // P5 motion amplitudes only. Source-backed requirement is ordering/contact role, not these angles.
+    tiltDetentPivot.rotation.x = deg(24 * state.tiltDetent);
+    rotateDetentPivot.rotation.x = deg(26 * state.rotateDetent);
+    detentFollower.position.y = P4.printShaft.y + 16 - Math.max(state.tiltDetent, state.rotateDetent) * 5;
   }
 
   function setPrintApproach(value) {
@@ -1850,6 +1923,16 @@ export function createSelectricModel() {
         angleDeg: state.shiftAngleDeg,
         transitionCamDeg: 180
       },
+      fineAlignment: {
+        coarseSelectionSeparate: true,
+        tiltDetent: state.tiltDetent,
+        rotateDetent: state.rotateDetent,
+        tiltSeatsBeforeRotateInPresentation: true,
+        fullySeatedBeforeImpact: true,
+        releasedBeforeFullSelectionRestore: true,
+        exactPivotsAndTimingDegrees: 'unresolved',
+        animationPhaseClass: 'P5 preserving source-backed causal ordering'
+      },
       printRocker: {
         motion: 'revolute',
         restClearanceMm: P4.printRocker.derivedRestClearanceMm,
@@ -1870,6 +1953,7 @@ export function createSelectricModel() {
   setCarrierX(state.carrierX);
   setTypeball(0, 0, 0);
   setRibbonLift(0);
+  setFineAlignment(0, 0);
   setPrintApproach(0);
   setMotorPhase(0);
   setOperationalCam(null, 0);
@@ -1891,6 +1975,7 @@ export function createSelectricModel() {
     setTypeball,
     setRibbonLift,
     feedRibbon,
+    setFineAlignment,
     setPrintApproach,
     setIndexPawlPhase,
     setPlatenIndex,
