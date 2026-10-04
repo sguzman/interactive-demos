@@ -225,6 +225,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(copyRear.geometry.paperFeed.copyControl.detentMarkerCount).toBe(5);
   expect(copyRear.geometry.paperFeed.copyControl.activeDetentSetting).toBe(4);
   expect(copyRear.geometry.paperFeed.copyControl.detentPresentationClass).toContain('exact lever angles/marker geometry unresolved');
+  expect(copyRear.geometry.paperFeed.copyControl.eccentricCollars).toBe(2);
+  expect(copyRear.geometry.paperFeed.copyControl.eccentricCollarsRotateWithShaft).toBe(true);
+  expect(copyRear.geometry.paperFeed.copyControl.shaftRotorAngleDegP5).toBeCloseTo(48, 8);
   await page.evaluate(() => window.__selectricDebug.setCopyControl(0));
   const copyNormal = await page.evaluate(() => window.__selectricDebug.state);
   expect(copyNormal.copyControlOffsetZ).toBe(0);

@@ -1382,11 +1382,16 @@ export function createSelectricModel() {
   addPickable(paperReleaseLever, COMPONENTS.paperFeed, pickables);
   paperReleasePivot.add(paperReleaseLever);
 
-  const copyControlShaft = shaft(326, 2.8, darkMetal, 'copy-control shaft');
-  copyControlShaft.position.set(0, P4.platen.y - 31, P4.platen.z - 20);
-  addPickable(copyControlShaft, COMPONENTS.paperFeed, pickables);
-  platenAssembly.add(copyControlShaft);
+  const copyControlRotor = new THREE.Group();
+  copyControlRotor.name = 'copy-control shaft + eccentric rotor';
+  copyControlRotor.position.set(0, P4.platen.y - 31, P4.platen.z - 20);
+  platenAssembly.add(copyControlRotor);
 
+  const copyControlShaft = shaft(326, 2.8, darkMetal, 'copy-control shaft');
+  addPickable(copyControlShaft, COMPONENTS.paperFeed, pickables);
+  copyControlRotor.add(copyControlShaft);
+
+  const copyControlEccentrics = [];
   const copyControlLeverPivot = new THREE.Group();
   copyControlLeverPivot.name = 'left copy-control lever / five-position detent';
   copyControlLeverPivot.position.set(-P4.platen.length / 2 - 11, P4.platen.y - 18, P4.platen.z - 20);
@@ -1415,10 +1420,11 @@ export function createSelectricModel() {
   for (const x of [-P4.platen.length / 2 - 3, P4.platen.length / 2 + 3]) {
     const eccentric = new THREE.Mesh(new THREE.CylinderGeometry(7, 7, 5, 24), metal);
     eccentric.rotation.z = Math.PI / 2;
-    eccentric.position.set(x, P4.platen.y - 31, P4.platen.z - 20);
+    eccentric.position.set(x, 0, 0);
     eccentric.name = 'copy-control eccentric collar cue';
     addPickable(eccentric, COMPONENTS.paperFeed, pickables);
-    platenAssembly.add(eccentric);
+    copyControlRotor.add(eccentric);
+    copyControlEccentrics.push(eccentric);
   }
 
   const selectionAssembly = makeAssembly('selection transmission', new THREE.Vector3(98, -40, 42));
@@ -2334,7 +2340,7 @@ export function createSelectricModel() {
     state.copyControlOffsetZ = next === 0 ? 0 : -next * 2.2;
     paperFeedCarriage.position.z = state.copyControlOffsetZ;
     copyControlLeverPivot.rotation.x = deg(-next * 8);
-    copyControlShaft.rotation.x = deg(next * 12);
+    copyControlRotor.rotation.x = deg(next * 12);
     copyControlDetentMarkers.forEach((marker, index) => {
       const scale = index === next ? 1.35 : 1;
       marker.scale.set(scale, scale, scale);
@@ -2630,6 +2636,9 @@ export function createSelectricModel() {
           detentMarkerCount: copyControlDetentMarkers.length,
           activeDetentSetting: state.copyControlSetting,
           detentPresentationClass: 'P5 visible five-position marker arc; source-backed discrete count, exact lever angles/marker geometry unresolved',
+          shaftRotorAngleDegP5: THREE.MathUtils.radToDeg(copyControlRotor.rotation.x),
+          eccentricCollars: copyControlEccentrics.length,
+          eccentricCollarsRotateWithShaft: copyControlEccentrics.every(eccentric => eccentric.parent === copyControlRotor),
           movesPlatenAndEntirePaperFeedCarriage: true,
           movesCarrierTypehead: false
         },
