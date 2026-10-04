@@ -721,6 +721,7 @@ export function createSelectricModel() {
     keyboardPress: 0,
     operationalCamAction: 'rest',
     operationalCamPhase: 0,
+    operationalFollowerLiftP5: { spaceBackspace: 0, returnIndex: 0, shift: 0 },
     backspaceLinkage: 0,
     tensionArmAngleDeg: 0,
     carrierReturnDrivePhase: 0,
@@ -1050,6 +1051,51 @@ export function createSelectricModel() {
   shiftLobe.position.set(0, 9.5, 0);
   addPickable(shiftLobe, COMPONENTS.drive, pickables);
   shiftCam.add(shiftLobe);
+
+  function makeOperationalFollower(x, name) {
+    const follower = new THREE.Group();
+    follower.name = name;
+    follower.position.set(x, P4.operationalShaft.y + 30, P4.operationalShaft.z);
+    driveAssembly.add(follower);
+
+    const pivotPin = pulley(3.8, 7, metal, name + ' pivot');
+    addPickable(pivotPin, COMPONENTS.drive, pickables);
+    follower.add(pivotPin);
+
+    const arm = box(4.5, 28, 3.6, metal, name + ' lever');
+    arm.position.set(0, -11, 0);
+    addPickable(arm, COMPONENTS.drive, pickables);
+    follower.add(arm);
+
+    const roller = pulley(4.2, 6, darkMetal, name + ' roller');
+    roller.position.set(0, -24, 0);
+    addPickable(roller, COMPONENTS.drive, pickables);
+    follower.add(roller);
+
+    return follower;
+  }
+
+  const spaceBackspaceFollower = makeOperationalFollower(
+    -44,
+    'space/backspace operational cam follower'
+  );
+  const returnIndexFollower = makeOperationalFollower(
+    22,
+    'carrier-return/index operational cam follower'
+  );
+  const shiftFollower = makeOperationalFollower(
+    84,
+    'shift operational cam follower'
+  );
+
+  function followerLiftForCamPhaseP5(phase) {
+    const t = THREE.MathUtils.clamp(Number(phase) || 0, 0, 1);
+    return Math.sin(Math.PI * t);
+  }
+
+  function applyOperationalFollowerLift(follower, liftP5) {
+    follower.rotation.x = deg(-12 * THREE.MathUtils.clamp(liftP5, 0, 1));
+  }
 
   const motor = new THREE.Mesh(new THREE.CylinderGeometry(24, 24, 58, 36), darkMetal);
   motor.rotation.z = Math.PI / 2;
@@ -2866,13 +2912,34 @@ export function createSelectricModel() {
     doubleServiceCam.rotation.x = 0;
     returnIndexCam.rotation.x = 0;
     shiftCam.rotation.x = 0;
+    state.operationalFollowerLiftP5.spaceBackspace = 0;
+    state.operationalFollowerLiftP5.returnIndex = 0;
+    state.operationalFollowerLiftP5.shift = 0;
+
+    const followerLift = followerLiftForCamPhaseP5(state.operationalCamPhase);
     if (action === 'space' || action === 'backspace') {
       doubleServiceCam.rotation.x = state.operationalCamPhase * Math.PI;
+      state.operationalFollowerLiftP5.spaceBackspace = followerLift;
     } else if (action === 'carrier-return' || action === 'index') {
       returnIndexCam.rotation.x = state.operationalCamPhase * Math.PI * 2;
+      state.operationalFollowerLiftP5.returnIndex = followerLift;
     } else if (action === 'shift') {
       shiftCam.rotation.x = state.operationalCamPhase * Math.PI;
+      state.operationalFollowerLiftP5.shift = followerLift;
     }
+
+    applyOperationalFollowerLift(
+      spaceBackspaceFollower,
+      state.operationalFollowerLiftP5.spaceBackspace
+    );
+    applyOperationalFollowerLift(
+      returnIndexFollower,
+      state.operationalFollowerLiftP5.returnIndex
+    );
+    applyOperationalFollowerLift(
+      shiftFollower,
+      state.operationalFollowerLiftP5.shift
+    );
   }
 
   function setCyclePhase(value) {
@@ -3259,7 +3326,18 @@ export function createSelectricModel() {
         carrierReturnIndexDegreesPerOperation: 360,
         shiftDegreesPerTransition: 180,
         tabUsesPoweredCam: false,
-        shiftInterlocksCharacterCycle: true
+        shiftInterlocksCharacterCycle: true,
+        followersEmbodied: true,
+        followerLiftP5: { ...state.operationalFollowerLiftP5 },
+        selectedFollower:
+          state.operationalCamAction === 'space' || state.operationalCamAction === 'backspace'
+            ? 'space/backspace'
+            : state.operationalCamAction === 'carrier-return' || state.operationalCamAction === 'index'
+              ? 'carrier-return/index'
+              : state.operationalCamAction === 'shift'
+                ? 'shift'
+                : 'none',
+        followerTravelClass: 'P5 follower throw driven directly from the selected service-cam phase; service-cam degrees/topology are source-grounded, exact IBM cam profiles and roller-contact radii remain unresolved'
       },
       shaftTiming: {
         cycleShaftDegPerCharacter: 180,
