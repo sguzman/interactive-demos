@@ -809,8 +809,8 @@ const presets = {
   selection: { position: [0, 155, 330], target: [0, 72, -34], cover: 1 },
   ribbon: { position: [235, 165, 205], target: [0, 101, -50], cover: 1 },
   paper: { position: [0, 175, 300], target: [0, 127, -92], cover: 1 },
-  power: { position: [380, 170, 345], target: [-40, 54, 12], cover: 1 },
-  rack: { position: [330, 155, 125], target: [0, 84, -66], cover: 1 },
+  power: { position: [-120, 78, 185], target: [-116, 45, 28], cover: 1 },
+  rack: { position: [0, 108, 178], target: [0, 74, -72], cover: 1 },
   exploded: { position: [500, 330, 600], target: [0, 78, -18], cover: 0 }
 };
 

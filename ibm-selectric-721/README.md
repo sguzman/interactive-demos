@@ -35,7 +35,7 @@ The browser model currently includes:
 - fixed escapement/margin/tab rack families, runtime-adjustable left/right margin stops settable at the live carrier column on the 12-CPI pitch, live right-margin line lock, programmable tab stops with set/clear behavior, opposed carrier cords, common escapement-shaft drums, mainspring cue, spring-loaded right tension arm, sustained carrier-return clutch/pinion drive and non-propulsive tab governor;
 - dedicated 7X1 12P backspace rack/bellcrank presentation rather than reverse-escapement shorthand;
 - clutched 180° space/backspace service-cam actions, including filter-shaft-style storage of a space request made during an active character cycle and release immediately after character escapement; mainspring-style tab destination, carrier return + index, animated 180° shift-cam transition with character-cycle interlock, and animated 360° index-cam/pawl action;
-- assembled / exploded inspection plus dedicated carrier/typeball, selection, ribbon/print, paper/platen, rack/support and powerframe inspection views, with click-to-inspect provenance; runtime artifacts now capture every dedicated mechanism view, including rack/support and powerframe;
+- assembled / exploded inspection plus dedicated carrier/typeball, selection, ribbon/print, paper/platen, rack/support and powerframe inspection views, with click-to-inspect provenance; runtime artifacts now capture every dedicated mechanism view, including rack/support and powerframe; those two cameras are centered through the open machine rather than shooting through the shell side cheeks;
 - a centered P5 startup carrier pose for immediate type-element visibility; carrier return still terminates at the left writing margin.
 
 ## Provenance boundary
