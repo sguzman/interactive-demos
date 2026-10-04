@@ -832,12 +832,20 @@ document.querySelectorAll('[data-view]').forEach(button => {
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
+
+function isVisibleThroughParents(object) {
+  for (let current = object; current; current = current.parent) {
+    if (!current.visible) return false;
+  }
+  return true;
+}
+
 renderer.domElement.addEventListener('pointerdown', event => {
   const rect = renderer.domElement.getBoundingClientRect();
   pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
-  const hit = raycaster.intersectObjects(model.pickables, true)[0];
+  const hit = raycaster.intersectObjects(model.pickables, true).find(result => isVisibleThroughParents(result.object));
   const component = hit?.object?.userData?.component;
   if (!component) return;
   ui.partName.textContent = component.name;
