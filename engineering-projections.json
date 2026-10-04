@@ -1,5 +1,5 @@
 {
-  "version": 9,
+  "version": 10,
   "authority": "public-projection-registry",
   "canonicalEngineeringAuthority": "internal engineering corpus",
   "projections": [
@@ -138,7 +138,7 @@
         "gallery",
         "interactive specimen"
       ],
-      "publicUx": "product overview + assembled/exploded inspection + carrier/typeball + selection + ribbon/print + paper/platen + rack/support + powerframe views with an inspection-only shell/keyboard cutaway for the powerframe + deterministic print/shift/space/backspace/return/index with live selected-slug/platen clearance diagnostics + 4x22 structural type-element lattice aligned to the platen-facing print side + gearless tilt/rotate selection carried by explicit P4 flat tape strips over separate stationary and carrier-local guide lanes while preserving the carrier-sweep length invariant + single/double line spacing + P2 paper advance with platen wrap/feed-roll/bail-roll coupling + released-sheet manual alignment decoupled from platen/ratchet and feed-roll phase + paper-local typed-mark spacing driven from live sheet advance rather than logical line count + five-position copy-control detents and rotating eccentrics + platen-variable phase cues + P4 external-tangent motor-to-cycle positive-drive belt geometry preserving the 8:29 ratio with live P5 transport markers + ribbon mode/load/auto-reverse with live carrier-local lift-guide motion, stencil impact/no-ink coupling and compressed supply/take-up fullness transfer + live margins/line-lock + programmable tab-stop controls",
+      "publicUx": "product overview + assembled/exploded inspection + carrier/typeball + selection + ribbon/print + paper/platen + rack/support + powerframe views with an inspection-only shell/keyboard cutaway for the powerframe + deterministic print/shift/space/backspace/return/index with live selected-slug/platen clearance diagnostics + 4x22 structural type-element lattice aligned to the platen-facing print side with the 34.925 mm nominal diameter anchor, a P4 black top-cap/release-latch silhouette and chrome-like slug/skirt finish + gearless tilt/rotate selection carried by explicit P4 flat tape strips over separate stationary and carrier-local guide lanes while preserving the carrier-sweep length invariant + single/double line spacing + P2 paper advance with platen wrap/feed-roll/bail-roll coupling + released-sheet manual alignment decoupled from platen/ratchet and feed-roll phase + paper-local typed-mark spacing driven from live sheet advance rather than logical line count + five-position copy-control detents and rotating eccentrics + platen-variable phase cues + P4 external-tangent motor-to-cycle positive-drive belt geometry preserving the 8:29 ratio with live P5 transport markers + ribbon mode/load/auto-reverse with live carrier-local lift-guide motion, stencil impact/no-ink coupling and compressed supply/take-up fullness transfer + live margins/line-lock + programmable tab-stop controls",
       "geometryStatus": "integrated-public-build-active",
       "geometryTask": "ENG-SEL-022"
     }
