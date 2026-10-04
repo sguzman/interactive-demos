@@ -151,6 +151,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.evaluate(() => window.__selectricDebug.togglePaperRelease());
   const feedEngaged = await page.evaluate(() => window.__selectricDebug.state);
   expect(feedEngaged.feedRollsEngaged).toBe(true);
+  expect(feedEngaged.geometry.paperFeed.paperPath.outputSheetTextured).toBe(true);
+  expect(feedEngaged.geometry.paperFeed.paperPath.platenWrapRepresented).toBe(true);
+  expect(feedEngaged.geometry.paperFeed.paperPath.wrapSpanDegP4).toBeCloseTo(204, 8);
+  expect(feedEngaged.geometry.paperFeed.paperPath.wrapClass).toContain('exact hidden wrap/contact arc unresolved');
 
   await page.evaluate(() => window.__selectricDebug.togglePaperBail());
   const bailReleased = await page.evaluate(() => window.__selectricDebug.state);

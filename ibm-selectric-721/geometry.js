@@ -328,16 +328,67 @@ function makePaper(pickables) {
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 4;
+
+  const root = new THREE.Group();
+  root.name = 'paper sheet + platen-wrap presentation';
+
   const mat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.96, metalness: 0, side: THREE.DoubleSide });
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(260, 112), mat);
-  mesh.name = 'paper sheet';
+  const sheet = new THREE.Mesh(new THREE.PlaneGeometry(260, 112), mat);
+  sheet.name = 'paper output sheet';
   const baseY = 169;
-  mesh.position.set(0, baseY, -110);
-  mesh.userData.component = COMPONENTS.paper;
-  pickables.push(mesh);
+  const wrapRadiusMmP4 = CANONICAL.platen.radiusMm + 0.65;
+  const backTangentZP4 = P4.platen.z - wrapRadiusMmP4;
+  sheet.position.set(0, baseY, backTangentZP4);
+  sheet.userData.component = COMPONENTS.paper;
+  pickables.push(sheet);
+  root.add(sheet);
+
+  // The source material establishes the platen/paper relationship but not an exact hidden
+  // wrap angle for this branch. This P4 surface prevents the visible sheet from reading as a
+  // disconnected billboard while keeping the exact contact arc explicitly unresolved.
+  const wrapStartAngleP4 = Math.PI;
+  const wrapEndAngleP4 = deg(-24);
+  const wrapSegments = 28;
+  const halfWidth = 130;
+  const wrapVertices = [];
+  const wrapUvs = [];
+  const wrapIndices = [];
+  for (let i = 0; i <= wrapSegments; i += 1) {
+    const t = i / wrapSegments;
+    const angle = THREE.MathUtils.lerp(wrapStartAngleP4, wrapEndAngleP4, t);
+    const y = P4.platen.y + Math.sin(angle) * wrapRadiusMmP4;
+    const z = P4.platen.z + Math.cos(angle) * wrapRadiusMmP4;
+    wrapVertices.push(-halfWidth, y, z, halfWidth, y, z);
+    wrapUvs.push(0, 1 - t, 1, 1 - t);
+    if (i < wrapSegments) {
+      const a = i * 2;
+      const b = a + 2;
+      wrapIndices.push(a, a + 1, b + 1, a, b + 1, b);
+    }
+  }
+  const wrapGeometry = new THREE.BufferGeometry();
+  wrapGeometry.setAttribute('position', new THREE.Float32BufferAttribute(wrapVertices, 3));
+  wrapGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(wrapUvs, 2));
+  wrapGeometry.setIndex(wrapIndices);
+  wrapGeometry.computeVertexNormals();
+  const wrapMaterial = new THREE.MeshStandardMaterial({
+    color: 0xeee9db,
+    roughness: 0.96,
+    metalness: 0,
+    side: THREE.DoubleSide
+  });
+  const wrap = new THREE.Mesh(wrapGeometry, wrapMaterial);
+  wrap.name = 'P4 paper wrap around platen';
+  wrap.userData.component = COMPONENTS.paper;
+  wrap.castShadow = false;
+  wrap.receiveShadow = true;
+  pickables.push(wrap);
+  root.add(wrap);
 
   function setAdvance(mm) {
-    mesh.position.y = baseY + (Number(mm) || 0);
+    // The live output sheet retains the existing visible translation driven by physical
+    // paper advance; the P4 contact wrap remains registered to the platen as a topology cue.
+    sheet.position.y = baseY + (Number(mm) || 0);
   }
 
   function clear() {
@@ -364,7 +415,16 @@ function makePaper(pickables) {
 
   clear();
   setAdvance(0);
-  return { mesh, clear, stamp, setAdvance };
+  return {
+    mesh: root,
+    clear,
+    stamp,
+    setAdvance,
+    wrapRadiusMmP4,
+    wrapStartAngleDegP4: THREE.MathUtils.radToDeg(wrapStartAngleP4),
+    wrapEndAngleDegP4: THREE.MathUtils.radToDeg(wrapEndAngleP4),
+    wrapSpanDegP4: THREE.MathUtils.radToDeg(wrapStartAngleP4 - wrapEndAngleP4)
+  };
 }
 
 export function createSelectricModel() {
@@ -2372,6 +2432,15 @@ export function createSelectricModel() {
         variableOffsetPersistsWhenRecoupled: true,
         paperAdvanceMm: state.paperAdvanceMm,
         paperAdvanceClass: 'P2 platen arc length while feed rolls are engaged',
+        paperPath: {
+          outputSheetTextured: true,
+          platenWrapRepresented: true,
+          wrapRadiusMmP4: paper.wrapRadiusMmP4,
+          wrapStartAngleDegP4: paper.wrapStartAngleDegP4,
+          wrapEndAngleDegP4: paper.wrapEndAngleDegP4,
+          wrapSpanDegP4: paper.wrapSpanDegP4,
+          wrapClass: 'P4 platen-contact presentation; exact hidden wrap/contact arc unresolved'
+        },
         feedRollPhaseRad: state.feedRollPhaseRad,
         feedRollRotationClass: 'P4 roller-radius kinematic presentation driven from paper advance; exact roller radius unresolved',
         exactCenters: 'unresolved-P4'

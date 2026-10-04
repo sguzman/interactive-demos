@@ -30,7 +30,7 @@ The browser model currently includes:
 - 7X1 gearless tilt and rotate tape presentation driven by the source-backed normalized 1:2 tilt weighting, staged 1:2:2 rotate weighting and signed five-unit balance, with a carrier-sweep constant-length presentation path;
 - cycle and operational shafts, cams, motor and belt cues;
 - new-style fabric-ribbon lift with stencil / low / middle / high print states, a distinct threading/load pose, stencil feed lockout/centering, source-ordered bidirectional feed, and automatic reversal; unresolved heights/capacity remain explicitly P5 while the OEM trigger -> feed/reverse-plate pivot -> pawl/check transfer sequence is preserved;
-- paper output that records typed characters;
+- paper output that records typed characters, plus an explicit P4 paper-wrap surface registered to the platen so the visible sheet reaches the print region without claiming an exact hidden contact arc;
 - deterministic character-cycle ordering through code setup, selection, fine align, impact, escapement and clutch check;
 - fixed escapement/margin/tab rack families, runtime-adjustable left/right margin stops settable at the live carrier column on the 12-CPI pitch, live right-margin line lock, programmable tab stops with set/clear behavior, opposed carrier cords, common escapement-shaft drums, mainspring cue, spring-loaded right tension arm, sustained carrier-return clutch/pinion drive and non-propulsive tab governor;
 - dedicated 7X1 12P backspace rack/bellcrank presentation rather than reverse-escapement shorthand;
@@ -64,6 +64,7 @@ The Playwright smoke test checks:
 - programmable tab-stop set/clear plus capture at the next active stop;
 - shift hemisphere;
 - one-tooth single and two-tooth double 27T paper indexing, including the visibly embodied selector state and P2 physical sheet advance from platen radius × rotation;
+- paper-path topology: textured output sheet plus a platen-registered P4 wrap surface with its exact hidden contact arc explicitly unresolved;
 - paper-release decoupling: platen rotation leaves sheet position and feed-roll phase unchanged while both feed-roll banks are released;
 - paper-bail roller adjustment: two rollers remain independently movable laterally, with exact travel explicitly P5;
 - platen-variable manual rotation: public +/- controls leave ratchet phase fixed while free, advance paper only when feed is engaged, and preserve the new platen phase offset after re-coupling;
