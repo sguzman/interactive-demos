@@ -35,6 +35,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.paperFeed.rearRollers).toBe(4);
   expect(initial.geometry.paperFeed.bailRollers).toBe(2);
   expect(initial.geometry.paperFeed.frontRearReleaseCoupled).toBe(true);
+  expect(initial.geometry.paperFeed.releaseLatchedStateRepresented).toBe(true);
+  expect(initial.geometry.paperFeed.copyControl.positions).toBe(5);
+  expect(initial.geometry.paperFeed.copyControl.normalForwardSetting).toBe(0);
+  expect(initial.geometry.paperFeed.copyControl.movesPlatenAndEntirePaperFeedCarriage).toBe(true);
+  expect(initial.geometry.paperFeed.copyControl.movesCarrierTypehead).toBe(false);
   expect(initial.geometry.ribbon.parent).toBe('carrier');
   expect(initial.geometry.ribbon.mediaWidthMm).toBeCloseTo(14.2875, 6);
   expect(initial.geometry.ribbon.nominalRatchetTeethPerCharacter).toBeCloseTo(2.5, 8);
@@ -106,6 +111,17 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.evaluate(() => window.__selectricDebug.togglePaperRelease());
   const feedEngaged = await page.evaluate(() => window.__selectricDebug.state);
   expect(feedEngaged.feedRollsEngaged).toBe(true);
+
+  const carrierBeforeCopyControl = feedEngaged.carrierX;
+  await page.evaluate(() => window.__selectricDebug.setCopyControl(4));
+  const copyRear = await page.evaluate(() => window.__selectricDebug.state);
+  expect(copyRear.copyControlSetting).toBe(4);
+  expect(copyRear.copyControlOffsetZ).toBeLessThan(0);
+  expect(copyRear.carrierX).toBeCloseTo(carrierBeforeCopyControl, 8);
+  expect(copyRear.geometry.paperFeed.copyControl.offsetClass).toContain('P5');
+  await page.evaluate(() => window.__selectricDebug.setCopyControl(0));
+  const copyNormal = await page.evaluate(() => window.__selectricDebug.state);
+  expect(copyNormal.copyControlOffsetZ).toBe(0);
 
   const ratchetBeforeVariable = feedEngaged.platenIndex;
   await page.evaluate(() => window.__selectricDebug.togglePlatenVariable());

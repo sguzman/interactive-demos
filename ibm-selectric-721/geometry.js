@@ -399,7 +399,9 @@ export function createSelectricModel() {
     rotateDetent: 0,
     feedRollsEngaged: true,
     platenVariableEngaged: false,
-    manualPlatenAngle: 0
+    manualPlatenAngle: 0,
+    copyControlSetting: 0,
+    copyControlOffsetZ: 0
   };
 
   const shellMat = material(0xb8b4a8, 0.03, 0.76);
@@ -997,26 +999,30 @@ export function createSelectricModel() {
   assemblies.push(platenAssembly);
   root.add(platenAssembly);
 
+  const paperFeedCarriage = new THREE.Group();
+  paperFeedCarriage.name = 'copy-control moving platen / paper-feed carriage';
+  platenAssembly.add(paperFeedCarriage);
+
   const platen = shaft(P4.platen.length, CANONICAL.platen.radiusMm, rubber, 'platen');
   platen.position.set(0, P4.platen.y, P4.platen.z);
   addPickable(platen, COMPONENTS.platen, pickables);
-  platenAssembly.add(platen);
+  paperFeedCarriage.add(platen);
 
   for (const x of [-159, 159]) {
     const knob = shaft(28, 14, shellDark, x < 0 ? 'left platen knob' : 'right platen knob');
     knob.position.set(x, P4.platen.y, P4.platen.z);
     knob.userData.component = COMPONENTS.platen;
     pickables.push(knob);
-    platenAssembly.add(knob);
+    paperFeedCarriage.add(knob);
   }
 
   const paper = makePaper(pickables);
-  platenAssembly.add(paper.mesh);
+  paperFeedCarriage.add(paper.mesh);
 
   const ratchetGroup = new THREE.Group();
   ratchetGroup.name = '27-tooth platen ratchet group';
   ratchetGroup.position.set(P4.platen.length / 2 - 8, P4.platen.y, P4.platen.z);
-  platenAssembly.add(ratchetGroup);
+  paperFeedCarriage.add(ratchetGroup);
 
   const ratchetHub = shaft(6.5, CANONICAL.platen.ratchetDiameterMm / 2 - 2.1, darkMetal, 'platen ratchet hub');
   addPickable(ratchetHub, COMPONENTS.platenRatchet, pickables);
@@ -1051,15 +1057,15 @@ export function createSelectricModel() {
   const feedRollXs = [-90, -30, 30, 90];
   const frontFeedRollers = [];
   const rearFeedRollers = [];
-  const rearFeedShaft = shaft(242, 2.4, metal, 'rear paper-feed actuating shaft');
+  const rearFeedShaft = shaft(242, 2.4, metal, 'rear feed-roll shaft');
   rearFeedShaft.position.set(0, P4.platen.y - 17, P4.platen.z - 12);
   addPickable(rearFeedShaft, COMPONENTS.paperFeed, pickables);
-  platenAssembly.add(rearFeedShaft);
+  paperFeedCarriage.add(rearFeedShaft);
 
-  const frontFeedShaft = shaft(242, 2.4, metal, 'front paper-feed actuating shaft');
+  const frontFeedShaft = shaft(242, 2.4, metal, 'front feed-roll shaft');
   frontFeedShaft.position.set(0, P4.platen.y - 18, P4.platen.z + 18);
   addPickable(frontFeedShaft, COMPONENTS.paperFeed, pickables);
-  platenAssembly.add(frontFeedShaft);
+  paperFeedCarriage.add(frontFeedShaft);
 
   for (const x of feedRollXs) {
     const rearRoller = pulley(6.2, 15, rubber, 'rear molded rubber feed roller');
@@ -1067,7 +1073,7 @@ export function createSelectricModel() {
     rearRoller.userData.baseY = rearRoller.position.y;
     rearRoller.userData.baseZ = rearRoller.position.z;
     addPickable(rearRoller, COMPONENTS.paperFeed, pickables);
-    platenAssembly.add(rearRoller);
+    paperFeedCarriage.add(rearRoller);
     rearFeedRollers.push(rearRoller);
 
     const frontRoller = pulley(6.2, 15, rubber, 'front molded rubber feed roller');
@@ -1075,7 +1081,7 @@ export function createSelectricModel() {
     frontRoller.userData.baseY = frontRoller.position.y;
     frontRoller.userData.baseZ = frontRoller.position.z;
     addPickable(frontRoller, COMPONENTS.paperFeed, pickables);
-    platenAssembly.add(frontRoller);
+    paperFeedCarriage.add(frontRoller);
     frontFeedRollers.push(frontRoller);
   }
 
@@ -1083,17 +1089,17 @@ export function createSelectricModel() {
   paperDeflector.position.set(0, P4.platen.y - 23, P4.platen.z + 1);
   paperDeflector.rotation.x = deg(-5);
   addPickable(paperDeflector, COMPONENTS.paperFeed, pickables);
-  platenAssembly.add(paperDeflector);
+  paperFeedCarriage.add(paperDeflector);
 
   const bailBar = shaft(266, 2.8, metal, 'paper bail bar');
   bailBar.position.set(0, P4.platen.y + 27, P4.platen.z + 4);
   addPickable(bailBar, COMPONENTS.paperFeed, pickables);
-  platenAssembly.add(bailBar);
+  paperFeedCarriage.add(bailBar);
   for (const x of [-74, 74]) {
     const roller = pulley(5.5, 12, rubber, 'laterally adjustable paper bail roller');
     roller.position.set(x, P4.platen.y + 24, P4.platen.z + 1);
     addPickable(roller, COMPONENTS.paperFeed, pickables);
-    platenAssembly.add(roller);
+    paperFeedCarriage.add(roller);
   }
 
   const indexPawl = box(5, 20, 4, darkMetal, 'platen index pawl');
@@ -1101,17 +1107,79 @@ export function createSelectricModel() {
   indexPawl.rotation.x = deg(-22);
   indexPawl.userData.baseRotationX = indexPawl.rotation.x;
   addPickable(indexPawl, COMPONENTS.platenRatchet, pickables);
-  platenAssembly.add(indexPawl);
+  paperFeedCarriage.add(indexPawl);
 
   const detentRoller = pulley(4.5, 5, metal, 'platen detent roller');
   detentRoller.position.set(P4.platen.length / 2 - 20, P4.platen.y + 13, P4.platen.z + 8);
   addPickable(detentRoller, COMPONENTS.platenRatchet, pickables);
-  platenAssembly.add(detentRoller);
+  paperFeedCarriage.add(detentRoller);
 
   const variableRelease = box(18, 7, 9, metal, 'platen variable-release coupling');
   variableRelease.position.set(-P4.platen.length / 2 + 17, P4.platen.y, P4.platen.z);
   addPickable(variableRelease, COMPONENTS.paperFeed, pickables);
-  platenAssembly.add(variableRelease);
+  paperFeedCarriage.add(variableRelease);
+
+  const feedRollActuatingShaft = shaft(276, 2.6, darkMetal, 'feed-roll actuating shaft / common release coordinate');
+  feedRollActuatingShaft.position.set(0, P4.platen.y - 29, P4.platen.z + 8);
+  addPickable(feedRollActuatingShaft, COMPONENTS.paperFeed, pickables);
+  paperFeedCarriage.add(feedRollActuatingShaft);
+
+  const frontReleaseArms = [];
+  const rearReleaseArms = [];
+  for (const x of [-105, 105]) {
+    const frontArm = box(5, 25, 5, metal, 'front feed-roll release arm cue');
+    frontArm.position.set(x, P4.platen.y - 19, P4.platen.z + 13);
+    frontArm.userData.baseRotationX = deg(-8);
+    frontArm.rotation.x = frontArm.userData.baseRotationX;
+    addPickable(frontArm, COMPONENTS.paperFeed, pickables);
+    paperFeedCarriage.add(frontArm);
+    frontReleaseArms.push(frontArm);
+
+    const rearArm = box(5, 24, 5, metal, 'rear feed-roll arm coupled by shoulder-screw cue');
+    rearArm.position.set(x, P4.platen.y - 18, P4.platen.z - 11);
+    rearArm.userData.baseRotationX = deg(8);
+    rearArm.rotation.x = rearArm.userData.baseRotationX;
+    addPickable(rearArm, COMPONENTS.paperFeed, pickables);
+    paperFeedCarriage.add(rearArm);
+    rearReleaseArms.push(rearArm);
+
+    const coupling = box(4, 4, 25, darkMetal, 'front/rear feed-arm shoulder-screw coupling cue');
+    coupling.position.set(x, P4.platen.y - 24, P4.platen.z + 1);
+    addPickable(coupling, COMPONENTS.paperFeed, pickables);
+    paperFeedCarriage.add(coupling);
+  }
+
+  const paperReleasePivot = new THREE.Group();
+  paperReleasePivot.name = 'right-end paper-release lever';
+  paperReleasePivot.position.set(P4.platen.length / 2 + 7, P4.platen.y - 8, P4.platen.z + 15);
+  paperFeedCarriage.add(paperReleasePivot);
+  const paperReleaseLever = box(7, 33, 7, shellDark, 'paper-release lever');
+  paperReleaseLever.position.set(0, 15, 0);
+  addPickable(paperReleaseLever, COMPONENTS.paperFeed, pickables);
+  paperReleasePivot.add(paperReleaseLever);
+
+  const copyControlShaft = shaft(326, 2.8, darkMetal, 'copy-control shaft');
+  copyControlShaft.position.set(0, P4.platen.y - 31, P4.platen.z - 20);
+  addPickable(copyControlShaft, COMPONENTS.paperFeed, pickables);
+  platenAssembly.add(copyControlShaft);
+
+  const copyControlLeverPivot = new THREE.Group();
+  copyControlLeverPivot.name = 'left copy-control lever / five-position detent';
+  copyControlLeverPivot.position.set(-P4.platen.length / 2 - 11, P4.platen.y - 18, P4.platen.z - 20);
+  platenAssembly.add(copyControlLeverPivot);
+  const copyControlLever = box(7, 31, 7, shellDark, 'copy-control lever');
+  copyControlLever.position.set(0, 14, 0);
+  addPickable(copyControlLever, COMPONENTS.paperFeed, pickables);
+  copyControlLeverPivot.add(copyControlLever);
+
+  for (const x of [-P4.platen.length / 2 - 3, P4.platen.length / 2 + 3]) {
+    const eccentric = new THREE.Mesh(new THREE.CylinderGeometry(7, 7, 5, 24), metal);
+    eccentric.rotation.z = Math.PI / 2;
+    eccentric.position.set(x, P4.platen.y - 31, P4.platen.z - 20);
+    eccentric.name = 'copy-control eccentric collar cue';
+    addPickable(eccentric, COMPONENTS.paperFeed, pickables);
+    platenAssembly.add(eccentric);
+  }
 
   const selectionAssembly = makeAssembly('selection transmission', new THREE.Vector3(98, -40, 42));
   assemblies.push(selectionAssembly);
@@ -1751,6 +1819,24 @@ export function createSelectricModel() {
       roller.position.y = roller.userData.baseY - release * 4.5;
       roller.position.z = roller.userData.baseZ + release * 4.0;
     });
+    frontReleaseArms.forEach(arm => {
+      arm.rotation.x = arm.userData.baseRotationX + deg(18 * release);
+    });
+    rearReleaseArms.forEach(arm => {
+      arm.rotation.x = arm.userData.baseRotationX - deg(16 * release);
+    });
+    feedRollActuatingShaft.rotation.x = deg(24 * release);
+    paperReleasePivot.rotation.x = deg(-32 * release);
+  }
+
+  function setCopyControl(setting) {
+    const next = Math.max(0, Math.min(4, Math.round(Number(setting) || 0)));
+    state.copyControlSetting = next;
+    // Only the discrete topology and rearward direction are sourced. These display offsets are P5.
+    state.copyControlOffsetZ = -next * 2.2;
+    paperFeedCarriage.position.z = state.copyControlOffsetZ;
+    copyControlLeverPivot.rotation.x = deg(-next * 8);
+    copyControlShaft.rotation.x = deg(next * 12);
   }
 
   function setPlatenVariable(engaged) {
@@ -1910,7 +1996,17 @@ export function createSelectricModel() {
         bailRollers: 2,
         frontRearReleaseCoupled: true,
         feedRollsEngaged: state.feedRollsEngaged,
+        releaseLatchedStateRepresented: true,
         releaseTravel: 'P5 presentation; exact metric travel unresolved',
+        copyControl: {
+          positions: 5,
+          setting: state.copyControlSetting,
+          normalForwardSetting: 0,
+          offsetZ: state.copyControlOffsetZ,
+          offsetClass: 'P5 presentation; exact five offsets unresolved',
+          movesPlatenAndEntirePaperFeedCarriage: true,
+          movesCarrierTypehead: false
+        },
         platenVariableEngaged: state.platenVariableEngaged,
         platenRatchetCoupled: !state.platenVariableEngaged,
         manualPlatenAngle: state.manualPlatenAngle,
@@ -1996,6 +2092,7 @@ export function createSelectricModel() {
   setRibbonLift(0);
   setFineAlignment(0, 0);
   setPaperRelease(false);
+  setCopyControl(0);
   setPlatenVariable(false);
   setPrintApproach(0);
   setMotorPhase(0);
@@ -2020,6 +2117,7 @@ export function createSelectricModel() {
     feedRibbon,
     setFineAlignment,
     setPaperRelease,
+    setCopyControl,
     setPlatenVariable,
     rotatePlatenManually,
     setPrintApproach,

@@ -150,10 +150,10 @@ export const COMPONENTS = Object.freeze({
     description: '30.1498 mm ratchet outer diameter with 27 equal angular positions. The public tooth shape is reconstructive; one normal index advances one tooth.'
   },
   paperFeed: {
-    name: 'Paper feed / bail system',
+    name: 'Paper feed / bail / copy-control system',
     category: 'paper transport',
-    provenance: 'source-grounded topology/state coupling + P4 centers and local dimensions',
-    description: 'Four front and four rear feed rollers couple paper to the platen through a deflector path; the bail has two laterally adjustable rollers. Paper release disengages both feed-roll banks together. Exact roller diameters, centers and release travel remain unresolved.'
+    provenance: 'source-grounded topology/state coupling + P4 centers and local dimensions + P5 unsourced copy-control offsets',
+    description: 'Four front and four rear feed rollers couple paper to the platen through a deflector path; the bail has two laterally adjustable rollers. Paper release disengages both feed-roll banks together. Five-position copy control moves the platen plus entire paper-feed carriage front/rear while leaving the carrier/typehead fixed. Exact copy offsets and local dimensions remain unresolved.'
   },
   printShaft: {
     name: 'Print shaft · IBM 1164736',
