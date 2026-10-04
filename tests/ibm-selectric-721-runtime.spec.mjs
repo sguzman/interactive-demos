@@ -93,6 +93,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.profile).toContain('12 CPI');
   expect(initial.explosion).toBe(0);
   expect(initial.serviceCoverOpen).toBe(0);
+  expect(initial.geometry.inspectionCutaway.mode).toBe('none');
+  expect(initial.geometry.inspectionCutaway.shellVisible).toBe(true);
+  expect(initial.geometry.inspectionCutaway.keyboardVisible).toBe(true);
   expect(initial.cycle).toBe('C0_REST');
   expect(initial.powered).toBe(true);
   expect(initial.geometry.primaryDrive.motorPulleyTeeth).toBe(8);
@@ -562,9 +565,18 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.screenshot({ path: 'test-results/selectric-rack-view.png', fullPage: true });
   await page.locator('[data-view="power"]').click();
   await expect.poll(async () => page.evaluate(() => window.__selectricDebug.state.serviceCoverOpen)).toBe(1);
+  const powerInspection = await page.evaluate(() => window.__selectricDebug.state);
+  expect(powerInspection.geometry.inspectionCutaway.mode).toBe('powerframe');
+  expect(powerInspection.geometry.inspectionCutaway.shellVisible).toBe(false);
+  expect(powerInspection.geometry.inspectionCutaway.keyboardVisible).toBe(false);
+  expect(powerInspection.geometry.inspectionCutaway.powerframeIsolationClass).toContain('occluder removal');
   await page.screenshot({ path: 'test-results/selectric-power-view.png', fullPage: true });
   await page.locator('[data-view="product"]').click();
   await expect.poll(async () => page.evaluate(() => window.__selectricDebug.state.serviceCoverOpen)).toBe(0);
+  const productInspection = await page.evaluate(() => window.__selectricDebug.state);
+  expect(productInspection.geometry.inspectionCutaway.mode).toBe('none');
+  expect(productInspection.geometry.inspectionCutaway.shellVisible).toBe(true);
+  expect(productInspection.geometry.inspectionCutaway.keyboardVisible).toBe(true);
 
   const beforeExplosion = await page.evaluate(() => ({
     carrierX: window.__selectricDebug.state.carrierX,
