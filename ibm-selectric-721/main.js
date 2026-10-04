@@ -840,6 +840,7 @@ function snapshot() {
     ribbonReverseCount: model.state.ribbonReverseCount,
     printApproach: model.state.printApproach,
     platenIndex: model.state.platenIndex,
+    paperAdvanceMm: model.state.paperAdvanceMm,
     lineSpacingTeeth: model.state.lineSpacingTeeth,
     cyclePhase: model.state.cyclePhase,
     explosion: model.state.explosion,

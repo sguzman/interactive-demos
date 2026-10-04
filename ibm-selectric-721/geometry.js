@@ -331,9 +331,14 @@ function makePaper(pickables) {
   const mat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.96, metalness: 0, side: THREE.DoubleSide });
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(260, 112), mat);
   mesh.name = 'paper sheet';
-  mesh.position.set(0, 169, -110);
+  const baseY = 169;
+  mesh.position.set(0, baseY, -110);
   mesh.userData.component = COMPONENTS.paper;
   pickables.push(mesh);
+
+  function setAdvance(mm) {
+    mesh.position.y = baseY + (Number(mm) || 0);
+  }
 
   function clear() {
     ctx.fillStyle = '#eee9db';
@@ -358,7 +363,8 @@ function makePaper(pickables) {
   }
 
   clear();
-  return { mesh, clear, stamp };
+  setAdvance(0);
+  return { mesh, clear, stamp, setAdvance };
 }
 
 export function createSelectricModel() {
@@ -385,6 +391,7 @@ export function createSelectricModel() {
     ribbonFeedSuppressedCount: 0,
     printApproach: 0,
     platenIndex: 0,
+    paperAdvanceMm: 0,
     lineSpacingTeeth: 1,
     cyclePhase: 0,
     keyboardCode: 0,
@@ -2065,8 +2072,13 @@ export function createSelectricModel() {
 
   function rotatePlatenManually(delta) {
     if (!state.platenVariableEngaged) return false;
-    state.manualPlatenAngle += Number(delta) || 0;
+    const rotation = Number(delta) || 0;
+    state.manualPlatenAngle += rotation;
     platen.rotation.x = state.platenIndex + state.manualPlatenAngle;
+    if (state.feedRollsEngaged) {
+      state.paperAdvanceMm += rotation * CANONICAL.platen.radiusMm;
+      paper.setAdvance(state.paperAdvanceMm);
+    }
     return true;
   }
 
@@ -2082,10 +2094,16 @@ export function createSelectricModel() {
   }
 
   function setPlatenIndex(value) {
-    state.platenIndex = value;
+    const next = Number(value) || 0;
+    const delta = next - state.platenIndex;
+    state.platenIndex = next;
     state.manualPlatenAngle = 0;
-    platen.rotation.x = value;
-    ratchetGroup.rotation.x = value;
+    platen.rotation.x = next;
+    ratchetGroup.rotation.x = next;
+    if (state.feedRollsEngaged) {
+      state.paperAdvanceMm += delta * CANONICAL.platen.radiusMm;
+      paper.setAdvance(state.paperAdvanceMm);
+    }
   }
 
   function setMotorPhase(value) {
@@ -2133,6 +2151,8 @@ export function createSelectricModel() {
   }
 
   function clearPaper() {
+    state.paperAdvanceMm = 0;
+    paper.setAdvance(0);
     paper.clear();
   }
 
@@ -2226,6 +2246,8 @@ export function createSelectricModel() {
         outerDiameterMm: CANONICAL.platen.ratchetDiameterMm,
         teeth: CANONICAL.platen.representativeRatchetTeeth,
         toothProfile: 'P4',
+        paperAdvancePerRatchetToothMm: Math.PI * 2 * CANONICAL.platen.radiusMm / CANONICAL.platen.representativeRatchetTeeth,
+        paperAdvanceDerivation: 'P2 arc length from source-backed platen radius divided by representative 27T ratchet',
         lineSpacingModes: ['single', 'double'],
         singleIndexTeeth: 1,
         doubleIndexTeeth: 2,
@@ -2255,6 +2277,8 @@ export function createSelectricModel() {
         platenVariableEngaged: state.platenVariableEngaged,
         platenRatchetCoupled: !state.platenVariableEngaged,
         manualPlatenAngle: state.manualPlatenAngle,
+        paperAdvanceMm: state.paperAdvanceMm,
+        paperAdvanceClass: 'P2 platen arc length while feed rolls are engaged',
         exactCenters: 'unresolved-P4'
       },
       ribbon: {

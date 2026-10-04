@@ -35,6 +35,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.platenRatchet.singleIndexTeeth).toBe(1);
   expect(initial.geometry.platenRatchet.doubleIndexTeeth).toBe(2);
   expect(initial.geometry.platenRatchet.activeIndexTeeth).toBe(1);
+  expect(initial.geometry.platenRatchet.paperAdvancePerRatchetToothMm).toBeCloseTo(2 * Math.PI * 18.1864 / 27, 8);
+  expect(initial.geometry.platenRatchet.paperAdvanceDerivation).toContain('P2 arc length');
+  expect(initial.paperAdvanceMm).toBe(0);
   expect(initial.lineSpacingTeeth).toBe(1);
   expect(initial.geometry.paperFeed.frontRollers).toBe(4);
   expect(initial.geometry.paperFeed.rearRollers).toBe(4);
@@ -162,11 +165,14 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const variableFree = await page.evaluate(() => window.__selectricDebug.state);
   expect(variableFree.platenVariableEngaged).toBe(true);
   expect(variableFree.geometry.paperFeed.platenRatchetCoupled).toBe(false);
+  const paperBeforeManual = variableFree.paperAdvanceMm;
   const manualMoved = await page.evaluate(() => window.__selectricDebug.rotatePlatenManually(Math.PI / 9));
   expect(manualMoved).toBe(true);
   const afterManualPlaten = await page.evaluate(() => window.__selectricDebug.state);
   expect(afterManualPlaten.platenIndex).toBe(ratchetBeforeVariable);
   expect(afterManualPlaten.geometry.paperFeed.manualPlatenAngle).toBeCloseTo(Math.PI / 9, 8);
+  expect(afterManualPlaten.paperAdvanceMm - paperBeforeManual).toBeCloseTo(18.1864 * Math.PI / 9, 8);
+  expect(afterManualPlaten.geometry.paperFeed.paperAdvanceMm).toBeCloseTo(afterManualPlaten.paperAdvanceMm, 8);
   await page.evaluate(() => window.__selectricDebug.togglePlatenVariable());
 
   const loadSelected = await page.evaluate(() => window.__selectricDebug.setRibbonLoadState(true));
@@ -381,10 +387,12 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(shifted.selection.shiftAngleDeg).toBeCloseTo(shifted.selection.shiftHemisphere * 180, 6);
   expect(shifted.events.some(event => event.name === 'SHIFT_OPERATION_COMPLETE')).toBe(true);
 
+  const paperBeforeSingleIndex = (await page.evaluate(() => window.__selectricDebug.state)).paperAdvanceMm;
   await page.evaluate(() => window.__selectricDebug.index());
   await page.waitForFunction(() => window.__selectricDebug.state.serviceOperation === null, null, { timeout: 5000 });
   const indexed = await page.evaluate(() => window.__selectricDebug.state);
   expect(indexed.line).toBe(1);
+  expect(indexed.paperAdvanceMm - paperBeforeSingleIndex).toBeCloseTo(indexed.geometry.platenRatchet.paperAdvancePerRatchetToothMm, 8);
   expect(indexed.platenIndex).toBeCloseTo(Math.PI * 2 / 27, 6);
   expect(indexed.events.some(event => event.name === 'INDEX_OPERATION_COMPLETE')).toBe(true);
   expect(indexed.events.some(event => event.name === 'INDEX_RATCHET_ADVANCE' && event.teeth === 1)).toBe(true);
@@ -398,6 +406,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(doubleIndexed.lineSpacingTeeth).toBe(2);
   expect(doubleIndexed.line - beforeDoubleIndex.line).toBe(2);
   expect(doubleIndexed.platenIndex - beforeDoubleIndex.platenIndex).toBeCloseTo(Math.PI * 4 / 27, 6);
+  expect(doubleIndexed.paperAdvanceMm - beforeDoubleIndex.paperAdvanceMm).toBeCloseTo(
+    2 * doubleIndexed.geometry.platenRatchet.paperAdvancePerRatchetToothMm,
+    8
+  );
   expect(doubleIndexed.geometry.platenRatchet.activeIndexTeeth).toBe(2);
   expect(doubleIndexed.events.some(event => event.name === 'INDEX_RATCHET_ADVANCE' && event.teeth === 2)).toBe(true);
   await page.evaluate(() => window.__selectricDebug.setLineSpacing(1));
