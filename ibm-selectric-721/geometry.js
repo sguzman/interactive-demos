@@ -157,24 +157,24 @@ function makeKeyboard(keysMat, darkMat, pickables) {
   addPickable(frontApron, COMPONENTS.shell, pickables);
   group.add(frontApron);
 
-  function addLabeledKey(label, x, y, z, width = 18, depth = 17, name = null) {
-    const key = box(width, 8, depth, keysMat, name || ('key-' + label));
+  function addLabeledKey(keyText, x, y, z, width = 18, depth = 17, name = null) {
+    const key = box(width, 8, depth, keysMat, name || ('key-' + keyText));
     key.position.set(x, y, z);
     key.rotation.x = deg(-8);
     key.userData.component = COMPONENTS.keyboard;
     pickables.push(key);
 
     const labelMaterial = new THREE.MeshBasicMaterial({
-      map: keyLabelTexture(label),
+      map: keyLabelTexture(keyText),
       transparent: true,
       depthWrite: false,
       side: THREE.DoubleSide
     });
-    const label = new THREE.Mesh(new THREE.PlaneGeometry(Math.max(12, width - 4), 7.4), labelMaterial);
-    label.rotation.x = -Math.PI / 2;
-    label.position.y = 4.15;
-    label.name = 'key label ' + label;
-    key.add(label);
+    const labelPlane = new THREE.Mesh(new THREE.PlaneGeometry(Math.max(12, width - 4), 7.4), labelMaterial);
+    labelPlane.rotation.x = -Math.PI / 2;
+    labelPlane.position.y = 4.15;
+    labelPlane.name = 'key label ' + keyText;
+    key.add(labelPlane);
     group.add(key);
     return key;
   }

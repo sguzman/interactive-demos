@@ -14,7 +14,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await expect(galleryLink).toHaveCount(1);
 
   await page.goto('http://127.0.0.1:4173/ibm-selectric-721/', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => Boolean(window.__selectricDebug?.state?.running));
+  await page.waitForTimeout(500);
+  if (errors.length) throw new Error('Selectric initialization error: ' + errors.join(' | '));
+  await page.waitForFunction(() => Boolean(window.__selectricDebug?.state?.running), null, { timeout: 15_000 });
   await expect(page.locator('#loading')).toBeHidden();
 
   const initial = await page.evaluate(() => window.__selectricDebug.state);
