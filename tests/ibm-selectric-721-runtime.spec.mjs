@@ -34,6 +34,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.paperFeed.frontRollers).toBe(4);
   expect(initial.geometry.paperFeed.rearRollers).toBe(4);
   expect(initial.geometry.paperFeed.bailRollers).toBe(2);
+  expect(initial.geometry.paperFeed.bailStableStates).toEqual(['against-platen', 'released']);
+  expect(initial.geometry.paperFeed.bailToggle).toContain('two-stable-state');
   expect(initial.geometry.paperFeed.frontRearReleaseCoupled).toBe(true);
   expect(initial.geometry.paperFeed.releaseLatchedStateRepresented).toBe(true);
   expect(initial.geometry.paperFeed.copyControl.positions).toBe(5);
@@ -111,6 +113,14 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.evaluate(() => window.__selectricDebug.togglePaperRelease());
   const feedEngaged = await page.evaluate(() => window.__selectricDebug.state);
   expect(feedEngaged.feedRollsEngaged).toBe(true);
+
+  await page.evaluate(() => window.__selectricDebug.togglePaperBail());
+  const bailReleased = await page.evaluate(() => window.__selectricDebug.state);
+  expect(bailReleased.paperBailEngaged).toBe(false);
+  expect(bailReleased.geometry.paperFeed.bailEngaged).toBe(false);
+  await page.evaluate(() => window.__selectricDebug.togglePaperBail());
+  const bailEngaged = await page.evaluate(() => window.__selectricDebug.state);
+  expect(bailEngaged.paperBailEngaged).toBe(true);
 
   const carrierBeforeCopyControl = feedEngaged.carrierX;
   await page.evaluate(() => window.__selectricDebug.setCopyControl(4));

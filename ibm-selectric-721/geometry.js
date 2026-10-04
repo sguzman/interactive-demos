@@ -401,7 +401,8 @@ export function createSelectricModel() {
     platenVariableEngaged: false,
     manualPlatenAngle: 0,
     copyControlSetting: 0,
-    copyControlOffsetZ: 0
+    copyControlOffsetZ: 0,
+    paperBailEngaged: true
   };
 
   const shellMat = material(0xb8b4a8, 0.03, 0.76);
@@ -1091,15 +1092,38 @@ export function createSelectricModel() {
   addPickable(paperDeflector, COMPONENTS.paperFeed, pickables);
   paperFeedCarriage.add(paperDeflector);
 
-  const bailBar = shaft(266, 2.8, metal, 'paper bail bar');
-  bailBar.position.set(0, P4.platen.y + 27, P4.platen.z + 4);
+  const paperBailPivot = new THREE.Group();
+  paperBailPivot.name = 'two-stable-state paper bail';
+  paperBailPivot.position.set(0, P4.platen.y + 27, P4.platen.z + 4);
+  paperFeedCarriage.add(paperBailPivot);
+
+  const bailBar = shaft(266, 2.8, metal, 'paper bail shaft');
   addPickable(bailBar, COMPONENTS.paperFeed, pickables);
-  paperFeedCarriage.add(bailBar);
+  paperBailPivot.add(bailBar);
+
   for (const x of [-74, 74]) {
     const roller = pulley(5.5, 12, rubber, 'laterally adjustable paper bail roller');
-    roller.position.set(x, P4.platen.y + 24, P4.platen.z + 1);
+    roller.position.set(x, -3, -3);
     addPickable(roller, COMPONENTS.paperFeed, pickables);
-    paperFeedCarriage.add(roller);
+    paperBailPivot.add(roller);
+  }
+
+  for (const sign of [-1, 1]) {
+    const endLever = box(5, 23, 5, metal, sign < 0 ? 'left paper-bail end lever' : 'right paper-bail end lever');
+    endLever.position.set(sign * 128, -8, 2);
+    endLever.rotation.x = deg(-16);
+    addPickable(endLever, COMPONENTS.paperFeed, pickables);
+    paperBailPivot.add(endLever);
+
+    const toggleSpring = new THREE.Mesh(
+      new THREE.TorusGeometry(5, 0.7, 6, 18, Math.PI * 1.25),
+      metal
+    );
+    toggleSpring.rotation.y = Math.PI / 2;
+    toggleSpring.position.set(sign * 128, -18, 7);
+    toggleSpring.name = sign < 0 ? 'left paper-bail hairpin toggle spring cue' : 'right paper-bail hairpin toggle spring cue';
+    addPickable(toggleSpring, COMPONENTS.paperFeed, pickables);
+    paperBailPivot.add(toggleSpring);
   }
 
   const indexPawl = box(5, 20, 4, darkMetal, 'platen index pawl');
@@ -1829,6 +1853,11 @@ export function createSelectricModel() {
     paperReleasePivot.rotation.x = deg(-32 * release);
   }
 
+  function setPaperBail(engaged) {
+    state.paperBailEngaged = Boolean(engaged);
+    paperBailPivot.rotation.x = state.paperBailEngaged ? 0 : deg(31);
+  }
+
   function setCopyControl(setting) {
     const next = Math.max(0, Math.min(4, Math.round(Number(setting) || 0)));
     state.copyControlSetting = next;
@@ -1994,6 +2023,9 @@ export function createSelectricModel() {
         frontRollers: 4,
         rearRollers: 4,
         bailRollers: 2,
+        bailStableStates: ['against-platen', 'released'],
+        bailEngaged: state.paperBailEngaged,
+        bailToggle: 'hairpin-spring two-stable-state',
         frontRearReleaseCoupled: true,
         feedRollsEngaged: state.feedRollsEngaged,
         releaseLatchedStateRepresented: true,
@@ -2092,6 +2124,7 @@ export function createSelectricModel() {
   setRibbonLift(0);
   setFineAlignment(0, 0);
   setPaperRelease(false);
+  setPaperBail(true);
   setCopyControl(0);
   setPlatenVariable(false);
   setPrintApproach(0);
@@ -2117,6 +2150,7 @@ export function createSelectricModel() {
     feedRibbon,
     setFineAlignment,
     setPaperRelease,
+    setPaperBail,
     setCopyControl,
     setPlatenVariable,
     rotatePlatenManually,

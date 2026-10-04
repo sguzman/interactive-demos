@@ -64,6 +64,7 @@ const ui = {
   returnBtn: document.querySelector('#returnBtn'),
   indexBtn: document.querySelector('#indexBtn'),
   paperReleaseBtn: document.querySelector('#paperReleaseBtn'),
+  paperBailBtn: document.querySelector('#paperBailBtn'),
   copyControlBtn: document.querySelector('#copyControlBtn'),
   platenVariableBtn: document.querySelector('#platenVariableBtn'),
   resetBtn: document.querySelector('#resetBtn'),
@@ -76,6 +77,7 @@ const ui = {
   shiftState: document.querySelector('#shiftState'),
   ribbonState: document.querySelector('#ribbonState'),
   feedState: document.querySelector('#feedState'),
+  paperBailState: document.querySelector('#paperBailState'),
   copyControlState: document.querySelector('#copyControlState'),
   platenVariableState: document.querySelector('#platenVariableState'),
   lineState: document.querySelector('#lineState'),
@@ -164,6 +166,7 @@ function syncUi() {
   ui.shiftState.textContent = model.state.shiftHemisphere ? 'UPPER HEMISPHERE' : 'LOWER HEMISPHERE';
   ui.ribbonState.textContent = Math.round(model.state.ribbonLift * 100) + '%';
   ui.feedState.textContent = model.state.feedRollsEngaged ? 'ENGAGED' : 'RELEASED';
+  ui.paperBailState.textContent = model.state.paperBailEngaged ? 'AGAINST PLATEN' : 'RELEASED';
   ui.copyControlState.textContent = String(model.state.copyControlSetting + 1) + ' / 5';
   ui.platenVariableState.textContent = model.state.platenVariableEngaged ? 'FREE' : 'COUPLED';
   ui.lineState.textContent = String(runtime.line);
@@ -173,6 +176,7 @@ function syncUi() {
   ui.shiftBtn.textContent = model.state.shiftHemisphere ? 'Shift: upper' : 'Shift: lower';
   ui.coverBtn.textContent = model.state.serviceCoverOpen > 0.5 ? 'Close service cover' : 'Open service cover';
   ui.paperReleaseBtn.textContent = model.state.feedRollsEngaged ? 'Release paper feed' : 'Engage paper feed';
+  ui.paperBailBtn.textContent = model.state.paperBailEngaged ? 'Release paper bail' : 'Engage paper bail';
   ui.copyControlBtn.textContent = 'Copy control ' + (model.state.copyControlSetting + 1) + '/5';
   ui.platenVariableBtn.textContent = model.state.platenVariableEngaged ? 'Lock platen variable' : 'Free platen variable';
 }
@@ -199,6 +203,7 @@ function resetMechanicalState() {
   model.setRibbonLift(0);
   model.setFineAlignment(0, 0);
   model.setPaperRelease(false);
+  model.setPaperBail(true);
   model.setCopyControl(0);
   model.setPlatenVariable(false);
   model.setPrintApproach(0);
@@ -514,6 +519,13 @@ ui.paperReleaseBtn.addEventListener('click', () => {
   recordEvent(model.state.feedRollsEngaged ? 'PAPER_FEED_ENGAGED' : 'PAPER_FEED_RELEASED');
   syncUi();
 });
+ui.paperBailBtn.addEventListener('click', () => {
+  if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
+  model.setPaperBail(!model.state.paperBailEngaged);
+  runtime.lastAction = model.state.paperBailEngaged ? 'paper-bail-engaged' : 'paper-bail-released';
+  recordEvent(model.state.paperBailEngaged ? 'PAPER_BAIL_ENGAGED' : 'PAPER_BAIL_RELEASED');
+  syncUi();
+});
 ui.copyControlBtn.addEventListener('click', () => {
   if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
   model.setCopyControl((model.state.copyControlSetting + 1) % 5);
@@ -657,6 +669,7 @@ function snapshot() {
     explosion: model.state.explosion,
     serviceCoverOpen: model.state.serviceCoverOpen,
     feedRollsEngaged: model.state.feedRollsEngaged,
+    paperBailEngaged: model.state.paperBailEngaged,
     copyControlSetting: model.state.copyControlSetting,
     copyControlOffsetZ: model.state.copyControlOffsetZ,
     platenVariableEngaged: model.state.platenVariableEngaged,
@@ -697,6 +710,7 @@ window.__selectricDebug = {
   carriageReturn: () => ui.returnBtn.click(),
   index: () => ui.indexBtn.click(),
   togglePaperRelease: () => ui.paperReleaseBtn.click(),
+  togglePaperBail: () => ui.paperBailBtn.click(),
   cycleCopyControl: () => ui.copyControlBtn.click(),
   setCopyControl: setting => {
     model.setCopyControl(setting);
