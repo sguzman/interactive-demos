@@ -101,6 +101,12 @@ export const COMPONENTS = Object.freeze({
     provenance: 'P4 repeated key geometry',
     description: 'Repeated key field representing the Selectric keyboard as a product-level input surface.'
   },
+  keyboardMechanism: {
+    name: 'Keyboard code mechanism',
+    category: 'mechanical information processing',
+    provenance: 'source-grounded six-channel topology + P4 repeated geometry',
+    description: 'Character interposers feed six standard selector-bail channels before latch-bail sampling. The public key-to-code assignment is P5 until one exact keyboard/typeball layout is frozen.'
+  },
   platen: {
     name: 'Platen',
     category: 'paper / print',

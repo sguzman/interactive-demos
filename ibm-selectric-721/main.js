@@ -70,6 +70,7 @@ const ui = {
   ribbonState: document.querySelector('#ribbonState'),
   lineState: document.querySelector('#lineState'),
   characterState: document.querySelector('#characterState'),
+  codeState: document.querySelector('#codeState'),
   partName: document.querySelector('#partName'),
   partCategory: document.querySelector('#partCategory'),
   partProvenance: document.querySelector('#partProvenance'),
@@ -115,7 +116,8 @@ function selectionForCharacter(character) {
   const around = slot % CANONICAL.typeElement.positionsPerBand;
   const shift = around >= 11 ? 1 : 0;
   const rotate = (around % 11) - 5;
-  return { tilt, rotate, shift, slot };
+  const code6 = slot & 0x3f;
+  return { tilt, rotate, shift, slot, code6 };
 }
 
 function syncUi() {
@@ -126,6 +128,7 @@ function syncUi() {
   ui.ribbonState.textContent = Math.round(model.state.ribbonLift * 100) + '%';
   ui.lineState.textContent = String(runtime.line);
   ui.characterState.textContent = runtime.pendingCharacter === ' ' ? 'SPACE' : runtime.pendingCharacter;
+  ui.codeState.textContent = model.state.keyboardCode.toString(2).padStart(6, '0');
   ui.explodeValue.textContent = Math.round(model.state.explosion * 100) + '%';
   ui.shiftBtn.textContent = model.state.shiftHemisphere ? 'Shift: upper' : 'Shift: lower';
 }
@@ -141,6 +144,7 @@ function resetMechanicalState() {
   runtime.lastRecordedCycle = 'C0_REST';
   runtime.pendingCharacter = 'a';
   runtime.selectionTarget = selectionForCharacter('a');
+  model.setKeyboardCode(0);
   model.setCarrierX(-CANONICAL.writingLineMm / 2);
   model.setTypeball(0, 0, 0);
   model.setRibbonLift(0);
@@ -175,11 +179,13 @@ function runCycle(now) {
 
   if (t < 0.12) {
     setCycleState('C1_TRIP');
+    model.setKeyboardCode(0);
     model.setTypeball(0, 0, runtime.selectionTarget.shift);
     model.setRibbonLift(0);
     model.setPrintApproach(0);
   } else if (t < 0.28) {
     setCycleState('C2_CODE_SETUP');
+    model.setKeyboardCode(runtime.selectionTarget.code6);
     const k = (t - 0.12) / 0.16;
     model.setTypeball(runtime.selectionTarget.tilt * k, runtime.selectionTarget.rotate * k, runtime.selectionTarget.shift);
   } else if (t < 0.43) {
@@ -203,6 +209,7 @@ function runCycle(now) {
     }
   } else if (t < 0.91) {
     setCycleState('C6_ESCAPEMENT_RIBBON_RESTORE');
+    model.setKeyboardCode(0);
     const k = 1 - (t - 0.66) / 0.25;
     model.setRibbonLift(Math.max(0, k));
     model.setPrintApproach(Math.max(0, k));
@@ -213,6 +220,7 @@ function runCycle(now) {
     }
   } else {
     setCycleState('C7_CLUTCH_DISENGAGE_CHECK');
+    model.setKeyboardCode(0);
     model.setRibbonLift(0);
     model.setPrintApproach(0);
   }
@@ -335,6 +343,7 @@ function snapshot() {
     line: runtime.line,
     lastAction: runtime.lastAction,
     pendingCharacter: runtime.pendingCharacter,
+    keyboardCode: model.state.keyboardCode,
     carrierX: model.state.carrierX,
     selection: {
       tiltBand: model.state.tiltBand,

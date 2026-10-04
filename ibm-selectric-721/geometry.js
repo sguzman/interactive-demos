@@ -252,7 +252,8 @@ export function createSelectricModel() {
     ribbonLift: 0,
     printApproach: 0,
     platenIndex: 0,
-    cyclePhase: 0
+    cyclePhase: 0,
+    keyboardCode: 0
   };
 
   const shellMat = material(0xb8b4a8, 0.03, 0.76);
@@ -303,6 +304,64 @@ export function createSelectricModel() {
   assemblies.push(keyboardAssembly);
   keyboardAssembly.add(makeKeyboard(keyMat, shellDark, pickables));
   root.add(keyboardAssembly);
+
+  const selectorBailMaterials = [];
+  const keyboardMechanismAssembly = makeAssembly('keyboard code mechanism', new THREE.Vector3(0, -24, 36));
+  assemblies.push(keyboardMechanismAssembly);
+  root.add(keyboardMechanismAssembly);
+
+  const keyleverGeometry = new THREE.BoxGeometry(3.0, 2.4, 82);
+  const keylevers = new THREE.InstancedMesh(keyleverGeometry, darkMetal, 51);
+  keylevers.name = 'repeated keylevers';
+  const leverMatrix = new THREE.Matrix4();
+  const leverQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(deg(-8), 0, 0));
+  const leverScale = new THREE.Vector3(1, 1, 1);
+  for (let i = 0; i < 51; i += 1) {
+    const row = Math.floor(i / 11);
+    const col = i % 11;
+    const x = (col - 5) * 24 + (row % 2 ? 7 : 0);
+    const p = new THREE.Vector3(x, 31 - row * 1.2, 54 - row * 16);
+    leverMatrix.compose(p, leverQuat, leverScale);
+    keylevers.setMatrixAt(i, leverMatrix);
+  }
+  keylevers.castShadow = true;
+  keylevers.userData.component = COMPONENTS.keyboardMechanism;
+  pickables.push(keylevers);
+  keyboardMechanismAssembly.add(keylevers);
+
+  const interposerGeometry = new THREE.BoxGeometry(3.2, 2.2, 54);
+  const interposers = new THREE.InstancedMesh(interposerGeometry, metal, 51);
+  interposers.name = 'character interposers';
+  for (let i = 0; i < 51; i += 1) {
+    const row = Math.floor(i / 11);
+    const col = i % 11;
+    const x = (col - 5) * 24 + (row % 2 ? 7 : 0);
+    leverMatrix.compose(new THREE.Vector3(x, 27 - row * 0.8, 6 - row * 10), new THREE.Quaternion(), leverScale);
+    interposers.setMatrixAt(i, leverMatrix);
+  }
+  interposers.castShadow = true;
+  interposers.userData.component = COMPONENTS.keyboardMechanism;
+  pickables.push(interposers);
+  keyboardMechanismAssembly.add(interposers);
+
+  for (let channel = 0; channel < 6; channel += 1) {
+    const bailMat = material(0x7d8486, 0.58, 0.35);
+    selectorBailMaterials.push(bailMat);
+    const bail = box(286, 2.5, 4.2, bailMat, 'selector bail C' + (channel + 1));
+    bail.position.set(0, 28 + channel * 4.0, -6 - channel * 5.0);
+    addPickable(bail, COMPONENTS.keyboardMechanism, pickables);
+    keyboardMechanismAssembly.add(bail);
+  }
+
+  const filterShaft = shaft(294, 3.4, darkMetal, 'filter shaft');
+  filterShaft.position.set(0, 32, 18);
+  addPickable(filterShaft, COMPONENTS.keyboardMechanism, pickables);
+  keyboardMechanismAssembly.add(filterShaft);
+
+  const latchBail = box(286, 4.5, 9, metal, 'selector latch bail');
+  latchBail.position.set(0, 45, -42);
+  addPickable(latchBail, COMPONENTS.keyboardMechanism, pickables);
+  keyboardMechanismAssembly.add(latchBail);
 
   const frameAssembly = makeAssembly('primary frame', new THREE.Vector3(0, 6, -36));
   assemblies.push(frameAssembly);
@@ -557,6 +616,15 @@ export function createSelectricModel() {
     ]);
   }
 
+  function setKeyboardCode(code) {
+    state.keyboardCode = Math.max(0, Math.min(63, Math.trunc(code) || 0));
+    selectorBailMaterials.forEach((mat, index) => {
+      const active = Boolean(state.keyboardCode & (1 << index));
+      mat.emissive.setHex(active ? 0x7a4a12 : 0x000000);
+      mat.emissiveIntensity = active ? 1.4 : 1;
+    });
+  }
+
   function setCarrierX(x) {
     state.carrierX = THREE.MathUtils.clamp(x, -CANONICAL.writingLineMm / 2, CANONICAL.writingLineMm / 2);
     carrierMotion.position.x = state.carrierX;
@@ -621,11 +689,14 @@ export function createSelectricModel() {
       explosion: state.explosion,
       pickableCount: pickables.length,
       supportTopology: 'D6 front + Level-2 upper/lower rack shoes',
+      keyboardCodeChannels: 6,
+      keyboardCode: state.keyboardCode,
       sleeveCamOrder: ['ribbon-lift', '1164240-feed-detent', '1124174-print-restoring'],
       provenance: CANONICAL.provenance
     };
   }
 
+  setKeyboardCode(0);
   setCarrierX(state.carrierX);
   setTypeball(0, 0, 0);
   setRibbonLift(0);
@@ -637,6 +708,7 @@ export function createSelectricModel() {
     root,
     pickables,
     state,
+    setKeyboardCode,
     setCarrierX,
     setTypeball,
     setRibbonLift,
