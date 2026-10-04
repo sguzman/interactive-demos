@@ -214,7 +214,13 @@ function beginCarrierOperation(type, destination, durationMs, includesIndex = fa
     singleIndex();
     recordEvent('RETURN_INDEX_STARTED');
   }
-  recordEvent(type === 'tab' ? 'TAB_RELEASE' : 'CARRIER_RETURN_CLUTCH_ENGAGED', { destination: runtime.operation.to });
+  const startEvent = {
+    tab: 'TAB_RELEASE',
+    'carrier-return': 'CARRIER_RETURN_CLUTCH_ENGAGED',
+    space: 'SPACE_OPERATION_STARTED',
+    backspace: 'BACKSPACE_OPERATION_STARTED'
+  }[type];
+  if (startEvent) recordEvent(startEvent, { destination: runtime.operation.to });
   syncUi();
   return true;
 }
@@ -224,10 +230,25 @@ function runCarrierOperation(now) {
   if (!op) return;
   const t = THREE.MathUtils.clamp((now - op.startedAt) / op.durationMs, 0, 1);
   const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+  if (op.type === 'space' || op.type === 'backspace') {
+    model.setOperationalCam(op.type, t);
+  } else if (op.type === 'carrier-return') {
+    model.setOperationalCam('carrier-return', Math.min(1, t * 4));
+  } else {
+    model.setOperationalCam(null, 0);
+  }
+
   model.setCarrierX(THREE.MathUtils.lerp(op.from, op.to, eased));
   if (t >= 1) {
-    if (op.type === 'tab') recordEvent('TAB_CAPTURE', { destination: op.to });
-    else recordEvent('CARRIER_RETURN_TERMINATED_AT_LEFT_MARGIN');
+    const endEvent = {
+      tab: 'TAB_CAPTURE',
+      'carrier-return': 'CARRIER_RETURN_TERMINATED_AT_LEFT_MARGIN',
+      space: 'SPACE_OPERATION_COMPLETE',
+      backspace: 'BACKSPACE_OPERATION_COMPLETE'
+    }[op.type];
+    if (endEvent) recordEvent(endEvent, { destination: op.to });
+    model.setOperationalCam(null, 0);
     runtime.operation = null;
   }
   syncUi();
@@ -336,10 +357,8 @@ ui.shiftBtn.addEventListener('click', () => {
   syncUi();
 });
 ui.spaceBtn.addEventListener('click', () => {
-  if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation) return;
-  runtime.lastAction = 'space';
   runtime.pendingCharacter = ' ';
-  advanceCarrier(CANONICAL.pitchMm);
+  beginCarrierOperation('space', model.state.carrierX + CANONICAL.pitchMm, 220, false);
 });
 ui.tabBtn.addEventListener('click', () => {
   const destination = nextDefaultTabStop();
@@ -347,9 +366,7 @@ ui.tabBtn.addEventListener('click', () => {
   beginCarrierOperation('tab', destination, 280 + distance * 3.2, false);
 });
 ui.backspaceBtn.addEventListener('click', () => {
-  if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation) return;
-  runtime.lastAction = 'backspace';
-  advanceCarrier(-CANONICAL.pitchMm);
+  beginCarrierOperation('backspace', model.state.carrierX - CANONICAL.pitchMm, 220, false);
 });
 ui.returnBtn.addEventListener('click', () => {
   const destination = -CANONICAL.writingLineMm / 2;

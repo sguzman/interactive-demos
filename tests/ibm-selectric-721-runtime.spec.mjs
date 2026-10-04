@@ -57,6 +57,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.cycle).toBe('C0_REST');
   expect(initial.powered).toBe(true);
   expect(initial.geometry.powerPresentation.operationalShaftContinuousWhenPowered).toBe(true);
+  expect(initial.geometry.powerPresentation.serviceCamsStationaryUntilSelected).toBe(true);
+  expect(initial.geometry.operationalCams.spaceBackspaceDegreesPerOperation).toBe(180);
+  expect(initial.geometry.operationalCams.carrierReturnIndexDegreesPerOperation).toBe(360);
+  expect(initial.geometry.operationalCams.tabUsesPoweredCam).toBe(false);
 
   const carrierBeforePowerOff = initial.carrierX;
   await page.evaluate(() => window.__selectricDebug.setPower(false));
@@ -144,12 +148,17 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
 
   const beforeSpace = assembled.carrierX;
   await page.evaluate(() => window.__selectricDebug.space());
+  await page.waitForFunction(() => window.__selectricDebug.state.operation === null, null, { timeout: 5000 });
   const spaced = await page.evaluate(() => window.__selectricDebug.state);
   expect(spaced.carrierX - beforeSpace).toBeCloseTo(spaced.geometry.pitchMm, 5);
+  expect(spaced.events.some(event => event.name === 'SPACE_OPERATION_COMPLETE')).toBe(true);
+  expect(spaced.geometry.powerPresentation.selectedServiceCam).toBe('rest');
 
   await page.evaluate(() => window.__selectricDebug.backspace());
+  await page.waitForFunction(() => window.__selectricDebug.state.operation === null, null, { timeout: 5000 });
   const backed = await page.evaluate(() => window.__selectricDebug.state);
   expect(backed.carrierX).toBeCloseTo(beforeSpace, 5);
+  expect(backed.events.some(event => event.name === 'BACKSPACE_OPERATION_COMPLETE')).toBe(true);
 
   const beforeShift = backed.selection.shiftHemisphere;
   await page.evaluate(() => window.__selectricDebug.shift());

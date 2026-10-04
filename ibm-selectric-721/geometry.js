@@ -385,7 +385,9 @@ export function createSelectricModel() {
     ribbonFeedDirection: 1,
     motorPhase: 0,
     keyboardPressCharacter: null,
-    keyboardPress: 0
+    keyboardPress: 0,
+    operationalCamAction: 'rest',
+    operationalCamPhase: 0
   };
 
   const shellMat = material(0xb8b4a8, 0.03, 0.76);
@@ -652,19 +654,60 @@ export function createSelectricModel() {
   }
 
   const operationalRotor = new THREE.Group();
-  operationalRotor.name = 'operational shaft rotational frame';
+  operationalRotor.name = 'continuously rotating operational shaft frame';
   operationalRotor.position.set(0, P4.operationalShaft.y, P4.operationalShaft.z);
   driveAssembly.add(operationalRotor);
   const operational = shaft(P4.operationalShaft.length, P4.operationalShaft.radius, darkMetal, 'operational shaft');
   addPickable(operational, COMPONENTS.drive, pickables);
   operationalRotor.add(operational);
-  for (const x of [-85, -28, 34, 86]) {
-    const cam = pulley(10, 7, metal, 'operational shaft cam');
-    cam.position.set(x, 0, 0);
-    cam.scale.y = 0.75;
-    addPickable(cam, COMPONENTS.drive, pickables);
-    operationalRotor.add(cam);
+  const operationalPhaseMarker = box(10, 2.4, 2.4, metal, 'operational shaft phase marker');
+  operationalPhaseMarker.position.set(-110, P4.operationalShaft.radius + 2, 0);
+  addPickable(operationalPhaseMarker, COMPONENTS.drive, pickables);
+  operationalRotor.add(operationalPhaseMarker);
+
+  const operationalCamFrame = new THREE.Group();
+  operationalCamFrame.name = 'clutched operational service cams';
+  operationalCamFrame.position.set(0, P4.operationalShaft.y, P4.operationalShaft.z);
+  driveAssembly.add(operationalCamFrame);
+
+  const doubleServiceCam = new THREE.Group();
+  doubleServiceCam.position.x = -44;
+  doubleServiceCam.name = 'space/backspace double-lobed 180-degree service cam';
+  operationalCamFrame.add(doubleServiceCam);
+  const doubleHub = pulley(10.5, 8, metal, 'space/backspace cam hub');
+  addPickable(doubleHub, COMPONENTS.drive, pickables);
+  doubleServiceCam.add(doubleHub);
+  for (const angle of [0, Math.PI]) {
+    const lobe = box(8, 7, 5, darkMetal, 'space/backspace cam lobe');
+    lobe.position.set(0, Math.cos(angle) * 10, Math.sin(angle) * 10);
+    lobe.rotation.x = angle;
+    addPickable(lobe, COMPONENTS.drive, pickables);
+    doubleServiceCam.add(lobe);
   }
+
+  const returnIndexCam = new THREE.Group();
+  returnIndexCam.position.x = 22;
+  returnIndexCam.name = 'carrier-return/index single-lobed 360-degree service cam';
+  operationalCamFrame.add(returnIndexCam);
+  const returnHub = pulley(11.5, 9, metal, 'carrier-return/index cam hub');
+  addPickable(returnHub, COMPONENTS.drive, pickables);
+  returnIndexCam.add(returnHub);
+  const returnLobe = box(9, 8, 6, darkMetal, 'carrier-return/index cam lobe');
+  returnLobe.position.set(0, 11, 0);
+  addPickable(returnLobe, COMPONENTS.drive, pickables);
+  returnIndexCam.add(returnLobe);
+
+  const shiftCam = new THREE.Group();
+  shiftCam.position.x = 84;
+  shiftCam.name = 'dedicated shift 180-degree cam';
+  operationalCamFrame.add(shiftCam);
+  const shiftHub = pulley(9.5, 8, metal, 'shift cam hub');
+  addPickable(shiftHub, COMPONENTS.drive, pickables);
+  shiftCam.add(shiftHub);
+  const shiftLobe = box(8, 7, 5, darkMetal, 'shift cam lobe');
+  shiftLobe.position.set(0, 9.5, 0);
+  addPickable(shiftLobe, COMPONENTS.drive, pickables);
+  shiftCam.add(shiftLobe);
 
   const motor = new THREE.Mesh(new THREE.CylinderGeometry(24, 24, 58, 36), darkMetal);
   motor.rotation.z = Math.PI / 2;
@@ -1214,6 +1257,21 @@ export function createSelectricModel() {
     drivePulley.rotation.x = state.motorPhase * Math.PI * 2;
   }
 
+  function setOperationalCam(action, phase = 0) {
+    state.operationalCamAction = action || 'rest';
+    state.operationalCamPhase = THREE.MathUtils.clamp(Number(phase) || 0, 0, 1);
+    doubleServiceCam.rotation.x = 0;
+    returnIndexCam.rotation.x = 0;
+    shiftCam.rotation.x = 0;
+    if (action === 'space' || action === 'backspace') {
+      doubleServiceCam.rotation.x = state.operationalCamPhase * Math.PI;
+    } else if (action === 'carrier-return' || action === 'index') {
+      returnIndexCam.rotation.x = state.operationalCamPhase * Math.PI * 2;
+    } else if (action === 'shift') {
+      shiftCam.rotation.x = state.operationalCamPhase * Math.PI;
+    }
+  }
+
   function setCyclePhase(value) {
     state.cyclePhase = THREE.MathUtils.clamp(value, 0, 1);
     cycleRotor.rotation.x = state.cyclePhase * Math.PI;
@@ -1297,8 +1355,17 @@ export function createSelectricModel() {
       sleeveCamOrder: ['ribbon-lift', '1164240-feed-detent', '1124174-print-restoring'],
       powerPresentation: {
         operationalShaftContinuousWhenPowered: true,
+        serviceCamsStationaryUntilSelected: true,
         motorPhase: state.motorPhase,
+        selectedServiceCam: state.operationalCamAction,
+        selectedServiceCamPhase: state.operationalCamPhase,
         speedClass: 'P5 slowed presentation'
+      },
+      operationalCams: {
+        spaceBackspaceDegreesPerOperation: 180,
+        carrierReturnIndexDegreesPerOperation: 360,
+        shiftDegreesPerTransition: 180,
+        tabUsesPoweredCam: false
       },
       shaftTiming: {
         cycleShaftDegPerCharacter: 180,
@@ -1325,6 +1392,7 @@ export function createSelectricModel() {
   setRibbonLift(0);
   setPrintApproach(0);
   setMotorPhase(0);
+  setOperationalCam(null, 0);
   setCyclePhase(0);
   setServiceCover(0);
   setExplosion(0);
@@ -1342,6 +1410,7 @@ export function createSelectricModel() {
     setPrintApproach,
     setPlatenIndex,
     setMotorPhase,
+    setOperationalCam,
     setCyclePhase,
     setServiceCover,
     setExplosion,
