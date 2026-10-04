@@ -292,26 +292,48 @@ function makeTypeElement(ballMat, darkMetal, pickables) {
   addPickable(skirt, COMPONENTS.typeball, pickables);
   group.add(skirt);
 
-  const slugGeo = new THREE.BoxGeometry(2.9, 2.6, 1.35);
+  const slugDepth = 1.35;
+  const slugGeo = new THREE.BoxGeometry(2.9, 2.6, slugDepth);
   const slugs = new THREE.InstancedMesh(slugGeo, darkMetal, CANONICAL.typeElement.characterCount);
-  slugs.name = '88 type slug cues';
+  slugs.name = '88 surface-normal type slug cues';
   const matrix = new THREE.Matrix4();
+  const rotationMatrix = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   const scale = new THREE.Vector3(1,1,1);
+  const normal = new THREE.Vector3();
+  const tangentX = new THREE.Vector3();
+  const tangentY = new THREE.Vector3();
+  const surface = new THREE.Vector3();
+  const p = new THREE.Vector3();
   let index = 0;
+  const bodyRadius = CANONICAL.typeElement.structuralRadiusP4Mm;
+  const bodyYRadius = bodyRadius * 0.90;
   const bandLatitudes = [-0.58, -0.20, 0.20, 0.58];
-  for (let band = 0; band < 4; band += 1) {
+  for (let band = 0; band < CANONICAL.typeElement.bands; band += 1) {
     const lat = bandLatitudes[band];
-    const y = lat * 13.5;
-    const radial = Math.sqrt(Math.max(1, CANONICAL.typeElement.structuralRadiusP4Mm ** 2 - y ** 2));
-    for (let slot = 0; slot < 22; slot += 1) {
-      const a = slot * Math.PI * 2 / 22;
-      const p = new THREE.Vector3(Math.sin(a) * radial, y, Math.cos(a) * radial);
-      q.setFromEuler(new THREE.Euler(-lat * 0.45, a, 0));
+    const y = lat * bodyYRadius;
+    const radial = bodyRadius * Math.sqrt(Math.max(0, 1 - (y * y) / (bodyYRadius * bodyYRadius)));
+    for (let slot = 0; slot < CANONICAL.typeElement.positionsPerBand; slot += 1) {
+      const a = slot * Math.PI * 2 / CANONICAL.typeElement.positionsPerBand;
+      surface.set(Math.sin(a) * radial, y, Math.cos(a) * radial);
+
+      // P4 functional geometry: each slug face is tangent to the ellipsoidal structural
+      // body instead of sharing a global orientation. Exact glyph-face sections remain unresolved.
+      normal.set(
+        surface.x / (bodyRadius * bodyRadius),
+        surface.y / (bodyYRadius * bodyYRadius),
+        surface.z / (bodyRadius * bodyRadius)
+      ).normalize();
+      tangentX.set(Math.cos(a), 0, -Math.sin(a)).normalize();
+      tangentY.copy(normal).cross(tangentX).normalize();
+      rotationMatrix.makeBasis(tangentX, tangentY, normal);
+      q.setFromRotationMatrix(rotationMatrix);
+      p.copy(surface).addScaledVector(normal, slugDepth * 0.5);
       matrix.compose(p, q, scale);
       slugs.setMatrixAt(index++, matrix);
     }
   }
+  slugs.instanceMatrix.needsUpdate = true;
   slugs.userData.component = COMPONENTS.typeball;
   slugs.castShadow = true;
   pickables.push(slugs);
@@ -2324,6 +2346,14 @@ export function createSelectricModel() {
       keyboardCode: state.keyboardCode,
       selectorInputs: { ...state.selectorInputs },
       selectionNormalized: { ...state.selectionNormalized },
+      typeElement: {
+        characterCount: CANONICAL.typeElement.characterCount,
+        bands: CANONICAL.typeElement.bands,
+        positionsPerBand: CANONICAL.typeElement.positionsPerBand,
+        structuralRadiusP4Mm: CANONICAL.typeElement.structuralRadiusP4Mm,
+        slugOrientation: 'P4 surface-normal tangent frames on structural ellipsoid',
+        glyphFaceGeometry: 'unresolved; repeated structural slug cues only'
+      },
       selectionDifferential: {
         tiltEquation: 'qTilt=(T1+2*T2)/3',
         rotateQ1Equation: 'q1=(R1+2*R2)/3',
