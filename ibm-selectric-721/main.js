@@ -68,6 +68,10 @@ const ui = {
   lineSpacingBtn: document.querySelector('#lineSpacingBtn'),
   paperReleaseBtn: document.querySelector('#paperReleaseBtn'),
   paperBailBtn: document.querySelector('#paperBailBtn'),
+  bailLeft: document.querySelector('#bailLeft'),
+  bailRight: document.querySelector('#bailRight'),
+  bailLeftValue: document.querySelector('#bailLeftValue'),
+  bailRightValue: document.querySelector('#bailRightValue'),
   ribbonModeBtn: document.querySelector('#ribbonModeBtn'),
   ribbonLoadBtn: document.querySelector('#ribbonLoadBtn'),
   marginLeftBtn: document.querySelector('#marginLeftBtn'),
@@ -224,6 +228,10 @@ function syncUi() {
   ui.tabStopsState.textContent = String(model.state.tabStopIndices.length);
   ui.feedState.textContent = model.state.feedRollsEngaged ? 'ENGAGED' : 'RELEASED';
   ui.paperBailState.textContent = model.state.paperBailEngaged ? 'AGAINST PLATEN' : 'RELEASED';
+  ui.bailLeft.value = String(Math.round(model.state.paperBailRollerPositionsP5.left * 100));
+  ui.bailRight.value = String(Math.round(model.state.paperBailRollerPositionsP5.right * 100));
+  ui.bailLeftValue.textContent = Math.round(model.state.paperBailRollerPositionsP5.left * 100) + '%';
+  ui.bailRightValue.textContent = Math.round(model.state.paperBailRollerPositionsP5.right * 100) + '%';
   ui.copyControlState.textContent = String(model.state.copyControlSetting + 1) + ' / 5';
   ui.platenVariableState.textContent = model.state.platenVariableEngaged ? 'FREE' : 'COUPLED';
   ui.lineSpacingState.textContent = (model.state.lineSpacingTeeth === 2 ? 'DOUBLE' : 'SINGLE') + ' · ' + model.state.lineSpacingTeeth + (model.state.lineSpacingTeeth === 1 ? ' TOOTH' : ' TEETH');
@@ -273,6 +281,8 @@ function resetMechanicalState() {
   model.setFineAlignment(0, 0);
   model.setPaperRelease(false);
   model.setPaperBail(true);
+  model.setPaperBailRollerPosition('left', 0.4);
+  model.setPaperBailRollerPosition('right', 0.4);
   model.setCopyControl(0);
   model.setPlatenVariable(false);
   model.resetPlatenVariableOffset();
@@ -661,6 +671,19 @@ ui.paperBailBtn.addEventListener('click', () => {
   recordEvent(model.state.paperBailEngaged ? 'PAPER_BAIL_ENGAGED' : 'PAPER_BAIL_RELEASED');
   syncUi();
 });
+function updateBailRoller(side, input) {
+  if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) {
+    syncUi();
+    return;
+  }
+  const normalized = Number(input.value) / 100;
+  model.setPaperBailRollerPosition(side, normalized);
+  runtime.lastAction = 'paper-bail-' + side + '-roller';
+  recordEvent('PAPER_BAIL_ROLLER_ADJUSTED', { side, normalized });
+  syncUi();
+}
+ui.bailLeft.addEventListener('input', () => updateBailRoller('left', ui.bailLeft));
+ui.bailRight.addEventListener('input', () => updateBailRoller('right', ui.bailRight));
 ui.ribbonModeBtn.addEventListener('click', () => {
   if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
   const modes = ['low', 'middle', 'high', 'stencil'];
@@ -966,6 +989,12 @@ window.__selectricDebug = {
   index: () => ui.indexBtn.click(),
   togglePaperRelease: () => ui.paperReleaseBtn.click(),
   togglePaperBail: () => ui.paperBailBtn.click(),
+  setPaperBailRollerPosition(side, normalized) {
+    if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
+    const changed = model.setPaperBailRollerPosition(side, normalized);
+    syncUi();
+    return changed;
+  },
   cycleCopyControl: () => ui.copyControlBtn.click(),
   setCopyControl: setting => {
     model.setCopyControl(setting);

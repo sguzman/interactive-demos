@@ -425,7 +425,8 @@ export function createSelectricModel() {
     manualPlatenAngle: 0,
     copyControlSetting: 0,
     copyControlOffsetZ: 0,
-    paperBailEngaged: true
+    paperBailEngaged: true,
+    paperBailRollerPositionsP5: { left: 0.4, right: 0.4 }
   };
 
   const shellMat = material(0xb8b4a8, 0.03, 0.76);
@@ -1135,11 +1136,13 @@ export function createSelectricModel() {
   addPickable(bailBar, COMPONENTS.paperFeed, pickables);
   paperBailPivot.add(bailBar);
 
-  for (const x of [-74, 74]) {
-    const roller = pulley(5.5, 12, rubber, 'laterally adjustable paper bail roller');
+  const paperBailRollers = {};
+  for (const [side, x] of [['left', -74], ['right', 74]]) {
+    const roller = pulley(5.5, 12, rubber, side + ' laterally adjustable paper bail roller');
     roller.position.set(x, -3, -3);
     addPickable(roller, COMPONENTS.paperFeed, pickables);
     paperBailPivot.add(roller);
+    paperBailRollers[side] = roller;
   }
 
   for (const sign of [-1, 1]) {
@@ -2081,6 +2084,17 @@ export function createSelectricModel() {
     paperBailPivot.rotation.x = state.paperBailEngaged ? 0 : deg(31);
   }
 
+  function setPaperBailRollerPosition(side, value) {
+    if (side !== 'left' && side !== 'right') return false;
+    const normalized = THREE.MathUtils.clamp(Number(value) || 0, 0, 1);
+    state.paperBailRollerPositionsP5[side] = normalized;
+    // The sources establish independent lateral adjustability, not exact travel limits.
+    // Keep each roller on its own half of the bail bar with explicitly P5 endpoints.
+    const magnitude = THREE.MathUtils.lerp(110, 20, normalized);
+    paperBailRollers[side].position.x = side === 'left' ? -magnitude : magnitude;
+    return true;
+  }
+
   function setCopyControl(setting) {
     const next = Math.max(0, Math.min(4, Math.round(Number(setting) || 0)));
     state.copyControlSetting = next;
@@ -2301,6 +2315,14 @@ export function createSelectricModel() {
         bailStableStates: ['against-platen', 'released'],
         bailEngaged: state.paperBailEngaged,
         bailToggle: 'hairpin-spring two-stable-state',
+        bailRollerAdjustment: {
+          independentlyAdjustable: true,
+          leftNormalizedP5: state.paperBailRollerPositionsP5.left,
+          rightNormalizedP5: state.paperBailRollerPositionsP5.right,
+          leftX: paperBailRollers.left.position.x,
+          rightX: paperBailRollers.right.position.x,
+          travelClass: 'P5 lateral presentation range; source-backed adjustability, exact travel unresolved'
+        },
         frontRearReleaseCoupled: true,
         feedRollsEngaged: state.feedRollsEngaged,
         releaseLatchedStateRepresented: true,
@@ -2432,6 +2454,8 @@ export function createSelectricModel() {
   setFineAlignment(0, 0);
   setPaperRelease(false);
   setPaperBail(true);
+  setPaperBailRollerPosition('left', 0.4);
+  setPaperBailRollerPosition('right', 0.4);
   setCopyControl(0);
   setPlatenVariable(false);
   setPrintApproach(0);
@@ -2467,6 +2491,7 @@ export function createSelectricModel() {
     setFineAlignment,
     setPaperRelease,
     setPaperBail,
+    setPaperBailRollerPosition,
     setCopyControl,
     setPlatenVariable,
     rotatePlatenManually,

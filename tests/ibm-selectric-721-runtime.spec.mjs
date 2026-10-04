@@ -160,6 +160,19 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const bailEngaged = await page.evaluate(() => window.__selectricDebug.state);
   expect(bailEngaged.paperBailEngaged).toBe(true);
 
+  const initialBailAdjustment = bailEngaged.geometry.paperFeed.bailRollerAdjustment;
+  expect(initialBailAdjustment.independentlyAdjustable).toBe(true);
+  expect(initialBailAdjustment.leftNormalizedP5).toBeCloseTo(0.4, 8);
+  expect(initialBailAdjustment.rightNormalizedP5).toBeCloseTo(0.4, 8);
+  expect(initialBailAdjustment.travelClass).toContain('exact travel unresolved');
+  const rightBailX = initialBailAdjustment.rightX;
+  await page.evaluate(() => window.__selectricDebug.setPaperBailRollerPosition('left', 0.75));
+  const bailAdjusted = await page.evaluate(() => window.__selectricDebug.state);
+  expect(bailAdjusted.geometry.paperFeed.bailRollerAdjustment.leftNormalizedP5).toBeCloseTo(0.75, 8);
+  expect(bailAdjusted.geometry.paperFeed.bailRollerAdjustment.leftX).toBeGreaterThan(initialBailAdjustment.leftX);
+  expect(bailAdjusted.geometry.paperFeed.bailRollerAdjustment.rightX).toBeCloseTo(rightBailX, 8);
+  await page.evaluate(() => window.__selectricDebug.setPaperBailRollerPosition('left', 0.4));
+
   const carrierBeforeCopyControl = feedEngaged.carrierX;
   await page.evaluate(() => window.__selectricDebug.setCopyControl(4));
   const copyRear = await page.evaluate(() => window.__selectricDebug.state);
