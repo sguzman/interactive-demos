@@ -17,8 +17,8 @@ This is a source-aware mechanical reconstruction of an original IBM Selectric Mo
 
 The browser model currently includes:
 
-- product shell / keyboard / platen / paper;
-- D6 print shaft and current IBM 1164740 bearing family;
+- product shell / keyboard / platen / 27-tooth representative ratchet / paper;
+- D6 print shaft, current IBM 1164740 bearing family, IBM 1164739 gear envelope and market-unfrozen item-51 C-clip presentation;
 - IBM 1124109 fixed 12P rack with repeated pitch geometry;
 - carrier translating over the 215.9 mm writing line;
 - Level-2 upper/lower rear shoe topology;

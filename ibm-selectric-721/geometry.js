@@ -577,6 +577,21 @@ export function createSelectricModel() {
   addPickable(printShaft, COMPONENTS.printShaft, pickables);
   printShaftRotor.add(printShaft);
 
+  const currentGear = shaft(13, 14, darkMetal, 'IBM 1164739 current print-shaft gear envelope');
+  currentGear.position.x = P4.sideframeX - 16;
+  addPickable(currentGear, COMPONENTS.d6CurrentSet, pickables);
+  printShaftRotor.add(currentGear);
+
+  const cClip = new THREE.Mesh(
+    new THREE.TorusGeometry(P4.printShaft.visibleRadius + 1.3, 0.9, 8, 28, Math.PI * 1.72),
+    metal
+  );
+  cClip.rotation.y = Math.PI / 2;
+  cClip.position.x = -P4.sideframeX + 14;
+  cClip.name = 'item-51 C-clip presentation · IBM 1175220 US / 6520762 WT';
+  addPickable(cClip, COMPONENTS.d6CurrentSet, pickables);
+  printShaftRotor.add(cClip);
+
   const shaftPhaseMarker = box(8, 2, 2, darkMetal, 'P5 D6 phase marker');
   shaftPhaseMarker.position.set(0, P4.printShaft.visibleRadius + 1.6, 0);
   addPickable(shaftPhaseMarker, COMPONENTS.printShaft, pickables);
@@ -739,6 +754,41 @@ export function createSelectricModel() {
 
   const paper = makePaper(pickables);
   platenAssembly.add(paper.mesh);
+
+  const ratchetGroup = new THREE.Group();
+  ratchetGroup.name = '27-tooth platen ratchet group';
+  ratchetGroup.position.set(P4.platen.length / 2 - 8, P4.platen.y, P4.platen.z);
+  platenAssembly.add(ratchetGroup);
+
+  const ratchetHub = shaft(6.5, CANONICAL.platen.ratchetDiameterMm / 2 - 2.1, darkMetal, 'platen ratchet hub');
+  addPickable(ratchetHub, COMPONENTS.platenRatchet, pickables);
+  ratchetGroup.add(ratchetHub);
+
+  const ratchetToothGeo = new THREE.BoxGeometry(5.6, 2.4, 4.0);
+  const ratchetTeeth = new THREE.InstancedMesh(
+    ratchetToothGeo,
+    metal,
+    CANONICAL.platen.representativeRatchetTeeth
+  );
+  ratchetTeeth.name = '27 representative ratchet teeth';
+  const ratchetMatrix = new THREE.Matrix4();
+  const ratchetQuat = new THREE.Quaternion();
+  const ratchetScale = new THREE.Vector3(1, 1, 1);
+  const ratchetR = CANONICAL.platen.ratchetDiameterMm / 2 - 0.8;
+  for (let i = 0; i < CANONICAL.platen.representativeRatchetTeeth; i += 1) {
+    const a = i * Math.PI * 2 / CANONICAL.platen.representativeRatchetTeeth;
+    ratchetQuat.setFromEuler(new THREE.Euler(a, 0, 0));
+    ratchetMatrix.compose(
+      new THREE.Vector3(0, Math.cos(a) * ratchetR, Math.sin(a) * ratchetR),
+      ratchetQuat,
+      ratchetScale
+    );
+    ratchetTeeth.setMatrixAt(i, ratchetMatrix);
+  }
+  ratchetTeeth.userData.component = COMPONENTS.platenRatchet;
+  ratchetTeeth.castShadow = true;
+  pickables.push(ratchetTeeth);
+  ratchetGroup.add(ratchetTeeth);
 
   const bailBar = shaft(266, 2.8, metal, 'paper bail bar');
   bailBar.position.set(0, P4.platen.y + 27, P4.platen.z + 4);
@@ -1058,6 +1108,7 @@ export function createSelectricModel() {
   function setPlatenIndex(value) {
     state.platenIndex = value;
     platen.rotation.x = value;
+    ratchetGroup.rotation.x = value;
   }
 
   function setMotorPhase(value) {
@@ -1114,6 +1165,18 @@ export function createSelectricModel() {
       selectorInputs: { ...state.selectorInputs },
       cordPhase: state.cordPhase,
       writingLineRacks: ['1124109 escapement', '1164743 margin', '1164102/6519354 tab'],
+      d6CurrentSet: {
+        shaft: '1164736',
+        bearings: '1164740',
+        gear: '1164739',
+        item51Clip: '1175220 US / 6520762 WT',
+        clipMarketFrozen: false
+      },
+      platenRatchet: {
+        outerDiameterMm: CANONICAL.platen.ratchetDiameterMm,
+        teeth: CANONICAL.platen.representativeRatchetTeeth,
+        toothProfile: 'P4'
+      },
       ribbon: {
         parent: 'carrier',
         mediaWidthMm: P4.ribbon.widthMm,

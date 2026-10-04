@@ -138,11 +138,23 @@ export const COMPONENTS = Object.freeze({
     provenance: 'P0/P2 metric anchor',
     description: '36.3728 mm platen diameter anchor. Axis placement remains P4 pending complete D6→D7→D8→D4 solve.'
   },
+  platenRatchet: {
+    name: '27-tooth platen ratchet',
+    category: 'paper / line index',
+    provenance: 'IBM shared Selectric diameter + OEM 7X1 representative 27T profile + P4 tooth shape',
+    description: '30.1498 mm ratchet outer diameter with 27 equal angular positions. The public tooth shape is reconstructive; one normal index advances one tooth.'
+  },
   printShaft: {
     name: 'Print shaft · IBM 1164736',
     category: 'primary frame',
     provenance: 'exact active part identity + P4 visible section',
     description: 'D6 axis. Current IBM 1164740 bearing geometry is exact-part interchange evidence; shaft journal and installed coordinates remain reconstruction.'
+  },
+  d6CurrentSet: {
+    name: 'Current D6 compatibility set',
+    category: 'primary frame',
+    provenance: 'OEM current-level identities + P4 unresolved sections',
+    description: 'Current 7X1 D6 package: IBM 1164736 shaft, IBM 1164740 bearings, IBM 1164739 gear and market-dependent item-51 C-clip (US 1175220 / WT 6520762). Exact gear and ring geometry remain unresolved.'
   },
   bearing: {
     name: 'D6 bearing · IBM 1164740',
