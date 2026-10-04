@@ -32,7 +32,7 @@ The browser model currently includes:
 - new-style fabric-ribbon lift with stencil / low / middle / high print states, a distinct threading/load pose, stencil feed lockout/centering, source-ordered bidirectional feed, and automatic reversal; unresolved heights/capacity remain explicitly P5 while the OEM trigger -> feed/reverse-plate pivot -> pawl/check transfer sequence is preserved;
 - paper output that records typed characters;
 - deterministic character-cycle ordering through code setup, selection, fine align, impact, escapement and clutch check;
-- fixed escapement/margin/tab rack families, physical left/right margin stops, opposed carrier cords, common escapement-shaft drums, mainspring cue, spring-loaded right tension arm, sustained carrier-return clutch/pinion drive and non-propulsive tab governor;
+- fixed escapement/margin/tab rack families, runtime-adjustable left/right margin stops on the 12-CPI pitch, live right-margin line lock, opposed carrier cords, common escapement-shaft drums, mainspring cue, spring-loaded right tension arm, sustained carrier-return clutch/pinion drive and non-propulsive tab governor;
 - dedicated 7X1 12P backspace rack/bellcrank presentation rather than reverse-escapement shorthand;
 - clutched 180° space/backspace service-cam actions, mainspring-style tab destination, carrier return + index, animated 180° shift-cam transition with character-cycle interlock, and animated 360° index-cam/pawl action;
 - assembled / exploded inspection and click-to-inspect provenance;
@@ -60,6 +60,7 @@ The Playwright smoke test checks:
 - ribbon selector modes, stencil feed lockout/centering, distinct load pose, and automatic fabric-ribbon reversal through the animated reverse sequence;
 - explosion independence;
 - space / backspace;
+- adjustable margin-stop positions, right-margin line lock and carrier return to the live left stop;
 - shift hemisphere;
 - one-tooth 27T paper index;
 - tab capture on the writing lattice;

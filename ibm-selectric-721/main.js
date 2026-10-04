@@ -67,6 +67,7 @@ const ui = {
   paperBailBtn: document.querySelector('#paperBailBtn'),
   ribbonModeBtn: document.querySelector('#ribbonModeBtn'),
   ribbonLoadBtn: document.querySelector('#ribbonLoadBtn'),
+  marginBtn: document.querySelector('#marginBtn'),
   copyControlBtn: document.querySelector('#copyControlBtn'),
   platenVariableBtn: document.querySelector('#platenVariableBtn'),
   resetBtn: document.querySelector('#resetBtn'),
@@ -80,6 +81,7 @@ const ui = {
   ribbonState: document.querySelector('#ribbonState'),
   ribbonModeState: document.querySelector('#ribbonModeState'),
   ribbonLoadState: document.querySelector('#ribbonLoadState'),
+  marginState: document.querySelector('#marginState'),
   feedState: document.querySelector('#feedState'),
   paperBailState: document.querySelector('#paperBailState'),
   copyControlState: document.querySelector('#copyControlState'),
@@ -180,6 +182,12 @@ function selectionForCharacter(character) {
 
 function requestCharacter(character = runtime.pendingCharacter) {
   if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
+  if (model.state.carrierX >= model.state.rightMarginX - 1e-6) {
+    runtime.lastAction = 'right-margin-line-lock';
+    recordEvent('RIGHT_MARGIN_LINE_LOCK', { rightMarginX: model.state.rightMarginX });
+    syncUi();
+    return false;
+  }
   const target = selectionForCharacter(character || 'a');
   if (target.shift !== model.state.shiftHemisphere) {
     runtime.queuedCharacter = character || 'a';
@@ -202,6 +210,7 @@ function syncUi() {
   ui.ribbonState.textContent = Math.round(model.state.ribbonLift * 100) + '%';
   ui.ribbonModeState.textContent = model.state.ribbonPrintMode.toUpperCase();
   ui.ribbonLoadState.textContent = model.state.ribbonLoadState ? 'THREADING / LOAD' : 'OFF';
+  ui.marginState.textContent = model.state.leftMarginInsetColumns + ' / ' + model.state.rightMarginInsetColumns + ' COL';
   ui.feedState.textContent = model.state.feedRollsEngaged ? 'ENGAGED' : 'RELEASED';
   ui.paperBailState.textContent = model.state.paperBailEngaged ? 'AGAINST PLATEN' : 'RELEASED';
   ui.copyControlState.textContent = String(model.state.copyControlSetting + 1) + ' / 5';
@@ -216,6 +225,9 @@ function syncUi() {
   ui.paperBailBtn.textContent = model.state.paperBailEngaged ? 'Release paper bail' : 'Engage paper bail';
   ui.ribbonModeBtn.textContent = 'Ribbon: ' + model.state.ribbonPrintMode;
   ui.ribbonLoadBtn.textContent = model.state.ribbonLoadState ? 'Ribbon load: on' : 'Ribbon load: off';
+  ui.marginBtn.textContent = model.state.leftMarginInsetColumns || model.state.rightMarginInsetColumns
+    ? 'Margins: inset'
+    : 'Margins: full';
   ui.copyControlBtn.textContent = 'Copy control ' + (model.state.copyControlSetting + 1) + '/5';
   ui.platenVariableBtn.textContent = model.state.platenVariableEngaged ? 'Lock platen variable' : 'Free platen variable';
 }
@@ -237,6 +249,7 @@ function resetMechanicalState() {
   runtime.pendingCharacter = 'a';
   runtime.selectionTarget = selectionForCharacter('a');
   model.setKeyboardCode(0);
+  model.setMarginInsets(0, 0);
   model.setCarrierX(0);
   model.setTypeball(0, 0, 0);
   model.setRibbonLoadState(false);
@@ -270,7 +283,12 @@ function startCharacterCycle(character = runtime.pendingCharacter) {
 }
 
 function advanceCarrier(delta) {
-  model.setCarrierX(model.state.carrierX + delta);
+  const from = model.state.carrierX;
+  const destination = THREE.MathUtils.clamp(from + delta, model.state.leftMarginX, model.state.rightMarginX);
+  model.setCarrierX(destination);
+  if (delta > 0 && destination >= model.state.rightMarginX - 1e-6 && from < model.state.rightMarginX - 1e-6) {
+    recordEvent('RIGHT_MARGIN_REACHED', { rightMarginX: model.state.rightMarginX });
+  }
   syncUi();
 }
 
@@ -282,7 +300,10 @@ function singleIndex() {
 function nextDefaultTabStop() {
   const currentIndex = Math.max(0, Math.round((model.state.carrierX + CANONICAL.writingLineMm / 2) / CANONICAL.pitchMm));
   const nextIndex = Math.min(CANONICAL.nominalPositions - 1, (Math.floor(currentIndex / 8) + 1) * 8);
-  return -CANONICAL.writingLineMm / 2 + nextIndex * CANONICAL.pitchMm;
+  return Math.min(
+    model.state.rightMarginX,
+    -CANONICAL.writingLineMm / 2 + nextIndex * CANONICAL.pitchMm
+  );
 }
 
 function beginCarrierOperation(type, destination, durationMs, includesIndex = false) {
@@ -291,7 +312,7 @@ function beginCarrierOperation(type, destination, durationMs, includesIndex = fa
   runtime.operation = {
     type,
     from,
-    to: THREE.MathUtils.clamp(destination, -CANONICAL.writingLineMm / 2, CANONICAL.writingLineMm / 2),
+    to: THREE.MathUtils.clamp(destination, model.state.leftMarginX, model.state.rightMarginX),
     startedAt: performance.now(),
     durationMs: Math.max(120, durationMs)
   };
@@ -540,7 +561,7 @@ ui.backspaceBtn.addEventListener('click', () => {
   beginCarrierOperation('backspace', model.state.carrierX - CANONICAL.pitchMm, 220, false);
 });
 ui.returnBtn.addEventListener('click', () => {
-  const destination = -CANONICAL.writingLineMm / 2;
+  const destination = model.state.leftMarginX;
   const distance = Math.abs(model.state.carrierX - destination);
   beginCarrierOperation('carrier-return', destination, 360 + distance * 2.4, true);
 });
@@ -578,6 +599,18 @@ ui.ribbonLoadBtn.addEventListener('click', () => {
   recordEvent(model.state.ribbonLoadState ? 'RIBBON_LOAD_POSITION' : 'RIBBON_LOAD_RELEASED');
   syncUi();
 });
+ui.marginBtn.addEventListener('click', () => {
+  if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
+  const inset = model.state.leftMarginInsetColumns || model.state.rightMarginInsetColumns ? 0 : 12;
+  model.setMarginInsets(inset, inset);
+  runtime.lastAction = inset ? 'margins-inset' : 'margins-full';
+  recordEvent('MARGIN_STOPS_ADJUSTED', {
+    leftInsetColumns: model.state.leftMarginInsetColumns,
+    rightInsetColumns: model.state.rightMarginInsetColumns
+  });
+  syncUi();
+});
+
 ui.copyControlBtn.addEventListener('click', () => {
   if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return;
   model.setCopyControl((model.state.copyControlSetting + 1) % 5);
@@ -701,6 +734,12 @@ function snapshot() {
       depression: model.state.keyboardPress
     },
     carrierX: model.state.carrierX,
+    margins: {
+      leftInsetColumns: model.state.leftMarginInsetColumns,
+      rightInsetColumns: model.state.rightMarginInsetColumns,
+      leftX: model.state.leftMarginX,
+      rightX: model.state.rightMarginX
+    },
     selection: {
       tiltBand: model.state.tiltBand,
       rotateUnit: model.state.rotateUnit,
@@ -778,6 +817,12 @@ window.__selectricDebug = {
   },
   toggleRibbonLoad: () => ui.ribbonLoadBtn.click(),
   primeRibbonAutoReverse: () => model.primeRibbonAutoReverse(),
+  setMarginInsets(leftColumns, rightColumns) {
+    if (runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
+    model.setMarginInsets(leftColumns, rightColumns);
+    syncUi();
+    return true;
+  },
   space: () => ui.spaceBtn.click(),
   tab: () => ui.tabBtn.click(),
   backspace: () => ui.backspaceBtn.click(),

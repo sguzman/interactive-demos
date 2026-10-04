@@ -370,6 +370,10 @@ export function createSelectricModel() {
   const state = {
     explosion: 0,
     carrierX: 0,
+    leftMarginInsetColumns: 0,
+    rightMarginInsetColumns: 0,
+    leftMarginX: -CANONICAL.writingLineMm / 2,
+    rightMarginX: CANONICAL.writingLineMm / 2,
     tiltBand: 0,
     rotateUnit: 0,
     shiftHemisphere: 0,
@@ -822,14 +826,16 @@ export function createSelectricModel() {
   horizontalAssembly.add(marginRack);
 
   const marginLimit = CANONICAL.writingLineMm / 2;
-  for (const [x, name] of [
-    [-marginLimit, 'left physical margin stop / carrier-return terminator'],
-    [marginLimit, 'right physical margin stop / line-lock interface']
+  const marginStops = {};
+  for (const [side, x, name] of [
+    ['left', -marginLimit, 'left physical margin stop / carrier-return terminator'],
+    ['right', marginLimit, 'right physical margin stop / line-lock interface']
   ]) {
     const stop = box(8, 15, 10, darkMetal, name);
     stop.position.set(x, P4.writingLineRacks.marginY + 8, P4.writingLineRacks.marginZ);
     addPickable(stop, COMPONENTS.horizontalMotion, pickables);
     horizontalAssembly.add(stop);
+    marginStops[side] = stop;
   }
 
   const tabRack = box(P4.writingLineRacks.length, 4, 5, darkMetal, 'IBM 1164102/6519354 7X1 tab rack family');
@@ -1766,6 +1772,19 @@ export function createSelectricModel() {
     backspaceBellcrank.rotation.z = deg(-22 * pulse);
   }
 
+  function setMarginInsets(leftColumns = 0, rightColumns = 0) {
+    const maxCombinedInset = CANONICAL.nominalPositions - 1;
+    const left = Math.max(0, Math.min(maxCombinedInset, Math.round(Number(leftColumns) || 0)));
+    const requestedRight = Math.max(0, Math.min(maxCombinedInset, Math.round(Number(rightColumns) || 0)));
+    const right = Math.min(requestedRight, maxCombinedInset - left);
+    state.leftMarginInsetColumns = left;
+    state.rightMarginInsetColumns = right;
+    state.leftMarginX = -marginLimit + left * CANONICAL.pitchMm;
+    state.rightMarginX = marginLimit - right * CANONICAL.pitchMm;
+    marginStops.left.position.x = state.leftMarginX;
+    marginStops.right.position.x = state.rightMarginX;
+  }
+
   function setCarrierX(x) {
     state.carrierX = THREE.MathUtils.clamp(x, -CANONICAL.writingLineMm / 2, CANONICAL.writingLineMm / 2);
     carrierMotion.position.x = state.carrierX;
@@ -2140,8 +2159,15 @@ export function createSelectricModel() {
       marginStops: {
         leftPhysical: true,
         rightPhysical: true,
+        adjustableOnWritingLine: true,
         leftTerminatesCarrierReturn: true,
-        rightLineLockInterface: true
+        rightLineLockInterface: true,
+        leftInsetColumns: state.leftMarginInsetColumns,
+        rightInsetColumns: state.rightMarginInsetColumns,
+        leftX: state.leftMarginX,
+        rightX: state.rightMarginX,
+        pitchMm: CANONICAL.pitchMm,
+        positioningClass: 'runtime-adjustable stops on the source-backed 12-CPI writing lattice; release-actuator detail unresolved'
       },
       backspace: {
         mechanism: 'dedicated-powered-reverse-linkage',
@@ -2284,6 +2310,7 @@ export function createSelectricModel() {
   setBackspaceLinkage(0);
   setCarrierReturnDrive(0);
   setTabGovernor(0);
+  setMarginInsets(0, 0);
   setCarrierX(state.carrierX);
   setTypeball(0, 0, 0);
   setRibbonLoadState(false);
@@ -2311,6 +2338,7 @@ export function createSelectricModel() {
     setBackspaceLinkage,
     setCarrierReturnDrive,
     setTabGovernor,
+    setMarginInsets,
     setCarrierX,
     setShiftTransition,
     setTypeball,

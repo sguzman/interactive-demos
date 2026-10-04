@@ -42,6 +42,7 @@
         <button id="paperBailBtn" class="secondary">Release paper bail</button>
         <button id="ribbonModeBtn" class="secondary">Ribbon: middle</button>
         <button id="ribbonLoadBtn" class="secondary">Ribbon load: off</button>
+        <button id="marginBtn" class="secondary">Margins: full</button>
         <button id="copyControlBtn" class="secondary">Copy control 1/5</button>
         <button id="platenVariableBtn" class="secondary">Free platen variable</button>
         <button id="resetBtn" class="secondary">Reset</button>
@@ -59,6 +60,7 @@
         <div><span>Ribbon lift</span><output id="ribbonState">0%</output></div>
         <div><span>Ribbon mode</span><output id="ribbonModeState">MIDDLE</output></div>
         <div><span>Ribbon load</span><output id="ribbonLoadState">OFF</output></div>
+        <div><span>Margins L / R</span><output id="marginState">0 / 0 COL</output></div>
         <div><span>Paper feed</span><output id="feedState">ENGAGED</output></div>
         <div><span>Paper bail</span><output id="paperBailState">AGAINST PLATEN</output></div>
         <div><span>Copy control</span><output id="copyControlState">1 / 5</output></div>
@@ -80,7 +82,7 @@
       <p class="note"><strong>Power note:</strong> the operational shaft receives a deliberately slowed P5 continuous-motion presentation while powered. Power-off blocks ordinary character and powered operational actions rather than merely freezing the display.</p>
       <p class="note"><strong>Cover note:</strong> the hinged service-cover motion is a P5 presentation path kept separate from exploded inspection and from the live mechanical state. Opening it exposes the carrier/type-element region without moving the frame.</p>
       <p class="note"><strong>Paper-path note:</strong> paper release rotates a common actuating shaft and moves the front and rear feed-roll banks together into a latched release state. The paper bail is independently modeled as a two-stable-state toggle with two laterally adjustable rollers. Copy control has five discrete settings: setting 1 is IBM's forward/normal reference, while settings 2–5 move the platen plus the entire paper-feed carriage rearward using explicitly P5 display offsets because the factory offsets are unresolved. Platen variable is a separate coupling state: when free, manual platen rotation no longer moves the ratchet.</p>
-      <p class="note"><strong>Horizontal-motion note:</strong> tab stops are shown on the 12-CPI writing lattice with a P5 default every eight positions. Tab travel is mainspring-propelled in the real mechanism; the public action now sweeps to the next default stop while the cord/drum geometry updates from the same carrier coordinate. Carrier return terminates at the left margin and performs one 27-tooth-profile index step.</p>
+      <p class="note"><strong>Horizontal-motion note:</strong> tab stops are shown on the 12-CPI writing lattice with a P5 default every eight positions. The IBM 1164743 margin-rack stops are now movable on that same pitch: the public margin button toggles a 12-column inset demonstration, carrier return terminates at the live left stop, and ordinary rightward motion is bounded by the live right stop with a modeled line-lock state. The exact margin-release actuator detail remains unresolved. Tab travel is mainspring-propelled in the real mechanism; the public action sweeps to the next default stop while the cord/drum geometry updates from the same carrier coordinate.</p>
       <p class="note"><strong>Ribbon note:</strong> the new-style fabric ribbon exposes the four documented print states (stencil / low / middle / high), plus a distinct threading/load pose above the high print position. Stencil centers the feed pawl/checking state and suppresses ribbon feed. Ordinary fabric feed is bidirectional and auto-reverses through an animated source-ordered sequence: the exhausted-side trigger moves, the feed/reverse plate pivots, and the pawl/checking state transfers to the opposite ratchet before direction changes. Exact lift/load heights, total ribbon length and ratchet geometry remain unresolved, so the relative lift heights and compressed spool-end threshold are explicitly P5 presentation values rather than factory dimensions.</p>
       <p class="note"><strong>Selection note:</strong> keyboard characters use a deterministic P5 assignment to 44 base tilt/rotate positions paired across the two shift hemispheres. Lower/upper letter pairs therefore share tilt/rotate coordinates and differ by the independent 180° shift state. The six displayed code bits are the modeled T1, T2, R1, R2, R2A and five-unit selection inputs; this is still not a claim about one exact factory typeball character layout.</p>
       <p class="note">Exact factory geometry is not claimed for unresolved hidden sections. P4 parts preserve the active branch, known dimensions, service topology and mechanical relationships while the reconstruction is refined.</p>

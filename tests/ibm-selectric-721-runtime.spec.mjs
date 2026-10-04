@@ -104,6 +104,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.cordSystem.rightTensionArmSpiralSprings).toBe(2);
   expect(initial.geometry.marginStops.leftTerminatesCarrierReturn).toBe(true);
   expect(initial.geometry.marginStops.rightLineLockInterface).toBe(true);
+  expect(initial.geometry.marginStops.adjustableOnWritingLine).toBe(true);
+  expect(initial.geometry.marginStops.leftInsetColumns).toBe(0);
+  expect(initial.geometry.marginStops.rightInsetColumns).toBe(0);
+  expect(initial.geometry.marginStops.positioningClass).toContain('12-CPI');
   expect(initial.geometry.backspace.mechanism).toBe('dedicated-powered-reverse-linkage');
   expect(initial.geometry.backspace.rackFamily).toEqual(['1124568', '6519139']);
   expect(initial.geometry.backspace.displacementMm).toBeCloseTo(-initial.geometry.pitchMm, 8);
@@ -377,6 +381,35 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(returned.events.some(event => event.name === 'CARRIER_RETURN_CLUTCH_ENGAGED')).toBe(true);
   expect(returned.events.some(event => event.name === 'CARRIER_RETURN_TERMINATED_AT_LEFT_MARGIN')).toBe(true);
   expect(returned.geometry.returnTabDrive.carrierReturnDrivePhase).toBe(0);
+
+  // Move the right stop to one pitch beyond the live left stop. One character may print and
+  // advance to the stop; the next character is line-locked. Carrier return still targets the
+  // current left stop rather than the physical end of travel.
+  await page.evaluate(() => window.__selectricDebug.setMarginInsets(0, 101));
+  const narrowMargins = await page.evaluate(() => window.__selectricDebug.state);
+  expect(narrowMargins.margins.leftInsetColumns).toBe(0);
+  expect(narrowMargins.margins.rightInsetColumns).toBe(101);
+  expect(narrowMargins.margins.rightX - narrowMargins.margins.leftX).toBeCloseTo(narrowMargins.geometry.pitchMm, 5);
+  expect(narrowMargins.geometry.marginStops.rightX).toBeCloseTo(narrowMargins.margins.rightX, 8);
+
+  await page.evaluate(() => window.__selectricDebug.typeCharacter('m'));
+  await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
+  const atRightMargin = await page.evaluate(() => window.__selectricDebug.state);
+  expect(atRightMargin.carrierX).toBeCloseTo(atRightMargin.margins.rightX, 5);
+  expect(atRightMargin.events.some(event => event.name === 'RIGHT_MARGIN_REACHED')).toBe(true);
+
+  await page.evaluate(() => window.__selectricDebug.typeCharacter('n'));
+  await page.waitForTimeout(120);
+  const lineLocked = await page.evaluate(() => window.__selectricDebug.state);
+  expect(lineLocked.cycle).toBe('C0_REST');
+  expect(lineLocked.carrierX).toBeCloseTo(atRightMargin.carrierX, 8);
+  expect(lineLocked.events.some(event => event.name === 'RIGHT_MARGIN_LINE_LOCK')).toBe(true);
+
+  await page.evaluate(() => window.__selectricDebug.carriageReturn());
+  await page.waitForFunction(() => window.__selectricDebug.state.operation === null, null, { timeout: 5000 });
+  const returnedToLiveMargin = await page.evaluate(() => window.__selectricDebug.state);
+  expect(returnedToLiveMargin.carrierX).toBeCloseTo(returnedToLiveMargin.margins.leftX, 5);
+  await page.evaluate(() => window.__selectricDebug.setMarginInsets(0, 0));
 
   expect(errors).toEqual([]);
 });
