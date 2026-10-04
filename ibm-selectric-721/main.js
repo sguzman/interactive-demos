@@ -86,8 +86,27 @@ const runtime = {
   cycleImpactCommitted: false,
   pendingCharacter: 'a',
   selectionTarget: { tilt: 0, rotate: 0, shift: 0 },
-  cycleDurationMs: 1250
+  cycleDurationMs: 1250,
+  eventLog: [],
+  lastRecordedCycle: 'C0_REST'
 };
+
+function recordEvent(name, extra = {}) {
+  runtime.eventLog.push({
+    name,
+    carrierX: model.state.carrierX,
+    line: runtime.line,
+    ...extra
+  });
+  if (runtime.eventLog.length > 80) runtime.eventLog.shift();
+}
+
+function setCycleState(next) {
+  if (runtime.cycle === next) return;
+  runtime.cycle = next;
+  runtime.lastRecordedCycle = next;
+  recordEvent(next);
+}
 
 function selectionForCharacter(character) {
   const cp = (character || 'a').codePointAt(0) || 97;
@@ -118,6 +137,8 @@ function resetMechanicalState() {
   runtime.cycleStart = 0;
   runtime.cycleAdvanceCommitted = false;
   runtime.cycleImpactCommitted = false;
+  runtime.eventLog = [];
+  runtime.lastRecordedCycle = 'C0_REST';
   runtime.pendingCharacter = 'a';
   runtime.selectionTarget = selectionForCharacter('a');
   model.setCarrierX(-CANONICAL.writingLineMm / 2);
@@ -134,7 +155,7 @@ function startCharacterCycle(character = runtime.pendingCharacter) {
   if (runtime.cycle !== 'C0_REST') return;
   runtime.pendingCharacter = character || 'a';
   runtime.selectionTarget = selectionForCharacter(runtime.pendingCharacter);
-  runtime.cycle = 'C1_TRIP';
+  setCycleState('C1_TRIP');
   runtime.cycleStart = performance.now();
   runtime.cycleAdvanceCommitted = false;
   runtime.cycleImpactCommitted = false;
@@ -153,49 +174,51 @@ function runCycle(now) {
   model.setCyclePhase(t);
 
   if (t < 0.12) {
-    runtime.cycle = 'C1_TRIP';
+    setCycleState('C1_TRIP');
     model.setTypeball(0, 0, runtime.selectionTarget.shift);
     model.setRibbonLift(0);
     model.setPrintApproach(0);
   } else if (t < 0.28) {
-    runtime.cycle = 'C2_CODE_SETUP';
+    setCycleState('C2_CODE_SETUP');
     const k = (t - 0.12) / 0.16;
     model.setTypeball(runtime.selectionTarget.tilt * k, runtime.selectionTarget.rotate * k, runtime.selectionTarget.shift);
   } else if (t < 0.43) {
-    runtime.cycle = 'C3_SELECTION_DRIVE';
+    setCycleState('C3_SELECTION_DRIVE');
     model.setTypeball(runtime.selectionTarget.tilt, runtime.selectionTarget.rotate, runtime.selectionTarget.shift);
   } else if (t < 0.54) {
-    runtime.cycle = 'C4_FINE_ALIGN';
+    setCycleState('C4_FINE_ALIGN');
     const k = (t - 0.43) / 0.11;
     model.setTypeball(runtime.selectionTarget.tilt, runtime.selectionTarget.rotate, runtime.selectionTarget.shift);
     model.setRibbonLift(k);
     model.setPrintApproach(k * 0.55);
   } else if (t < 0.66) {
-    runtime.cycle = 'C5_PRINT_IMPACT';
+    setCycleState('C5_PRINT_IMPACT');
     const k = (t - 0.54) / 0.12;
     model.setRibbonLift(1);
     model.setPrintApproach(Math.min(1, 0.55 + k * 0.45));
     if (!runtime.cycleImpactCommitted && k > 0.58) {
       model.stampCharacter(runtime.pendingCharacter, runtime.line);
       runtime.cycleImpactCommitted = true;
+      recordEvent('PRINT_IMPACT', { character: runtime.pendingCharacter });
     }
   } else if (t < 0.91) {
-    runtime.cycle = 'C6_ESCAPEMENT_RIBBON_RESTORE';
+    setCycleState('C6_ESCAPEMENT_RIBBON_RESTORE');
     const k = 1 - (t - 0.66) / 0.25;
     model.setRibbonLift(Math.max(0, k));
     model.setPrintApproach(Math.max(0, k));
     if (!runtime.cycleAdvanceCommitted && t > 0.73) {
       advanceCarrier(CANONICAL.pitchMm);
       runtime.cycleAdvanceCommitted = true;
+      recordEvent('ESCAPEMENT_ADVANCE');
     }
   } else {
-    runtime.cycle = 'C7_CLUTCH_DISENGAGE_CHECK';
+    setCycleState('C7_CLUTCH_DISENGAGE_CHECK');
     model.setRibbonLift(0);
     model.setPrintApproach(0);
   }
 
   if (t >= 1) {
-    runtime.cycle = 'C0_REST';
+    setCycleState('C0_REST');
     model.setRibbonLift(0);
     model.setPrintApproach(0);
     model.setCyclePhase(0);
@@ -325,6 +348,7 @@ function snapshot() {
     cyclePhase: model.state.cyclePhase,
     explosion: model.state.explosion,
     geometry: model.geometryDiagnostics(),
+    events: runtime.eventLog.map(event => ({ ...event })),
     profile: CANONICAL.profile
   };
 }
