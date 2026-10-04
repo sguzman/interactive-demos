@@ -357,16 +357,33 @@ ui.indexBtn.addEventListener('click', () => {
 });
 ui.resetBtn.addEventListener('click', resetMechanicalState);
 ui.explode.addEventListener('input', () => {
-  model.setExplosion(Number(ui.explode.value) / 100);
+  const amount = Number(ui.explode.value) / 100;
+  model.setExplosion(amount);
+  if (amount >= 0.20) {
+    const preset = presets.exploded;
+    model.setServiceCover(preset.cover);
+    camera.position.fromArray(preset.position);
+    orbit.target.fromArray(preset.target);
+    orbit.update();
+    document.querySelectorAll('[data-view]').forEach(other => other.classList.remove('active'));
+  } else if (amount === 0) {
+    const preset = presets.product;
+    model.setServiceCover(preset.cover);
+    camera.position.fromArray(preset.position);
+    orbit.target.fromArray(preset.target);
+    orbit.update();
+    document.querySelectorAll('[data-view]').forEach(other => other.classList.toggle('active', other.dataset.view === 'product'));
+  }
   syncUi();
 });
 
 const presets = {
-  product: { position: [350, 235, 505], target: [0, 78, -4] },
-  carrier: { position: [275, 175, 230], target: [0, 100, -58] },
-  selection: { position: [330, 175, 250], target: [0, 72, -32] },
-  power: { position: [350, 150, 315], target: [-45, 50, 20] },
-  rack: { position: [310, 145, 90], target: [0, 83, -65] }
+  product: { position: [350, 235, 505], target: [0, 78, -4], cover: 0 },
+  carrier: { position: [285, 190, 245], target: [0, 101, -58], cover: 1 },
+  selection: { position: [350, 188, 285], target: [0, 76, -38], cover: 1 },
+  power: { position: [380, 170, 345], target: [-40, 54, 12], cover: 1 },
+  rack: { position: [330, 155, 125], target: [0, 84, -66], cover: 1 },
+  exploded: { position: [575, 390, 760], target: [0, 82, -6], cover: 0 }
 };
 
 document.querySelectorAll('[data-view]').forEach(button => {
@@ -374,9 +391,11 @@ document.querySelectorAll('[data-view]').forEach(button => {
     document.querySelectorAll('[data-view]').forEach(other => other.classList.toggle('active', other === button));
     const preset = presets[button.dataset.view];
     if (!preset) return;
+    model.setServiceCover(preset.cover);
     camera.position.fromArray(preset.position);
     orbit.target.fromArray(preset.target);
     orbit.update();
+    syncUi();
   });
 });
 
@@ -497,8 +516,22 @@ window.__selectricDebug = {
   },
   reset: resetMechanicalState,
   setExplosion(value) {
-    model.setExplosion(value);
+    const amount = THREE.MathUtils.clamp(Number(value) || 0, 0, 1);
+    model.setExplosion(amount);
     ui.explode.value = String(Math.round(model.state.explosion * 100));
+    if (amount >= 0.20) {
+      const preset = presets.exploded;
+      model.setServiceCover(preset.cover);
+      camera.position.fromArray(preset.position);
+      orbit.target.fromArray(preset.target);
+      orbit.update();
+    } else if (amount === 0) {
+      const preset = presets.product;
+      model.setServiceCover(preset.cover);
+      camera.position.fromArray(preset.position);
+      orbit.target.fromArray(preset.target);
+      orbit.update();
+    }
     syncUi();
   }
 };
