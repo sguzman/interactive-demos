@@ -486,6 +486,7 @@ export function createSelectricModel() {
     ribbonFeedApproxRatchetTeeth: 0,
     ribbonFeedDirection: 1,
     ribbonFeedStrokeInDirection: 0,
+    ribbonSpoolFillP5: [0.86, 0.14],
     ribbonReverseCount: 0,
     ribbonReversePhase: 0,
     ribbonReverseState: 'feeding',
@@ -1535,6 +1536,9 @@ export function createSelectricModel() {
   const ribbonRatchets = [];
   const reverseTriggers = [];
   const ribbonPawlTargetXP5 = 30;
+  const ribbonFillMinP5 = 0.14;
+  const ribbonFillMaxP5 = 0.86;
+  const ribbonFillStepP5 = (ribbonFillMaxP5 - ribbonFillMinP5) / state.ribbonReverseThresholdStepsP5;
   for (const x of [-P4.ribbon.spoolCenterX, P4.ribbon.spoolCenterX]) {
     const spool = new THREE.Mesh(
       new THREE.CylinderGeometry(P4.ribbon.spoolRadiusP4, P4.ribbon.spoolRadiusP4, 10, 36),
@@ -1612,20 +1616,33 @@ export function createSelectricModel() {
     mesh.scale.set(length, 1, 1);
   }
 
+  function ribbonRollRadiusScaleP5(fill) {
+    return THREE.MathUtils.lerp(0.52, 1.04, THREE.MathUtils.clamp(fill, 0, 1));
+  }
+
+  function updateRibbonSpoolFillVisuals() {
+    ribbonSpools.forEach((spool, index) => {
+      const radiusScale = ribbonRollRadiusScaleP5(state.ribbonSpoolFillP5[index]);
+      spool.scale.set(radiusScale, 1, radiusScale);
+    });
+  }
+
   function updateRibbonPath(lift) {
     const liftY = THREE.MathUtils.lerp(P4.ribbon.yRest, P4.ribbon.yLift, lift);
     leftGuide.y = liftY;
     rightGuide.y = liftY;
+    const leftRadius = P4.ribbon.spoolRadiusP4 * ribbonSpools[0].scale.x;
+    const rightRadius = P4.ribbon.spoolRadiusP4 * ribbonSpools[1].scale.x;
     updateRibbonSegment(
       ribbonLeftSegment,
-      new THREE.Vector3(-P4.ribbon.spoolCenterX + 5, 94, -50),
+      new THREE.Vector3(-P4.ribbon.spoolCenterX + leftRadius * 0.82, 94, -50),
       leftGuide
     );
     updateRibbonSegment(ribbonCenterSegment, leftGuide, rightGuide);
     updateRibbonSegment(
       ribbonRightSegment,
       rightGuide,
-      new THREE.Vector3(P4.ribbon.spoolCenterX - 5, 94, -50)
+      new THREE.Vector3(P4.ribbon.spoolCenterX - rightRadius * 0.82, 94, -50)
     );
   }
 
@@ -2078,6 +2095,15 @@ export function createSelectricModel() {
     state.ribbonFeedStep += 1;
     state.ribbonFeedApproxRatchetTeeth += 2.5;
     state.ribbonFeedStrokeInDirection += 1;
+    if (state.ribbonFeedDirection > 0) {
+      state.ribbonSpoolFillP5[0] = Math.max(ribbonFillMinP5, state.ribbonSpoolFillP5[0] - ribbonFillStepP5);
+      state.ribbonSpoolFillP5[1] = Math.min(ribbonFillMaxP5, state.ribbonSpoolFillP5[1] + ribbonFillStepP5);
+    } else {
+      state.ribbonSpoolFillP5[0] = Math.min(ribbonFillMaxP5, state.ribbonSpoolFillP5[0] + ribbonFillStepP5);
+      state.ribbonSpoolFillP5[1] = Math.max(ribbonFillMinP5, state.ribbonSpoolFillP5[1] - ribbonFillStepP5);
+    }
+    updateRibbonSpoolFillVisuals();
+    updateRibbonPath(state.ribbonLift);
     const presentationStep = 0.17 * state.ribbonFeedDirection;
     ribbonSpools[0].rotation.y -= presentationStep;
     ribbonSpools[1].rotation.y += presentationStep;
@@ -2100,6 +2126,13 @@ export function createSelectricModel() {
   function primeRibbonAutoReverse() {
     if (state.ribbonReverseState !== 'feeding') return false;
     state.ribbonFeedStrokeInDirection = Math.max(0, state.ribbonReverseThresholdStepsP5 - 1);
+    if (state.ribbonFeedDirection > 0) {
+      state.ribbonSpoolFillP5 = [ribbonFillMinP5 + ribbonFillStepP5, ribbonFillMaxP5 - ribbonFillStepP5];
+    } else {
+      state.ribbonSpoolFillP5 = [ribbonFillMaxP5 - ribbonFillStepP5, ribbonFillMinP5 + ribbonFillStepP5];
+    }
+    updateRibbonSpoolFillVisuals();
+    updateRibbonPath(state.ribbonLift);
     return true;
   }
 
@@ -2108,6 +2141,7 @@ export function createSelectricModel() {
     state.ribbonFeedApproxRatchetTeeth = 0;
     state.ribbonFeedDirection = 1;
     state.ribbonFeedStrokeInDirection = 0;
+    state.ribbonSpoolFillP5 = [ribbonFillMaxP5, ribbonFillMinP5];
     state.ribbonReverseCount = 0;
     state.ribbonReversePhase = 0;
     state.ribbonReverseState = 'feeding';
@@ -2121,6 +2155,8 @@ export function createSelectricModel() {
     reverseTriggers.forEach(trigger => {
       trigger.rotation.z = trigger.userData.baseRotationZ;
     });
+    updateRibbonSpoolFillVisuals();
+    updateRibbonPath(state.ribbonLift);
     applyRibbonFeedSelection();
   }
 
@@ -2498,6 +2534,9 @@ export function createSelectricModel() {
         nominalRatchetTeethQualifier: 'approximately',
         feedDirection: state.ribbonFeedDirection,
         feedStrokeInDirection: state.ribbonFeedStrokeInDirection,
+        spoolFillP5: [...state.ribbonSpoolFillP5],
+        spoolRadiusScaleP5: ribbonSpools.map(spool => spool.scale.x),
+        spoolFillClass: 'P5 compressed supply/take-up fullness presentation; direction and reversal topology source-grounded, physical ribbon length unresolved',
         reverseState: state.ribbonReverseState,
         reversePhase: state.ribbonReversePhase,
         reverseCount: state.ribbonReverseCount,

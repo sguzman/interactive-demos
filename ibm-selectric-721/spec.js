@@ -224,8 +224,8 @@ export const COMPONENTS = Object.freeze({
   ribbon: {
     name: 'Fabric ribbon system',
     category: 'inking',
-    provenance: 'active fabric-ribbon branch + P4 path',
-    description: 'Twin-spool fabric ribbon presentation with lift coupled to the fine-align/print portion of the character cycle.'
+    provenance: 'active fabric-ribbon branch + P4 path + P5 compressed spool-fullness presentation',
+    description: 'Twin-spool fabric ribbon presentation with lift coupled to the fine-align/print portion of the character cycle. Supply/take-up roll fullness now transfers with feed direction and survives auto-reversal, but the displayed capacity is intentionally compressed P5 rather than a claim about physical ribbon length.'
   },
   horizontalMotion: {
     name: 'Writing-line racks / cords',
