@@ -25,7 +25,7 @@ The browser model currently includes:
 - carrier-parented escapement bracket and pawl cue;
 - IBM 1141628 print sleeve;
 - ribbon-lift -> IBM 1164240 -> IBM 1124174 cam-stack order;
-- 88-position structural type-element model with four × 22 repeated slug cues oriented tangent to the P4 ellipsoidal body, with visible tilt/rotate now aligned to that same structural lattice (11 base rotate coordinates plus the independent 180° shift hemisphere) and anchored to the reconstruction's platen-facing -Z print side; exact keyboard/glyph mapping and glyph-face sections remain unresolved;
+- 88-position structural type-element model with four × 22 repeated slug cues oriented tangent to the P4 ellipsoidal body, with visible tilt/rotate aligned to that same structural lattice (11 base rotate coordinates plus the independent 180° shift hemisphere) and anchored to the reconstruction's platen-facing -Z print side; diagnostics now solve the selected slug normal and verify that it actually lands on that print-facing direction, while exact keyboard/glyph mapping and glyph-face sections remain unresolved;
 - distinct coarse selection and carrier-local tilt/rotate fine-alignment detents, with source-order-preserving P5 engagement/release phasing;
 - 7X1 gearless tilt and rotate tape presentation driven by the source-backed normalized 1:2 tilt weighting, staged 1:2:2 rotate weighting and signed five-unit balance, with a carrier-sweep constant-length presentation path;
 - cycle and operational shafts, cams, motor and belt cues;

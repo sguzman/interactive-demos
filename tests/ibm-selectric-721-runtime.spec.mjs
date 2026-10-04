@@ -112,6 +112,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.typeElement.selectionOrientationClass).toContain('structural lattice alignment');
   expect(initial.geometry.typeElement.printFacingOffsetDegP4).toBe(180);
   expect(initial.geometry.typeElement.printFacingTarget).toContain('-Z toward platen');
+  expect(initial.geometry.typeElement.selectedSlugAlignmentErrorDegP4).toBeLessThan(1e-7);
+  expect(initial.geometry.typeElement.selectedSlugFacingVectorP4.z).toBeCloseTo(-1, 8);
   expect(initial.geometry.typeElement.glyphFaceGeometry).toContain('unresolved');
   expect(initial.geometry.operationalCams.spaceBackspaceDegreesPerOperation).toBe(180);
   expect(initial.geometry.operationalCams.carrierReturnIndexDegreesPerOperation).toBe(360);
@@ -390,6 +392,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(uppercaseTyped.geometry.typeElement.selectedStructuralSlotP4).toBe(
     (typed.geometry.typeElement.selectedStructuralSlotP4 + 11) % 22
   );
+  expect(uppercaseTyped.geometry.typeElement.selectedSlugAlignmentErrorDegP4).toBeLessThan(1e-7);
+  expect(uppercaseTyped.geometry.typeElement.selectedSlugFacingVectorP4.z).toBeCloseTo(-1, 8);
   expect(uppercaseTyped.events.some(event => event.name === 'SHIFT_OPERATION_COMPLETE')).toBe(true);
 
   await page.evaluate(() => window.__selectricDebug.typeCharacter('q'));
