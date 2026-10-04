@@ -1862,7 +1862,7 @@ export function createSelectricModel() {
     const next = Math.max(0, Math.min(4, Math.round(Number(setting) || 0)));
     state.copyControlSetting = next;
     // Only the discrete topology and rearward direction are sourced. These display offsets are P5.
-    state.copyControlOffsetZ = -next * 2.2;
+    state.copyControlOffsetZ = next === 0 ? 0 : -next * 2.2;
     paperFeedCarriage.position.z = state.copyControlOffsetZ;
     copyControlLeverPivot.rotation.x = deg(-next * 8);
     copyControlShaft.rotation.x = deg(next * 12);
