@@ -357,6 +357,12 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.locator('[data-view="selection"]').click();
   await expect.poll(async () => page.evaluate(() => window.__selectricDebug.state.serviceCoverOpen)).toBe(1);
   await page.screenshot({ path: 'test-results/selectric-selection-view.png', fullPage: true });
+  await page.locator('[data-view="ribbon"]').click();
+  await expect.poll(async () => page.evaluate(() => window.__selectricDebug.state.serviceCoverOpen)).toBe(1);
+  await page.screenshot({ path: 'test-results/selectric-ribbon-view.png', fullPage: true });
+  await page.locator('[data-view="paper"]').click();
+  await expect.poll(async () => page.evaluate(() => window.__selectricDebug.state.serviceCoverOpen)).toBe(1);
+  await page.screenshot({ path: 'test-results/selectric-paper-view.png', fullPage: true });
   await page.locator('[data-view="product"]').click();
   await expect.poll(async () => page.evaluate(() => window.__selectricDebug.state.serviceCoverOpen)).toBe(0);
 

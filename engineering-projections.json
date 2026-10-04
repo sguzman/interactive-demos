@@ -138,7 +138,7 @@
         "gallery",
         "interactive specimen"
       ],
-      "publicUx": "product overview + assembled/exploded inspection + carrier/typeball + selection + rack/support + powerframe views + deterministic print/shift/space/backspace/return/index + single/double line spacing + paper release/bail/copy-control/platen-variable + ribbon mode/load/auto-reverse + live margins/line-lock + programmable tab-stop controls",
+      "publicUx": "product overview + assembled/exploded inspection + carrier/typeball + selection + ribbon/print + paper/platen + rack/support + powerframe views + deterministic print/shift/space/backspace/return/index + single/double line spacing + paper release/bail/copy-control/platen-variable + ribbon mode/load/auto-reverse + live margins/line-lock + programmable tab-stop controls",
       "geometryStatus": "integrated-public-build-active",
       "geometryTask": "ENG-SEL-022"
     }
