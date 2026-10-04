@@ -191,6 +191,26 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.evaluate(() => window.__selectricDebug.setRibbonMode('middle'));
   await page.evaluate(() => window.__selectricDebug.reset());
 
+  const storedSpaceStart = await page.evaluate(() => window.__selectricDebug.state.carrierX);
+  await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.50));
+  await page.evaluate(() => window.__selectricDebug.space());
+  const storedSpace = await page.evaluate(() => window.__selectricDebug.state);
+  expect(storedSpace.storedSpace).toBe(true);
+  expect(storedSpace.operation).toBe(null);
+  expect(storedSpace.events.some(event => event.name === 'SPACE_STORED_BY_FILTER_SHAFT_INTERLOCK')).toBe(true);
+  await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
+  await page.waitForFunction(
+    () => window.__selectricDebug.state.cycle === 'C0_REST' && window.__selectricDebug.state.operation === null,
+    null,
+    { timeout: 6000 }
+  );
+  const storedSpaceReleased = await page.evaluate(() => window.__selectricDebug.state);
+  expect(storedSpaceReleased.storedSpace).toBe(false);
+  expect(storedSpaceReleased.carrierX - storedSpaceStart).toBeCloseTo(storedSpaceReleased.geometry.pitchMm * 2, 5);
+  expect(storedSpaceReleased.events.some(event => event.name === 'SPACE_INTERLOCK_RELEASED')).toBe(true);
+  expect(storedSpaceReleased.events.some(event => event.name === 'SPACE_OPERATION_COMPLETE')).toBe(true);
+  await page.evaluate(() => window.__selectricDebug.reset());
+
   const coverCarrier = initial.carrierX;
   await page.evaluate(() => window.__selectricDebug.setServiceCover(1));
   const coverOpen = await page.evaluate(() => window.__selectricDebug.state);
