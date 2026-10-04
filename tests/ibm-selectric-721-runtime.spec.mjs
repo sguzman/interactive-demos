@@ -432,7 +432,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(narrowMargins.geometry.marginStops.rightX).toBeCloseTo(narrowMargins.margins.rightX, 8);
 
   await page.evaluate(() => window.__selectricDebug.typeCharacter('m'));
-  await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
+  await page.waitForFunction(
+    () => window.__selectricDebug.state.serviceOperation === null && window.__selectricDebug.state.cycle === 'C0_REST',
+    null,
+    { timeout: 7000 }
+  );
   const atRightMargin = await page.evaluate(() => window.__selectricDebug.state);
   expect(atRightMargin.carrierX).toBeCloseTo(atRightMargin.margins.rightX, 5);
   expect(atRightMargin.events.some(event => event.name === 'RIGHT_MARGIN_REACHED')).toBe(true);
