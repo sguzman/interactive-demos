@@ -188,8 +188,8 @@ export const COMPONENTS = Object.freeze({
   sleeve: {
     name: 'Print sleeve · IBM 1141628',
     category: 'carrier / print',
-    provenance: 'exact active part identity + topology-grounded P4 dimensions',
-    description: 'Later/new-style sleeve with ribbon-lift cam, IBM 1164240 combined feed/detent cam and IBM 1124174 double print/restoring cam in sourced left-to-right order.'
+    provenance: 'exact active part/cam identities + sourced stack order + P4 cam/follower/bellcrank geometry + P5 event envelopes',
+    description: 'Later/new-style sleeve with ribbon-lift cam, IBM 1164240 combined feed/detent cam and IBM 1124174 double print/restoring cam in sourced left-to-right order. The reconstruction now makes all three visible as causal sleeve outputs: ribbon lift, fine alignment and the print-rocker swing use embodied followers/linkages rather than parallel cycle animations; exact cam profiles and lever sections remain unresolved.'
   },
   rearSupport: {
     name: 'Level-2 rear carrier support',
