@@ -188,6 +188,13 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(spaceFollower.geometry.operationalCams.followerLiftP5.spaceBackspace).toBeCloseTo(1, 8);
   expect(spaceFollower.geometry.operationalCams.followerLiftP5.returnIndex).toBeCloseTo(0, 8);
   expect(spaceFollower.geometry.operationalCams.followerLiftP5.shift).toBeCloseTo(0, 8);
+  expect(spaceFollower.geometry.backspace.linkagePhase).toBeCloseTo(0, 8);
+
+  await page.evaluate(() => window.__selectricDebug.setOperationalCam('backspace', 0.5));
+  const backspaceFollower = await page.evaluate(() => window.__selectricDebug.state);
+  expect(backspaceFollower.geometry.operationalCams.selectedFollower).toBe('space/backspace');
+  expect(backspaceFollower.geometry.operationalCams.followerLiftP5.spaceBackspace).toBeCloseTo(1, 8);
+  expect(backspaceFollower.geometry.backspace.linkagePhase).toBeCloseTo(0.5, 8);
 
   await page.evaluate(() => window.__selectricDebug.setOperationalCam('carrier-return', 0.5));
   const returnFollower = await page.evaluate(() => window.__selectricDebug.state);
