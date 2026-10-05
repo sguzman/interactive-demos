@@ -1346,44 +1346,52 @@ export function createSelectricModel() {
   operationalCamFrame.position.set(0, P4.operationalShaft.y, P4.operationalShaft.z);
   driveAssembly.add(operationalCamFrame);
 
+  // Smooth P4 operational-cam envelopes replace the earlier round hubs with box lobes.
+  // Lobe count and service-rotation class are preserved; exact IBM production profiles remain unresolved.
   const doubleServiceCam = new THREE.Group();
   doubleServiceCam.position.x = -44;
   doubleServiceCam.name = 'space/backspace double-lobed 180-degree service cam';
   operationalCamFrame.add(doubleServiceCam);
-  const doubleHub = pulley(10.5, 8, metal, 'space/backspace cam hub');
-  addPickable(doubleHub, COMPONENTS.drive, pickables);
-  doubleServiceCam.add(doubleHub);
-  for (const angle of [0, Math.PI]) {
-    const lobe = box(8, 7, 5, darkMetal, 'space/backspace cam lobe');
-    lobe.position.set(0, Math.cos(angle) * 10, Math.sin(angle) * 10);
-    lobe.rotation.x = angle;
-    addPickable(lobe, COMPONENTS.drive, pickables);
-    doubleServiceCam.add(lobe);
-  }
+  const doubleServiceCamProfile = camProfileP4(
+    8,
+    8.6,
+    [
+      { angleRad: 0, liftMm: 2.8, halfWidthRad: deg(42), sharpness: 2.7 },
+      { angleRad: Math.PI, liftMm: 2.8, halfWidthRad: deg(42), sharpness: 2.7 }
+    ],
+    darkMetal,
+    'space/backspace service cam · smooth double-lobed P4 profile'
+  );
+  addPickable(doubleServiceCamProfile, COMPONENTS.drive, pickables);
+  doubleServiceCam.add(doubleServiceCamProfile);
 
   const returnIndexCam = new THREE.Group();
   returnIndexCam.position.x = 22;
   returnIndexCam.name = 'carrier-return/index single-lobed 360-degree service cam';
   operationalCamFrame.add(returnIndexCam);
-  const returnHub = pulley(11.5, 9, metal, 'carrier-return/index cam hub');
-  addPickable(returnHub, COMPONENTS.drive, pickables);
-  returnIndexCam.add(returnHub);
-  const returnLobe = box(9, 8, 6, darkMetal, 'carrier-return/index cam lobe');
-  returnLobe.position.set(0, 11, 0);
-  addPickable(returnLobe, COMPONENTS.drive, pickables);
-  returnIndexCam.add(returnLobe);
+  const returnIndexCamProfile = camProfileP4(
+    9,
+    9.2,
+    [{ angleRad: 0, liftMm: 3.3, halfWidthRad: deg(54), sharpness: 2.6 }],
+    darkMetal,
+    'carrier-return/index service cam · smooth single-lobed P4 profile'
+  );
+  addPickable(returnIndexCamProfile, COMPONENTS.drive, pickables);
+  returnIndexCam.add(returnIndexCamProfile);
 
   const shiftCam = new THREE.Group();
   shiftCam.position.x = 84;
   shiftCam.name = 'dedicated shift 180-degree cam';
   operationalCamFrame.add(shiftCam);
-  const shiftHub = pulley(9.5, 8, metal, 'shift cam hub');
-  addPickable(shiftHub, COMPONENTS.drive, pickables);
-  shiftCam.add(shiftHub);
-  const shiftLobe = box(8, 7, 5, darkMetal, 'shift cam lobe');
-  shiftLobe.position.set(0, 9.5, 0);
-  addPickable(shiftLobe, COMPONENTS.drive, pickables);
-  shiftCam.add(shiftLobe);
+  const shiftCamProfile = camProfileP4(
+    8,
+    7.9,
+    [{ angleRad: 0, liftMm: 2.7, halfWidthRad: deg(50), sharpness: 2.6 }],
+    darkMetal,
+    'shift service cam · smooth single-lobed P4 profile'
+  );
+  addPickable(shiftCamProfile, COMPONENTS.drive, pickables);
+  shiftCam.add(shiftCamProfile);
 
   function makeOperationalFollower(x, name) {
     const follower = new THREE.Group();
@@ -4090,6 +4098,17 @@ export function createSelectricModel() {
         tabUsesPoweredCam: false,
         shiftInterlocksCharacterCycle: true,
         followersEmbodied: true,
+        profilePresentationClass: 'smooth P4 radial service-cam envelopes; lobe count/operation class preserved, exact IBM profiles unresolved',
+        profileLobeCounts: {
+          spaceBackspace: doubleServiceCamProfile.userData.p4CamProfile.lobes.length,
+          carrierReturnIndex: returnIndexCamProfile.userData.p4CamProfile.lobes.length,
+          shift: shiftCamProfile.userData.p4CamProfile.lobes.length
+        },
+        profileBaseRadiiMmP4: {
+          spaceBackspace: doubleServiceCamProfile.userData.p4CamProfile.baseRadius,
+          carrierReturnIndex: returnIndexCamProfile.userData.p4CamProfile.baseRadius,
+          shift: shiftCamProfile.userData.p4CamProfile.baseRadius
+        },
         followerLiftP5: { ...state.operationalFollowerLiftP5 },
         selectedFollower:
           state.operationalCamAction === 'space' || state.operationalCamAction === 'backspace'
