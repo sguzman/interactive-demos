@@ -2563,14 +2563,16 @@ export function createSelectricModel() {
   indexPawlPivot.name = 'platen index pawl pivot P4';
   indexPawlPivot.position.set(
     P4.platen.length / 2 - 20,
-    P4.platen.y - 10,
-    P4.platen.z + 22
+    P4.platen.y - 14,
+    P4.platen.z + 23
   );
-  indexPawlPivot.userData.baseRotationX = deg(-65);
+  // Rest tip sits at the reconstructed front circumference of the 27T ratchet rather than
+  // cutting through its hub. The stroke then swings the pawl clear in the public presentation.
+  indexPawlPivot.userData.baseRotationX = deg(-28);
   indexPawlPivot.rotation.x = indexPawlPivot.userData.baseRotationX;
   paperFeedCarriage.add(indexPawlPivot);
 
-  const indexPawlGeometryP4 = leverPlateGeometryP4(25, 7.2, 4.4, 3.2);
+  const indexPawlGeometryP4 = leverPlateGeometryP4(17.5, 7.2, 4.4, 3.2);
   const indexPawl = new THREE.Mesh(indexPawlGeometryP4, darkMetal);
   indexPawl.name = 'platen index pawl stamped-link arm P4';
   indexPawl.castShadow = true;
@@ -2583,7 +2585,7 @@ export function createSelectricModel() {
   indexPawlPivot.add(indexPawlPivotPin);
 
   const indexPawlTip = box(5.2, 4.8, 3.2, metal, 'platen index pawl tooth-contact tip P4');
-  indexPawlTip.position.set(0, 25.0, 0);
+  indexPawlTip.position.set(0, 17.5, 0);
   indexPawlTip.rotation.x = deg(-16);
   addPickable(indexPawlTip, COMPONENTS.platenRatchet, pickables);
   indexPawlPivot.add(indexPawlTip);
@@ -4547,7 +4549,11 @@ export function createSelectricModel() {
         indexPawlPivotEmbodied: true,
         indexPawlTipEmbodied: true,
         indexPawlRestAngleDegP4: THREE.MathUtils.radToDeg(indexPawlPivot.userData.baseRotationX),
-        indexPawlStrokeClass: 'P5 presentation amplitude about explicit P4 pivot; one-vs-two-tooth function source-backed, exact OEM pawl travel unresolved'
+        indexPawlRestTipRadiusFromRatchetCenterMmP4: Math.hypot(
+          (indexPawlPivot.position.y + Math.cos(indexPawlPivot.userData.baseRotationX) * 17.5) - P4.platen.y,
+          (indexPawlPivot.position.z + Math.sin(indexPawlPivot.userData.baseRotationX) * 17.5) - P4.platen.z
+        ),
+        indexPawlStrokeClass: 'P5 presentation amplitude about explicit P4 pivot; rest tip placed at reconstructed ratchet circumference, one-vs-two-tooth function source-backed, exact OEM pawl travel unresolved'
       },
       paperFeed: {
         frontRollers: 4,
