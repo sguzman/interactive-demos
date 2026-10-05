@@ -205,6 +205,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.primaryDrive.cycleShaftEventGated).toBe(true);
   expect(initial.geometry.powerPresentation.operationalShaftContinuousWhenPowered).toBe(true);
   expect(initial.geometry.powerPresentation.serviceCamsStationaryUntilSelected).toBe(true);
+  expect(initial.geometry.powerPresentation.motorConstructionClass).toContain('barrel + twin endbells');
+  expect(initial.geometry.powerPresentation.motorEndbellCount).toBe(2);
+  expect(initial.geometry.powerPresentation.motorVentBandCount).toBe(3);
+  expect(initial.geometry.powerPresentation.motorMountingFootCount).toBe(2);
+  expect(initial.geometry.powerPresentation.motorThroughShaftVisible).toBe(true);
   expect(initial.geometry.typeElement.characterCount).toBe(88);
   expect(initial.geometry.typeElement.bands).toBe(4);
   expect(initial.geometry.typeElement.positionsPerBand).toBe(22);
