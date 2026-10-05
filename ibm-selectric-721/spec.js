@@ -218,8 +218,8 @@ export const COMPONENTS = Object.freeze({
   selection: {
     name: 'Selection transmission',
     category: 'mechanical information processing',
-    provenance: 'source-grounded weighted differential topology + width-specific 7X1 identities + P4 linkage/flat-tape guide geometry',
-    description: 'Two weighted tilt inputs, three positive rotate inputs plus the five-unit negative baseline drive gearless-tilt and rotate tape paths. The public reconstruction now uses flat tape strips over separate stationary and carrier-local P4 guide lanes with tangent offsets instead of round cords through decorative pulley centers; tape length remains invariant under carrier x while exact production sheave coordinates remain unresolved.'
+    provenance: 'source-grounded weighted differential topology and hole ratios + width-specific 7X1 identities + P4 stamped-link/flat-tape geometry',
+    description: 'Two weighted tilt inputs, three positive rotate inputs and the physically separate five-unit negative baseline now act through visible floating differential plates rather than decorative sliding bars. The P4 plates preserve the source-fixed tilt 0/1/3, rotate 0/2/3 and 0/3/5, and signed-balance midpoint hole ratios; endpoint displacement rotates/translates each lever and the tilt output remains an explicit double vertical link. The negative-five bail rises into the opposite balance-lever side instead of numerically flipping sign. Flat 7X1 tape strips continue over separate stationary/carrier P4 guide lanes with carrier-sweep length invariance. Absolute lever spans, stampings, pivots and production sheave coordinates remain reconstructed/unresolved.'
   },
   ribbon: {
     name: 'Fabric ribbon system',
