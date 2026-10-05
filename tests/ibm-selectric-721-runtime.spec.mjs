@@ -184,6 +184,14 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.keyboardMechanism.sixthChannelMappingClass).toContain('unresolved');
   expect(initial.geometry.keyboardMechanism.latchInterposerCount).toBe(6);
   expect(initial.geometry.keyboardMechanism.latchInterposerClass).toContain('one-to-one');
+  expect(initial.geometry.keyboardMechanism.selectorBailToLatchInterposerTransferEmbodiedP4).toBe(true);
+  expect(initial.geometry.keyboardMechanism.selectorBailToLatchInterposerTransferCountP4).toBe(6);
+  expect(initial.geometry.keyboardMechanism.selectorBailToLatchInterposerRodLengthsMmP4).toHaveLength(6);
+  expect(initial.geometry.keyboardMechanism.selectorBailToLatchInterposerRodLengthsMmP4
+    .every(length => Number.isFinite(length) && length > 0)).toBe(true);
+  expect(initial.geometry.keyboardMechanism.latchInterposerTravelDerivedFromBailPoseP5).toBe(true);
+  expect(initial.geometry.keyboardMechanism.selectorLatchForwardTravelDerivedFromInterposerPoseP5).toBe(true);
+  expect(initial.geometry.keyboardMechanism.latchInterposerToSelectorLatchVisibleBridge).toContain('open');
   expect(initial.geometry.keyboardMechanism.filterShaftBladeCount).toBe(2);
   expect(initial.geometry.keyboardMechanism.filterShaftBearingCount).toBe(2);
   expect(initial.geometry.keyboardMechanism.filterShaftRotationDegPerCharacter).toBe(180);
@@ -884,6 +892,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     angle === -12 ? fineAligned.geometry.keyboardMechanism.selectorLatchForwardTravelMmP5 : 0
   );
   expect(fineAligned.geometry.keyboardMechanism.selectorLatchForeAftOffsetMmP5).toEqual(expectedLatchForeAft);
+  expect(fineAligned.geometry.keyboardMechanism.selectorBailToLatchInterposerRodLengthsMmP4
+    .every(length => Number.isFinite(length) && length > 0)).toBe(true);
+  expect(fineAligned.geometry.keyboardMechanism.selectorBailToLatchInterposerRodLengthsMmP4).not.toEqual(
+    initial.geometry.keyboardMechanism.selectorBailToLatchInterposerRodLengthsMmP4
+  );
   const requestedLatchBits = ['T1','T2','R1','R2','R2A'].map(
     name => fineAligned.selection.selectorInputs[name]
   );
