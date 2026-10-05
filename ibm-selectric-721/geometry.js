@@ -172,6 +172,103 @@ function leverPlateGeometryP4(length, pivotWidth, tipWidth, thickness, pivotHole
   return geometry;
 }
 
+function twoHoleLinkPlateGeometryP4(length, width, thickness, pivotHoleRadius = 1.25) {
+  const halfWidth = width / 2;
+  const endRadius = halfWidth;
+  const chamfer = Math.min(1.8, width * 0.28);
+  const shape = new THREE.Shape();
+
+  shape.moveTo(-halfWidth + chamfer, -endRadius);
+  shape.lineTo(halfWidth - chamfer, -endRadius);
+  shape.lineTo(halfWidth, -endRadius + chamfer);
+  shape.lineTo(halfWidth, length + endRadius - chamfer);
+  shape.lineTo(halfWidth - chamfer, length + endRadius);
+  shape.lineTo(-halfWidth + chamfer, length + endRadius);
+  shape.lineTo(-halfWidth, length + endRadius - chamfer);
+  shape.lineTo(-halfWidth, -endRadius + chamfer);
+  shape.closePath();
+
+  for (const y of [0, length]) {
+    const hole = new THREE.Path();
+    hole.absarc(0, y, pivotHoleRadius, 0, Math.PI * 2, false);
+    shape.holes.push(hole);
+  }
+
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: thickness,
+    steps: 1,
+    bevelEnabled: true,
+    bevelThickness: 0.24,
+    bevelSize: 0.24,
+    bevelSegments: 2,
+    curveSegments: 16
+  });
+  geometry.translate(0, 0, -thickness / 2);
+  geometry.computeVertexNormals();
+  geometry.userData.p4TwoHoleLinkClass =
+    'two-eye chamfered P4 stamped link with explicit end holes; exact IBM stamping/section unresolved';
+  return geometry;
+}
+
+function differentialLeverPlateGeometryP4(
+  span,
+  width,
+  thickness,
+  holeFractions,
+  pivotHoleRadius = 1.35
+) {
+  const halfSpan = span / 2;
+  const halfWidth = width / 2;
+  const chamfer = Math.min(1.8, width * 0.28);
+  const left = -halfSpan - halfWidth;
+  const right = halfSpan + halfWidth;
+  const shape = new THREE.Shape();
+
+  shape.moveTo(left + chamfer, -halfWidth);
+  shape.lineTo(right - chamfer, -halfWidth);
+  shape.lineTo(right, -halfWidth + chamfer);
+  shape.lineTo(right, halfWidth - chamfer);
+  shape.lineTo(right - chamfer, halfWidth);
+  shape.lineTo(left + chamfer, halfWidth);
+  shape.lineTo(left, halfWidth - chamfer);
+  shape.lineTo(left, -halfWidth + chamfer);
+  shape.closePath();
+
+  for (const fraction of holeFractions) {
+    const x = THREE.MathUtils.lerp(-halfSpan, halfSpan, fraction);
+    const hole = new THREE.Path();
+    hole.absarc(x, 0, pivotHoleRadius, 0, Math.PI * 2, false);
+    shape.holes.push(hole);
+  }
+
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: thickness,
+    steps: 1,
+    bevelEnabled: true,
+    bevelThickness: 0.26,
+    bevelSize: 0.26,
+    bevelSegments: 2,
+    curveSegments: 16
+  });
+  geometry.translate(0, 0, -thickness / 2);
+  geometry.computeVertexNormals();
+  geometry.userData.p4DifferentialLeverClass =
+    'multi-eye chamfered P4 floating differential plate; source-fixed hole ratios preserved while absolute span/section remain reconstructed';
+  return geometry;
+}
+
+function pinZP4(length, radius, mat, name) {
+  const mesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius, radius, length, 20),
+    mat
+  );
+  mesh.rotation.x = Math.PI / 2;
+  mesh.name = name;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
 function carrierSidePlateGeometryP4(thickness, height, depth) {
   const halfH = height / 2;
   const halfD = depth / 2;
@@ -2797,65 +2894,225 @@ export function createSelectricModel() {
   addPickable(fiveUnitBail, COMPONENTS.selection, pickables);
   selectionAssembly.add(fiveUnitBail);
 
+  const selectionLinkageTravelP5 = Object.freeze({
+    tilt: 8,
+    rotateFirst: 10,
+    rotateSecond: 10,
+    balanceEndpoint: 14,
+    balanceOutput: 7,
+    fiveUnitBail: 8
+  });
+  const selectionLinkagePoseP5 = {
+    tilt: { angleDeg: 0, outputTravel: 0, expectedTravel: 0, error: 0 },
+    rotateFirst: { angleDeg: 0, outputTravel: 0, expectedTravel: 0, error: 0 },
+    rotateSecond: { angleDeg: 0, outputTravel: 0, expectedTravel: 0, error: 0 },
+    balance: { angleDeg: 0, signedOutputTravel: 0, expectedTravel: 0, error: 0 }
+  };
+
+  function makeSelectionLinkP4(length, name, mat = darkMetal, width = 5.8) {
+    const geometry = twoHoleLinkPlateGeometryP4(length, width, 2.2, 1.15);
+    const link = new THREE.Mesh(geometry, mat);
+    link.name = name;
+    link.castShadow = true;
+    link.receiveShadow = true;
+    addPickable(link, COMPONENTS.selection, pickables);
+    return link;
+  }
+
+  function addDifferentialPinsP4(parent, span, fractions, prefix) {
+    const pins = [];
+    fractions.forEach((fraction, index) => {
+      const pin = pinZP4(6.2, 1.45, darkMetal, prefix + ' joint pin ' + (index + 1) + ' P4');
+      pin.position.x = THREE.MathUtils.lerp(-span / 2, span / 2, fraction);
+      addPickable(pin, COMPONENTS.selection, pickables);
+      parent.add(pin);
+      pins.push(pin);
+    });
+    return pins;
+  }
+
+  function poseFloatingLeverP5(motion, leftYOffset, rightYOffset, span) {
+    motion.position.y = (leftYOffset + rightYOffset) / 2;
+    motion.rotation.z = Math.atan2(rightYOffset - leftYOffset, span);
+    return THREE.MathUtils.radToDeg(motion.rotation.z);
+  }
+
+  // Tilt: the source-fixed 0 / 1 / 3 hole ratio is now embodied by a floating lever.
+  // Either end may act as the effective pivot; when both latches descend the whole lever translates.
   const tiltDifferential = new THREE.Group();
+  tiltDifferential.name = 'tilt weighted differential stage P4';
   tiltDifferential.position.set(-76, 68, -35);
   selectionAssembly.add(tiltDifferential);
   const tiltLeverSpan = 60;
-  const tiltArmA = box(tiltLeverSpan, 4, 6, metal, 'tilt differential lever · normalized span 3');
+  const tiltOutputFractionP4 = 1 / 3;
+  const tiltLeverMotion = new THREE.Group();
+  tiltLeverMotion.name = 'tilt differential floating-lever motion';
+  tiltDifferential.add(tiltLeverMotion);
+  const tiltArmAGeometryP4 = differentialLeverPlateGeometryP4(
+    tiltLeverSpan,
+    7.2,
+    2.8,
+    [0, tiltOutputFractionP4, 1]
+  );
+  const tiltArmA = new THREE.Mesh(tiltArmAGeometryP4, metal);
+  tiltArmA.name = 'tilt differential lever · source-ratio holes 0/1/3 P4';
+  tiltArmA.castShadow = true;
+  tiltArmA.receiveShadow = true;
   addPickable(tiltArmA, COMPONENTS.selection, pickables);
-  tiltDifferential.add(tiltArmA);
-  const tiltT2Input = box(4, 28, 5, darkMetal, 'T2 input at normalized x=0');
-  tiltT2Input.position.set(-tiltLeverSpan / 2, 14, 0);
-  tiltT2Input.userData.baseY = tiltT2Input.position.y;
-  addPickable(tiltT2Input, COMPONENTS.selection, pickables);
-  tiltDifferential.add(tiltT2Input);
-  const tiltT1Input = box(4, 28, 5, darkMetal, 'T1 input at normalized x=3');
-  tiltT1Input.position.set(tiltLeverSpan / 2, 14, 0);
-  tiltT1Input.userData.baseY = tiltT1Input.position.y;
-  addPickable(tiltT1Input, COMPONENTS.selection, pickables);
-  tiltDifferential.add(tiltT1Input);
-  const tiltLink = box(4, 36, 5, darkMetal, 'tilt output link at normalized x=1');
-  tiltLink.position.set(-tiltLeverSpan / 6, 16, 0);
-  tiltLink.userData.baseY = tiltLink.position.y;
-  addPickable(tiltLink, COMPONENTS.selection, pickables);
-  tiltDifferential.add(tiltLink);
+  tiltLeverMotion.add(tiltArmA);
+  const tiltDifferentialPinsP4 = addDifferentialPinsP4(
+    tiltLeverMotion,
+    tiltLeverSpan,
+    [0, tiltOutputFractionP4, 1],
+    'tilt differential'
+  );
 
+  const tiltT2Input = makeSelectionLinkP4(28, 'T2 differential input link P4');
+  tiltT2Input.position.set(-tiltLeverSpan / 2, 0, 2.6);
+  tiltDifferential.add(tiltT2Input);
+  const tiltT1Input = makeSelectionLinkP4(28, 'T1 differential input link P4');
+  tiltT1Input.position.set(tiltLeverSpan / 2, 0, 2.6);
+  tiltDifferential.add(tiltT1Input);
+
+  // IBM describes this as a double vertical output link, so preserve that topology explicitly.
+  const tiltLink = new THREE.Group();
+  tiltLink.name = 'tilt double vertical output link P4';
+  tiltLink.position.set(
+    THREE.MathUtils.lerp(-tiltLeverSpan / 2, tiltLeverSpan / 2, tiltOutputFractionP4),
+    0,
+    0
+  );
+  tiltDifferential.add(tiltLink);
+  const tiltOutputLinkPlatesP4 = [];
+  for (const z of [-2.7, 2.7]) {
+    const plate = makeSelectionLinkP4(36, 'tilt output-link plate P4');
+    plate.position.z = z;
+    tiltLink.add(plate);
+    tiltOutputLinkPlatesP4.push(plate);
+  }
+
+  // Positive rotate stage 1: R1 and R2 occupy the two ends; q1 is taken at 2/3 span.
   const rotateFirst = new THREE.Group();
+  rotateFirst.name = 'rotate positive first differential stage P4';
   rotateFirst.position.set(12, 56, -34);
   selectionAssembly.add(rotateFirst);
   const rotateFirstSpan = 54;
-  const rotateFirstLever = box(rotateFirstSpan, 4, 6, metal, 'rotate first lever · normalized span 3');
+  const rotateFirstOutputFractionP4 = 2 / 3;
+  const rotateFirstLeverMotion = new THREE.Group();
+  rotateFirstLeverMotion.name = 'rotate first floating-lever motion';
+  rotateFirst.add(rotateFirstLeverMotion);
+  const rotateFirstLeverGeometryP4 = differentialLeverPlateGeometryP4(
+    rotateFirstSpan,
+    7.0,
+    2.8,
+    [0, rotateFirstOutputFractionP4, 1]
+  );
+  const rotateFirstLever = new THREE.Mesh(rotateFirstLeverGeometryP4, metal);
+  rotateFirstLever.name = 'rotate first lever · source-ratio holes 0/2/3 P4';
+  rotateFirstLever.castShadow = true;
+  rotateFirstLever.receiveShadow = true;
   addPickable(rotateFirstLever, COMPONENTS.selection, pickables);
-  rotateFirst.add(rotateFirstLever);
-  const rotateFirstLink = box(4, 28, 5, darkMetal, 'rotate q1 link at normalized x=2');
-  rotateFirstLink.position.set(rotateFirstSpan / 6, 14, 0);
-  rotateFirstLink.userData.baseY = rotateFirstLink.position.y;
-  addPickable(rotateFirstLink, COMPONENTS.selection, pickables);
+  rotateFirstLeverMotion.add(rotateFirstLever);
+  const rotateFirstPinsP4 = addDifferentialPinsP4(
+    rotateFirstLeverMotion,
+    rotateFirstSpan,
+    [0, rotateFirstOutputFractionP4, 1],
+    'rotate first differential'
+  );
+  const rotateFirstR1Input = makeSelectionLinkP4(24, 'R1 first-stage input link P4');
+  rotateFirstR1Input.position.set(-rotateFirstSpan / 2, 0, 2.6);
+  rotateFirst.add(rotateFirstR1Input);
+  const rotateFirstR2Input = makeSelectionLinkP4(24, 'R2 first-stage input link P4');
+  rotateFirstR2Input.position.set(rotateFirstSpan / 2, 0, 2.6);
+  rotateFirst.add(rotateFirstR2Input);
+  const rotateFirstLink = makeSelectionLinkP4(28, 'rotate q1 output link P4');
+  rotateFirstLink.position.set(
+    THREE.MathUtils.lerp(-rotateFirstSpan / 2, rotateFirstSpan / 2, rotateFirstOutputFractionP4),
+    0,
+    2.6
+  );
   rotateFirst.add(rotateFirstLink);
 
+  // Positive rotate stage 2: R2A enters at the left and q1 at the right; q2 is taken at 3/5 span.
   const rotateSecond = new THREE.Group();
+  rotateSecond.name = 'rotate positive second differential stage P4';
   rotateSecond.position.set(68, 68, -38);
   selectionAssembly.add(rotateSecond);
   const rotateSecondSpan = 58;
-  const rotateSecondLever = box(rotateSecondSpan, 4, 6, metal, 'rotate second lever · normalized span 5');
+  const rotateSecondOutputFractionP4 = 3 / 5;
+  const rotateSecondLeverMotion = new THREE.Group();
+  rotateSecondLeverMotion.name = 'rotate second floating-lever motion';
+  rotateSecond.add(rotateSecondLeverMotion);
+  const rotateSecondLeverGeometryP4 = differentialLeverPlateGeometryP4(
+    rotateSecondSpan,
+    7.0,
+    2.8,
+    [0, rotateSecondOutputFractionP4, 1]
+  );
+  const rotateSecondLever = new THREE.Mesh(rotateSecondLeverGeometryP4, metal);
+  rotateSecondLever.name = 'rotate second lever · source-ratio holes 0/3/5 P4';
+  rotateSecondLever.castShadow = true;
+  rotateSecondLever.receiveShadow = true;
   addPickable(rotateSecondLever, COMPONENTS.selection, pickables);
-  rotateSecond.add(rotateSecondLever);
-  const rotateSecondLink = box(4, 30, 5, darkMetal, 'rotate q2 link at normalized x=3');
-  rotateSecondLink.position.set(rotateSecondSpan * 0.1, 15, 0);
-  rotateSecondLink.userData.baseY = rotateSecondLink.position.y;
-  addPickable(rotateSecondLink, COMPONENTS.selection, pickables);
+  rotateSecondLeverMotion.add(rotateSecondLever);
+  const rotateSecondPinsP4 = addDifferentialPinsP4(
+    rotateSecondLeverMotion,
+    rotateSecondSpan,
+    [0, rotateSecondOutputFractionP4, 1],
+    'rotate second differential'
+  );
+  const rotateSecondR2AInput = makeSelectionLinkP4(26, 'R2A second-stage input link P4');
+  rotateSecondR2AInput.position.set(-rotateSecondSpan / 2, 0, 2.6);
+  rotateSecond.add(rotateSecondR2AInput);
+  const rotateSecondQ1Input = makeSelectionLinkP4(26, 'q1 second-stage input link P4');
+  rotateSecondQ1Input.position.set(rotateSecondSpan / 2, 0, 2.6);
+  rotateSecond.add(rotateSecondQ1Input);
+  const rotateSecondLink = makeSelectionLinkP4(30, 'rotate q2 output link P4');
+  rotateSecondLink.position.set(
+    THREE.MathUtils.lerp(-rotateSecondSpan / 2, rotateSecondSpan / 2, rotateSecondOutputFractionP4),
+    0,
+    2.6
+  );
   rotateSecond.add(rotateSecondLink);
 
+  // Signed balance: positive q2 pulls the left end down while the physically separate N5
+  // mechanism raises the right end. The midpoint therefore carries q2-fiveUnit without
+  // changing assembly topology.
   const rotateBalance = new THREE.Group();
+  rotateBalance.name = 'signed rotate balance stage P4';
   rotateBalance.position.set(108, 77, -42);
   selectionAssembly.add(rotateBalance);
-  const rotateArm = box(54, 4, 6, metal, 'rotate signed balance lever · normalized span 2');
+  const rotateBalanceSpan = 54;
+  const rotateBalanceOutputFractionP4 = 0.5;
+  const rotateBalanceLeverMotion = new THREE.Group();
+  rotateBalanceLeverMotion.name = 'signed rotate balance floating-lever motion';
+  rotateBalance.add(rotateBalanceLeverMotion);
+  const rotateBalanceGeometryP4 = differentialLeverPlateGeometryP4(
+    rotateBalanceSpan,
+    7.4,
+    3.0,
+    [0, rotateBalanceOutputFractionP4, 1]
+  );
+  const rotateArm = new THREE.Mesh(rotateBalanceGeometryP4, metal);
+  rotateArm.name = 'signed rotate balance lever · positive/midpoint/N5 P4';
+  rotateArm.castShadow = true;
+  rotateArm.receiveShadow = true;
   addPickable(rotateArm, COMPONENTS.selection, pickables);
-  rotateBalance.add(rotateArm);
-  const rotateBellcrank = box(5, 34, 5, darkMetal, 'rotate balance midpoint output');
-  rotateBellcrank.position.set(0, 15, 0);
-  rotateBellcrank.userData.baseY = rotateBellcrank.position.y;
-  addPickable(rotateBellcrank, COMPONENTS.selection, pickables);
+  rotateBalanceLeverMotion.add(rotateArm);
+  const rotateBalancePinsP4 = addDifferentialPinsP4(
+    rotateBalanceLeverMotion,
+    rotateBalanceSpan,
+    [0, rotateBalanceOutputFractionP4, 1],
+    'signed rotate balance'
+  );
+  const rotatePositiveInputLink = makeSelectionLinkP4(28, 'positive q2 balance input link P4');
+  rotatePositiveInputLink.position.set(-rotateBalanceSpan / 2, 0, 2.8);
+  rotateBalance.add(rotatePositiveInputLink);
+  const rotateNegativeFiveInputLink = makeSelectionLinkP4(28, 'negative-five balance input link P4');
+  rotateNegativeFiveInputLink.position.set(rotateBalanceSpan / 2, 0, 2.8);
+  rotateBalance.add(rotateNegativeFiveInputLink);
+  const rotateBellcrank = makeSelectionLinkP4(34, 'rotate balance midpoint output / bellcrank link P4');
+  rotateBellcrank.position.set(0, 0, 2.8);
   rotateBalance.add(rotateBellcrank);
 
   function rotatePositiveInputs(units) {
@@ -2887,14 +3144,101 @@ export function createSelectricModel() {
     selectorLatches.R1.position.y = selectorLatches.R1.userData.baseY - positive.R1 * 7;
     selectorLatches.R2.position.y = selectorLatches.R2.userData.baseY - positive.R2 * 7;
     selectorLatches.R2A.position.y = selectorLatches.R2A.userData.baseY - positive.R2A * 7;
-    fiveUnitBail.position.y = fiveUnitBail.userData.baseY - fiveUnit * 8;
 
-    tiltT1Input.position.y = tiltT1Input.userData.baseY - T1 * 8;
-    tiltT2Input.position.y = tiltT2Input.userData.baseY - T2 * 8;
-    tiltLink.position.y = tiltLink.userData.baseY - qTilt * 12;
-    rotateFirstLink.position.y = rotateFirstLink.userData.baseY - q1 * 10;
-    rotateSecondLink.position.y = rotateSecondLink.userData.baseY - q2 * 10;
-    rotateBellcrank.position.y = rotateBellcrank.userData.baseY - qSigned * 10;
+    // The five-unit bail rises for negative selection. The previous presentation moved it
+    // downward, opposite the OEM theory description.
+    fiveUnitBail.position.y =
+      fiveUnitBail.userData.baseY + fiveUnit * selectionLinkageTravelP5.fiveUnitBail;
+
+    const tiltT2YOffset = -T2 * selectionLinkageTravelP5.tilt;
+    const tiltT1YOffset = -T1 * selectionLinkageTravelP5.tilt;
+    const tiltOutputYOffset = THREE.MathUtils.lerp(
+      tiltT2YOffset,
+      tiltT1YOffset,
+      tiltOutputFractionP4
+    );
+    tiltT2Input.position.y = tiltT2YOffset;
+    tiltT1Input.position.y = tiltT1YOffset;
+    tiltLink.position.y = tiltOutputYOffset;
+    selectionLinkagePoseP5.tilt.angleDeg = poseFloatingLeverP5(
+      tiltLeverMotion,
+      tiltT2YOffset,
+      tiltT1YOffset,
+      tiltLeverSpan
+    );
+    selectionLinkagePoseP5.tilt.outputTravel = -tiltOutputYOffset;
+    selectionLinkagePoseP5.tilt.expectedTravel = qTilt * selectionLinkageTravelP5.tilt;
+    selectionLinkagePoseP5.tilt.error =
+      selectionLinkagePoseP5.tilt.outputTravel - selectionLinkagePoseP5.tilt.expectedTravel;
+
+    const rotateFirstLeftYOffset = -positive.R1 * selectionLinkageTravelP5.rotateFirst;
+    const rotateFirstRightYOffset = -positive.R2 * selectionLinkageTravelP5.rotateFirst;
+    const rotateFirstOutputYOffset = THREE.MathUtils.lerp(
+      rotateFirstLeftYOffset,
+      rotateFirstRightYOffset,
+      rotateFirstOutputFractionP4
+    );
+    rotateFirstR1Input.position.y = rotateFirstLeftYOffset;
+    rotateFirstR2Input.position.y = rotateFirstRightYOffset;
+    rotateFirstLink.position.y = rotateFirstOutputYOffset;
+    selectionLinkagePoseP5.rotateFirst.angleDeg = poseFloatingLeverP5(
+      rotateFirstLeverMotion,
+      rotateFirstLeftYOffset,
+      rotateFirstRightYOffset,
+      rotateFirstSpan
+    );
+    selectionLinkagePoseP5.rotateFirst.outputTravel = -rotateFirstOutputYOffset;
+    selectionLinkagePoseP5.rotateFirst.expectedTravel =
+      q1 * selectionLinkageTravelP5.rotateFirst;
+    selectionLinkagePoseP5.rotateFirst.error =
+      selectionLinkagePoseP5.rotateFirst.outputTravel -
+      selectionLinkagePoseP5.rotateFirst.expectedTravel;
+
+    const rotateSecondLeftYOffset = -positive.R2A * selectionLinkageTravelP5.rotateSecond;
+    const rotateSecondRightYOffset = -q1 * selectionLinkageTravelP5.rotateSecond;
+    const rotateSecondOutputYOffset = THREE.MathUtils.lerp(
+      rotateSecondLeftYOffset,
+      rotateSecondRightYOffset,
+      rotateSecondOutputFractionP4
+    );
+    rotateSecondR2AInput.position.y = rotateSecondLeftYOffset;
+    rotateSecondQ1Input.position.y = rotateSecondRightYOffset;
+    rotateSecondLink.position.y = rotateSecondOutputYOffset;
+    selectionLinkagePoseP5.rotateSecond.angleDeg = poseFloatingLeverP5(
+      rotateSecondLeverMotion,
+      rotateSecondLeftYOffset,
+      rotateSecondRightYOffset,
+      rotateSecondSpan
+    );
+    selectionLinkagePoseP5.rotateSecond.outputTravel = -rotateSecondOutputYOffset;
+    selectionLinkagePoseP5.rotateSecond.expectedTravel =
+      q2 * selectionLinkageTravelP5.rotateSecond;
+    selectionLinkagePoseP5.rotateSecond.error =
+      selectionLinkagePoseP5.rotateSecond.outputTravel -
+      selectionLinkagePoseP5.rotateSecond.expectedTravel;
+
+    const balanceLeftYOffset = -q2 * selectionLinkageTravelP5.balanceEndpoint;
+    const balanceRightYOffset = fiveUnit * selectionLinkageTravelP5.balanceEndpoint;
+    const balanceOutputYOffset = THREE.MathUtils.lerp(
+      balanceLeftYOffset,
+      balanceRightYOffset,
+      rotateBalanceOutputFractionP4
+    );
+    rotatePositiveInputLink.position.y = balanceLeftYOffset;
+    rotateNegativeFiveInputLink.position.y = balanceRightYOffset;
+    rotateBellcrank.position.y = balanceOutputYOffset;
+    selectionLinkagePoseP5.balance.angleDeg = poseFloatingLeverP5(
+      rotateBalanceLeverMotion,
+      balanceLeftYOffset,
+      balanceRightYOffset,
+      rotateBalanceSpan
+    );
+    selectionLinkagePoseP5.balance.signedOutputTravel = -balanceOutputYOffset;
+    selectionLinkagePoseP5.balance.expectedTravel =
+      qSigned * selectionLinkageTravelP5.balanceOutput;
+    selectionLinkagePoseP5.balance.error =
+      selectionLinkagePoseP5.balance.signedOutputTravel -
+      selectionLinkagePoseP5.balance.expectedTravel;
   }
 
   const carrierAssembly = makeAssembly('carrier assembly', new THREE.Vector3(-92, 102, -8));
@@ -4447,6 +4791,38 @@ export function createSelectricModel() {
         rotateQ2Equation: 'q2=(3*q1+2*R2A)/5',
         signedEquation: 'qSigned=q2-fiveUnit',
         rotateUnitsEquation: 'rotateUnits=5*qSigned',
+        weightedLeverEmbodimentP4: true,
+        floatingLeverMotionP5: true,
+        fiveUnitBailMotion: 'rises into the separate negative-five input; no numeric sign-flip shortcut',
+        differentialLeverClass: tiltArmAGeometryP4.userData.p4DifferentialLeverClass,
+        twoHoleLinkClass: tiltOutputLinkPlatesP4[0].geometry.userData.p4TwoHoleLinkClass,
+        tiltDoubleVerticalOutputLink: tiltOutputLinkPlatesP4.length === 2,
+        explicitJointPinCountsP4: {
+          tilt: tiltDifferentialPinsP4.length,
+          rotateFirst: rotateFirstPinsP4.length,
+          rotateSecond: rotateSecondPinsP4.length,
+          balance: rotateBalancePinsP4.length
+        },
+        sourceFixedHoleFractions: {
+          tiltOutput: tiltOutputFractionP4,
+          rotateFirstOutput: rotateFirstOutputFractionP4,
+          rotateSecondOutput: rotateSecondOutputFractionP4,
+          balanceOutput: rotateBalanceOutputFractionP4
+        },
+        geometryDerivedP5: {
+          tilt: { ...selectionLinkagePoseP5.tilt },
+          rotateFirst: { ...selectionLinkagePoseP5.rotateFirst },
+          rotateSecond: { ...selectionLinkagePoseP5.rotateSecond },
+          balance: { ...selectionLinkagePoseP5.balance }
+        },
+        geometryOutputErrorMaxP5: Math.max(
+          Math.abs(selectionLinkagePoseP5.tilt.error),
+          Math.abs(selectionLinkagePoseP5.rotateFirst.error),
+          Math.abs(selectionLinkagePoseP5.rotateSecond.error),
+          Math.abs(selectionLinkagePoseP5.balance.error)
+        ),
+        geometryClass:
+          'P4 stamped multi-eye floating levers and two-eye links preserve OEM differential hole ratios; P5 motion derives visible lever rotation/translation from endpoint displacements rather than sliding decorative bars',
         tapeCarrierInvariantErrorMm: selectionTapeInvariantError(),
         tapePresentation: {
           crossSection: 'P4 flat strip rather than round cord',
