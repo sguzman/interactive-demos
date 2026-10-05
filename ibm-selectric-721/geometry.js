@@ -3564,23 +3564,49 @@ export function createSelectricModel() {
   carrierMotion.add(backspaceTeeth);
 
   const backspaceBellcrank = new THREE.Group();
-  backspaceBellcrank.name = 'backspace bellcrank / intermediate lever presentation';
+  backspaceBellcrank.name = 'backspace two-arm bellcrank P4';
   backspaceBellcrank.position.set(-18, P4.rack.y - 2, P4.rack.z + 18);
   carrierMotion.add(backspaceBellcrank);
-  const backspaceArmA = box(31, 4, 5, metal, 'backspace bellcrank arm');
-  backspaceArmA.position.x = 12;
+
+  // The backspace linkage already rotated about Z, but its working members were rectangular
+  // sticks. Keep the source-backed dedicated powered-reverse topology while giving the visible
+  // bellcrank two pinned stamped-link arms that actually sweep in the X/Y working plane.
+  const backspaceArmAGeometryP4 = twoHoleLinkPlateGeometryP4(31, 6.2, 2.5, 1.25);
+  const backspaceArmA = new THREE.Mesh(backspaceArmAGeometryP4, metal);
+  backspaceArmA.name = 'backspace bellcrank rack-drive arm P4';
+  backspaceArmA.rotation.z = -Math.PI / 2;
+  backspaceArmA.castShadow = true;
+  backspaceArmA.receiveShadow = true;
   addPickable(backspaceArmA, COMPONENTS.backspaceLinkage, pickables);
   backspaceBellcrank.add(backspaceArmA);
-  const backspaceArmB = box(4, 24, 5, darkMetal, 'backspace intermediate lever');
-  backspaceArmB.position.set(0, -9, 0);
+
+  const backspaceArmBGeometryP4 = twoHoleLinkPlateGeometryP4(24, 6.0, 2.5, 1.25);
+  const backspaceArmB = new THREE.Mesh(backspaceArmBGeometryP4, darkMetal);
+  backspaceArmB.name = 'backspace bellcrank intermediate arm P4';
+  backspaceArmB.rotation.z = Math.PI;
+  backspaceArmB.castShadow = true;
+  backspaceArmB.receiveShadow = true;
   addPickable(backspaceArmB, COMPONENTS.backspaceLinkage, pickables);
   backspaceBellcrank.add(backspaceArmB);
 
-  const pawl = box(10, 11, 3.5, darkMetal, 'escapement pawl');
+  const backspaceBellcrankPivotPin = pinZP4(7.2, 1.8, darkMetal, 'backspace bellcrank pivot pin P4');
+  addPickable(backspaceBellcrankPivotPin, COMPONENTS.backspaceLinkage, pickables);
+  backspaceBellcrank.add(backspaceBellcrankPivotPin);
+
+  const escapementPawlGeometryP4 = leverPlateGeometryP4(11, 7.2, 4.4, 2.6, 1.3);
+  const pawl = new THREE.Mesh(escapementPawlGeometryP4, darkMetal);
+  pawl.name = 'escapement pawl stamped-link P4';
   pawl.position.set(-25, P4.rack.y + 4.7, P4.rack.z + 4.5);
   pawl.rotation.z = deg(-14);
+  pawl.castShadow = true;
+  pawl.receiveShadow = true;
   addPickable(pawl, COMPONENTS.escapementBracket, pickables);
   carrierMotion.add(pawl);
+
+  const escapementPawlPivotPin = pinZP4(6.4, 1.55, metal, 'escapement pawl pivot pin P4');
+  escapementPawlPivotPin.position.copy(pawl.position);
+  addPickable(escapementPawlPivotPin, COMPONENTS.escapementBracket, pickables);
+  carrierMotion.add(escapementPawlPivotPin);
 
   const supportPlate = box(34, 26, 3.5, metal, 'Level-2 rear support plate');
   supportPlate.position.set(0, P4.carrierLocal.supportPlateY, P4.carrierLocal.supportPlateZ);
@@ -4898,7 +4924,15 @@ export function createSelectricModel() {
         activePitch: '12P',
         displacementMm: -CANONICAL.pitchMm,
         serialExactPart: 'unresolved',
-        linkagePhase: state.backspaceLinkage
+        linkagePhase: state.backspaceLinkage,
+        bellcrankEmbodied: true,
+        bellcrankWorkingPlane: 'X/Y about explicit Z-axis pivot pin',
+        bellcrankArmCountP4: 2,
+        bellcrankConstructionClass: backspaceArmAGeometryP4.userData.p4TwoHoleLinkClass,
+        bellcrankPivotPinEmbodied: true,
+        escapementPawlConstructionClass: escapementPawlGeometryP4.userData.p4LeverPlateClass,
+        escapementPawlPivotPinEmbodied: true,
+        geometryClass: 'P4 pinned stamped-link embodiment replacing rectangular bellcrank/pawl sticks; exact IBM link outlines, pivot centers and lever lengths unresolved'
       },
       d6CurrentSet: {
         shaft: '1164736',
