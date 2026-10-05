@@ -4260,9 +4260,15 @@ export function createSelectricModel() {
       const active = Boolean(state.keyboardCode & (1 << index));
       mat.emissive.setHex(active ? 0x2d1b08 : 0x000000);
       mat.emissiveIntensity = active ? 0.45 : 1;
+
+      // Bail motion is revolute about its transverse X-axis. The linked interposer is a distinct
+      // downstream stamped member with reconstructed forward travel rather than the bail itself
+      // teleporting through Y/Z space.
       const bail = selectorBails[index];
-      bail.position.y = bail.userData.baseY - (active ? 4.5 : 0);
-      bail.position.z = bail.userData.baseZ + (active ? 3.0 : 0);
+      bail.rotation.x = bail.userData.baseRotationX + deg(active ? -12 : 0);
+
+      const latchInterposer = selectorLatchInterposers[index];
+      latchInterposer.position.z = latchInterposer.userData.baseZ + (active ? 5.0 : 0);
     });
   }
 
@@ -5029,6 +5035,39 @@ export function createSelectricModel() {
         depression: state.keyboardPress,
         keycapClass: keyMeshes.values().next().value?.userData.keycapClass ?? 'unresolved',
         travelClass: 'P5 presentation preserving keypress-before-code-sampling order'
+      },
+      keyboardMechanism: {
+        keyleverPresentationCountP4: keylevers.count,
+        rearFulcrumRodEmbodied: true,
+        frontGuideCombEmbodied: true,
+        frontGuideFingerCountP4: keyleverGuideFingerCountP4,
+        keyleverStopRodCountP4: keyleverStopRods.length,
+        keyleverBearingSupportEmbodied: true,
+        separateKeyleverPawlCountP4: keyleverPawlsP4.count,
+        keyleverPawlShoulderRivetCountP4: keyleverPawlPivotsP4.count,
+        interposerPresentationCountP4: interposers.count,
+        interposerFrontFulcrumRodEmbodied: true,
+        interposerGuideRailCountP4: interposerGuideRailsP4.length,
+        selectorCompensatorEmbodied: true,
+        selectorCompensatorBallCountP4,
+        selectorCompensatorClass:
+          'source-backed closely spaced steel-ball mutual-exclusion medium; visible ball count/tube envelope are P4 presentation only',
+        selectorBailCount: selectorBails.length,
+        selectorBailMotionClass:
+          'six transverse P4 bail frames revolve about their X axes; code activation no longer translates whole bars through Y/Z space',
+        selectorBailWorkingPlane: 'Y/Z about transverse X-axis',
+        selectorBailAnglesDegP5: selectorBails.map(bail => THREE.MathUtils.radToDeg(bail.rotation.x)),
+        latchInterposerCount: selectorLatchInterposers.length,
+        latchInterposerClass:
+          'one-to-one two-eye P4 stamped links move forward from the six selector-bail channels; exact production travel/sections unresolved',
+        filterShaftBladeCount: filterShaftBladesP4.length,
+        filterShaftBearingCount: filterShaftBearingsP4.length,
+        filterShaftBearingMaterialClass: 'bronze P4 visual material on both end supports; exact bearing dimensions unresolved',
+        filterShaftRotationDegPerCharacter: 180,
+        latchBailOpenFrameEmbodied: true,
+        latchBailContactFingerCountP4: latchBailContactFingersP4.length,
+        geometryClass:
+          'P4 source-topology embodiment adds common keylever/interposer supports, separate keylever pawls, selector compensator, revolute selector bails, one-to-one latch interposers and two-blade filter shaft without promoting reconstructed dimensions to OEM CAD'
       },
       keyboardCodeChannels: 6,
       keyboardCode: state.keyboardCode,
