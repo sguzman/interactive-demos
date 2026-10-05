@@ -6252,6 +6252,13 @@ export function createSelectricModel() {
   function setExplosion(value) {
     state.explosion = THREE.MathUtils.clamp(value, 0, 1);
     assemblies.forEach(group => setAssemblyExplosion(group, state.explosion));
+
+    // These selector-transfer rods live in root space while their endpoints live in exploded
+    // assemblies. Re-solve them after assembly transforms so inspection separation cannot leave
+    // rods hanging at the assembled pose. This is presentation kinematics only; it does not
+    // promote the P4 dogleg routes or attachment points into IBM production geometry.
+    updateSelectorBailInterposerLinksP4();
+    updateLatchInterposerSelectorLatchLinksP4();
     updateSelectorCamDriveP4();
   }
 
@@ -6420,6 +6427,7 @@ export function createSelectricModel() {
         ),
         latchInterposerToSelectorLatchVisibleBridge:
           'closed as a source-backed interposer-to-ordinary-latch topology with separated three-segment P4 dogleg transfer lanes; exact IBM link count, joints, route and dimensions unresolved',
+        rootSpaceSelectorTransfersRefreshAfterExplosionP5: true,
         filterShaftBladeCount: filterShaftBladesP4.length,
         filterShaftBearingCount: filterShaftBearingsP4.length,
         filterShaftBearingMaterialClass: 'bronze P4 visual material on both end supports; exact bearing dimensions unresolved',

@@ -1316,7 +1316,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
 
   const beforeExplosion = await page.evaluate(() => ({
     carrierX: window.__selectricDebug.state.carrierX,
-    line: window.__selectricDebug.state.line
+    line: window.__selectricDebug.state.line,
+    bailInterposerRods:
+      [...window.__selectricDebug.state.geometry.keyboardMechanism.selectorBailToLatchInterposerRodLengthsMmP4],
+    interposerLatchPose:
+      structuredClone(window.__selectricDebug.state.geometry.keyboardMechanism.latchInterposerToSelectorLatchPoseP5)
   }));
   await page.evaluate(() => window.__selectricDebug.setExplosion(0.55));
   const exploded = await page.evaluate(() => window.__selectricDebug.state);
@@ -1328,11 +1332,32 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(exploded.geometry.explosionTopology.separationClass).toContain('outer shell lifts up/rear while broad base drops away');
   expect(exploded.carrierX).toBeCloseTo(beforeExplosion.carrierX, 6);
   expect(exploded.line).toBe(beforeExplosion.line);
+  expect(exploded.geometry.keyboardMechanism.rootSpaceSelectorTransfersRefreshAfterExplosionP5).toBe(true);
+  expect(exploded.geometry.keyboardMechanism.selectorBailToLatchInterposerRodLengthsMmP4
+    .every(length => Number.isFinite(length) && length > 0)).toBe(true);
+  expect(Object.values(exploded.geometry.keyboardMechanism.latchInterposerToSelectorLatchPoseP5)
+    .every(pose =>
+      Number.isFinite(pose.segmentAMmP4) && pose.segmentAMmP4 > 0 &&
+      Number.isFinite(pose.bridgeMmP4) && pose.bridgeMmP4 > 0 &&
+      Number.isFinite(pose.segmentBMmP4) && pose.segmentBMmP4 > 0
+    )).toBe(true);
+  // Bail and interposer share one exploded assembly, so their root-space rod lengths remain
+  // invariant even though the rods themselves must be translated to the new world pose.
+  expect(exploded.geometry.keyboardMechanism.selectorBailToLatchInterposerRodLengthsMmP4)
+    .toEqual(beforeExplosion.bailInterposerRods);
+  // Interposer and selector latch live in different assemblies, so a correct root-space re-solve
+  // changes the cross-assembly transfer geometry during explosion.
+  expect(exploded.geometry.keyboardMechanism.latchInterposerToSelectorLatchPoseP5)
+    .not.toEqual(beforeExplosion.interposerLatchPose);
   await page.screenshot({ path: 'test-results/selectric-exploded.png', fullPage: true });
 
   await page.evaluate(() => window.__selectricDebug.setExplosion(0));
   const assembled = await page.evaluate(() => window.__selectricDebug.state);
   expect(assembled.explosion).toBe(0);
+  expect(assembled.geometry.keyboardMechanism.selectorBailToLatchInterposerRodLengthsMmP4)
+    .toEqual(beforeExplosion.bailInterposerRods);
+  expect(assembled.geometry.keyboardMechanism.latchInterposerToSelectorLatchPoseP5)
+    .toEqual(beforeExplosion.interposerLatchPose);
 
   const beforeSpace = assembled.carrierX;
   await page.evaluate(() => window.__selectricDebug.space());
