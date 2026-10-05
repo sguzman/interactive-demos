@@ -345,6 +345,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.carrierSelectionTransmission.oldSectorTubeEmbodied).toBe(false);
   expect(initial.geometry.carrierSelectionTransmission.tiltRingNotchCount).toBe(4);
   expect(initial.geometry.carrierSelectionTransmission.carrierTapeGuideOrAnchorCountP4).toBe(4);
+  expect(initial.geometry.carrierSelectionTransmission.parameterSeedP4.tiltPulleyCommandDegP5).toBe(34);
+  expect(initial.geometry.carrierSelectionTransmission.parameterSeedP4.dogBoneTiltDeflectionScaleP5).toBeCloseTo(0.62, 8);
+  expect(initial.geometry.carrierSelectionTransmission.parameterSeedP4.typeElementInterfaceRadiusFractionP4).toBeCloseTo(0.72, 8);
   expect(initial.geometry.carrierSelectionTransmission.tiltChain).toEqual([
     'IBM 1164314 7X1 tilt tape',
     'carrier gearless tilt pulley',
