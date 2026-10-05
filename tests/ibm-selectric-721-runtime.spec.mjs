@@ -336,6 +336,13 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.backspace.mechanism).toBe('dedicated-powered-reverse-linkage');
   expect(initial.geometry.backspace.rackFamily).toEqual(['1124568', '6519139']);
   expect(initial.geometry.backspace.displacementMm).toBeCloseTo(-initial.geometry.pitchMm, 8);
+  expect(initial.geometry.backspace.bellcrankEmbodied).toBe(true);
+  expect(initial.geometry.backspace.bellcrankWorkingPlane).toContain('X/Y');
+  expect(initial.geometry.backspace.bellcrankArmCountP4).toBe(2);
+  expect(initial.geometry.backspace.bellcrankConstructionClass).toContain('two-eye');
+  expect(initial.geometry.backspace.bellcrankPivotPinEmbodied).toBe(true);
+  expect(initial.geometry.backspace.escapementPawlConstructionClass).toContain('stamped-link');
+  expect(initial.geometry.backspace.escapementPawlPivotPinEmbodied).toBe(true);
 
   // Each clutched service follower is now solved from the smooth P4 cam radius at the
   // fixed roller line rather than from a parallel sinusoidal animation.
