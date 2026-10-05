@@ -122,8 +122,8 @@ export const COMPONENTS = Object.freeze({
   shell: {
     name: 'Outer case / shell',
     category: 'product',
-    provenance: 'P4 surface reconstruction constrained by product envelope',
-    description: 'Recognizable 7X1 Selectric exterior reconstruction. Exact industrial-design surfaces remain reconstruction.'
+    provenance: 'P4 surface reconstruction constrained by product envelope + P5 inspection-only cover/base separation',
+    description: 'Recognizable 7X1 Selectric exterior reconstruction. In exploded inspection the broad base shell now separates downward independently from the outer cover/cheeks lifting up and rearward, preventing the base from occluding the carrier/platen layers. This explosion is presentation only; exact industrial-design surfaces remain reconstruction.'
   },
   keyboard: {
     name: 'Keyboard',
