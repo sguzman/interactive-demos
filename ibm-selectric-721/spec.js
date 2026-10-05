@@ -248,8 +248,8 @@ export const COMPONENTS = Object.freeze({
   backspaceLinkage: {
     name: 'Dedicated 12P backspace linkage',
     category: 'horizontal transport',
-    provenance: 'OEM 7X1 12P rack-family identity + source-grounded linkage topology + P4 local geometry',
-    description: 'Backspace uses its own powered bellcrank/intermediate-lever/rack path rather than reversing ordinary escapement. IBM 1124568 and 6519139 are documented 7X1 12P rack-family identities; exact serial-level installed part remains unresolved.'
+    provenance: 'OEM 7X1 12P rack-family identity + source-grounded linkage topology + pinned P4 stamped-link geometry',
+    description: 'Backspace uses its own powered bellcrank/intermediate-lever/rack path rather than reversing ordinary escapement. The visible P4 bellcrank is now a two-arm pinned linkage rotating in its actual X/Y working plane, and the escapement pawl is a tapered stamped-link body with an explicit pivot pin instead of a rectangular block. IBM 1124568 and 6519139 remain the documented 7X1 12P rack-family identities; exact serial-level installed rack, link outlines, pivot centers and lever lengths remain unresolved.'
   },
   drive: {
     name: 'Drive / operational shafts',
