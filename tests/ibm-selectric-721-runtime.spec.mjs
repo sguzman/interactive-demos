@@ -176,6 +176,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.keyboardMechanism.selectorBailMotionClass).toContain('revolve about their X axes');
   expect(initial.geometry.keyboardMechanism.selectorBailWorkingPlane).toContain('Y/Z');
   expect(initial.geometry.keyboardMechanism.selectorBailAnglesDegP5).toEqual([0, 0, 0, 0, 0, 0]);
+  expect(initial.keyboardCodeEngaged).toBe(false);
+  expect(initial.geometry.keyboardMechanism.codeEngaged).toBe(false);
+  expect(initial.geometry.keyboardMechanism.ordinaryBailInversionEmbodied).toBe(true);
+  expect(initial.geometry.keyboardMechanism.publicCodeSemantic).toContain('downstream selector-request vector');
+  expect(initial.geometry.keyboardMechanism.sixthChannelMappingClass).toContain('unresolved');
   expect(initial.geometry.keyboardMechanism.latchInterposerCount).toBe(6);
   expect(initial.geometry.keyboardMechanism.latchInterposerClass).toContain('one-to-one');
   expect(initial.geometry.keyboardMechanism.filterShaftBladeCount).toBe(2);
@@ -183,6 +188,13 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.keyboardMechanism.filterShaftRotationDegPerCharacter).toBe(180);
   expect(initial.geometry.keyboardMechanism.latchBailOpenFrameEmbodied).toBe(true);
   expect(initial.geometry.keyboardMechanism.latchBailContactFingerCountP4).toBe(6);
+  expect(initial.geometry.keyboardMechanism.latchBailSampleP5).toBeCloseTo(0, 8);
+  expect(initial.geometry.keyboardMechanism.setupBeforeSampleOrdering).toBe(true);
+  expect(initial.geometry.keyboardMechanism.selectorLatchCount).toBe(5);
+  expect(initial.geometry.keyboardMechanism.selectorLatchForeAftOffsetMmP5).toEqual([0, 0, 0, 0, 0]);
+  expect(initial.geometry.keyboardMechanism.selectorLatchDownOffsetMmP5).toEqual([0, 0, 0, 0, 0]);
+  expect(initial.geometry.keyboardMechanism.selectorLatchConstructionClass).toContain('stamped-link plate');
+  expect(initial.geometry.keyboardMechanism.selectorLatchMotionClass).toContain('latch forward/excluded');
   expect(initial.geometry.keyboardMechanism.geometryClass).toContain('source-topology embodiment');
 
   expect(initial.geometry.shaftTiming.cycleShaftDegPerCharacter).toBe(180);
@@ -698,6 +710,30 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   );
   expect(fineAligned.geometry.printRocker.followerLiftP5).toBeCloseTo(fineAligned.printApproach, 8);
   expect(fineAligned.geometry.fineAlignment.sharedFollowerWithRotateLostMotion).toBe(true);
+
+  // The public code vector names downstream selector requests. OEM keyboard theory fixes the
+  // visible inversion: active ordinary selector bails pull their T/R latches forward/out of the
+  // common latch bail, while requested latch-down inputs remain rearward and are sampled down.
+  expect(fineAligned.keyboardCodeEngaged).toBe(true);
+  expect(fineAligned.geometry.keyboardMechanism.codeEngaged).toBe(true);
+  expect(fineAligned.geometry.keyboardMechanism.latchBailSampleP5).toBeCloseTo(1, 8);
+  const expectedFineBailAngles = Array.from({ length: 6 }, (_, index) => {
+    const bit = Boolean(fineAligned.keyboardCode & (1 << index));
+    if (index < 5) return bit ? 0 : -12;
+    return bit ? -12 : 0;
+  });
+  expect(fineAligned.geometry.keyboardMechanism.selectorBailAnglesDegP5).toEqual(expectedFineBailAngles);
+  const expectedLatchForeAft = expectedFineBailAngles.slice(0, 5).map(angle =>
+    angle === -12 ? fineAligned.geometry.keyboardMechanism.selectorLatchForwardTravelMmP5 : 0
+  );
+  expect(fineAligned.geometry.keyboardMechanism.selectorLatchForeAftOffsetMmP5).toEqual(expectedLatchForeAft);
+  const requestedLatchBits = ['T1','T2','R1','R2','R2A'].map(
+    name => fineAligned.selection.selectorInputs[name]
+  );
+  const expectedLatchDown = requestedLatchBits.map(
+    bit => bit * fineAligned.geometry.keyboardMechanism.selectorLatchDownTravelMmP5
+  );
+  expect(fineAligned.geometry.keyboardMechanism.selectorLatchDownOffsetMmP5).toEqual(expectedLatchDown);
   await page.screenshot({ path: 'test-results/selectric-fine-align.png', fullPage: true });
   await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
@@ -710,6 +746,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(afterFineAlignCycle.geometry.fineAlignment.printSleevePhaseP5).toBeCloseTo(0, 8);
   expect(afterFineAlignCycle.geometry.printRocker.followerLiftP5).toBeCloseTo(0, 8);
   expect(afterFineAlignCycle.printApproach).toBeCloseTo(0, 8);
+  expect(afterFineAlignCycle.keyboardCodeEngaged).toBe(false);
+  expect(afterFineAlignCycle.geometry.keyboardMechanism.codeEngaged).toBe(false);
+  expect(afterFineAlignCycle.geometry.keyboardMechanism.selectorBailAnglesDegP5).toEqual([0, 0, 0, 0, 0, 0]);
+  expect(afterFineAlignCycle.geometry.keyboardMechanism.selectorLatchForeAftOffsetMmP5).toEqual([0, 0, 0, 0, 0]);
+  expect(afterFineAlignCycle.geometry.keyboardMechanism.selectorLatchDownOffsetMmP5).toEqual([0, 0, 0, 0, 0]);
 
   const keyDownHold = await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.06));
   expect(keyDownHold).toBe(true);
@@ -719,10 +760,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(keyDown.keyboardPress.depression).toBeGreaterThan(0.7);
   expect(keyDown.geometry.keyboardActuation.keycapClass).toContain('tapered three-stage P4 keycap');
   expect(keyDown.keyboardCodeBitOrder).toEqual(['T1','T2','R1','R2','R2A','fiveUnit']);
-  const expectedSelectorBailAngles = Array.from({ length: 6 }, (_, index) =>
-    (keyDown.keyboardCode & (1 << index)) ? -12 : 0
-  );
-  expect(keyDown.geometry.keyboardMechanism.selectorBailAnglesDegP5).toEqual(expectedSelectorBailAngles);
+  expect(keyDown.keyboardCodeEngaged).toBe(false);
+  expect(keyDown.geometry.keyboardMechanism.codeEngaged).toBe(false);
+  expect(keyDown.geometry.keyboardMechanism.selectorBailAnglesDegP5).toEqual([0, 0, 0, 0, 0, 0]);
+  expect(keyDown.geometry.keyboardMechanism.latchBailSampleP5).toBeCloseTo(0, 8);
   await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
 
