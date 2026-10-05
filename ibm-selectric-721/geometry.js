@@ -6832,7 +6832,7 @@ export function createSelectricModel() {
         selectedInterposerRestoreSpringLoadingClass:
           'source-backed rearward/upward extension-spring role; P5 coil turns, anchors and no spring-rate claim',
         selectedInterposerCompensatorHookEmbodiedP5: true,
-        selectedInterposerCompensatorOccupancyFractionP5,
+        selectedInterposerCompensatorOccupancyFractionP5: selectedCompensatorOccupancyFractionP5,
         selectorCompensatorBallDisplacementMmP5,
         selectorCompensatorSingleOccupationInvariantP5: true,
         selectorCompensatorOccupancyClass:
