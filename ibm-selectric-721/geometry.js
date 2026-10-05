@@ -5810,7 +5810,7 @@ export function createSelectricModel() {
     };
   }
 
-  setKeyboardCode(0);
+  setKeyboardCode(0, false);
   setKeyPress(null, 0);
   setBackspaceLinkage(0);
   setCarrierReturnDrive(0);
