@@ -882,28 +882,53 @@ function keyLabelTexture(label) {
 function makeKeyboard(keysMat, darkMat, pickables) {
   const group = new THREE.Group();
   const keyMeshes = new Map();
-  const deck = box(340, 17, 142, darkMat, 'keyboard deck');
-  deck.position.set(0, P4.keyboard.y, P4.keyboard.z);
-  deck.rotation.x = deg(-7);
+  const allKeycapsP4 = [];
+  const keyboardP4 = P4.keyboard;
+
+  const deck = box(
+    keyboardP4.deckP4.widthMm,
+    keyboardP4.deckP4.heightMm,
+    keyboardP4.deckP4.depthMm,
+    darkMat,
+    'keyboard deck'
+  );
+  deck.position.set(0, keyboardP4.y, keyboardP4.z);
+  deck.rotation.x = deg(keyboardP4.deckP4.slopeDeg);
   addPickable(deck, COMPONENTS.keyboard, pickables);
   group.add(deck);
 
-  const frontApron = box(346, 25, 42, darkMat, 'keyboard front apron');
-  frontApron.position.set(0, 34, 139);
-  frontApron.rotation.x = deg(-11);
+  const frontApron = box(
+    keyboardP4.frontApronP4.widthMm,
+    keyboardP4.frontApronP4.heightMm,
+    keyboardP4.frontApronP4.depthMm,
+    darkMat,
+    'keyboard front apron'
+  );
+  frontApron.position.set(0, keyboardP4.frontApronP4.y, keyboardP4.frontApronP4.z);
+  frontApron.rotation.x = deg(keyboardP4.frontApronP4.slopeDeg);
   addPickable(frontApron, COMPONENTS.shell, pickables);
   group.add(frontApron);
 
-  function addLabeledKey(keyText, x, y, z, width = 18, depth = 17, name = null) {
-    const keyGeometry = keycapGeometryP4(width, 8, depth);
+  function addLabeledKey(
+    keyText,
+    x,
+    y,
+    z,
+    width = keyboardP4.keycapP4.ordinaryWidthMm,
+    depth = keyboardP4.keycapP4.depthMm,
+    name = null
+  ) {
+    const keyGeometry = keycapGeometryP4(width, keyboardP4.keycapP4.heightMm, depth);
     const key = new THREE.Mesh(keyGeometry, keysMat);
     key.name = name || ('key-' + keyText);
     key.castShadow = true;
     key.receiveShadow = true;
     key.position.set(x, y, z);
-    key.rotation.x = deg(-8);
+    key.rotation.x = deg(keyboardP4.keycapP4.faceSlopeDeg);
     key.userData.component = COMPONENTS.keyboard;
     key.userData.baseY = y;
+    key.userData.nominalWidthMmP4 = width;
+    key.userData.nominalDepthMmP4 = depth;
     key.userData.keycapClass = keyGeometry.userData.p4KeycapClass;
     pickables.push(key);
 
@@ -919,6 +944,7 @@ function makeKeyboard(keysMat, darkMat, pickables) {
     labelPlane.name = 'key label ' + keyText;
     key.add(labelPlane);
     group.add(key);
+    allKeycapsP4.push(key);
     const mapKey = keyText === '' ? 'SPACE' : keyText.toUpperCase();
     if (!keyMeshes.has(mapKey)) keyMeshes.set(mapKey, key);
     return key;
@@ -930,34 +956,84 @@ function makeKeyboard(keysMat, darkMat, pickables) {
     ['A','S','D','F','G','H','J','K','L',';'],
     ['Z','X','C','V','B','N','M',',','.','/']
   ];
-  const rowZ = [116, 92, 69, 47];
   rows.forEach((labels, row) => {
-    const count = labels.length;
-    const spacing = row === 0 ? 22.5 : 24;
-    const offset = row === 1 ? 3 : row === 2 ? 9 : 15;
-    for (let i = 0; i < count; i += 1) {
+    const rowP4 = keyboardP4.characterRowsP4[row];
+    if (!rowP4 || rowP4.count !== labels.length) {
+      throw new Error('P4 keyboard row configuration no longer matches rendered labels at row ' + row);
+    }
+    for (let i = 0; i < labels.length; i += 1) {
       addLabeledKey(
         labels[i],
-        (i - (count - 1) / 2) * spacing + offset,
-        55 - row * 2.8,
-        rowZ[row]
+        (i - (labels.length - 1) / 2) * rowP4.spacingX + rowP4.offsetX,
+        rowP4.centerY,
+        rowP4.centerZ
       );
     }
   });
 
-  addLabeledKey('TAB', -145, 49, 92, 24);
-  addLabeledKey('CLR', -145, 46, 68, 24);
-  addLabeledKey('LOCK', -145, 43, 46, 24);
-  addLabeledKey('SHIFT', -145, 40, 24, 28);
+  const serviceX = keyboardP4.serviceColumnXP4;
+  addLabeledKey('TAB', -serviceX, 49, 92, 24);
+  addLabeledKey('CLR', -serviceX, 46, 68, 24);
+  addLabeledKey('LOCK', -serviceX, 43, 46, 24);
+  addLabeledKey('SHIFT', -serviceX, 40, 24, 28);
 
-  addLabeledKey('BKSP', 145, 49, 92, 28);
-  addLabeledKey('RETURN', 145, 46, 65, 32);
-  addLabeledKey('SHIFT', 145, 41, 32, 28);
+  addLabeledKey('BKSP', serviceX, 49, 92, 28);
+  addLabeledKey('RETURN', serviceX, 46, 65, 32);
+  addLabeledKey('SHIFT', serviceX, 41, 32, 28);
 
-  const spacebar = addLabeledKey('', 0, 39, 23, 112, 18, 'spacebar');
-  spacebar.position.x = -2;
+  const spacebar = addLabeledKey(
+    '',
+    keyboardP4.spacebarP4.centerX,
+    keyboardP4.spacebarP4.centerY,
+    keyboardP4.spacebarP4.centerZ,
+    keyboardP4.spacebarP4.widthMm,
+    keyboardP4.spacebarP4.depthMm,
+    'spacebar'
+  );
+
+  const ordinaryRowBoundsP4 = keyboardP4.characterRowsP4.map(rowP4 => {
+    const halfCenters = (rowP4.count - 1) * rowP4.spacingX / 2;
+    const halfKey = keyboardP4.keycapP4.ordinaryWidthMm / 2;
+    return {
+      minX: rowP4.offsetX - halfCenters - halfKey,
+      maxX: rowP4.offsetX + halfCenters + halfKey
+    };
+  });
+  const ordinaryMinXP4 = Math.min(...ordinaryRowBoundsP4.map(row => row.minX));
+  const ordinaryMaxXP4 = Math.max(...ordinaryRowBoundsP4.map(row => row.maxX));
+  const allKeyMinXP4 = Math.min(
+    ...allKeycapsP4.map(key => key.position.x - key.userData.nominalWidthMmP4 / 2)
+  );
+  const allKeyMaxXP4 = Math.max(
+    ...allKeycapsP4.map(key => key.position.x + key.userData.nominalWidthMmP4 / 2)
+  );
 
   group.keyMeshes = keyMeshes;
+  group.userData.registrationP4 = {
+    parameterized: true,
+    deckWidthMmP4: keyboardP4.deckP4.widthMm,
+    deckSlopeDegP4: keyboardP4.deckP4.slopeDeg,
+    characterRowsP4: keyboardP4.characterRowsP4.map(row => ({ ...row })),
+    ordinaryFieldSpanMmP4: ordinaryMaxXP4 - ordinaryMinXP4,
+    fullKeyControlSpanMmP4: allKeyMaxXP4 - allKeyMinXP4,
+    ordinaryFieldWidthFractionOfEnvelopeP4:
+      (ordinaryMaxXP4 - ordinaryMinXP4) / CANONICAL.envelopeMm.width,
+    fullKeyControlWidthFractionOfEnvelopeP4:
+      (allKeyMaxXP4 - allKeyMinXP4) / CANONICAL.envelopeMm.width,
+    deckWidthFractionOfEnvelopeP4:
+      keyboardP4.deckP4.widthMm / CANONICAL.envelopeMm.width,
+    photoProjectedWidthSeeds: {
+      fullKeyControlOpeningFractionApprox:
+        [...keyboardP4.photoProjectedWidthSeeds.fullKeyControlOpeningFractionApprox],
+      ordinaryAlphanumericFieldFractionApprox:
+        [...keyboardP4.photoProjectedWidthSeeds.ordinaryAlphanumericFieldFractionApprox],
+      sourceClass: keyboardP4.photoProjectedWidthSeeds.sourceClass
+    },
+    directPhysicalToProjectedComparisonForbidden: true,
+    cameraSolveRequired: true,
+    registrationClosed: false,
+    registrationClass: keyboardP4.registrationClass
+  };
   return group;
 }
 
@@ -1478,7 +1554,14 @@ export function createSelectricModel() {
   pickables.push(ticks);
   shellAssembly.add(ticks);
 
-  const keyboardAssembly = makeAssembly('keyboard assembly', new THREE.Vector3(0, -46, 155));
+  const keyboardAssembly = makeAssembly(
+    'keyboard assembly',
+    new THREE.Vector3(
+      P4.keyboard.assemblyOriginP4.x,
+      P4.keyboard.assemblyOriginP4.y,
+      P4.keyboard.assemblyOriginP4.z
+    )
+  );
   assemblies.push(keyboardAssembly);
   const keyboardSurface = makeKeyboard(keyMat, shellDark, pickables);
   keyboardAssembly.add(keyboardSurface);
@@ -1488,7 +1571,14 @@ export function createSelectricModel() {
   const selectorBailMaterials = [];
   const selectorBails = [];
   const selectorLatchInterposers = [];
-  const keyboardMechanismAssembly = makeAssembly('keyboard code mechanism', new THREE.Vector3(0, -78, 62));
+  const keyboardMechanismAssembly = makeAssembly(
+    'keyboard code mechanism',
+    new THREE.Vector3(
+      P4.keyboard.mechanismOriginP4.x,
+      P4.keyboard.mechanismOriginP4.y,
+      P4.keyboard.mechanismOriginP4.z
+    )
+  );
   assemblies.push(keyboardMechanismAssembly);
   root.add(keyboardMechanismAssembly);
 
@@ -7280,6 +7370,14 @@ export function createSelectricModel() {
         depression: state.keyboardPress,
         keycapClass: keyMeshes.values().next().value?.userData.keycapClass ?? 'unresolved',
         travelClass: 'P5 presentation preserving keypress-before-code-sampling order'
+      },
+      keyboardRegistrationP4: {
+        ...keyboardSurface.userData.registrationP4,
+        envelopeWidthMm: CANONICAL.envelopeMm.width,
+        keyboardAssemblyOriginP4: { ...P4.keyboard.assemblyOriginP4 },
+        mechanismAssemblyOriginP4: { ...P4.keyboard.mechanismOriginP4 },
+        calibrationRule:
+          'photo width fractions are image-plane seeds only; do not rescale physical keyboard directly to them before a shared Q1/Q4 camera solve'
       },
       keyboardMechanism: {
         keyleverPresentationCountP4: keylevers.count,

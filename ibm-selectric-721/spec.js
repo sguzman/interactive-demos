@@ -102,7 +102,48 @@ export const P4 = Object.freeze({
     spoolCenterX: 42,
     spoolRadiusP4: 20
   },
-  keyboard: { y: 43, z: 78 },
+  keyboard: {
+    y: 43,
+    z: 78,
+    assemblyOriginP4: { x: 0, y: -46, z: 155 },
+    mechanismOriginP4: { x: 0, y: -78, z: 62 },
+    deckP4: {
+      widthMm: 340,
+      heightMm: 17,
+      depthMm: 142,
+      slopeDeg: -7
+    },
+    frontApronP4: {
+      widthMm: 346,
+      heightMm: 25,
+      depthMm: 42,
+      y: 34,
+      z: 139,
+      slopeDeg: -11
+    },
+    keycapP4: {
+      ordinaryWidthMm: 18,
+      heightMm: 8,
+      depthMm: 17,
+      faceSlopeDeg: -8
+    },
+    characterRowsP4: [
+      { centerY: 55.0, centerZ: 116, spacingX: 22.5, offsetX: 0, count: 12 },
+      { centerY: 52.2, centerZ: 92, spacingX: 24.0, offsetX: 3, count: 10 },
+      { centerY: 49.4, centerZ: 69, spacingX: 24.0, offsetX: 9, count: 10 },
+      { centerY: 46.6, centerZ: 47, spacingX: 24.0, offsetX: 15, count: 10 }
+    ],
+    serviceColumnXP4: 145,
+    spacebarP4: { centerX: -2, centerY: 39, centerZ: 23, widthMm: 112, depthMm: 18 },
+    photoProjectedWidthSeeds: {
+      fullKeyControlOpeningFractionApprox: [0.70, 0.71],
+      ordinaryAlphanumericFieldFractionApprox: [0.62, 0.63],
+      sourceClass:
+        'CAL-F1/CAL-Q4 normalized image-space landmarks; perspective/crop affected and not direct physical-span targets'
+    },
+    registrationClass:
+      'U-GEO-006 parameterized P4 seed only; camera solve and shared exterior fit required before metric closure'
+  },
   motor: { x: -116, y: 39, z: 42 },
   writingLineRacks: { marginY: 68, marginZ: -80, tabY: 61, tabZ: -86, length: 245 },
   cordSystem: { shaftY: 55, shaftZ: -8, drumRadius: 10, leftPulleyX: -142, rightPulleyX: 142 },

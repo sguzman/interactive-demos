@@ -162,6 +162,25 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     'ratchet'
   ]);
   expect(initial.geometry.ribbon.feedStrokeClass).toContain('transport commit occurs at reconstructed peak stroke');
+  expect(initial.geometry.keyboardRegistrationP4.parameterized).toBe(true);
+  expect(initial.geometry.keyboardRegistrationP4.envelopeWidthMm).toBeCloseTo(381, 8);
+  expect(initial.geometry.keyboardRegistrationP4.deckWidthMmP4).toBeCloseTo(340, 8);
+  expect(initial.geometry.keyboardRegistrationP4.deckSlopeDegP4).toBeCloseTo(-7, 8);
+  expect(initial.geometry.keyboardRegistrationP4.characterRowsP4).toHaveLength(4);
+  expect(initial.geometry.keyboardRegistrationP4.ordinaryFieldSpanMmP4).toBeGreaterThan(250);
+  expect(initial.geometry.keyboardRegistrationP4.fullKeyControlSpanMmP4).toBeGreaterThan(300);
+  expect(initial.geometry.keyboardRegistrationP4.ordinaryFieldWidthFractionOfEnvelopeP4)
+    .toBeCloseTo(initial.geometry.keyboardRegistrationP4.ordinaryFieldSpanMmP4 / 381, 10);
+  expect(initial.geometry.keyboardRegistrationP4.fullKeyControlWidthFractionOfEnvelopeP4)
+    .toBeCloseTo(initial.geometry.keyboardRegistrationP4.fullKeyControlSpanMmP4 / 381, 10);
+  expect(initial.geometry.keyboardRegistrationP4.photoProjectedWidthSeeds.fullKeyControlOpeningFractionApprox)
+    .toEqual([0.70, 0.71]);
+  expect(initial.geometry.keyboardRegistrationP4.photoProjectedWidthSeeds.ordinaryAlphanumericFieldFractionApprox)
+    .toEqual([0.62, 0.63]);
+  expect(initial.geometry.keyboardRegistrationP4.directPhysicalToProjectedComparisonForbidden).toBe(true);
+  expect(initial.geometry.keyboardRegistrationP4.cameraSolveRequired).toBe(true);
+  expect(initial.geometry.keyboardRegistrationP4.registrationClosed).toBe(false);
+  expect(initial.geometry.keyboardRegistrationP4.registrationClass).toContain('U-GEO-006');
   expect(initial.geometry.keyboardMechanism.rearFulcrumRodEmbodied).toBe(true);
   expect(initial.geometry.keyboardMechanism.frontGuideCombEmbodied).toBe(true);
   expect(initial.geometry.keyboardMechanism.frontGuideFingerCountP4).toBe(51);
