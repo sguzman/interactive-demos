@@ -214,8 +214,28 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.shaftTiming.cycleCamStationCount).toBe(3);
   expect(initial.geometry.shaftTiming.cycleCamProfilesP4).toHaveLength(3);
   expect(initial.geometry.shaftTiming.cycleCamProfilesP4.every(cam => cam.baseRadiusMmP4 > 0)).toBe(true);
-  expect(initial.geometry.shaftTiming.cycleCamProfilesP4.every(cam => cam.lobeCountP4 === 1)).toBe(true);
-  expect(initial.geometry.shaftTiming.cycleCamPresentationClass).toContain('smooth P4 radial envelopes');
+  expect(initial.geometry.shaftTiming.cycleCamProfilesP4.every(cam => cam.lobeCountP4 === 2)).toBe(true);
+  expect(initial.geometry.shaftTiming.cycleCamProfilesP4.map(cam => cam.role)).toEqual([
+    'ordinary-selector-latch-bail-cam-A',
+    'ordinary-selector-latch-bail-cam-B',
+    'five-unit-selector-cam'
+  ]);
+  expect(initial.geometry.shaftTiming.cycleCamPresentationClass).toContain('source-identified double-lobed selector');
+  expect(initial.geometry.selectorCamDrive.positioningCamCount).toBe(3);
+  expect(initial.geometry.selectorCamDrive.ordinaryLatchBailCamCount).toBe(2);
+  expect(initial.geometry.selectorCamDrive.fiveUnitCamCount).toBe(1);
+  expect(initial.geometry.selectorCamDrive.allPositioningCamsDoubleLobed).toBe(true);
+  expect(initial.geometry.selectorCamDrive.fiveUnitRelativePhaseDegSourceBacked).toBe(90);
+  expect(initial.geometry.selectorCamDrive.ordinaryFollowerCountP4).toBe(2);
+  expect(initial.geometry.selectorCamDrive.ordinaryFollowerWorkingPlaneP4).toContain('Y/Z');
+  expect(initial.geometry.selectorCamDrive.ordinaryFollowerArmConstructionClassP4).toContain('stamped-link');
+  expect(initial.geometry.selectorCamDrive.transferRodCountP4).toBe(2);
+  expect(initial.geometry.selectorCamDrive.latchBailDrivenFromVisibleCamFollowers).toBe(true);
+  expect(initial.geometry.selectorCamDrive.earlyDwellPreserved).toBe(true);
+  expect(initial.geometry.selectorCamDrive.fiveUnitFollowerEmbodiedP4).toBe(true);
+  expect(initial.geometry.selectorCamDrive.poseP5.latchBailSampleP5).toBeCloseTo(0, 8);
+  expect(initial.geometry.selectorCamDrive.poseP5.ordinaryRawLiftP5).toEqual([0, 0]);
+  expect(initial.geometry.selectorCamDrive.poseP5.transferRodLengthsMmP4.every(length => length > 0)).toBe(true);
   expect(initial.geometry.fineAlignment.coarseSelectionSeparate).toBe(true);
   expect(initial.geometry.fineAlignment.tiltSeatsBeforeRotateInPresentation).toBe(true);
   expect(initial.geometry.fineAlignment.driver).toContain('IBM 1164240');
@@ -775,6 +795,13 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(fineAligned.keyboardCodeEngaged).toBe(true);
   expect(fineAligned.geometry.keyboardMechanism.codeEngaged).toBe(true);
   expect(fineAligned.geometry.keyboardMechanism.latchBailSampleP5).toBeCloseTo(1, 8);
+  expect(fineAligned.geometry.selectorCamDrive.poseP5.latchBailSampleP5).toBeCloseTo(
+    fineAligned.geometry.keyboardMechanism.latchBailSampleP5,
+    8
+  );
+  expect(fineAligned.geometry.selectorCamDrive.poseP5.ordinaryRawLiftP5.every(lift => lift > 0.95)).toBe(true);
+  expect(fineAligned.geometry.selectorCamDrive.poseP5.ordinaryFollowerAngleDegP5.every(angle => angle < -12)).toBe(true);
+  expect(fineAligned.geometry.selectorCamDrive.poseP5.transferRodLengthsMmP4.every(length => Number.isFinite(length) && length > 0)).toBe(true);
   const expectedFineBailAngles = Array.from({ length: 6 }, (_, index) => {
     const bit = Boolean(fineAligned.keyboardCode & (1 << index));
     if (index < 5) return bit ? 0 : -12;
@@ -824,6 +851,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(keyDown.geometry.keyboardMechanism.codeEngaged).toBe(false);
   expect(keyDown.geometry.keyboardMechanism.selectorBailAnglesDegP5).toEqual([0, 0, 0, 0, 0, 0]);
   expect(keyDown.geometry.keyboardMechanism.latchBailSampleP5).toBeCloseTo(0, 8);
+  expect(keyDown.geometry.selectorCamDrive.poseP5.latchBailSampleP5).toBeCloseTo(0, 8);
+  expect(keyDown.geometry.selectorCamDrive.poseP5.ordinaryRawLiftP5.every(lift => lift < 0.01)).toBe(true);
   await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
 
