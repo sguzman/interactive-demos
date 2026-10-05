@@ -1756,6 +1756,56 @@ export function createSelectricModel() {
   addPickable(selectedInterposerCycleReleaseLugP5, COMPONENTS.keyboardMechanism, pickables);
   selectedInterposerPivotP5.add(selectedInterposerCycleReleaseLugP5);
 
+  // The common wide interposer lug is a cycle request, not one of the six character-code channels.
+  // Embody that distinction with a common transverse cycle-release bail. Its exact axis/arms are P4,
+  // but every selected interposer can address the same bail before powered filter transport begins.
+  const cycleReleaseBailP4 = new THREE.Group();
+  cycleReleaseBailP4.name = 'common character-interposer cycle-release bail P4';
+  cycleReleaseBailP4.position.set(0, 17.2, -19.0);
+  cycleReleaseBailP4.userData.baseRotationX = 0;
+  cycleReleaseBailP4.userData.outputLocalP4 = new THREE.Vector3(138, -4.5, 0);
+  keyboardMechanismAssembly.add(cycleReleaseBailP4);
+
+  const cycleReleaseBailCrossbarP4 = shaft(
+    292,
+    1.7,
+    metal,
+    'common cycle-release bail crossbar P4'
+  );
+  addPickable(cycleReleaseBailCrossbarP4, COMPONENTS.keyboardMechanism, pickables);
+  cycleReleaseBailP4.add(cycleReleaseBailCrossbarP4);
+
+  for (const side of [-1, 1]) {
+    const arm = box(
+      4.0,
+      12.0,
+      3.8,
+      darkMetal,
+      side < 0
+        ? 'left cycle-release bail end arm P4'
+        : 'right cycle-release bail end arm P4'
+    );
+    arm.position.set(side * 138, -4.5, 0);
+    addPickable(arm, COMPONENTS.keyboardMechanism, pickables);
+    cycleReleaseBailP4.add(arm);
+  }
+
+  let selectedInterposerDownFractionP5 = 0;
+  let cycleReleaseBailTravelFractionP5 = 0;
+  let cycleReleaseBailAngleDegP5 = 0;
+  let cycleReleaseBailToClutchLinkLengthMmP4 = 0;
+  let updateCycleReleaseBailToClutchLinkP5 = () => {};
+  let updateCycleClutchP5 = () => {};
+
+  function updateCycleReleaseBailP5() {
+    cycleReleaseBailTravelFractionP5 = selectedInterposerDownFractionP5;
+    cycleReleaseBailAngleDegP5 = -11 * cycleReleaseBailTravelFractionP5;
+    cycleReleaseBailP4.rotation.x =
+      cycleReleaseBailP4.userData.baseRotationX + deg(cycleReleaseBailAngleDegP5);
+    updateCycleReleaseBailToClutchLinkP5();
+    updateCycleClutchP5();
+  }
+
   const selectedInterposerDownAngleDegP5 = -8.0;
   const selectedInterposerForwardTravelMmP5 = 8.0;
   const selectedInterposerLatchClearFractionP5 = 0.42;
@@ -1888,11 +1938,12 @@ export function createSelectricModel() {
       state.keyboardCodeEngaged &&
       selectedInterposerFilterTransportFractionP5 < selectedInterposerLatchClearFractionP5;
 
-    const downFractionP5 = Math.max(
+    selectedInterposerDownFractionP5 = Math.max(
       selectedPawlContactFractionP5,
       selectedInterposerLatchedDownP5 ? 1 : 0
     );
-    selectedInterposerPivotP5.rotation.x = deg(selectedInterposerDownAngleDegP5 * downFractionP5);
+    selectedInterposerPivotP5.rotation.x =
+      deg(selectedInterposerDownAngleDegP5 * selectedInterposerDownFractionP5);
     selectedInterposerP5.position.z =
       selectedInterposerP5.userData.baseZ +
       selectedInterposerFilterTransportFractionP5 * selectedInterposerForwardTravelMmP5;
@@ -1900,7 +1951,7 @@ export function createSelectricModel() {
       state.keyboardPress > 0 || state.keyboardCodeEngaged;
 
     selectedInterposerLatchFingerCaughtP5 =
-      downFractionP5 > 0.65 &&
+      selectedInterposerDownFractionP5 > 0.65 &&
       selectedInterposerFilterTransportFractionP5 < selectedInterposerLatchClearFractionP5;
     selectedInterposerLatchFingerP5.position.x = selectedInterposerP5.position.x;
     selectedInterposerLatchFingerP5.rotation.x = deg(
@@ -1939,8 +1990,9 @@ export function createSelectricModel() {
     );
     selectedInterposerRestoreSpringP5.visible = selectedInterposerP5.visible;
 
-    selectedCompensatorOccupancyFractionP5 = downFractionP5;
+    selectedCompensatorOccupancyFractionP5 = selectedInterposerDownFractionP5;
     updateSelectorCompensatorOccupancyP5();
+    updateCycleReleaseBailP5();
   }
 
   // Closely spaced steel balls are a source-backed mutual-exclusion medium. The visible ball
@@ -3045,6 +3097,89 @@ export function createSelectricModel() {
   addPickable(cycleClutchKeeperP4, COMPONENTS.drive, pickables);
   driveAssembly.add(cycleClutchKeeperP4);
 
+  const cycleClutchLatchPawlP4 = new THREE.Group();
+  cycleClutchLatchPawlP4.name = 'cycle-clutch latch-pawl / keeper release pivot P4';
+  cycleClutchLatchPawlP4.position.set(
+    cycleClutchAxisXP4 + 2,
+    P4.cycleShaft.y + 11,
+    P4.cycleShaft.z + 18
+  );
+  cycleClutchLatchPawlP4.userData.baseRotationX = 0;
+  driveAssembly.add(cycleClutchLatchPawlP4);
+
+  const cycleClutchLatchPawlBodyP4 = box(
+    6.0,
+    15,
+    4.8,
+    metal,
+    'cycle-clutch latch-pawl body P4'
+  );
+  cycleClutchLatchPawlBodyP4.position.y = -5.5;
+  addPickable(cycleClutchLatchPawlBodyP4, COMPONENTS.drive, pickables);
+  cycleClutchLatchPawlP4.add(cycleClutchLatchPawlBodyP4);
+
+  const cycleClutchLatchPawlPivotP4 = shaft(
+    8.5,
+    1.55,
+    darkMetal,
+    'cycle-clutch latch-pawl pivot pin P4'
+  );
+  addPickable(cycleClutchLatchPawlPivotP4, COMPONENTS.drive, pickables);
+  cycleClutchLatchPawlP4.add(cycleClutchLatchPawlPivotP4);
+
+  const cycleClutchLatchLinkSpringPointsP4 = [];
+  for (let i = 0; i <= 36; i += 1) {
+    const u = i / 36;
+    const a = u * Math.PI * 2 * 3.25;
+    cycleClutchLatchLinkSpringPointsP4.push(new THREE.Vector3(
+      Math.cos(a) * 0.65,
+      u * 11 - 5.5,
+      Math.sin(a) * 0.65
+    ));
+  }
+  const cycleClutchLatchLinkSpringP4 = new THREE.Mesh(
+    new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3(cycleClutchLatchLinkSpringPointsP4),
+      48,
+      0.32,
+      6,
+      false
+    ),
+    metal
+  );
+  cycleClutchLatchLinkSpringP4.name = 'cycle-clutch latch/link spring P4';
+  cycleClutchLatchLinkSpringP4.position.set(
+    cycleClutchAxisXP4 + 7,
+    P4.cycleShaft.y + 14,
+    P4.cycleShaft.z + 10
+  );
+  cycleClutchLatchLinkSpringP4.rotation.z = deg(-24);
+  addPickable(cycleClutchLatchLinkSpringP4, COMPONENTS.drive, pickables);
+  driveAssembly.add(cycleClutchLatchLinkSpringP4);
+
+  const cycleReleaseBailToClutchPawlRodP4 = makeRootDynamicRodP4(
+    'common cycle-release bail to cycle-clutch latch-pawl transfer P4',
+    1.05,
+    metal,
+    COMPONENTS.drive
+  );
+
+  updateCycleReleaseBailToClutchLinkP5 = () => {
+    cycleClutchLatchPawlP4.rotation.x =
+      cycleClutchLatchPawlP4.userData.baseRotationX +
+      deg(-17 * cycleReleaseBailTravelFractionP5);
+    const bailEndP4 = objectPointInRootP4(
+      cycleReleaseBailP4,
+      cycleReleaseBailP4.userData.outputLocalP4
+    );
+    const pawlEndP4 = objectPointInRootP4(
+      cycleClutchLatchPawlP4,
+      new THREE.Vector3(0, -11, 0)
+    );
+    cycleReleaseBailToClutchLinkLengthMmP4 =
+      cycleReleaseBailToClutchPawlRodP4.update(bailEndP4, pawlEndP4);
+  };
+
   const cycleCheckRatchetTeethP4 = 12;
   const cycleCheckRatchetP4 = new THREE.Mesh(
     radialToothedWheelGeometryP4(10.2, 2.1, 5.2, cycleCheckRatchetTeethP4),
@@ -3097,16 +3232,25 @@ export function createSelectricModel() {
   let cycleClutchCheckPawlEngagedP5 = true;
   let cycleClutchSleevePhaseDegP5 = 0;
   let cycleClutchSecondStepCaptureReadyP5 = true;
+  let cycleClutchTripStoredP5 = false;
 
-  function updateCycleClutchP5() {
+  updateCycleClutchP5 = () => {
     const phase = state.cyclePhase;
     const contactAngleRadP5 = Math.PI - cycleRotor.rotation.x;
     cycleClutchRestoringCamLiftP5 =
       normalizedCamLiftAtContactP4(cycleClutchRestoringCamP4, contactAngleRadP5);
 
-    // Release is early and cam restoration must win before the second sleeve step arrives.
-    // The keeper holds the restored latch after the cam has done its work; this hysteresis is P5.
-    const releaseWindowP5 = phase > 0.002 && phase < 0.62;
+    // The common cycle-release bail first rotates the latch pawl out of the keeper. The latch/link
+    // spring then stores that released state until the shaft-mounted restoring cam forces the
+    // latch rearward and allows the pawl to reset. This is explicit mechanical memory, not a
+    // direct "phase means engaged" substitution.
+    if (phase < 0.002) cycleClutchTripStoredP5 = false;
+    if (cycleReleaseBailTravelFractionP5 > 0.20) cycleClutchTripStoredP5 = true;
+    if (phase > 0.18 && cycleClutchRestoringCamLiftP5 > 0.70) {
+      cycleClutchTripStoredP5 = false;
+    }
+
+    const releaseWindowP5 = cycleClutchTripStoredP5 && phase < 0.62;
     const restoreFractionP5 = phase < 0.62
       ? THREE.MathUtils.clamp((cycleClutchRestoringCamLiftP5 - 0.12) / 0.58, 0, 1)
       : 1;
@@ -3139,7 +3283,10 @@ export function createSelectricModel() {
     cycleClutchSecondStepCaptureReadyP5 =
       phase < 0.002 ||
       (phase >= 0.62 && !cycleClutchLatchReleasedP5);
-  }
+  };
+
+  updateCycleReleaseBailToClutchLinkP5();
+  updateCycleClutchP5();
 
   const driveBeltPathP4 = openPositiveDriveBeltPathP4(
     -145,
@@ -7014,6 +7161,7 @@ export function createSelectricModel() {
     // promote the P4 dogleg routes or attachment points into IBM production geometry.
     updateSelectorBailInterposerLinksP4();
     updateLatchInterposerSelectorLatchLinksP4();
+    updateCycleReleaseBailToClutchLinkP5();
     updateSelectorCamDriveP4();
   }
 
@@ -7198,6 +7346,12 @@ export function createSelectricModel() {
           .filter(index => index !== null),
         selectedInterposerSpecialApplicationLugCueSeparateP5: true,
         selectedInterposerCycleReleaseLugCueSeparateP5: true,
+        commonCycleReleaseBailEmbodiedP4: true,
+        commonCycleReleaseBailTravelFractionP5: cycleReleaseBailTravelFractionP5,
+        commonCycleReleaseBailAngleDegP5: cycleReleaseBailAngleDegP5,
+        commonCycleReleaseBailToClutchLinkEmbodiedP4: true,
+        commonCycleReleaseBailToClutchLinkLengthMmP4: cycleReleaseBailToClutchLinkLengthMmP4,
+        commonCycleReleaseFunctionSeparateFromSixCodeChannels: true,
         selectorBailMotionDerivedFromVisibleSelectedInterposerLugsP5: true,
         selectorBailMotionScalesWithInterposerForwardTransportP5: true,
         selectedInterposerMappingClass:
@@ -7785,6 +7939,11 @@ export function createSelectricModel() {
         restoringCamOverthrowStopLugCountP4: cycleClutchOverthrowStopLugsP4.length,
         rubberComplianceMountEmbodiedP4: true,
         keeperEmbodiedP4: true,
+        latchPawlEmbodiedP4: true,
+        latchLinkSpringEmbodiedP4: true,
+        tripRequestFromCommonCycleReleaseBailP5: cycleReleaseBailTravelFractionP5 > 0.20,
+        tripStoredByLatchPawlKeeperP5: cycleClutchTripStoredP5,
+        keyboardToClutchLinkLengthMmP4: cycleReleaseBailToClutchLinkLengthMmP4,
         springEngagedP5: cycleClutchSpringEngagedP5,
         springRadialScaleP5: cycleClutchSpringRadialScaleP5,
         sleevePhaseDegP5: cycleClutchSleevePhaseDegP5,

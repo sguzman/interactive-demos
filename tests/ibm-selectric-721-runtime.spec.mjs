@@ -449,6 +449,16 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.cycleClutch.rubberComplianceMountEmbodiedP4).toBe(true);
   expect(initial.geometry.cycleClutch.checkRatchetEmbodiedP4).toBe(true);
   expect(initial.geometry.cycleClutch.checkPawlEmbodiedP4).toBe(true);
+  expect(initial.geometry.keyboardMechanism.commonCycleReleaseBailEmbodiedP4).toBe(true);
+  expect(initial.geometry.keyboardMechanism.commonCycleReleaseBailTravelFractionP5).toBeCloseTo(0, 8);
+  expect(initial.geometry.keyboardMechanism.commonCycleReleaseBailAngleDegP5).toBeCloseTo(0, 8);
+  expect(initial.geometry.keyboardMechanism.commonCycleReleaseBailToClutchLinkEmbodiedP4).toBe(true);
+  expect(initial.geometry.keyboardMechanism.commonCycleReleaseBailToClutchLinkLengthMmP4).toBeGreaterThan(0);
+  expect(initial.geometry.keyboardMechanism.commonCycleReleaseFunctionSeparateFromSixCodeChannels).toBe(true);
+  expect(initial.geometry.cycleClutch.latchPawlEmbodiedP4).toBe(true);
+  expect(initial.geometry.cycleClutch.latchLinkSpringEmbodiedP4).toBe(true);
+  expect(initial.geometry.cycleClutch.tripRequestFromCommonCycleReleaseBailP5).toBe(false);
+  expect(initial.geometry.cycleClutch.tripStoredByLatchPawlKeeperP5).toBe(false);
   expect(initial.geometry.cycleClutch.latchReleasedP5).toBe(false);
   expect(initial.geometry.cycleClutch.springEngagedP5).toBe(false);
   expect(initial.geometry.cycleClutch.checkPawlEngagedP5).toBe(true);
@@ -1014,6 +1024,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(keyDownHold).toBe(true);
   const keyDown = await page.evaluate(() => window.__selectricDebug.state);
   expect(keyDown.cycle).toBe('C1_TRIP');
+  expect(keyDown.geometry.keyboardMechanism.commonCycleReleaseBailTravelFractionP5).toBeGreaterThan(0.7);
+  expect(keyDown.geometry.keyboardMechanism.commonCycleReleaseBailAngleDegP5).toBeLessThan(-7);
+  expect(keyDown.geometry.cycleClutch.tripRequestFromCommonCycleReleaseBailP5).toBe(true);
+  expect(keyDown.geometry.cycleClutch.tripStoredByLatchPawlKeeperP5).toBe(true);
   expect(keyDown.geometry.cycleClutch.latchReleasedP5).toBe(true);
   expect(keyDown.geometry.cycleClutch.springEngagedP5).toBe(true);
   expect(keyDown.geometry.cycleClutch.checkPawlEngagedP5).toBe(false);
