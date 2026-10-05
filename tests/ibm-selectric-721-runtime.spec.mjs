@@ -165,8 +165,15 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.keyboardRegistrationP4.parameterized).toBe(true);
   expect(initial.geometry.keyboardRegistrationP4.envelopeWidthMm).toBeCloseTo(381, 8);
   expect(initial.geometry.keyboardRegistrationP4.deckWidthMmP4).toBeCloseTo(340, 8);
-  expect(initial.geometry.keyboardRegistrationP4.deckSlopeDegP4).toBeCloseTo(-7, 8);
+  expect(initial.geometry.keyboardRegistrationP4.deckSlopeDegP4).toBeCloseTo(7, 8);
   expect(initial.geometry.keyboardRegistrationP4.characterRowsP4).toHaveLength(4);
+  expect(initial.geometry.keyboardRegistrationP4.rearToFrontRowZsP4).toEqual([47, 69, 92, 116]);
+  expect(initial.geometry.keyboardRegistrationP4.rearToFrontZMonotonicP4).toBe(true);
+  expect(initial.geometry.keyboardRegistrationP4.spacebarP4.centerZ).toBe(136);
+  expect(initial.geometry.keyboardRegistrationP4.spacebarFrontOfCharacterRowsP4).toBe(true);
+  expect(initial.geometry.keyboardRegistrationP4.deckFallsTowardOperatorFrontP4).toBe(true);
+  expect(initial.geometry.keyboardRegistrationP4.maxAbsKeyCenterDeckTopResidualMmP4).toBeLessThan(0.8);
+  expect(initial.geometry.keyboardRegistrationP4.frontApronP4.slopeDeg).toBe(11);
   expect(initial.geometry.keyboardRegistrationP4.ordinaryFieldSpanMmP4).toBeGreaterThan(250);
   expect(initial.geometry.keyboardRegistrationP4.fullKeyControlSpanMmP4).toBeGreaterThan(300);
   expect(initial.geometry.keyboardRegistrationP4.ordinaryFieldWidthFractionOfEnvelopeP4)

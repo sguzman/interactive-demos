@@ -972,14 +972,24 @@ function makeKeyboard(keysMat, darkMat, pickables) {
   });
 
   const serviceX = keyboardP4.serviceColumnXP4;
-  addLabeledKey('TAB', -serviceX, 49, 92, 24);
-  addLabeledKey('CLR', -serviceX, 46, 68, 24);
-  addLabeledKey('LOCK', -serviceX, 43, 46, 24);
-  addLabeledKey('SHIFT', -serviceX, 40, 24, 28);
-
-  addLabeledKey('BKSP', serviceX, 49, 92, 28);
-  addLabeledKey('RETURN', serviceX, 46, 65, 32);
-  addLabeledKey('SHIFT', serviceX, 41, 32, 28);
+  keyboardP4.serviceKeysP4.left.forEach(keyP4 => {
+    addLabeledKey(
+      keyP4.label,
+      -serviceX,
+      keyP4.centerY,
+      keyP4.centerZ,
+      keyP4.widthMm
+    );
+  });
+  keyboardP4.serviceKeysP4.right.forEach(keyP4 => {
+    addLabeledKey(
+      keyP4.label,
+      serviceX,
+      keyP4.centerY,
+      keyP4.centerZ,
+      keyP4.widthMm
+    );
+  });
 
   const spacebar = addLabeledKey(
     '',
@@ -1008,12 +1018,60 @@ function makeKeyboard(keysMat, darkMat, pickables) {
     ...allKeycapsP4.map(key => key.position.x + key.userData.nominalWidthMmP4 / 2)
   );
 
+  const rearToFrontRowZsP4 = keyboardP4.characterRowsP4.map(row => row.centerZ);
+  const rearToFrontZMonotonicP4 = rearToFrontRowZsP4.every(
+    (z, index) => index === 0 || z > rearToFrontRowZsP4[index - 1]
+  );
+  const spacebarFrontOfCharacterRowsP4 =
+    keyboardP4.spacebarP4.centerZ > Math.max(...rearToFrontRowZsP4);
+  const deckFallsTowardOperatorFrontP4 = keyboardP4.deckP4.slopeDeg > 0;
+
+  // With z = front(+), a positive X-axis deck rotation lowers the top surface toward +z.
+  // The current row y values were already close to that top plane; the earlier negative slope +
+  // reversed row-z order contradicted both the declared axis and the photographed rear-row ->
+  // spacebar ordering. Report the seating residual rather than hiding this fit relation.
+  const deckThetaP4 = deg(keyboardP4.deckP4.slopeDeg);
+  const deckTopPlanePointYP4 =
+    keyboardP4.y +
+    keyboardP4.deckP4.heightMm / 2 * Math.cos(deckThetaP4);
+  const deckTopPlanePointZP4 =
+    keyboardP4.z +
+    keyboardP4.deckP4.heightMm / 2 * Math.sin(deckThetaP4);
+  const deckTopYAtZP4 = z =>
+    deckTopPlanePointYP4 -
+    Math.tan(deckThetaP4) * (z - deckTopPlanePointZP4);
+  const characterRowDeckTopResidualsMmP4 = keyboardP4.characterRowsP4.map(
+    row => row.centerY - deckTopYAtZP4(row.centerZ)
+  );
+  const spacebarDeckTopResidualMmP4 =
+    keyboardP4.spacebarP4.centerY -
+    deckTopYAtZP4(keyboardP4.spacebarP4.centerZ);
+  const maxAbsKeyCenterDeckTopResidualMmP4 = Math.max(
+    ...characterRowDeckTopResidualsMmP4.map(Math.abs),
+    Math.abs(spacebarDeckTopResidualMmP4)
+  );
+
   group.keyMeshes = keyMeshes;
   group.userData.registrationP4 = {
     parameterized: true,
     deckWidthMmP4: keyboardP4.deckP4.widthMm,
     deckSlopeDegP4: keyboardP4.deckP4.slopeDeg,
+    frontApronP4: { ...keyboardP4.frontApronP4 },
     characterRowsP4: keyboardP4.characterRowsP4.map(row => ({ ...row })),
+    serviceKeysP4: {
+      left: keyboardP4.serviceKeysP4.left.map(key => ({ ...key })),
+      right: keyboardP4.serviceKeysP4.right.map(key => ({ ...key }))
+    },
+    spacebarP4: { ...keyboardP4.spacebarP4 },
+    rearToFrontRowZsP4,
+    rearToFrontZMonotonicP4,
+    spacebarFrontOfCharacterRowsP4,
+    deckFallsTowardOperatorFrontP4,
+    characterRowDeckTopResidualsMmP4,
+    spacebarDeckTopResidualMmP4,
+    maxAbsKeyCenterDeckTopResidualMmP4,
+    axisOrderingClass:
+      'z = front(+): rear/top character row -> progressively larger z -> spacebar/front lip; deck top falls toward +z',
     ordinaryFieldSpanMmP4: ordinaryMaxXP4 - ordinaryMinXP4,
     fullKeyControlSpanMmP4: allKeyMaxXP4 - allKeyMinXP4,
     ordinaryFieldWidthFractionOfEnvelopeP4:

@@ -111,15 +111,15 @@ export const P4 = Object.freeze({
       widthMm: 340,
       heightMm: 17,
       depthMm: 142,
-      slopeDeg: -7
+      slopeDeg: 7
     },
     frontApronP4: {
       widthMm: 346,
-      heightMm: 25,
+      heightMm: 20,
       depthMm: 42,
-      y: 34,
+      y: 32,
       z: 139,
-      slopeDeg: -11
+      slopeDeg: 11
     },
     keycapP4: {
       ordinaryWidthMm: 18,
@@ -128,13 +128,26 @@ export const P4 = Object.freeze({
       faceSlopeDeg: -8
     },
     characterRowsP4: [
-      { centerY: 55.0, centerZ: 116, spacingX: 22.5, offsetX: 0, count: 12 },
-      { centerY: 52.2, centerZ: 92, spacingX: 24.0, offsetX: 3, count: 10 },
-      { centerY: 49.4, centerZ: 69, spacingX: 24.0, offsetX: 9, count: 10 },
-      { centerY: 46.6, centerZ: 47, spacingX: 24.0, offsetX: 15, count: 10 }
+      { centerY: 55.0, centerZ: 47, spacingX: 22.5, offsetX: 0, count: 12 },
+      { centerY: 52.2, centerZ: 69, spacingX: 24.0, offsetX: 3, count: 10 },
+      { centerY: 49.4, centerZ: 92, spacingX: 24.0, offsetX: 9, count: 10 },
+      { centerY: 46.6, centerZ: 116, spacingX: 24.0, offsetX: 15, count: 10 }
     ],
     serviceColumnXP4: 145,
-    spacebarP4: { centerX: -2, centerY: 39, centerZ: 23, widthMm: 112, depthMm: 18 },
+    serviceKeysP4: {
+      left: [
+        { label: 'TAB', centerY: 52, centerZ: 71, widthMm: 24 },
+        { label: 'CLR', centerY: 49, centerZ: 95, widthMm: 24 },
+        { label: 'LOCK', centerY: 46, centerZ: 117, widthMm: 24 },
+        { label: 'SHIFT', centerY: 43, centerZ: 139, widthMm: 28 }
+      ],
+      right: [
+        { label: 'BKSP', centerY: 52, centerZ: 71, widthMm: 28 },
+        { label: 'RETURN', centerY: 49, centerZ: 98, widthMm: 32 },
+        { label: 'SHIFT', centerY: 44, centerZ: 131, widthMm: 28 }
+      ]
+    },
+    spacebarP4: { centerX: -2, centerY: 44, centerZ: 136, widthMm: 112, depthMm: 18 },
     photoProjectedWidthSeeds: {
       fullKeyControlOpeningFractionApprox: [0.70, 0.71],
       ordinaryAlphanumericFieldFractionApprox: [0.62, 0.63],
