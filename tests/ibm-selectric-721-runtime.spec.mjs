@@ -329,6 +329,41 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.printRocker.selectedSlugPlatenClearanceAlongZMmP4).toBeLessThan(9);
   expect(initial.geometry.printRocker.liveClearanceClass).toContain('geometry check');
   expect(initial.geometry.typeElement.glyphFaceGeometry).toContain('unresolved');
+  expect(initial.geometry.carrierSelectionTransmission.activeTiltStyle).toBe('gearless');
+  expect(initial.geometry.carrierSelectionTransmission.tiltTapePart).toBe('1164314');
+  expect(initial.geometry.carrierSelectionTransmission.rotateTapePart).toBe('1134811');
+  expect(initial.geometry.carrierSelectionTransmission.tiltLinkPart).toBe('1134879');
+  expect(initial.geometry.carrierSelectionTransmission.carrierTiltPulleyEmbodied).toBe(true);
+  expect(initial.geometry.carrierSelectionTransmission.carrierRotatePulleyEmbodied).toBe(true);
+  expect(initial.geometry.carrierSelectionTransmission.gearlessTiltLinkEmbodied).toBe(true);
+  expect(initial.geometry.carrierSelectionTransmission.tiltRingMovesWithSelectedBand).toBe(true);
+  expect(initial.geometry.carrierSelectionTransmission.rotateShaftEmbodied).toBe(true);
+  expect(initial.geometry.carrierSelectionTransmission.lowerBallSocketEmbodied).toBe(true);
+  expect(initial.geometry.carrierSelectionTransmission.dogBoneJointEmbodied).toBe(true);
+  expect(initial.geometry.carrierSelectionTransmission.upperBallSocketEmbodied).toBe(true);
+  expect(initial.geometry.carrierSelectionTransmission.simultaneousTiltRotateVisible).toBe(true);
+  expect(initial.geometry.carrierSelectionTransmission.oldSectorTubeEmbodied).toBe(false);
+  expect(initial.geometry.carrierSelectionTransmission.tiltRingNotchCount).toBe(4);
+  expect(initial.geometry.carrierSelectionTransmission.carrierTapeGuideOrAnchorCountP4).toBe(4);
+  expect(initial.geometry.carrierSelectionTransmission.tiltChain).toEqual([
+    'IBM 1164314 7X1 tilt tape',
+    'carrier gearless tilt pulley',
+    'IBM 1134879 7X1 tilt-pulley link',
+    'tilt ring',
+    'type element'
+  ]);
+  expect(initial.geometry.carrierSelectionTransmission.rotateChain).toEqual([
+    'IBM 1134811 7X1 rotate tape',
+    'carrier rotate pulley',
+    'rotate shaft',
+    'lower ball socket',
+    'dog-bone joint',
+    'upper ball socket',
+    'type element'
+  ]);
+  expect(initial.geometry.carrierSelectionTransmission.poseP4.tiltLinkLengthMmP4).toBeGreaterThan(0);
+  expect(initial.geometry.carrierSelectionTransmission.poseP4.upperSocketLinkLengthMmP4).toBeGreaterThan(0);
+  expect(initial.geometry.carrierSelectionTransmission.geometryClass).toContain('7X1 gearless carrier-side topology');
   expect(initial.geometry.operationalCams.spaceBackspaceDegreesPerOperation).toBe(180);
   expect(initial.geometry.operationalCams.carrierReturnIndexDegreesPerOperation).toBe(360);
   expect(initial.geometry.operationalCams.tabUsesPoweredCam).toBe(false);
@@ -961,6 +996,18 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(typed.geometry.selectionDifferential.tapePresentation.carrierGuidePulleys).toBe(4);
   expect(typed.geometry.selectionDifferential.tapePresentation.tangentLaneOffsetsApplied).toBe(true);
   expect(typed.geometry.selectionDifferential.tapePresentation.geometryClass).toContain('non-intersecting guide lanes');
+  expect(typed.geometry.carrierSelectionTransmission.poseP4.tiltRingAngleDegP4).toBeCloseTo(
+    typed.geometry.typeElement.orientationDegP4.tilt,
+    8
+  );
+  expect(typed.geometry.carrierSelectionTransmission.poseP4.rotatePulleyAngleDegP4).toBeCloseTo(
+    -typed.selection.rotateUnit * (360 / typed.geometry.typeElement.positionsPerBand) +
+      typed.selection.shiftAngleDeg,
+    8
+  );
+  expect(Math.abs(typed.geometry.carrierSelectionTransmission.poseP4.dogBoneDeflectionDegP4)).toBeGreaterThan(0.1);
+  expect(typed.geometry.carrierSelectionTransmission.poseP4.tiltLinkLengthMmP4).toBeGreaterThan(0);
+  expect(typed.geometry.carrierSelectionTransmission.poseP4.upperSocketLinkLengthMmP4).toBeGreaterThan(0);
   expect(typed.selection.selectorInputs.T1 + 2 * typed.selection.selectorInputs.T2).toBe(typed.selection.tiltBand);
   if (typed.selection.rotateUnit < 0) expect(typed.selection.selectorInputs.fiveUnit).toBe(1);
   expect(typed.selection.mappingClass).toContain('P5');
