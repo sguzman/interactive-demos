@@ -6382,7 +6382,7 @@ export function createSelectricModel() {
         normalizedOutputsDerivedFromHoleFractions: true,
         floatingLeverMotionP5: true,
         fiveUnitBailMotion:
-          'third cycle-shaft cam releases/restores an explicit latch-gated rising N5 bail whose effective rise drives the live signed-balance right endpoint',
+          'third cycle-shaft cam releases/restores an explicit latch-gated rising five-unit bail whose effective rise drives the live signed-balance right endpoint',
         targetAndMechanicalSelectionSeparated: true,
         ordinaryLatchOutputsDriveLiveDifferential: true,
         fiveUnitBailDrivesLiveBalanceEndpoint: true,
