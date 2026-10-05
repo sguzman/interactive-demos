@@ -67,6 +67,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.platenRatchet.doubleIndexTeeth).toBe(2);
   expect(initial.geometry.platenRatchet.activeIndexTeeth).toBe(1);
   expect(initial.geometry.platenRatchet.indexPawlConstructionClass).toContain('tapered chamfered P4 stamped-link plate');
+  expect(initial.geometry.platenRatchet.indexPawlWorkingPlaneP4).toContain('Y/Z with X-axis pivot hole');
   expect(initial.geometry.platenRatchet.indexPawlPivotEmbodied).toBe(true);
   expect(initial.geometry.platenRatchet.indexPawlTipEmbodied).toBe(true);
   expect(initial.geometry.platenRatchet.indexPawlRestAngleDegP4).toBeCloseTo(-28, 8);
@@ -211,6 +212,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.fineAlignment.detentFollowerEmbodied).toBe(true);
   expect(initial.geometry.fineAlignment.detentCamLobesP4).toBe(2);
   expect(initial.geometry.fineAlignment.detentArmConstructionClass).toContain('tapered chamfered P4 stamped-link plate');
+  expect(initial.geometry.fineAlignment.detentArmWorkingPlaneP4).toContain('Y/Z with X-axis pivot hole');
   expect(initial.geometry.fineAlignment.detentArmCountP4).toBe(2);
   expect(initial.geometry.fineAlignment.detentPivotPinsEmbodied).toBe(true);
   expect(initial.geometry.fineAlignment.causalChain).toEqual([
@@ -334,6 +336,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.operationalCams.followersEmbodied).toBe(true);
   expect(initial.geometry.operationalCams.followerPivotAxisP4).toBe('X');
   expect(initial.geometry.operationalCams.followerWorkingPlaneP4).toBe('Y/Z');
+  expect(initial.geometry.operationalCams.followerPlateGeometryWorkingPlaneP4).toContain('Y/Z with X-axis pivot hole');
   expect(initial.geometry.operationalCams.followerLeverConstructionClassP4).toContain('stamped-link');
   expect(initial.geometry.operationalCams.followerPivotPinsEmbodiedP4).toBe(true);
   expect(initial.geometry.operationalCams.followerRollersEmbodiedP4).toBe(true);
