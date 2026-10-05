@@ -85,9 +85,12 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     'print-sleeve-rotation',
     '1164240-cam',
     'roller-follower',
-    'tilt-detent',
-    'rotate-detent'
+    'tilt-takeup',
+    'rotate-lost-motion',
+    'detents'
   ]);
+  expect(initial.geometry.fineAlignment.sharedFollowerWithRotateLostMotion).toBe(true);
+  expect(initial.geometry.fineAlignment.rotateTakeupThresholdP5).toBeCloseTo(0.20, 8);
   expect(initial.geometry.fineAlignment.detentFollowerLiftP5).toBeCloseTo(0, 8);
   expect(initial.geometry.fineAlignment.exactPivotsAndTimingDegrees).toBe('unresolved');
   expect(initial.geometry.fineAlignment.animationPhaseClass).toContain('print-sleeve phase');
@@ -473,8 +476,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(fineAligned.fineAlignment.rotateDetent).toBeGreaterThan(0.7);
   expect(fineAligned.fineAlignment.tiltDetent).toBeGreaterThanOrEqual(fineAligned.fineAlignment.rotateDetent);
   expect(fineAligned.geometry.fineAlignment.printSleevePhaseP5).toBeCloseTo(0.50, 8);
-  expect(fineAligned.geometry.fineAlignment.detentFollowerLiftP5).toBeGreaterThan(0.9);
+  expect(fineAligned.geometry.fineAlignment.detentFollowerLiftP5).toBeGreaterThan(0.6);
+  expect(fineAligned.geometry.fineAlignment.detentFollowerLiftP5).toBeLessThan(0.7);
   expect(fineAligned.geometry.fineAlignment.driver).toContain('1164240');
+  expect(fineAligned.geometry.fineAlignment.sharedFollowerWithRotateLostMotion).toBe(true);
   await page.screenshot({ path: 'test-results/selectric-fine-align.png', fullPage: true });
   await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
