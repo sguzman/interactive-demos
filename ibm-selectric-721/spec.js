@@ -224,8 +224,8 @@ export const COMPONENTS = Object.freeze({
   ribbon: {
     name: 'Fabric ribbon system',
     category: 'inking',
-    provenance: 'active fabric-ribbon branch + source-ordered print-sleeve cam topology + P4 follower/bellcrank/path geometry + P5 lift envelope and compressed spool fullness',
-    description: 'Twin-spool fabric ribbon presentation whose print lift is now downstream of the rotating print-sleeve ribbon-lift cam through an embodied P4 roller follower and bellcrank into the carrier-local vibrator guides. Threading/load remains a distinct service override above the print-lift range. Supply/take-up roll fullness transfers with feed direction and survives auto-reversal, while exact cam profile, lever lengths, lift heights and physical ribbon capacity remain unresolved.'
+    provenance: 'active fabric-ribbon branch + source-ordered print-sleeve lift/feed topology + IBM 1164240 feed/detent cam identity + P4 follower/bellcrank/path geometry + P5 cam envelopes and compressed spool fullness',
+    description: 'Twin-spool fabric ribbon presentation with two explicit print-sleeve-driven paths: the ribbon-lift cam drives an embodied follower/bellcrank into the vibrator guides, while the IBM 1164240 feed lobe drives a second embodied follower/bellcrank into the feed plate, pawl and ratchet. The transport step is committed at the reconstructed feed-stroke peak rather than being the visible motion itself. Threading/load remains a distinct service override above the print-lift range. Supply/take-up roll fullness transfers with feed direction and survives auto-reversal; exact cam profiles, lever lengths, event angles, lift heights and physical ribbon capacity remain unresolved.'
   },
   horizontalMotion: {
     name: 'Writing-line racks / cords',
