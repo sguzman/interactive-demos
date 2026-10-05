@@ -1123,6 +1123,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(typed.geometry.selectionDifferential.floatingLeverMotionP5).toBe(true);
   expect(typed.geometry.selectionDifferential.tiltDoubleVerticalOutputLink).toBe(true);
   expect(typed.geometry.selectionDifferential.fiveUnitBailMotion).toContain('five-unit bail');
+  expect(typed.geometry.selectionDifferential.fiveUnitBailToBalanceTransferRodEmbodiedP4).toBe(true);
+  expect(typed.geometry.selectionDifferential.fiveUnitBailToBalanceTransferRodLengthMmP4).toBeGreaterThan(0);
+  expect(typed.geometry.selectionDifferential.fiveUnitBailToBalanceTransferGeometryClass).toContain('unresolved');
   expect(typed.geometry.selectionDifferential.explicitJointPinCountsP4).toEqual({
     tilt: 3,
     rotateFirst: 3,
