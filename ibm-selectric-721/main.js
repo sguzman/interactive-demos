@@ -532,14 +532,17 @@ function runCycle(now) {
     model.setTypeball(runtime.selectionTarget.tilt * k, runtime.selectionTarget.rotate * k, runtime.selectionTarget.shift);
   } else if (t < 0.43) {
     setCycleState('C3_SELECTION_DRIVE');
+    model.setKeyboardCode(runtime.selectionTarget.code6, true);
     model.setKeyPress(null, 0);
     model.setTypeball(runtime.selectionTarget.tilt, runtime.selectionTarget.rotate, runtime.selectionTarget.shift);
   } else if (t < 0.54) {
     setCycleState('C4_FINE_ALIGN');
+    model.setKeyboardCode(runtime.selectionTarget.code6, true);
     model.setKeyPress(null, 0);
     model.setTypeball(runtime.selectionTarget.tilt, runtime.selectionTarget.rotate, runtime.selectionTarget.shift);
   } else if (t < 0.66) {
     setCycleState('C5_PRINT_IMPACT');
+    model.setKeyboardCode(runtime.selectionTarget.code6, true);
     model.setKeyPress(null, 0);
   } else if (t < 0.91) {
     setCycleState('C6_ESCAPEMENT_RIBBON_RESTORE');
