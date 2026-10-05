@@ -653,6 +653,7 @@ function makeTypeElement(ballMat, darkMetal, pickables) {
   slugs.castShadow = true;
   pickables.push(slugs);
   group.add(slugs);
+  group.userData.slugSectionP4 = { ...slugGeo.userData.p4SlugSection };
 
   return group;
 }
@@ -3444,8 +3445,8 @@ export function createSelectricModel() {
         topCapCenterYP4Mm: TYPE_TOP_CAP_CENTER_Y_P4_MM,
         topCapAndLatchPresentation: true,
         slugFinishClass: 'chrome-like raised structural cues continuous with the element shell rather than black checkerboard blocks',
-        slugSectionClass: slugGeo.userData.p4SlugSection.class,
-        slugSectionP4: { ...slugGeo.userData.p4SlugSection },
+        slugSectionClass: typeElement.userData.slugSectionP4.class,
+        slugSectionP4: { ...typeElement.userData.slugSectionP4 },
         slugOrientation: 'P4 surface-normal tangent frames on structural ellipsoid',
         rotateSlotStepDegP4: 360 / CANONICAL.typeElement.positionsPerBand,
         bandLatitudesP4: [...TYPE_BAND_LATITUDES_P4],
