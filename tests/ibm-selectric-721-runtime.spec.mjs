@@ -158,6 +158,31 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     'ratchet'
   ]);
   expect(initial.geometry.ribbon.feedStrokeClass).toContain('transport commit occurs at reconstructed peak stroke');
+  expect(initial.geometry.keyboardMechanism.rearFulcrumRodEmbodied).toBe(true);
+  expect(initial.geometry.keyboardMechanism.frontGuideCombEmbodied).toBe(true);
+  expect(initial.geometry.keyboardMechanism.frontGuideFingerCountP4).toBe(51);
+  expect(initial.geometry.keyboardMechanism.keyleverStopRodCountP4).toBe(2);
+  expect(initial.geometry.keyboardMechanism.keyleverBearingSupportEmbodied).toBe(true);
+  expect(initial.geometry.keyboardMechanism.separateKeyleverPawlCountP4).toBe(51);
+  expect(initial.geometry.keyboardMechanism.keyleverPawlShoulderRivetCountP4).toBe(51);
+  expect(initial.geometry.keyboardMechanism.interposerFrontFulcrumRodEmbodied).toBe(true);
+  expect(initial.geometry.keyboardMechanism.interposerGuideRailCountP4).toBe(2);
+  expect(initial.geometry.keyboardMechanism.selectorCompensatorEmbodied).toBe(true);
+  expect(initial.geometry.keyboardMechanism.selectorCompensatorBallCountP4).toBeGreaterThan(10);
+  expect(initial.geometry.keyboardMechanism.selectorCompensatorClass).toContain('mutual-exclusion');
+  expect(initial.geometry.keyboardMechanism.selectorBailCount).toBe(6);
+  expect(initial.geometry.keyboardMechanism.selectorBailMotionClass).toContain('revolve about their X axes');
+  expect(initial.geometry.keyboardMechanism.selectorBailWorkingPlane).toContain('Y/Z');
+  expect(initial.geometry.keyboardMechanism.selectorBailAnglesDegP5).toEqual([0, 0, 0, 0, 0, 0]);
+  expect(initial.geometry.keyboardMechanism.latchInterposerCount).toBe(6);
+  expect(initial.geometry.keyboardMechanism.latchInterposerClass).toContain('one-to-one');
+  expect(initial.geometry.keyboardMechanism.filterShaftBladeCount).toBe(2);
+  expect(initial.geometry.keyboardMechanism.filterShaftBearingCount).toBe(2);
+  expect(initial.geometry.keyboardMechanism.filterShaftRotationDegPerCharacter).toBe(180);
+  expect(initial.geometry.keyboardMechanism.latchBailOpenFrameEmbodied).toBe(true);
+  expect(initial.geometry.keyboardMechanism.latchBailContactFingerCountP4).toBe(6);
+  expect(initial.geometry.keyboardMechanism.geometryClass).toContain('source-topology embodiment');
+
   expect(initial.geometry.shaftTiming.cycleShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.filterShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.printShaftDegPerCharacter).toBe(360);
