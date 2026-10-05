@@ -80,6 +80,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.paperFeed.bailRollers).toBe(2);
   expect(initial.geometry.paperFeed.bailStableStates).toEqual(['against-platen', 'released']);
   expect(initial.geometry.paperFeed.bailToggle).toContain('two-stable-state');
+  expect(initial.geometry.paperFeed.bailEndLeverCountP4).toBe(2);
+  expect(initial.geometry.paperFeed.bailEndLeverConstructionClassP4).toContain('stamped-link');
+  expect(initial.geometry.paperFeed.bailEndLeverWorkingPlaneP4).toContain('Y/Z');
   expect(initial.geometry.paperFeed.frontRearReleaseCoupled).toBe(true);
   expect(initial.geometry.paperFeed.lineSpacingSelectorConstructionClass).toContain('stamped-link');
   expect(initial.geometry.paperFeed.lineSpacingSelectorLinkConstructionClass).toContain('two-eye');
