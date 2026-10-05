@@ -2762,37 +2762,46 @@ export function createSelectricModel() {
     applyRibbonFeedSelection();
   }
 
-  function setFineAlignment(tiltValue, rotateValue = tiltValue) {
+  function applyFineAlignment(tiltValue, rotateValue, followerLiftValue) {
     state.tiltDetent = THREE.MathUtils.clamp(Number(tiltValue) || 0, 0, 1);
     state.rotateDetent = THREE.MathUtils.clamp(Number(rotateValue) || 0, 0, 1);
-    state.detentFollowerLiftP5 = Math.max(state.tiltDetent, state.rotateDetent);
+    state.detentFollowerLiftP5 = THREE.MathUtils.clamp(Number(followerLiftValue) || 0, 0, 1);
 
     // P5 motion amplitudes only. Source-backed requirement is ordering/contact role, not these angles.
-    // The follower moves radially away from the 1164240 cam center as its reconstructed lobe rises.
+    // The shared follower rises with the reconstructed 1164240 cam envelope. Tilt takes up first;
+    // rotate follows through explicit lost motion instead of the two detents having separate drivers.
     tiltDetentPivot.rotation.x = deg(24 * state.tiltDetent);
     rotateDetentPivot.rotation.x = deg(26 * state.rotateDetent);
     detentFollower.position.y = detentFollowerBaseYP4 + state.detentFollowerLiftP5 * 5;
   }
 
+  function setFineAlignment(tiltValue, rotateValue = tiltValue) {
+    const tilt = THREE.MathUtils.clamp(Number(tiltValue) || 0, 0, 1);
+    const rotate = THREE.MathUtils.clamp(Number(rotateValue) || 0, 0, 1);
+    applyFineAlignment(tilt, rotate, Math.max(tilt, rotate));
+  }
+
   function fineAlignmentFromSleevePhaseP5(phase) {
     const t = THREE.MathUtils.clamp(Number(phase) || 0, 0, 1);
-    if (t < 0.43) return { tilt: 0, rotate: 0 };
+    if (t < 0.43) return { driver: 0, tilt: 0, rotate: 0 };
     if (t < 0.54) {
-      const k = (t - 0.43) / 0.11;
+      const driver = THREE.MathUtils.clamp((t - 0.43) / 0.11, 0, 1);
       return {
-        tilt: THREE.MathUtils.clamp(k / 0.58, 0, 1),
-        rotate: THREE.MathUtils.clamp((k - 0.20) / 0.62, 0, 1)
+        driver,
+        tilt: THREE.MathUtils.clamp(driver / 0.58, 0, 1),
+        rotate: THREE.MathUtils.clamp((driver - 0.20) / 0.62, 0, 1)
       };
     }
-    if (t < 0.66) return { tilt: 1, rotate: 1 };
+    if (t < 0.66) return { driver: 1, tilt: 1, rotate: 1 };
     if (t < 0.91) {
-      const k = 1 - (t - 0.66) / 0.25;
+      const driver = THREE.MathUtils.clamp(1 - (t - 0.66) / 0.25, 0, 1);
       return {
-        tilt: THREE.MathUtils.clamp((k - 0.34) / 0.66, 0, 1),
-        rotate: THREE.MathUtils.clamp((k - 0.46) / 0.54, 0, 1)
+        driver,
+        tilt: THREE.MathUtils.clamp((driver - 0.34) / 0.66, 0, 1),
+        rotate: THREE.MathUtils.clamp((driver - 0.46) / 0.54, 0, 1)
       };
     }
-    return { tilt: 0, rotate: 0 };
+    return { driver: 0, tilt: 0, rotate: 0 };
   }
 
   function setPrintApproach(value) {
@@ -3016,7 +3025,7 @@ export function createSelectricModel() {
     // Fine alignment is now a downstream output of the rotating print sleeve / 1164240 cam.
     // Timing remains explicit P5 because exact IBM event angles are not yet sourced.
     const fineAlignment = fineAlignmentFromSleevePhaseP5(state.cyclePhase);
-    setFineAlignment(fineAlignment.tilt, fineAlignment.rotate);
+    applyFineAlignment(fineAlignment.tilt, fineAlignment.rotate, fineAlignment.driver);
   }
 
   function setServiceCover(value) {
@@ -3431,7 +3440,10 @@ export function createSelectricModel() {
         detentFollowerEmbodied: true,
         detentFollowerLiftP5: state.detentFollowerLiftP5,
         detentCamLobesP4: 2,
-        causalChain: ['print-sleeve-rotation', '1164240-cam', 'roller-follower', 'tilt-detent', 'rotate-detent'],
+        sharedFollowerWithRotateLostMotion: true,
+        tiltTakeupThresholdP5: 0,
+        rotateTakeupThresholdP5: 0.20,
+        causalChain: ['print-sleeve-rotation', '1164240-cam', 'roller-follower', 'tilt-takeup', 'rotate-lost-motion', 'detents'],
         exactPivotsAndTimingDegrees: 'unresolved',
         animationPhaseClass: 'P5 event-angle envelope driven from the print-sleeve phase; source-backed topology/order, not OEM timing degrees'
       },
