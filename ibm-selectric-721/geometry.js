@@ -1821,6 +1821,19 @@ export function createSelectricModel() {
   addPickable(printShaft, COMPONENTS.printShaft, pickables);
   printShaftRotor.add(printShaft);
 
+  // P4 longitudinal keyway land: the production parts corpus fixes a separate print-sleeve key
+  // and a rotationally keyed sliding sleeve, but not the exact key/keyway section used here.
+  const printShaftKeywayLandP4 = box(
+    P4.printShaft.length - 30,
+    1.15,
+    1.8,
+    darkMetal,
+    'print-shaft longitudinal keyway land P4'
+  );
+  printShaftKeywayLandP4.position.set(0, P4.printShaft.visibleRadius * 0.78, 0);
+  addPickable(printShaftKeywayLandP4, COMPONENTS.printShaft, pickables);
+  printShaftRotor.add(printShaftKeywayLandP4);
+
   const currentGearPresentationTeethP4 = 24;
   const currentGearGeometryP4 = radialToothedWheelGeometryP4(
     11.6,
@@ -4106,6 +4119,19 @@ export function createSelectricModel() {
   addPickable(sleeve, COMPONENTS.sleeve, pickables);
   printSleeveRotor.add(sleeve);
 
+  const printSleeveKeyP4 = box(
+    P4.carrierLocal.sleeveLength * 0.74,
+    1.35,
+    2.0,
+    darkMetal,
+    'print-sleeve longitudinal key P4'
+  );
+  printSleeveKeyP4.position.set(0, P4.carrierLocal.sleeveRadius * 0.84, 0);
+  printSleeveKeyP4.userData.geometryClass =
+    'P4 longitudinal key carried by the sliding print sleeve; exact IBM key section and radial seat unresolved';
+  addPickable(printSleeveKeyP4, COMPONENTS.sleeve, pickables);
+  printSleeveRotor.add(printSleeveKeyP4);
+
   // P4 smooth cam profiles replace the earlier round collars plus box-shaped lobe cues.
   // The sourced identities/order are preserved; these radial envelopes remain reconstruction,
   // not claims about exact IBM production cam sections.
@@ -4268,6 +4294,67 @@ export function createSelectricModel() {
   const rockerPivotHub = shaft(20, 4.2, darkMetal, 'type-element rocker pivot hub P4');
   addPickable(rockerPivotHub, COMPONENTS.typeball, pickables);
   rocker.add(rockerPivotHub);
+
+  // The parts corpus fixes a separate rocker return spring. Embody it as a compact P4 torsion
+  // spring around the rocker pivot rather than leaving restoration as an invisible state reset.
+  const rockerReturnSpringP4 = new THREE.Group();
+  rockerReturnSpringP4.name = 'rocker return torsion spring P4';
+  rockerReturnSpringP4.position.copy(rocker.position);
+  rockerReturnSpringP4.userData.geometryClass =
+    'source-backed rocker-return spring role with P4 coil diameter, turns, wire section and leg geometry';
+  carrierMotion.add(rockerReturnSpringP4);
+
+  const rockerReturnSpringPointsP4 = [];
+  const rockerReturnSpringTurnsP4 = 2.25;
+  const rockerReturnSpringRadiusP4 = 5.2;
+  const rockerReturnSpringWidthP4 = 8.0;
+  for (let i = 0; i <= 48; i += 1) {
+    const t = i / 48;
+    const a = t * Math.PI * 2 * rockerReturnSpringTurnsP4;
+    rockerReturnSpringPointsP4.push(new THREE.Vector3(
+      THREE.MathUtils.lerp(-rockerReturnSpringWidthP4 / 2, rockerReturnSpringWidthP4 / 2, t),
+      Math.cos(a) * rockerReturnSpringRadiusP4,
+      Math.sin(a) * rockerReturnSpringRadiusP4
+    ));
+  }
+  const rockerReturnSpringCoilP4 = new THREE.Mesh(
+    new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3(rockerReturnSpringPointsP4),
+      64,
+      0.62,
+      7,
+      false
+    ),
+    metal
+  );
+  rockerReturnSpringCoilP4.name = 'rocker return spring coil P4';
+  addPickable(rockerReturnSpringCoilP4, COMPONENTS.typeball, pickables);
+  rockerReturnSpringP4.add(rockerReturnSpringCoilP4);
+
+  const rockerReturnSpringFixedLegP4 = cylinderBetweenP4(
+    new THREE.Vector3(-rockerReturnSpringWidthP4 / 2, 0, -rockerReturnSpringRadiusP4),
+    new THREE.Vector3(-rockerReturnSpringWidthP4 / 2, -8.5, -8.5),
+    0.72,
+    metal,
+    'rocker return spring fixed leg P4',
+    10
+  );
+  addPickable(rockerReturnSpringFixedLegP4, COMPONENTS.typeball, pickables);
+  rockerReturnSpringP4.add(rockerReturnSpringFixedLegP4);
+
+  const rockerReturnSpringMovingLegP4 = new THREE.Group();
+  rockerReturnSpringMovingLegP4.name = 'rocker return spring moving leg P4';
+  rockerReturnSpringP4.add(rockerReturnSpringMovingLegP4);
+  const rockerReturnSpringMovingLegRodP4 = cylinderBetweenP4(
+    new THREE.Vector3(rockerReturnSpringWidthP4 / 2, 0, rockerReturnSpringRadiusP4),
+    new THREE.Vector3(rockerReturnSpringWidthP4 / 2, 10.5, 7.0),
+    0.72,
+    metal,
+    'rocker return spring rocker leg P4',
+    10
+  );
+  addPickable(rockerReturnSpringMovingLegRodP4, COMPONENTS.typeball, pickables);
+  rockerReturnSpringMovingLegP4.add(rockerReturnSpringMovingLegRodP4);
 
   for (const sign of [-1, 1]) {
     const arm = cylinderBetweenP4(
@@ -5376,6 +5463,7 @@ export function createSelectricModel() {
     printCamFollower.position.y = printCamFollowerBaseYP4 + state.printCamFollowerLiftP5 * 5.2;
     printFollowerBellcrank.rotation.x = deg(-21 * state.printCamFollowerLiftP5);
     rocker.rotation.x = deg(angleDeg);
+    rockerReturnSpringMovingLegP4.rotation.x = rocker.rotation.x;
     updateCarrierSelectionTransmissionP4();
   }
 
@@ -6370,6 +6458,20 @@ export function createSelectricModel() {
                 : 'none',
         followerTravelClass: 'P5 follower throw driven directly from the selected service-cam phase; service-cam degrees/topology are source-grounded, exact IBM cam profiles and roller-contact radii remain unresolved'
       },
+      carrierPrintDrive: {
+        printShaftPart: '1164736',
+        printSleevePart: '1141628',
+        printShaftWidthClass: '7X1',
+        printSleeveSeparateSlidingMember: true,
+        printShaftKeywayLandEmbodiedP4: true,
+        printSleeveKeyEmbodiedP4: true,
+        printSleeveKeyConstructionClass: printSleeveKeyP4.userData.geometryClass,
+        keyedRotationPhaseErrorDegP4: Math.abs(
+          THREE.MathUtils.radToDeg(printShaftRotor.rotation.x - printSleeveRotor.rotation.x)
+        ),
+        geometryClass:
+          'source-backed separate rotationally keyed sliding print-sleeve architecture; visible key/keyway sections are P4 reconstruction'
+      },
       shaftTiming: {
         cycleShaftDegPerCharacter: 180,
         filterShaftDegPerCharacter: 180,
@@ -6426,6 +6528,11 @@ export function createSelectricModel() {
         rockerForkArmCountP4: rockerArmsP4.length,
         rockerPivotHubEmbodied: true,
         rockerCradlePinEmbodied: true,
+        returnSpringEmbodiedP4: true,
+        returnSpringConstructionClassP4: rockerReturnSpringP4.userData.geometryClass,
+        returnSpringTurnsP4: rockerReturnSpringTurnsP4,
+        returnSpringMovingLegAngleDegP5:
+          THREE.MathUtils.radToDeg(rockerReturnSpringMovingLegP4.rotation.x),
         rockerArmSpanMmP4: rockerArmStartP4.distanceTo(rockerArmEndP4),
         causalChain: ['print-sleeve-rotation', '1124174-print-restoring-cam', 'roller-follower', 'bellcrank', 'print-rocker', 'type-element'],
         driveClass: 'P5 cam-envelope timing through P4 follower/bellcrank geometry; exact OEM cam profile and lever lengths unresolved',
