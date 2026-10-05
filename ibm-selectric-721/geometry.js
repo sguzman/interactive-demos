@@ -1052,14 +1052,21 @@ export function createSelectricModel() {
   const ribbonMat = material(0x171716, 0.01, 0.82);
   const shoeMat = material(0xd5d0bd, 0.02, 0.78);
 
-  const shellAssembly = makeAssembly('shell assembly', new THREE.Vector3(0, 150, -135));
+  const shellAssembly = makeAssembly('outer shell / cover assembly', new THREE.Vector3(0, 150, -135));
   assemblies.push(shellAssembly);
   root.add(shellAssembly);
+
+  // Keep the broad machine base out of the lifted outer-cover assembly. Exploding the old
+  // combined group carried the full base upward behind the cover and visually swallowed the
+  // platen/carrier layers. The base now separates downward while the outer shell lifts away.
+  const baseShellAssembly = makeAssembly('base shell assembly', new THREE.Vector3(0, -90, -10));
+  assemblies.push(baseShellAssembly);
+  root.add(baseShellAssembly);
 
   const base = box(370, 20, 330, shellMat, 'base shell');
   base.position.set(0, 13, 0);
   addPickable(base, COMPONENTS.shell, pickables);
-  shellAssembly.add(base);
+  baseShellAssembly.add(base);
 
   const cheekProfile = [
     { z: 162, y: 22 },
@@ -3646,6 +3653,20 @@ export function createSelectricModel() {
       pitchMm: CANONICAL.pitchMm,
       writingLineMm: CANONICAL.writingLineMm,
       explosion: state.explosion,
+      explosionTopology: {
+        outerShellSeparateFromBase: true,
+        outerShellVectorP5: {
+          x: shellAssembly.userData.explodeVector.x,
+          y: shellAssembly.userData.explodeVector.y,
+          z: shellAssembly.userData.explodeVector.z
+        },
+        baseShellVectorP5: {
+          x: baseShellAssembly.userData.explodeVector.x,
+          y: baseShellAssembly.userData.explodeVector.y,
+          z: baseShellAssembly.userData.explodeVector.z
+        },
+        separationClass: 'P5 inspection explosion: outer shell lifts up/rear while broad base drops away so neither is used as a moving mechanical state'
+      },
       serviceCoverOpen: state.serviceCoverOpen,
       inspectionCutaway: {
         mode: state.inspectionCutaway,
