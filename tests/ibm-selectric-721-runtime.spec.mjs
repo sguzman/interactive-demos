@@ -790,6 +790,23 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(Object.keys(typed.selection.selectorInputs).sort()).toEqual(['R1','R2','R2A','T1','T2','fiveUnit'].sort());
   expect(typed.geometry.selectionNormalized.qTilt).toBeCloseTo(typed.selection.tiltBand / 3, 8);
   expect(typed.geometry.selectionNormalized.qSigned).toBeCloseTo(typed.selection.rotateUnit / 5, 8);
+  expect(typed.geometry.selectionDifferential.weightedLeverEmbodimentP4).toBe(true);
+  expect(typed.geometry.selectionDifferential.normalizedOutputsDerivedFromHoleFractions).toBe(true);
+  expect(typed.geometry.selectionDifferential.floatingLeverMotionP5).toBe(true);
+  expect(typed.geometry.selectionDifferential.tiltDoubleVerticalOutputLink).toBe(true);
+  expect(typed.geometry.selectionDifferential.fiveUnitBailMotion).toContain('rises');
+  expect(typed.geometry.selectionDifferential.explicitJointPinCountsP4).toEqual({
+    tilt: 3,
+    rotateFirst: 3,
+    rotateSecond: 3,
+    balance: 3
+  });
+  expect(typed.geometry.selectionDifferential.sourceFixedHoleFractions.tiltOutput).toBeCloseTo(1 / 3, 8);
+  expect(typed.geometry.selectionDifferential.sourceFixedHoleFractions.rotateFirstOutput).toBeCloseTo(2 / 3, 8);
+  expect(typed.geometry.selectionDifferential.sourceFixedHoleFractions.rotateSecondOutput).toBeCloseTo(3 / 5, 8);
+  expect(typed.geometry.selectionDifferential.sourceFixedHoleFractions.balanceOutput).toBeCloseTo(1 / 2, 8);
+  expect(typed.geometry.selectionDifferential.geometryOutputErrorMaxP5).toBeLessThan(1e-9);
+  expect(typed.geometry.selectionDifferential.geometryClass).toContain('floating levers');
   expect(typed.geometry.selectionDifferential.tapeCarrierInvariantErrorMm.tiltMm).toBeLessThan(1e-8);
   expect(typed.geometry.selectionDifferential.tapeCarrierInvariantErrorMm.rotateMm).toBeLessThan(1e-8);
   expect(typed.geometry.selectionDifferential.tapePresentation.crossSection).toContain('flat strip');
