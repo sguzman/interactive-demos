@@ -4306,27 +4306,32 @@ export function createSelectricModel() {
   typeElement.position.set(0, typeLocalY, typeLocalZ);
   rocker.add(typeElement);
 
+  // The gearless tilt ring is a moving carrier-side body, not a decorative fixed torus.
+  // Keep its section P4, but give it a real X-axis tilt transform that tracks the selected
+  // type-element band. The four detent-notch cues ride on the same moving ring.
+  const tiltRingMotionP4 = new THREE.Group();
+  tiltRingMotionP4.name = 'gearless tilt-ring motion P4';
+  tiltRingMotionP4.position.set(0, typeLocalY - 9.2, typeLocalZ + 0.5);
+  rocker.add(tiltRingMotionP4);
+
   const tiltRing = new THREE.Mesh(
     new THREE.TorusGeometry(18.3, 1.8, 8, 36),
     metal
   );
   tiltRing.rotation.x = Math.PI / 2;
-  tiltRing.position.set(0, typeLocalY - 9.2, typeLocalZ + 0.5);
   tiltRing.name = 'tilt ring with four detent-notch cues';
   addPickable(tiltRing, COMPONENTS.fineAlignment, pickables);
-  rocker.add(tiltRing);
+  tiltRingMotionP4.add(tiltRing);
 
+  const tiltRingNotchesP4 = [];
   for (let band = 0; band < 4; band += 1) {
     const notch = box(4.5, 2.0, 2.5, darkMetal, 'tilt-ring detent notch cue band ' + band);
     const a = band * Math.PI / 2;
-    notch.position.set(
-      Math.sin(a) * 18.2,
-      typeLocalY - 9.2,
-      typeLocalZ + Math.cos(a) * 18.2
-    );
+    notch.position.set(Math.sin(a) * 18.2, 0, Math.cos(a) * 18.2);
     notch.rotation.y = a;
     addPickable(notch, COMPONENTS.fineAlignment, pickables);
-    rocker.add(notch);
+    tiltRingMotionP4.add(notch);
+    tiltRingNotchesP4.push(notch);
   }
 
   const skirtNotchCue = box(4.2, 3.8, 2.0, metal, 'type-element skirt rotate-detent notch cue');
@@ -4541,36 +4546,266 @@ export function createSelectricModel() {
   const printCamFollowerBaseYP4 = printCamFollower.position.y;
 
   const carrierTapeGuides = [];
-  for (const side of [-1, 1]) {
-    const tiltGuide = pulley(
-      selectionTapeP4.tilt.carrierGuideRadius,
-      4.4,
-      metal,
-      side < 0 ? 'left carrier P4 tilt tape guide' : 'right carrier P4 tilt tape guide'
-    );
-    tiltGuide.position.set(
-      side * selectionTapeP4.tilt.carrierHalfSpan,
-      selectionTapeP4.tilt.carrierGuideY,
-      selectionTapeP4.tilt.carrierGuideZ
-    );
-    addPickable(tiltGuide, COMPONENTS.selection, pickables);
-    carrierMotion.add(tiltGuide);
-    carrierTapeGuides.push(tiltGuide);
 
-    const rotateGuide = pulley(
-      selectionTapeP4.rotate.carrierGuideRadius,
-      4.0,
-      darkMetal,
-      side < 0 ? 'left carrier P4 rotate tape guide' : 'right carrier P4 rotate tape guide'
+  function makeCarrierPulleyPivotP4(kind, x, y, z, radius, width, mat) {
+    const pivot = new THREE.Group();
+    pivot.name = 'carrier ' + kind + ' pulley pivot P4';
+    pivot.position.set(x, y, z);
+    pivot.userData.axisClassP4 =
+      'P4 carrier-pulley axis selected for explanatory embodiment; exact production axis/center unresolved';
+    carrierMotion.add(pivot);
+
+    const wheel = pulley(radius, width, mat, 'carrier ' + kind + ' pulley P4');
+    addPickable(wheel, COMPONENTS.selection, pickables);
+    pivot.add(wheel);
+
+    const phaseArm = cylinderBetweenP4(
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, radius * 0.72, 0),
+      1.0,
+      mat,
+      'carrier ' + kind + ' pulley phase arm P4',
+      12
     );
-    rotateGuide.position.set(
-      side * selectionTapeP4.rotate.carrierHalfSpan,
+    addPickable(phaseArm, COMPONENTS.selection, pickables);
+    pivot.add(phaseArm);
+
+    const phasePin = shaft(width + 2.4, 1.15, darkMetal, 'carrier ' + kind + ' pulley phase pin P4');
+    phasePin.position.set(0, radius * 0.72, 0);
+    addPickable(phasePin, COMPONENTS.selection, pickables);
+    pivot.add(phasePin);
+
+    carrierTapeGuides.push(wheel);
+    return pivot;
+  }
+
+  const carrierTiltPulleyPivotP4 = makeCarrierPulleyPivotP4(
+    'gearless tilt',
+    -selectionTapeP4.tilt.carrierHalfSpan,
+    selectionTapeP4.tilt.carrierGuideY,
+    selectionTapeP4.tilt.carrierGuideZ,
+    selectionTapeP4.tilt.carrierGuideRadius,
+    4.4,
+    metal
+  );
+
+  const carrierTiltAnchorGuideP4 = pulley(
+    selectionTapeP4.tilt.carrierGuideRadius,
+    4.4,
+    metal,
+    'carrier tilt tape anchor/guide P4'
+  );
+  carrierTiltAnchorGuideP4.position.set(
+    selectionTapeP4.tilt.carrierHalfSpan,
+    selectionTapeP4.tilt.carrierGuideY,
+    selectionTapeP4.tilt.carrierGuideZ
+  );
+  addPickable(carrierTiltAnchorGuideP4, COMPONENTS.selection, pickables);
+  carrierMotion.add(carrierTiltAnchorGuideP4);
+  carrierTapeGuides.push(carrierTiltAnchorGuideP4);
+
+  const carrierRotatePulleyPivotP4 = makeCarrierPulleyPivotP4(
+    'rotate',
+    -selectionTapeP4.rotate.carrierHalfSpan,
+    selectionTapeP4.rotate.carrierGuideY,
+    selectionTapeP4.rotate.carrierGuideZ,
+    selectionTapeP4.rotate.carrierGuideRadius,
+    4.0,
+    darkMetal
+  );
+
+  const carrierRotateAnchorGuideP4 = pulley(
+    selectionTapeP4.rotate.carrierGuideRadius,
+    4.0,
+    darkMetal,
+    'carrier rotate tape anchor/guide P4'
+  );
+  carrierRotateAnchorGuideP4.position.set(
+    selectionTapeP4.rotate.carrierHalfSpan,
+    selectionTapeP4.rotate.carrierGuideY,
+    selectionTapeP4.rotate.carrierGuideZ
+  );
+  addPickable(carrierRotateAnchorGuideP4, COMPONENTS.selection, pickables);
+  carrierMotion.add(carrierRotateAnchorGuideP4);
+  carrierTapeGuides.push(carrierRotateAnchorGuideP4);
+
+  function makeCarrierDynamicRodP4(name, radius = 1.25, mat = darkMetal) {
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 1, 16), mat);
+    mesh.name = name;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    addPickable(mesh, COMPONENTS.selection, pickables);
+    carrierMotion.add(mesh);
+    const delta = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    const yAxis = new THREE.Vector3(0, 1, 0);
+    return {
+      mesh,
+      lengthMmP4: 0,
+      update(a, b) {
+        delta.copy(b).sub(a);
+        const length = Math.max(delta.length(), 1e-6);
+        center.copy(a).add(b).multiplyScalar(0.5);
+        mesh.position.copy(center);
+        mesh.quaternion.setFromUnitVectors(yAxis, delta.normalize());
+        mesh.scale.set(1, length, 1);
+        this.lengthMmP4 = length;
+        return length;
+      }
+    };
+  }
+
+  function objectLocalPointInCarrierP4(object, localPoint) {
+    root.updateMatrixWorld(true);
+    const world = localPoint.clone();
+    object.localToWorld(world);
+    return carrierMotion.worldToLocal(world);
+  }
+
+  // Active carrier-side gearless-tilt chain. IBM 1134879 is the 7X1 width-specific tilt link;
+  // its exact length and pivot centers remain unresolved, so this is a live P4 connection rather
+  // than a metric claim.
+  const gearlessTiltLinkP4 = makeCarrierDynamicRodP4(
+    'IBM 1134879 7X1 gearless tilt-pulley link P4',
+    1.45,
+    metal
+  );
+  const carrierTiltPulleyAnchorLocalP4 = new THREE.Vector3(
+    0,
+    selectionTapeP4.tilt.carrierGuideRadius * 0.72,
+    0
+  );
+  const tiltRingLinkAnchorLocalP4 = new THREE.Vector3(-15.5, 0, 0);
+
+  // Rotate carrier-side chain: tape pulley -> shaft -> lower socket -> dog-bone joint ->
+  // upper socket -> type-element interface. Socket sections/axes remain explicit P4.
+  const carrierRotateShaftP4 = cylinderBetweenP4(
+    new THREE.Vector3(
+      -selectionTapeP4.rotate.carrierHalfSpan,
       selectionTapeP4.rotate.carrierGuideY,
       selectionTapeP4.rotate.carrierGuideZ
+    ),
+    new THREE.Vector3(
+      0,
+      selectionTapeP4.rotate.carrierGuideY,
+      selectionTapeP4.rotate.carrierGuideZ
+    ),
+    1.9,
+    darkMetal,
+    'carrier rotate shaft P4'
+  );
+  addPickable(carrierRotateShaftP4, COMPONENTS.selection, pickables);
+  carrierMotion.add(carrierRotateShaftP4);
+
+  const lowerBallSocketP4 = new THREE.Mesh(new THREE.SphereGeometry(3.8, 18, 12), darkMetal);
+  lowerBallSocketP4.name = 'carrier lower ball socket P4';
+  lowerBallSocketP4.position.set(
+    0,
+    selectionTapeP4.rotate.carrierGuideY,
+    selectionTapeP4.rotate.carrierGuideZ
+  );
+  addPickable(lowerBallSocketP4, COMPONENTS.selection, pickables);
+  carrierMotion.add(lowerBallSocketP4);
+
+  const dogBoneJointPivotP4 = new THREE.Group();
+  dogBoneJointPivotP4.name = 'carrier dog-bone universal-joint motion P4';
+  dogBoneJointPivotP4.position.copy(lowerBallSocketP4.position);
+  carrierMotion.add(dogBoneJointPivotP4);
+
+  const dogBoneUpperOffsetP4 = new THREE.Vector3(0, 13.0, -3.6);
+  const dogBoneStemP4 = cylinderBetweenP4(
+    new THREE.Vector3(0, 0, 0),
+    dogBoneUpperOffsetP4,
+    1.55,
+    metal,
+    'carrier dog-bone joint stem P4'
+  );
+  addPickable(dogBoneStemP4, COMPONENTS.selection, pickables);
+  dogBoneJointPivotP4.add(dogBoneStemP4);
+
+  const dogBoneLowerBallP4 = new THREE.Mesh(new THREE.SphereGeometry(2.55, 16, 10), metal);
+  dogBoneLowerBallP4.name = 'dog-bone lower ball P4';
+  addPickable(dogBoneLowerBallP4, COMPONENTS.selection, pickables);
+  dogBoneJointPivotP4.add(dogBoneLowerBallP4);
+
+  const dogBoneUpperBallP4 = new THREE.Mesh(new THREE.SphereGeometry(2.55, 16, 10), metal);
+  dogBoneUpperBallP4.name = 'dog-bone upper ball P4';
+  dogBoneUpperBallP4.position.copy(dogBoneUpperOffsetP4);
+  addPickable(dogBoneUpperBallP4, COMPONENTS.selection, pickables);
+  dogBoneJointPivotP4.add(dogBoneUpperBallP4);
+
+  const dogBonePhasePinP4 = shaft(8.0, 1.0, darkMetal, 'dog-bone rotation phase pin P4');
+  dogBonePhasePinP4.position.copy(dogBoneUpperOffsetP4).multiplyScalar(0.55);
+  addPickable(dogBonePhasePinP4, COMPONENTS.selection, pickables);
+  dogBoneJointPivotP4.add(dogBonePhasePinP4);
+
+  const upperBallSocketP4 = new THREE.Mesh(new THREE.SphereGeometry(4.1, 18, 12), darkMetal);
+  upperBallSocketP4.name = 'carrier upper ball socket P4';
+  upperBallSocketP4.position.copy(dogBoneUpperOffsetP4);
+  addPickable(upperBallSocketP4, COMPONENTS.selection, pickables);
+  dogBoneJointPivotP4.add(upperBallSocketP4);
+
+  const upperSocketToElementP4 = makeCarrierDynamicRodP4(
+    'upper ball socket to type-element mounting interface P4',
+    1.35,
+    darkMetal
+  );
+
+  const carrierSelectionTransmissionPoseP4 = {
+    tiltPulleyAngleDegP5: 0,
+    tiltRingAngleDegP4: 0,
+    rotatePulleyAngleDegP4: 0,
+    dogBoneDeflectionDegP4: 0,
+    tiltLinkLengthMmP4: 0,
+    upperSocketLinkLengthMmP4: 0
+  };
+
+  function updateCarrierSelectionTransmissionP4() {
+    const qTilt = state.selectionNormalized.qTilt;
+    const relativeRotateDegP4 =
+      -state.rotateUnit * (360 / CANONICAL.typeElement.positionsPerBand) +
+      state.shiftAngleDeg;
+
+    carrierTiltPulleyPivotP4.rotation.x = deg(-34 * qTilt);
+    carrierRotatePulleyPivotP4.rotation.x = deg(relativeRotateDegP4);
+    tiltRingMotionP4.rotation.x = typeElement.rotation.x;
+
+    // Universal-joint deflection follows the selected tilt while a separate phase pin carries
+    // the rotate state. This makes simultaneous tilt/rotate visible without claiming exact OEM
+    // socket axes or dog-bone dimensions.
+    dogBoneJointPivotP4.rotation.x = typeElement.rotation.x * 0.62;
+    dogBonePhasePinP4.rotation.x = deg(relativeRotateDegP4);
+
+    const tiltPulleyAnchor = objectLocalPointInCarrierP4(
+      carrierTiltPulleyPivotP4,
+      carrierTiltPulleyAnchorLocalP4
     );
-    addPickable(rotateGuide, COMPONENTS.selection, pickables);
-    carrierMotion.add(rotateGuide);
-    carrierTapeGuides.push(rotateGuide);
+    const tiltRingAnchor = objectLocalPointInCarrierP4(
+      tiltRingMotionP4,
+      tiltRingLinkAnchorLocalP4
+    );
+    carrierSelectionTransmissionPoseP4.tiltLinkLengthMmP4 =
+      gearlessTiltLinkP4.update(tiltPulleyAnchor, tiltRingAnchor);
+
+    const upperSocketPoint = objectLocalPointInCarrierP4(
+      upperBallSocketP4,
+      new THREE.Vector3(0, 0, 0)
+    );
+    const typeElementInterface = objectLocalPointInCarrierP4(
+      typeElement,
+      new THREE.Vector3(0, -CANONICAL.typeElement.structuralRadiusP4Mm * 0.72, 0)
+    );
+    carrierSelectionTransmissionPoseP4.upperSocketLinkLengthMmP4 =
+      upperSocketToElementP4.update(upperSocketPoint, typeElementInterface);
+
+    carrierSelectionTransmissionPoseP4.tiltPulleyAngleDegP5 =
+      THREE.MathUtils.radToDeg(carrierTiltPulleyPivotP4.rotation.x);
+    carrierSelectionTransmissionPoseP4.tiltRingAngleDegP4 =
+      THREE.MathUtils.radToDeg(tiltRingMotionP4.rotation.x);
+    carrierSelectionTransmissionPoseP4.rotatePulleyAngleDegP4 =
+      THREE.MathUtils.radToDeg(carrierRotatePulleyPivotP4.rotation.x);
+    carrierSelectionTransmissionPoseP4.dogBoneDeflectionDegP4 =
+      THREE.MathUtils.radToDeg(dogBoneJointPivotP4.rotation.x);
   }
 
   function selectionTapePointsAt(x) {
@@ -4747,6 +4982,7 @@ export function createSelectricModel() {
       state.rotateUnit * rotateSlotStepDegP4 +
       state.shiftAngleDeg
     );
+    updateCarrierSelectionTransmissionP4();
   }
 
   function setTypeball(tiltBand, rotateUnit, shiftHemisphere = state.shiftHemisphere) {
@@ -5049,6 +5285,7 @@ export function createSelectricModel() {
     printCamFollower.position.y = printCamFollowerBaseYP4 + state.printCamFollowerLiftP5 * 5.2;
     printFollowerBellcrank.rotation.x = deg(-21 * state.printCamFollowerLiftP5);
     rocker.rotation.x = deg(angleDeg);
+    updateCarrierSelectionTransmissionP4();
   }
 
   function printApproachFromSleevePhaseP5(phase) {
@@ -5556,6 +5793,43 @@ export function createSelectricModel() {
         printFacingTarget: '-Z toward platen in the public reconstruction coordinate frame',
         selectionOrientationClass: 'P4 structural lattice alignment and print-facing anchor; exact keyboard/typeball glyph assignment remains P5',
         glyphFaceGeometry: 'unresolved; repeated structural slug cues only'
+      },
+      carrierSelectionTransmission: {
+        activeTiltStyle: 'gearless',
+        tiltTapePart: '1164314',
+        rotateTapePart: '1134811',
+        tiltLinkPart: '1134879',
+        carrierTiltPulleyEmbodied: true,
+        carrierRotatePulleyEmbodied: true,
+        gearlessTiltLinkEmbodied: true,
+        tiltRingMovesWithSelectedBand: true,
+        rotateShaftEmbodied: true,
+        lowerBallSocketEmbodied: true,
+        dogBoneJointEmbodied: true,
+        upperBallSocketEmbodied: true,
+        simultaneousTiltRotateVisible: true,
+        oldSectorTubeEmbodied: false,
+        tiltRingNotchCount: tiltRingNotchesP4.length,
+        carrierTapeGuideOrAnchorCountP4: carrierTapeGuides.length,
+        poseP4: { ...carrierSelectionTransmissionPoseP4 },
+        tiltChain: [
+          'IBM 1164314 7X1 tilt tape',
+          'carrier gearless tilt pulley',
+          'IBM 1134879 7X1 tilt-pulley link',
+          'tilt ring',
+          'type element'
+        ],
+        rotateChain: [
+          'IBM 1134811 7X1 rotate tape',
+          'carrier rotate pulley',
+          'rotate shaft',
+          'lower ball socket',
+          'dog-bone joint',
+          'upper ball socket',
+          'type element'
+        ],
+        geometryClass:
+          'source-backed 7X1 gearless carrier-side topology with live P4 pulley/link/socket embodiment; exact pulley axes/centers, link length, shaft/socket sections and universal-joint geometry remain unresolved'
       },
       selectionDifferential: {
         tiltEquation: 'qTilt=(T1+2*T2)/3',
