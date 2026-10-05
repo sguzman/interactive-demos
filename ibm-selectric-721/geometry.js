@@ -5253,6 +5253,26 @@ export function createSelectricModel() {
         ),
         geometryClass:
           'P4 stamped multi-eye floating levers and two-eye links preserve OEM differential hole ratios; P5 motion derives visible lever rotation/translation from endpoint displacements rather than sliding decorative bars',
+        sidePulleyEmbodiment: {
+          tapeEndpointsAnchoredToActuatorRims: true,
+          leftTiltCommandPulleyEmbodied: true,
+          rightTiltPulleyFixedDuringSelection: Math.abs(selectionActuatorPivotsP4.tiltRight.rotation.x) < 1e-12,
+          leftRotateCommandPulleyEmbodied: true,
+          shiftActsOnRightRotatePulley: true,
+          leftTiltAngleDegP5: THREE.MathUtils.radToDeg(selectionActuatorPivotsP4.tiltLeft.rotation.x),
+          rightTiltAngleDegP5: THREE.MathUtils.radToDeg(selectionActuatorPivotsP4.tiltRight.rotation.x),
+          leftRotateAngleDegP5: THREE.MathUtils.radToDeg(selectionActuatorPivotsP4.rotateLeft.rotation.x),
+          rightRotateShiftAngleDegP5: THREE.MathUtils.radToDeg(selectionActuatorPivotsP4.rotateRight.rotation.x),
+          tiltCommandAngleScaleDegP5: selectionSidePulleyMotionP5.tiltCommandDeg,
+          rotateCommandAngleScaleDegP5: selectionSidePulleyMotionP5.rotateCommandDeg,
+          shiftCommandAngleScaleDegP5: selectionSidePulleyMotionP5.shiftCommandDeg,
+          tiltTapeAnchorRadiusMmP4: selectionActuatorPivotsP4.tiltLeft.userData.tapeAnchorRadiusP4,
+          rotateTapeAnchorRadiusMmP4: selectionActuatorPivotsP4.rotateLeft.userData.tapeAnchorRadiusP4,
+          sourceTopology:
+            'tilt differential -> left tilt side pulley; signed rotate balance -> left rotate side pulley; shift -> right rotate side pulley; right tilt side remains fixed except adjustment',
+          geometryClass:
+            'P4 radial side-pulley arms with explicit rim tape anchors; actuator radii/base anchor angles and P5 angular amplitudes remain reconstruction, not IBM production dimensions'
+        },
         tapeCarrierInvariantErrorMm: selectionTapeInvariantError(),
         tapePresentation: {
           crossSection: 'P4 flat strip rather than round cord',
