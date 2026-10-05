@@ -232,6 +232,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.selectorCamDrive.transferRodCountP4).toBe(2);
   expect(initial.geometry.selectorCamDrive.latchBailDrivenFromVisibleCamFollowers).toBe(true);
   expect(initial.geometry.selectorCamDrive.earlyDwellPreserved).toBe(true);
+  expect(initial.geometry.selectorCamDrive.setupBeforeSampleCalibrationP5.browserCodeReadyPhaseP5).toBeCloseTo(0.28, 8);
+  expect(initial.geometry.selectorCamDrive.setupBeforeSampleCalibrationP5.commonRawLostMotionThresholdP5).toBeCloseTo(0.18, 8);
+  expect(initial.geometry.selectorCamDrive.setupBeforeSampleCalibrationP5.class).toContain('code-setup-before-latch-bail-sampling');
   expect(initial.geometry.selectorCamDrive.fiveUnitFollowerEmbodiedP4).toBe(true);
   expect(initial.geometry.selectorCamDrive.poseP5.latchBailSampleP5).toBeCloseTo(0, 8);
   expect(initial.geometry.selectorCamDrive.poseP5.ordinaryRawLiftP5).toEqual([0, 0]);
@@ -853,6 +856,16 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(keyDown.geometry.keyboardMechanism.latchBailSampleP5).toBeCloseTo(0, 8);
   expect(keyDown.geometry.selectorCamDrive.poseP5.latchBailSampleP5).toBeCloseTo(0, 8);
   expect(keyDown.geometry.selectorCamDrive.poseP5.ordinaryRawLiftP5.every(lift => lift < 0.01)).toBe(true);
+  await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
+  await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
+
+  const codeReadyHold = await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.28));
+  expect(codeReadyHold).toBe(true);
+  const codeReady = await page.evaluate(() => window.__selectricDebug.state);
+  expect(codeReady.keyboardCodeEngaged).toBe(true);
+  expect(codeReady.geometry.selectorCamDrive.poseP5.ordinaryRawLiftP5.every(lift => lift > 0.15)).toBe(true);
+  expect(codeReady.geometry.selectorCamDrive.poseP5.latchBailSampleP5).toBeCloseTo(0, 8);
+  expect(codeReady.geometry.keyboardMechanism.latchBailSampleP5).toBeCloseTo(0, 8);
   await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
 
