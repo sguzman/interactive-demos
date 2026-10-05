@@ -521,8 +521,9 @@ function minorArcYZP4(center, start, end, radius, segments = 10) {
   const endAngle = Math.atan2(end.z - center.z, end.y - center.y);
   const delta = wrappedCamDeltaP4(endAngle, startAngle);
   const points = [];
-  for (let i = 1; i <= segments; i += 1) {
-    const angle = startAngle + delta * i / segments;
+  const sampleCount = Math.max(0, Math.floor(segments));
+  for (let i = 1; i <= sampleCount; i += 1) {
+    const angle = startAngle + delta * i / sampleCount;
     points.push(new THREE.Vector3(
       center.x,
       center.y + Math.cos(angle) * radius,
@@ -1929,17 +1930,21 @@ export function createSelectricModel() {
       tensionPulleyRadiusP4,
       escapementTangentSideP4
     );
+    // The length solver runs thousands of evaluations during initialization and carrier motion.
+    // Skip arc point allocation here; only the final visible path samples the wrap curves.
     const guideArc = minorArcYZP4(
       escapementCordGuidePointP4,
       guideIn,
       guideToTension.pointA,
-      escapementGuideRadiusP4
+      escapementGuideRadiusP4,
+      0
     );
     const tensionArc = minorArcYZP4(
       tensionCenter,
       guideToTension.pointB,
       tensionOut,
-      tensionPulleyRadiusP4
+      tensionPulleyRadiusP4,
+      0
     );
     const lengthMm =
       escapementCordDrumPointP4.distanceTo(guideIn) +
@@ -1985,14 +1990,28 @@ export function createSelectricModel() {
 
   function escapementCordPathPointsP4(carrierX, armAngleRad) {
     const metrics = escapementCordMetricsP4(carrierX, armAngleRad);
+    const guideArcPoints = minorArcYZP4(
+      escapementCordGuidePointP4,
+      metrics.guideIn,
+      metrics.guideOut,
+      escapementGuideRadiusP4,
+      10
+    ).points;
+    const tensionArcPoints = minorArcYZP4(
+      metrics.tensionCenter,
+      metrics.tensionIn,
+      metrics.tensionOut,
+      tensionPulleyRadiusP4,
+      10
+    ).points;
     return {
       metrics,
       points: [
         escapementCordDrumPointP4.clone(),
         metrics.guideIn.clone(),
-        ...metrics.guideArc.points.map(point => point.clone()),
+        ...guideArcPoints,
         metrics.tensionIn.clone(),
-        ...metrics.tensionArc.points.map(point => point.clone()),
+        ...tensionArcPoints,
         metrics.carrierPoint.clone()
       ]
     };
