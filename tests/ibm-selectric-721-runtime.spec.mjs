@@ -612,7 +612,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.evaluate(() => window.__selectricDebug.reset());
 
   const storedSpaceStart = await page.evaluate(() => window.__selectricDebug.state.carrierX);
-  await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.50));
+  const storedSpaceHold = await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.50));
+  expect(storedSpaceHold).toBe(true);
   await page.evaluate(() => window.__selectricDebug.space());
   const storedSpace = await page.evaluate(() => window.__selectricDebug.state);
   expect(storedSpace.storedSpace).toBe(true);
@@ -645,9 +646,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   // documenting a closed product shell.
   await page.locator('[data-view="selection"]').click();
   await expect.poll(async () => page.evaluate(() => window.__selectricDebug.state.serviceCoverOpen)).toBe(1);
-  await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.50));
-  await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C4_FINE_ALIGN', null, { timeout: 1500 });
+  const fineAlignHold = await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.50));
+  expect(fineAlignHold).toBe(true);
   const fineAligned = await page.evaluate(() => window.__selectricDebug.state);
+  expect(fineAligned.cycle).toBe('C4_FINE_ALIGN');
   expect(fineAligned.fineAlignment.tiltDetent).toBeGreaterThan(0.9);
   expect(fineAligned.fineAlignment.rotateDetent).toBeGreaterThan(0.7);
   expect(fineAligned.fineAlignment.tiltDetent).toBeGreaterThanOrEqual(fineAligned.fineAlignment.rotateDetent);
@@ -682,7 +684,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(afterFineAlignCycle.geometry.printRocker.followerLiftP5).toBeCloseTo(0, 8);
   expect(afterFineAlignCycle.printApproach).toBeCloseTo(0, 8);
 
-  await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.06));
+  const keyDownHold = await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.06));
+  expect(keyDownHold).toBe(true);
   const keyDown = await page.evaluate(() => window.__selectricDebug.state);
   expect(keyDown.cycle).toBe('C1_TRIP');
   expect(keyDown.keyboardPress.character).toBe('Q');
@@ -699,14 +702,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   // service cover open so the print-point geometry is visible in the artifact.
   await page.locator('[data-view="ribbon"]').click();
   await expect.poll(async () => page.evaluate(() => window.__selectricDebug.state.serviceCoverOpen)).toBe(1);
-  await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.659));
-  await page.waitForFunction(
-    () => window.__selectricDebug.state.cycle === 'C5_PRINT_IMPACT' &&
-      window.__selectricDebug.state.events.some(event => event.name === 'PRINT_IMPACT'),
-    null,
-    { timeout: 1500 }
-  );
+  const impactHold = await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.659));
+  expect(impactHold).toBe(true);
   const impactHeld = await page.evaluate(() => window.__selectricDebug.state);
+  expect(impactHeld.cycle).toBe('C5_PRINT_IMPACT');
+  expect(impactHeld.events.some(event => event.name === 'PRINT_IMPACT')).toBe(true);
   expect(impactHeld.geometry.ribbon.liftFollowerP5).toBeCloseTo(1, 8);
   expect(impactHeld.ribbonLift).toBeCloseTo(0.82, 8);
   expect(impactHeld.geometry.ribbon.feedFollowerP5).toBeCloseTo(0, 8);
