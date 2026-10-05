@@ -61,6 +61,39 @@ function box(w, h, d, mat, name) {
   return mesh;
 }
 
+function ratchetToothGeometryP4(axialWidth, radialHeight, tangentialWidth) {
+  const hx = axialWidth / 2;
+  const hy = radialHeight / 2;
+  const hz = tangentialWidth / 2;
+
+  // Asymmetric Y/Z section: broad root and a narrower forward-skewed tip. Exact IBM tooth
+  // pressure/flank geometry remains unresolved, so this is an explicit P4 mechanical silhouette.
+  const section = [
+    [-hy, -hz],
+    [-hy,  hz],
+    [ hy,  hz * 0.38],
+    [ hy, -hz * 0.12]
+  ];
+  const vertices = [];
+  for (const x of [-hx, hx]) {
+    section.forEach(([y,z]) => vertices.push(x,y,z));
+  }
+  const indices = [
+    0,2,1, 0,3,2,
+    4,5,6, 4,6,7,
+    0,1,5, 0,5,4,
+    1,2,6, 1,6,5,
+    2,3,7, 2,7,6,
+    3,0,4, 3,4,7
+  ];
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.userData.p4RatchetToothClass = 'asymmetric tapered P4 ratchet tooth; exact production flank/profile unresolved';
+  return geometry;
+}
+
 function carrierSidePlateGeometryP4(thickness, height, depth) {
   const halfH = height / 2;
   const halfD = depth / 2;
@@ -1799,7 +1832,7 @@ export function createSelectricModel() {
   addPickable(ratchetHub, COMPONENTS.platenRatchet, pickables);
   ratchetGroup.add(ratchetHub);
 
-  const ratchetToothGeo = new THREE.BoxGeometry(5.6, 2.4, 4.0);
+  const ratchetToothGeo = ratchetToothGeometryP4(5.6, 4.0, 2.8);
   const ratchetTeeth = new THREE.InstancedMesh(
     ratchetToothGeo,
     metal,
@@ -3714,6 +3747,8 @@ export function createSelectricModel() {
         outerDiameterMm: CANONICAL.platen.ratchetDiameterMm,
         teeth: CANONICAL.platen.representativeRatchetTeeth,
         toothProfile: 'P4',
+        toothGeometryClass: ratchetToothGeo.userData.p4RatchetToothClass,
+        toothGeometryAsymmetric: true,
         paperAdvancePerRatchetToothMm: Math.PI * 2 * CANONICAL.platen.radiusMm / CANONICAL.platen.representativeRatchetTeeth,
         paperAdvanceDerivation: 'P2 arc length from source-backed platen radius divided by representative 27T ratchet',
         lineSpacingModes: ['single', 'double'],
