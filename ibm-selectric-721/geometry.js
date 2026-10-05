@@ -61,6 +61,52 @@ function box(w, h, d, mat, name) {
   return mesh;
 }
 
+function keycapGeometryP4(width, height, depth) {
+  const layers = [
+    { y: -height / 2, w: width, d: depth },
+    { y: height / 2 - 1.8, w: width * 0.94, d: depth * 0.93 },
+    { y: height / 2, w: width * 0.84, d: depth * 0.82 }
+  ];
+  const vertices = [];
+  const indices = [];
+
+  layers.forEach(layer => {
+    const hw = layer.w / 2;
+    const hd = layer.d / 2;
+    vertices.push(
+      -hw, layer.y, -hd,
+       hw, layer.y, -hd,
+       hw, layer.y,  hd,
+      -hw, layer.y,  hd
+    );
+  });
+
+  // Bottom and top caps.
+  indices.push(0, 1, 2, 0, 2, 3);
+  indices.push(8, 10, 9, 8, 11, 10);
+
+  // Tapered side walls and upper bevel.
+  for (let layer = 0; layer < 2; layer += 1) {
+    const a0 = layer * 4;
+    const b0 = (layer + 1) * 4;
+    for (let side = 0; side < 4; side += 1) {
+      const next = (side + 1) % 4;
+      const a = a0 + side;
+      const an = a0 + next;
+      const b = b0 + side;
+      const bn = b0 + next;
+      indices.push(a, b, bn, a, bn, an);
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.userData.p4KeycapClass = 'tapered three-stage P4 keycap with beveled top land; exact Selectric keycap tooling unresolved';
+  return geometry;
+}
+
 function shaft(length, radius, mat, name) {
   const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, 28), mat);
   mesh.rotation.z = Math.PI / 2;
@@ -444,11 +490,16 @@ function makeKeyboard(keysMat, darkMat, pickables) {
   group.add(frontApron);
 
   function addLabeledKey(keyText, x, y, z, width = 18, depth = 17, name = null) {
-    const key = box(width, 8, depth, keysMat, name || ('key-' + keyText));
+    const keyGeometry = keycapGeometryP4(width, 8, depth);
+    const key = new THREE.Mesh(keyGeometry, keysMat);
+    key.name = name || ('key-' + keyText);
+    key.castShadow = true;
+    key.receiveShadow = true;
     key.position.set(x, y, z);
     key.rotation.x = deg(-8);
     key.userData.component = COMPONENTS.keyboard;
     key.userData.baseY = y;
+    key.userData.keycapClass = keyGeometry.userData.p4KeycapClass;
     pickables.push(key);
 
     const labelMaterial = new THREE.MeshBasicMaterial({
@@ -3479,6 +3530,7 @@ export function createSelectricModel() {
       keyboardActuation: {
         character: state.keyboardPressCharacter,
         depression: state.keyboardPress,
+        keycapClass: keyMeshes.values().next().value?.userData.keycapClass ?? 'unresolved',
         travelClass: 'P5 presentation preserving keypress-before-code-sampling order'
       },
       keyboardCodeChannels: 6,
