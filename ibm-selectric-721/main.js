@@ -166,6 +166,10 @@ function rotatePositiveInputs(units) {
   return { R1: 1, R2: 1, R2A: 1 };
 }
 
+// P5 public downstream selector-request vector. These bits name the requested T/R/N5
+// differential inputs; they are not asserted as the literal factory interposer-lug pattern.
+// The geometry layer preserves the source-backed inversion from ordinary selector-bail motion
+// to T1/T2/R1/R2/R2A latch exclusion.
 function selectorCodeFor(tilt, rotate) {
   const T1 = tilt & 1 ? 1 : 0;
   const T2 = tilt & 2 ? 1 : 0;
@@ -280,7 +284,7 @@ function resetMechanicalState() {
   runtime.lastRecordedCycle = 'C0_REST';
   runtime.pendingCharacter = 'a';
   runtime.selectionTarget = selectionForCharacter('a');
-  model.setKeyboardCode(0);
+  model.setKeyboardCode(0, false);
   model.setTabStops(Array.from({ length: Math.floor((CANONICAL.nominalPositions - 1) / 8) }, (_, index) => (index + 1) * 8));
   model.setMarginInsets(0, 0);
   model.setCarrierX(0);
@@ -517,12 +521,12 @@ function runCycle(now) {
 
   if (t < 0.12) {
     setCycleState('C1_TRIP');
-    model.setKeyboardCode(0);
+    model.setKeyboardCode(0, false);
     model.setKeyPress(runtime.pendingCharacter, Math.min(1, t / 0.07));
     model.setTypeball(0, 0, runtime.selectionTarget.shift);
   } else if (t < 0.28) {
     setCycleState('C2_CODE_SETUP');
-    model.setKeyboardCode(runtime.selectionTarget.code6);
+    model.setKeyboardCode(runtime.selectionTarget.code6, true);
     const k = (t - 0.12) / 0.16;
     model.setKeyPress(runtime.pendingCharacter, Math.max(0, 1 - k));
     model.setTypeball(runtime.selectionTarget.tilt * k, runtime.selectionTarget.rotate * k, runtime.selectionTarget.shift);
@@ -876,6 +880,7 @@ function snapshot() {
     pendingCharacter: runtime.pendingCharacter,
     storedSpace: runtime.storedSpace,
     keyboardCode: model.state.keyboardCode,
+    keyboardCodeEngaged: model.state.keyboardCodeEngaged,
     keyboardCodeBitOrder: ['T1','T2','R1','R2','R2A','fiveUnit'],
     keyboardPress: {
       character: model.state.keyboardPressCharacter,
