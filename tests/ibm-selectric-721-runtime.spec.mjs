@@ -473,6 +473,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(variableFree.platenVariableEngaged).toBe(true);
   expect(variableFree.geometry.paperFeed.platenRatchetCoupled).toBe(false);
   expect(variableFree.geometry.paperFeed.platenPhaseCueCount).toBe(2);
+  expect(variableFree.geometry.paperFeed.platenKnobConstructionClass).toContain('repeated radial grip ribs');
+  expect(variableFree.geometry.paperFeed.platenKnobGripRibsPerKnobP4).toBe(12);
+  expect(variableFree.geometry.paperFeed.platenKnobGripRibTotal).toBe(24);
   expect(variableFree.geometry.paperFeed.platenPhaseCueClass).toContain('P5 visible rotational cue');
   expect(variableFree.geometry.paperFeed.platenPhaseCueAngleRad).toBeCloseTo(variableFree.geometry.paperFeed.platenPhysicalAngleRad, 8);
   expect(await page.locator('#platenForwardBtn').isEnabled()).toBe(true);
