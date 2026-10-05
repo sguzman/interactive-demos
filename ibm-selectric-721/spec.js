@@ -164,8 +164,8 @@ export const COMPONENTS = Object.freeze({
   d6CurrentSet: {
     name: 'Current D6 compatibility set',
     category: 'primary frame',
-    provenance: 'OEM current-level identities + P4 unresolved sections',
-    description: 'Current 7X1 D6 package: IBM 1164736 shaft, IBM 1164740 bearings, IBM 1164739 gear and market-dependent item-51 C-clip (US 1175220 / WT 6520762). Exact gear and ring geometry remain unresolved.'
+    provenance: 'OEM current-level identities + P4 toothed gear/hub envelope + P4 unresolved sections',
+    description: 'Current 7X1 D6 package: IBM 1164736 shaft, IBM 1164740 bearings, IBM 1164739 gear and market-dependent item-51 C-clip (US 1175220 / WT 6520762). The public 1164739 envelope now uses a separate hub and a toothed P4 silhouette instead of a smooth cylinder; the displayed 24-tooth count is explicitly presentation-only, not a production tooth-count claim. Exact gear module/profile/tooth count and ring geometry remain unresolved.'
   },
   bearing: {
     name: 'D6 bearing · IBM 1164740',
