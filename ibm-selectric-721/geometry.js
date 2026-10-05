@@ -2647,12 +2647,23 @@ export function createSelectricModel() {
     paperBailRollers[side] = pivot;
   }
 
+  const paperBailEndLeverGeometryP4 = leverPlateGeometryP4(23, 7.0, 3.2, 2.8, 1.35);
+  const paperBailEndLevers = [];
   for (const sign of [-1, 1]) {
-    const endLever = box(5, 23, 5, metal, sign < 0 ? 'left paper-bail end lever' : 'right paper-bail end lever');
-    endLever.position.set(sign * 128, -8, 2);
-    endLever.rotation.x = deg(-16);
+    const endLeverPose = new THREE.Group();
+    endLeverPose.name = sign < 0 ? 'left paper-bail end-lever pose P4' : 'right paper-bail end-lever pose P4';
+    endLeverPose.position.set(sign * 128, -8, 2);
+    endLeverPose.rotation.x = deg(-16);
+    paperBailPivot.add(endLeverPose);
+
+    const endLever = new THREE.Mesh(paperBailEndLeverGeometryP4, metal);
+    endLever.name = sign < 0 ? 'left paper-bail stamped end lever P4' : 'right paper-bail stamped end lever P4';
+    endLever.rotation.y = Math.PI / 2;
+    endLever.castShadow = true;
+    endLever.receiveShadow = true;
     addPickable(endLever, COMPONENTS.paperFeed, pickables);
-    paperBailPivot.add(endLever);
+    endLeverPose.add(endLever);
+    paperBailEndLevers.push(endLever);
 
     const toggleSpring = new THREE.Mesh(
       new THREE.TorusGeometry(5, 0.7, 6, 18, Math.PI * 1.25),
@@ -5013,6 +5024,9 @@ export function createSelectricModel() {
         bailStableStates: ['against-platen', 'released'],
         bailEngaged: state.paperBailEngaged,
         bailToggle: 'hairpin-spring two-stable-state',
+        bailEndLeverCountP4: paperBailEndLevers.length,
+        bailEndLeverConstructionClassP4: paperBailEndLeverGeometryP4.userData.p4LeverPlateClass,
+        bailEndLeverWorkingPlaneP4: 'Y/Z at the two lateral bail-bar ends; whole bail pivots about X',
         bailRollerAdjustment: {
           independentlyAdjustable: true,
           leftNormalizedP5: state.paperBailRollerPositionsP5.left,
