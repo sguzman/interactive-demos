@@ -544,6 +544,14 @@ function runCycle(now) {
     setCycleState('C5_PRINT_IMPACT');
     model.setKeyboardCode(runtime.selectionTarget.code6, true);
     model.setKeyPress(null, 0);
+    // A debug hold may enter the impact phase directly without rendering C2-C4 first.
+    // Reassert the selected type-element state here so every held phase is mechanically
+    // self-contained rather than inheriting stale tilt/rotate coordinates from a prior cycle.
+    model.setTypeball(
+      runtime.selectionTarget.tilt,
+      runtime.selectionTarget.rotate,
+      runtime.selectionTarget.shift
+    );
   } else if (t < 0.91) {
     setCycleState('C6_ESCAPEMENT_RIBBON_RESTORE');
     model.setKeyboardCode(0, false);
