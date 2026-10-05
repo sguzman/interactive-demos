@@ -1403,13 +1403,46 @@ export function createSelectricModel() {
   const cycle = shaft(P4.cycleShaft.length, P4.cycleShaft.radius, metal, 'cycle shaft');
   addPickable(cycle, COMPONENTS.drive, pickables);
   cycleRotor.add(cycle);
-  for (const x of [-94, 12, 97]) {
-    const cam = pulley(12, 8, darkMetal, 'cycle shaft cam');
-    cam.position.x = x;
-    cam.scale.y = 0.72;
+
+  // The three visible cycle-shaft cam stations were previously flattened cylinders. Give them
+  // smooth P4 radial envelopes so the powerframe reads mechanically, while keeping their exact
+  // IBM functions/profiles explicitly unresolved rather than inventing service-manual identities.
+  const cycleCamDefsP4 = [
+    {
+      x: -94,
+      width: 8,
+      baseRadius: 8.9,
+      lobes: [{ angleRad: deg(-92), liftMm: 2.9, halfWidthRad: deg(52), sharpness: 2.55 }],
+      name: 'left cycle-shaft cam · smooth P4 envelope'
+    },
+    {
+      x: 12,
+      width: 8,
+      baseRadius: 9.3,
+      lobes: [{ angleRad: deg(-28), liftMm: 3.2, halfWidthRad: deg(46), sharpness: 2.7 }],
+      name: 'center cycle-shaft cam · smooth P4 envelope'
+    },
+    {
+      x: 97,
+      width: 8,
+      baseRadius: 8.7,
+      lobes: [{ angleRad: deg(38), liftMm: 2.6, halfWidthRad: deg(56), sharpness: 2.45 }],
+      name: 'right cycle-shaft cam · smooth P4 envelope'
+    }
+  ];
+  const cycleCamProfilesP4 = cycleCamDefsP4.map(def => {
+    const cam = camProfileP4(
+      def.width,
+      def.baseRadius,
+      def.lobes,
+      darkMetal,
+      def.name
+    );
+    cam.position.x = def.x;
     addPickable(cam, COMPONENTS.drive, pickables);
     cycleRotor.add(cam);
-  }
+    return cam;
+  });
 
   const operationalRotor = new THREE.Group();
   operationalRotor.name = 'continuously rotating operational shaft frame';
@@ -4411,7 +4444,15 @@ export function createSelectricModel() {
         cycleShaftDegPerCharacter: 180,
         filterShaftDegPerCharacter: 180,
         printShaftDegPerCharacter: 360,
-        printSleeveDegPerCharacter: 360
+        printSleeveDegPerCharacter: 360,
+        cycleCamStationCount: cycleCamProfilesP4.length,
+        cycleCamProfilesP4: cycleCamProfilesP4.map((cam, index) => ({
+          station: index + 1,
+          baseRadiusMmP4: cam.userData.p4CamProfile.baseRadius,
+          lobeCountP4: cam.userData.p4CamProfile.lobes.length,
+          lobeAngleDegP4: cam.userData.p4CamProfile.lobes[0].angleDegP4
+        })),
+        cycleCamPresentationClass: 'three smooth P4 radial envelopes replacing flattened cylinders; station count preserved, exact IBM cam identities/functions/profiles unresolved'
       },
       shift: {
         hemisphere: state.shiftHemisphere,
