@@ -158,8 +158,8 @@ export const COMPONENTS = Object.freeze({
   printShaft: {
     name: 'Print shaft · IBM 1164736',
     category: 'primary frame',
-    provenance: 'exact active part identity + P4 visible section',
-    description: 'D6 axis. Current IBM 1164740 bearing geometry is exact-part interchange evidence; shaft journal and installed coordinates remain reconstruction.'
+    provenance: 'exact active part identity + P4 visible section + P4 windowed primary-sideframe reconstruction',
+    description: 'D6 axis. Current IBM 1164740 bearing geometry is exact-part interchange evidence. The two primary sideframes now use three-window chamfered P4 cast-frame silhouettes with retained D6 and lower-shaft bearing webs instead of solid slabs; exact IBM casting apertures/sections, shaft journal and installed coordinates remain reconstruction.'
   },
   d6CurrentSet: {
     name: 'Current D6 compatibility set',
