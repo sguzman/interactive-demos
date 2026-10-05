@@ -256,13 +256,17 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.selectionDifferential.ordinaryLatchOutputsDriveLiveDifferential).toBe(true);
   expect(initial.geometry.selectionDifferential.ordinaryLatchToDifferentialLinksEmbodiedP4).toBe(true);
   expect(initial.geometry.selectionDifferential.ordinaryLatchToDifferentialChannelCountP4).toBe(5);
-  expect(initial.geometry.selectionDifferential.ordinaryLatchToDifferentialDynamicRodSegmentCountP4).toBe(10);
+  expect(initial.geometry.selectionDifferential.ordinaryLatchToDifferentialDynamicRodSegmentCountP4).toBe(15);
   expect(initial.geometry.selectionDifferential.ordinaryLatchToDifferentialChannelOrderP4).toEqual([
     'T1', 'T2', 'R1', 'R2', 'R2A'
   ]);
   expect(initial.geometry.selectionDifferential.ordinaryLatchToDifferentialGeometryClass).toContain('unresolved');
   expect(Object.values(initial.geometry.selectionDifferential.ordinaryLatchToDifferentialPoseP5)
-    .every(pose => pose.segmentAMmP4 > 0 && pose.segmentBMmP4 > 0)).toBe(true);
+    .every(pose =>
+      pose.segmentAMmP4 > 0 &&
+      pose.bridgeMmP4 > 0 &&
+      pose.segmentBMmP4 > 0
+    )).toBe(true);
   expect(initial.geometry.selectionDifferential.fiveUnitBailDrivesLiveBalanceEndpoint).toBe(true);
   expect(initial.geometry.selectionDifferential.checkedRestRestoresCharacterSelection).toBe(true);
   expect(initial.geometry.typeElement.mechanicalPoseDerivedFromLiveDifferential).toBe(true);
@@ -852,7 +856,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     8
   );
   expect(Object.values(fineAligned.geometry.selectionDifferential.ordinaryLatchToDifferentialPoseP5)
-    .every(pose => pose.segmentAMmP4 > 0 && pose.segmentBMmP4 > 0)).toBe(true);
+    .every(pose =>
+      pose.segmentAMmP4 > 0 &&
+      pose.bridgeMmP4 > 0 &&
+      pose.segmentBMmP4 > 0
+    )).toBe(true);
   expect(fineAligned.geometry.selectionDifferential.ordinaryLatchToDifferentialPoseP5).not.toEqual(
     initial.geometry.selectionDifferential.ordinaryLatchToDifferentialPoseP5
   );
