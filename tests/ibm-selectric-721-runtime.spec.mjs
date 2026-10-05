@@ -52,6 +52,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.d6CurrentSet.shaft).toBe('1164736');
   expect(initial.geometry.d6CurrentSet.bearings).toBe('1164740');
   expect(initial.geometry.d6CurrentSet.gear).toBe('1164739');
+  expect(initial.geometry.d6CurrentSet.gearPresentationTeethP4).toBe(24);
+  expect(initial.geometry.d6CurrentSet.gearGeometryClass).toContain('presentation-only tooth count');
+  expect(initial.geometry.d6CurrentSet.gearHubEmbodied).toBe(true);
   expect(initial.geometry.d6CurrentSet.clipMarketFrozen).toBe(false);
   expect(initial.geometry.platenRatchet.outerDiameterMm).toBeCloseTo(30.1498, 6);
   expect(initial.geometry.platenRatchet.teeth).toBe(27);
