@@ -182,8 +182,8 @@ export const COMPONENTS = Object.freeze({
   carrier: {
     name: 'Carrier',
     category: 'print transport',
-    provenance: 'P4 constructive geometry with windowed/chamfered side-frame refinement + forked print-rocker/yoke reconstruction',
-    description: 'Carrier rides the D6/front support and rack/shoe rear support and translates across the 8.5-inch writing line. The public geometry uses chamfered windowed P4 side plates plus crossmembers instead of solid side walls, and the type-element rocker is now an explicit forked yoke with pivot hub, paired Y/Z arms and cradle pin/stem rather than a mis-oriented generic shaft cue. Exact cast/stamped carrier-frame and rocker-casting sections remain unresolved.'
+    provenance: 'P4 constructive geometry with windowed/chamfered side-frame refinement + corrected Y/Z-plane print bellcrank + forked print-rocker/yoke reconstruction',
+    description: 'Carrier rides the D6/front support and rack/shoe rear support and translates across the 8.5-inch writing line. The public geometry uses chamfered windowed P4 side plates plus crossmembers instead of solid side walls. The 1124174 follower output now passes through a two-arm P4 bellcrank whose working arms lie in the Y/Z sweep plane around an explicit X-axis pivot, and the type-element rocker is an explicit forked yoke with pivot hub, paired Y/Z arms and cradle pin/stem. Exact carrier-frame, bellcrank and rocker-casting sections remain unresolved.'
   },
   sleeve: {
     name: 'Print sleeve · IBM 1141628',
