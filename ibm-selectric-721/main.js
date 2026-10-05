@@ -35,6 +35,13 @@ key.shadow.camera.left = -260;
 key.shadow.camera.right = 260;
 key.shadow.camera.top = 240;
 key.shadow.camera.bottom = -240;
+key.shadow.camera.near = 20;
+key.shadow.camera.far = 1000;
+// The model is authored in millimeter-scale world units. A small world-space normal offset
+// suppresses directional-light shadow acne on the broad P4 service-cover panels without moving
+// the geometry or hiding real contact shadows.
+key.shadow.bias = -0.00035;
+key.shadow.normalBias = 0.65;
 scene.add(key);
 
 const rim = new THREE.DirectionalLight(0x9fbce0, 1.4);
@@ -916,6 +923,14 @@ function snapshot() {
     copyControlOffsetZ: model.state.copyControlOffsetZ,
     platenVariableEngaged: model.state.platenVariableEngaged,
     geometry: model.geometryDiagnostics(),
+    rendering: {
+      shadowMapType: 'PCFSoftShadowMap',
+      keyShadowBias: key.shadow.bias,
+      keyShadowNormalBias: key.shadow.normalBias,
+      keyShadowCameraNear: key.shadow.camera.near,
+      keyShadowCameraFar: key.shadow.camera.far,
+      shadowAcneMitigationClass: 'presentation-only directional-shadow normal offset; mechanical geometry unchanged'
+    },
     events: runtime.eventLog.map(event => ({ ...event })),
     profile: CANONICAL.profile
   };
