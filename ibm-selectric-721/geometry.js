@@ -3603,7 +3603,7 @@ export function createSelectricModel() {
   );
   const tiltHorizontalLinkP4 = makeDynamicSelectionRodP4(
     'tilt bellcrank horizontal link P4',
-    1.45,
+    carrierSelectionP4.tiltLinkRadiusMm,
     metal
   );
   const tiltMultiplierToPulleyRodP4 = makeDynamicSelectionRodP4(
@@ -4629,6 +4629,26 @@ export function createSelectricModel() {
   carrierMotion.add(carrierRotateAnchorGuideP4);
   carrierTapeGuides.push(carrierRotateAnchorGuideP4);
 
+  const carrierSelectionP4 = Object.freeze({
+    tiltLinkRadiusMm: 1.45,
+    tiltPulleyAnchorRadiusFraction: 0.72,
+    tiltRingLinkAnchorX: -15.5,
+    tiltPulleyCommandDegP5: 34,
+    rotateShaftRadiusMm: 1.9,
+    lowerSocketRadiusMm: 3.8,
+    dogBoneUpperY: 13.0,
+    dogBoneUpperZ: -3.6,
+    dogBoneStemRadiusMm: 1.55,
+    dogBoneBallRadiusMm: 2.55,
+    dogBonePhasePinLengthMm: 8.0,
+    dogBonePhasePinRadiusMm: 1.0,
+    dogBonePhasePinFraction: 0.55,
+    upperSocketRadiusMm: 4.1,
+    upperSocketLinkRadiusMm: 1.35,
+    dogBoneTiltDeflectionScaleP5: 0.62,
+    typeElementInterfaceRadiusFractionP4: 0.72
+  });
+
   function makeCarrierDynamicRodP4(name, radius = 1.25, mat = darkMetal) {
     const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 1, 16), mat);
     mesh.name = name;
@@ -4672,10 +4692,10 @@ export function createSelectricModel() {
   );
   const carrierTiltPulleyAnchorLocalP4 = new THREE.Vector3(
     0,
-    selectionTapeP4.tilt.carrierGuideRadius * 0.72,
+    selectionTapeP4.tilt.carrierGuideRadius * carrierSelectionP4.tiltPulleyAnchorRadiusFraction,
     0
   );
-  const tiltRingLinkAnchorLocalP4 = new THREE.Vector3(-15.5, 0, 0);
+  const tiltRingLinkAnchorLocalP4 = new THREE.Vector3(carrierSelectionP4.tiltRingLinkAnchorX, 0, 0);
 
   // Rotate carrier-side chain: tape pulley -> shaft -> lower socket -> dog-bone joint ->
   // upper socket -> type-element interface. Socket sections/axes remain explicit P4.
@@ -4690,14 +4710,17 @@ export function createSelectricModel() {
       selectionTapeP4.rotate.carrierGuideY,
       selectionTapeP4.rotate.carrierGuideZ
     ),
-    1.9,
+    carrierSelectionP4.rotateShaftRadiusMm,
     darkMetal,
     'carrier rotate shaft P4'
   );
   addPickable(carrierRotateShaftP4, COMPONENTS.selection, pickables);
   carrierMotion.add(carrierRotateShaftP4);
 
-  const lowerBallSocketP4 = new THREE.Mesh(new THREE.SphereGeometry(3.8, 18, 12), darkMetal);
+  const lowerBallSocketP4 = new THREE.Mesh(
+    new THREE.SphereGeometry(carrierSelectionP4.lowerSocketRadiusMm, 18, 12),
+    darkMetal
+  );
   lowerBallSocketP4.name = 'carrier lower ball socket P4';
   lowerBallSocketP4.position.set(
     0,
@@ -4712,34 +4735,54 @@ export function createSelectricModel() {
   dogBoneJointPivotP4.position.copy(lowerBallSocketP4.position);
   carrierMotion.add(dogBoneJointPivotP4);
 
-  const dogBoneUpperOffsetP4 = new THREE.Vector3(0, 13.0, -3.6);
+  const dogBoneUpperOffsetP4 = new THREE.Vector3(
+    0,
+    carrierSelectionP4.dogBoneUpperY,
+    carrierSelectionP4.dogBoneUpperZ
+  );
   const dogBoneStemP4 = cylinderBetweenP4(
     new THREE.Vector3(0, 0, 0),
     dogBoneUpperOffsetP4,
-    1.55,
+    carrierSelectionP4.dogBoneStemRadiusMm,
     metal,
     'carrier dog-bone joint stem P4'
   );
   addPickable(dogBoneStemP4, COMPONENTS.selection, pickables);
   dogBoneJointPivotP4.add(dogBoneStemP4);
 
-  const dogBoneLowerBallP4 = new THREE.Mesh(new THREE.SphereGeometry(2.55, 16, 10), metal);
+  const dogBoneLowerBallP4 = new THREE.Mesh(
+    new THREE.SphereGeometry(carrierSelectionP4.dogBoneBallRadiusMm, 16, 10),
+    metal
+  );
   dogBoneLowerBallP4.name = 'dog-bone lower ball P4';
   addPickable(dogBoneLowerBallP4, COMPONENTS.selection, pickables);
   dogBoneJointPivotP4.add(dogBoneLowerBallP4);
 
-  const dogBoneUpperBallP4 = new THREE.Mesh(new THREE.SphereGeometry(2.55, 16, 10), metal);
+  const dogBoneUpperBallP4 = new THREE.Mesh(
+    new THREE.SphereGeometry(carrierSelectionP4.dogBoneBallRadiusMm, 16, 10),
+    metal
+  );
   dogBoneUpperBallP4.name = 'dog-bone upper ball P4';
   dogBoneUpperBallP4.position.copy(dogBoneUpperOffsetP4);
   addPickable(dogBoneUpperBallP4, COMPONENTS.selection, pickables);
   dogBoneJointPivotP4.add(dogBoneUpperBallP4);
 
-  const dogBonePhasePinP4 = shaft(8.0, 1.0, darkMetal, 'dog-bone rotation phase pin P4');
-  dogBonePhasePinP4.position.copy(dogBoneUpperOffsetP4).multiplyScalar(0.55);
+  const dogBonePhasePinP4 = shaft(
+    carrierSelectionP4.dogBonePhasePinLengthMm,
+    carrierSelectionP4.dogBonePhasePinRadiusMm,
+    darkMetal,
+    'dog-bone rotation phase pin P4'
+  );
+  dogBonePhasePinP4.position.copy(dogBoneUpperOffsetP4).multiplyScalar(
+    carrierSelectionP4.dogBonePhasePinFraction
+  );
   addPickable(dogBonePhasePinP4, COMPONENTS.selection, pickables);
   dogBoneJointPivotP4.add(dogBonePhasePinP4);
 
-  const upperBallSocketP4 = new THREE.Mesh(new THREE.SphereGeometry(4.1, 18, 12), darkMetal);
+  const upperBallSocketP4 = new THREE.Mesh(
+    new THREE.SphereGeometry(carrierSelectionP4.upperSocketRadiusMm, 18, 12),
+    darkMetal
+  );
   upperBallSocketP4.name = 'carrier upper ball socket P4';
   upperBallSocketP4.position.copy(dogBoneUpperOffsetP4);
   addPickable(upperBallSocketP4, COMPONENTS.selection, pickables);
@@ -4747,7 +4790,7 @@ export function createSelectricModel() {
 
   const upperSocketToElementP4 = makeCarrierDynamicRodP4(
     'upper ball socket to type-element mounting interface P4',
-    1.35,
+    carrierSelectionP4.upperSocketLinkRadiusMm,
     darkMetal
   );
 
@@ -4766,14 +4809,15 @@ export function createSelectricModel() {
       -state.rotateUnit * (360 / CANONICAL.typeElement.positionsPerBand) +
       state.shiftAngleDeg;
 
-    carrierTiltPulleyPivotP4.rotation.x = deg(-34 * qTilt);
+    carrierTiltPulleyPivotP4.rotation.x = deg(-carrierSelectionP4.tiltPulleyCommandDegP5 * qTilt);
     carrierRotatePulleyPivotP4.rotation.x = deg(relativeRotateDegP4);
     tiltRingMotionP4.rotation.x = typeElement.rotation.x;
 
     // Universal-joint deflection follows the selected tilt while a separate phase pin carries
     // the rotate state. This makes simultaneous tilt/rotate visible without claiming exact OEM
     // socket axes or dog-bone dimensions.
-    dogBoneJointPivotP4.rotation.x = typeElement.rotation.x * 0.62;
+    dogBoneJointPivotP4.rotation.x =
+      typeElement.rotation.x * carrierSelectionP4.dogBoneTiltDeflectionScaleP5;
     dogBonePhasePinP4.rotation.x = deg(relativeRotateDegP4);
 
     const tiltPulleyAnchor = objectLocalPointInCarrierP4(
@@ -4793,7 +4837,11 @@ export function createSelectricModel() {
     );
     const typeElementInterface = objectLocalPointInCarrierP4(
       typeElement,
-      new THREE.Vector3(0, -CANONICAL.typeElement.structuralRadiusP4Mm * 0.72, 0)
+      new THREE.Vector3(
+        0,
+        -CANONICAL.typeElement.structuralRadiusP4Mm * carrierSelectionP4.typeElementInterfaceRadiusFractionP4,
+        0
+      )
     );
     carrierSelectionTransmissionPoseP4.upperSocketLinkLengthMmP4 =
       upperSocketToElementP4.update(upperSocketPoint, typeElementInterface);
@@ -5811,6 +5859,7 @@ export function createSelectricModel() {
         oldSectorTubeEmbodied: false,
         tiltRingNotchCount: tiltRingNotchesP4.length,
         carrierTapeGuideOrAnchorCountP4: carrierTapeGuides.length,
+        parameterSeedP4: { ...carrierSelectionP4 },
         poseP4: { ...carrierSelectionTransmissionPoseP4 },
         tiltChain: [
           'IBM 1164314 7X1 tilt tape',
