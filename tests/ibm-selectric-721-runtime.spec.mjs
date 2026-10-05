@@ -81,11 +81,18 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.paperFeed.bailStableStates).toEqual(['against-platen', 'released']);
   expect(initial.geometry.paperFeed.bailToggle).toContain('two-stable-state');
   expect(initial.geometry.paperFeed.frontRearReleaseCoupled).toBe(true);
+  expect(initial.geometry.paperFeed.lineSpacingSelectorConstructionClass).toContain('stamped-link');
+  expect(initial.geometry.paperFeed.lineSpacingSelectorLinkConstructionClass).toContain('two-eye');
+  expect(initial.geometry.paperFeed.lineSpacingSelectorPivotPinEmbodied).toBe(true);
+  expect(initial.geometry.paperFeed.paperReleaseLeverConstructionClass).toContain('stamped-link');
+  expect(initial.geometry.paperFeed.paperReleasePivotPinEmbodied).toBe(true);
   expect(initial.geometry.paperFeed.releaseLatchedStateRepresented).toBe(true);
   expect(initial.geometry.paperFeed.copyControl.positions).toBe(5);
   expect(initial.geometry.paperFeed.copyControl.normalForwardSetting).toBe(0);
   expect(initial.geometry.paperFeed.copyControl.movesPlatenAndEntirePaperFeedCarriage).toBe(true);
   expect(initial.geometry.paperFeed.copyControl.movesCarrierTypehead).toBe(false);
+  expect(initial.geometry.paperFeed.copyControl.leverConstructionClass).toContain('stamped-link');
+  expect(initial.geometry.paperFeed.copyControl.leverPivotPinEmbodied).toBe(true);
   expect(initial.geometry.ribbon.parent).toBe('carrier');
   expect(initial.geometry.ribbon.mediaWidthMm).toBeCloseTo(14.2875, 6);
   expect(initial.geometry.ribbon.nominalRatchetTeethPerCharacter).toBeCloseTo(2.5, 8);
