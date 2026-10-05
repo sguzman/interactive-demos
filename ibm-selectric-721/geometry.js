@@ -6387,7 +6387,7 @@ export function createSelectricModel() {
         ordinaryLatchOutputsDriveLiveDifferential: true,
         fiveUnitBailDrivesLiveBalanceEndpoint: true,
         fiveUnitBailToBalanceTransferRodEmbodiedP4: true,
-        fiveUnitBailToBalanceTransferRodLengthMmP4,
+        fiveUnitBailToBalanceTransferRodLengthMmP4: fiveUnitBailToBalanceRodLengthMmP4,
         fiveUnitBailToBalanceTransferGeometryClass:
           'P4 straight transfer bridge from source-backed N5 bail role to signed-balance right endpoint; exact IBM attachment geometry unresolved',
         checkedRestRestoresCharacterSelection: true,
