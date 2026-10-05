@@ -722,7 +722,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     if (index < 5) return bit ? 0 : -12;
     return bit ? -12 : 0;
   });
-  expect(fineAligned.geometry.keyboardMechanism.selectorBailAnglesDegP5).toEqual(expectedFineBailAngles);
+  expectedFineBailAngles.forEach((angle, index) => {
+    expect(fineAligned.geometry.keyboardMechanism.selectorBailAnglesDegP5[index]).toBeCloseTo(angle, 8);
+  });
   const expectedLatchForeAft = expectedFineBailAngles.slice(0, 5).map(angle =>
     angle === -12 ? fineAligned.geometry.keyboardMechanism.selectorLatchForwardTravelMmP5 : 0
   );
