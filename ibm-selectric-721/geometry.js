@@ -1287,6 +1287,7 @@ export function createSelectricModel() {
     keyboardCode: 0,
     keyboardCodeEngaged: false,
     selectorLatchSampleP5: 0,
+    fiveUnitLatchReleaseHeldP5: false,
     cordPhase: 0,
     serviceCoverOpen: 0,
     inspectionCutaway: 'none',
@@ -1941,12 +1942,12 @@ export function createSelectricModel() {
     return cam;
   });
 
-  function makeRootDynamicRodP4(name, radius = 1.2, mat = darkMetal) {
+  function makeRootDynamicRodP4(name, radius = 1.2, mat = darkMetal, component = COMPONENTS.drive) {
     const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 1, 14), mat);
     mesh.name = name;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
-    addPickable(mesh, COMPONENTS.drive, pickables);
+    addPickable(mesh, component, pickables);
     root.add(mesh);
     const delta = new THREE.Vector3();
     const center = new THREE.Vector3();
@@ -2036,12 +2037,25 @@ export function createSelectricModel() {
     )
   );
 
+  const fiveUnitCamBailTransferRodP4 = makeRootDynamicRodP4(
+    'five-unit cam follower to bail transfer rod P4',
+    1.25,
+    metal,
+    COMPONENTS.selection
+  );
+
   const selectorCamDrivePoseP5 = {
     ordinaryRawLiftP5: [0, 0],
     ordinaryFollowerAngleDegP5: [0, 0],
     latchBailSampleP5: 0,
     fiveUnitRawLiftP5: 0,
     fiveUnitFollowerAngleDegP5: 0,
+    fiveUnitCamAvailableRiseP5: 0,
+    fiveUnitLatchReleasedP5: false,
+    fiveUnitLatchAngleDegP5: 0,
+    fiveUnitBailRiseP5: 0,
+    fiveUnitEffectiveNegativeP5: 0,
+    fiveUnitCamBailTransferRodLengthMmP4: 0,
     transferRodLengthsMmP4: [0, 0]
   };
 
@@ -2112,6 +2126,7 @@ export function createSelectricModel() {
     selectorCamDrivePoseP5.latchBailSampleP5 = sample;
     selectorCamDrivePoseP5.fiveUnitRawLiftP5 = fiveRaw;
     selectorCamDrivePoseP5.fiveUnitFollowerAngleDegP5 = fiveAngleDegP5;
+    updateFiveUnitLatchBailP5();
   }
 
   const operationalRotor = new THREE.Group();
@@ -3477,8 +3492,41 @@ export function createSelectricModel() {
   const fiveUnitBail = box(54, 5, 9, darkMetal, 'five-unit bail');
   fiveUnitBail.position.set(58, 45, -31);
   fiveUnitBail.userData.baseY = fiveUnitBail.position.y;
+  fiveUnitBail.userData.motionClassP4 =
+    'source-backed cam-driven rising N5 bail with latch-gated travel and cam restoration; exact bail section/travel remain P4/P5 reconstruction';
   addPickable(fiveUnitBail, COMPONENTS.selection, pickables);
   selectionAssembly.add(fiveUnitBail);
+
+  // The five-unit latch is deliberately separate from the five ordinary selector latches.
+  // IBM theory fixes the opposite-sense behavior: ordinary selector latches are sampled down by
+  // the common bail, while an N5 request moves this latch out of the way so the five-unit bail can
+  // rise as its phase-offset cam releases it. Exact pivot, hook section and throw remain P4/P5.
+  const fiveUnitLatchedHomeRiseP5 = 0.14;
+  const fiveUnitLatchReleaseAngleDegP5 = -18;
+  const fiveUnitLatch = new THREE.Group();
+  fiveUnitLatch.name = 'five-unit latch constrained release P4';
+  fiveUnitLatch.position.set(88, 52, -29);
+  fiveUnitLatch.userData.baseRotationZ = 0;
+  fiveUnitLatch.userData.motionClassP4 =
+    'source-backed opposite-sense N5 latch gating a cam-driven rising bail; exact pivot/hook geometry remains reconstruction';
+  selectionAssembly.add(fiveUnitLatch);
+
+  const fiveUnitLatchPlateGeometryP4 = leverPlateGeometryP4(28, 7.2, 5.0, 3.0, 1.35);
+  const fiveUnitLatchPlateP4 = new THREE.Mesh(fiveUnitLatchPlateGeometryP4, metal);
+  fiveUnitLatchPlateP4.name = 'five-unit latch stamped body P4';
+  fiveUnitLatchPlateP4.castShadow = true;
+  fiveUnitLatchPlateP4.receiveShadow = true;
+  addPickable(fiveUnitLatchPlateP4, COMPONENTS.selection, pickables);
+  fiveUnitLatch.add(fiveUnitLatchPlateP4);
+
+  const fiveUnitLatchHookP4 = box(8.5, 3.4, 5.2, darkMetal, 'five-unit latch bail-restraint hook P4');
+  fiveUnitLatchHookP4.position.set(-10.5, 11.5, 0);
+  addPickable(fiveUnitLatchHookP4, COMPONENTS.selection, pickables);
+  fiveUnitLatch.add(fiveUnitLatchHookP4);
+
+  const fiveUnitLatchPivotP4 = pinZP4(7.0, 1.45, darkMetal, 'five-unit latch pivot pin P4');
+  addPickable(fiveUnitLatchPivotP4, COMPONENTS.selection, pickables);
+  fiveUnitLatch.add(fiveUnitLatchPivotP4);
 
   const selectionLinkageTravelP5 = Object.freeze({
     tilt: 8,
@@ -3928,6 +3976,57 @@ export function createSelectricModel() {
     return { R1: 1, R2: 1, R2A: 1 };
   }
 
+  function updateFiveUnitLatchBailP5() {
+    const fiveRaw = THREE.MathUtils.clamp(selectorCamDrivePoseP5.fiveUnitRawLiftP5, 0, 1);
+    const camAvailableRiseP5 = 1 - fiveRaw;
+
+    // Once an N5 request has moved the latch clear, retain that release through the useful cam
+    // interval. The returning high portion of the same cycle cam physically restores the bail;
+    // only near that restored high point is the release memory cleared. This prevents code release
+    // in C6 from becoming an invented independent bail-return actuator.
+    if (
+      state.fiveUnitLatchReleaseHeldP5 &&
+      fiveRaw >= 0.96 &&
+      (state.cyclePhase >= 0.75 || state.cyclePhase <= 0.02)
+    ) {
+      state.fiveUnitLatchReleaseHeldP5 = false;
+    }
+
+    const latchReleased = state.fiveUnitLatchReleaseHeldP5;
+    const latchedHomeRiseP5 = Math.min(camAvailableRiseP5, fiveUnitLatchedHomeRiseP5);
+    const bailRiseP5 = latchReleased ? camAvailableRiseP5 : latchedHomeRiseP5;
+    const effectiveNegativeP5 = latchReleased
+      ? THREE.MathUtils.clamp(
+          (bailRiseP5 - latchedHomeRiseP5) / Math.max(1e-9, 1 - fiveUnitLatchedHomeRiseP5),
+          0,
+          1
+        )
+      : 0;
+
+    fiveUnitLatch.rotation.z =
+      fiveUnitLatch.userData.baseRotationZ + deg(latchReleased ? fiveUnitLatchReleaseAngleDegP5 : 0);
+    fiveUnitBail.position.y =
+      fiveUnitBail.userData.baseY + bailRiseP5 * selectionLinkageTravelP5.fiveUnitBail;
+
+    const followerEnd = objectPointInRootP4(
+      fiveUnitCamFollowerP4,
+      fiveUnitCamFollowerP4.userData.outputLocalP4
+    );
+    const bailEnd = objectPointInRootP4(
+      fiveUnitBail,
+      new THREE.Vector3(0, 0, 0)
+    );
+
+    selectorCamDrivePoseP5.fiveUnitCamAvailableRiseP5 = camAvailableRiseP5;
+    selectorCamDrivePoseP5.fiveUnitLatchReleasedP5 = latchReleased;
+    selectorCamDrivePoseP5.fiveUnitLatchAngleDegP5 =
+      THREE.MathUtils.radToDeg(fiveUnitLatch.rotation.z);
+    selectorCamDrivePoseP5.fiveUnitBailRiseP5 = bailRiseP5;
+    selectorCamDrivePoseP5.fiveUnitEffectiveNegativeP5 = effectiveNegativeP5;
+    selectorCamDrivePoseP5.fiveUnitCamBailTransferRodLengthMmP4 =
+      fiveUnitCamBailTransferRodP4.update(followerEnd, bailEnd);
+  }
+
   function updateSelectionDrive(tiltBand, rotateUnit) {
     const T1 = tiltBand & 1 ? 1 : 0;
     const T2 = tiltBand & 2 ? 1 : 0;
@@ -3967,10 +4066,10 @@ export function createSelectricModel() {
     selectorLatches.R2A.position.y =
       selectorLatches.R2A.userData.baseY - positive.R2A * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
 
-    // The five-unit bail rises for negative selection. The previous presentation moved it
-    // downward, opposite the OEM theory description.
-    fiveUnitBail.position.y =
-      fiveUnitBail.userData.baseY + fiveUnit * selectionLinkageTravelP5.fiveUnitBail;
+    // N5 bail travel is not teleported from the requested rotate sign anymore. The third
+    // cycle-shaft cam and explicit five-unit latch own that pose; refresh it here because
+    // keyboard-code gating is updated in the same rendered cycle as the selection target.
+    updateFiveUnitLatchBailP5();
 
     const tiltT2YOffset = -T2 * selectionLinkageTravelP5.tilt;
     const tiltT1YOffset = -T1 * selectionLinkageTravelP5.tilt;
@@ -5233,8 +5332,9 @@ export function createSelectricModel() {
       // one factory interposer lug pattern. OEM theory fixes the inversion boundary: an active
       // selector bail pulls its ordinary T/R latch forward so the descending latch bail cannot
       // catch it. Therefore ordinary visible bail motion is the inverse of the downstream latch-
-      // down request while a codeword is present. The sixth public channel remains a presentation
-      // continuation; its exact factory application is unresolved and is not asserted as N5.
+      // down request while a codeword is present. The sixth public channel is the P5 downstream
+      // N5 request used by this explanatory model. It is explicitly not a claim that IBM used a
+      // literal sixth keyboard lug/channel in this public bit order.
       const active = !state.keyboardCodeEngaged
         ? false
         : index < selectorLatchNames.length
@@ -5254,8 +5354,12 @@ export function createSelectricModel() {
         const selectorLatch = selectorLatches[selectorLatchNames[index]];
         selectorLatch.position.z =
           selectorLatch.userData.baseZ + (active ? selectorLatchForwardTravelP5 : 0);
+      } else if (state.keyboardCodeEngaged && publicDownstreamBit) {
+        state.fiveUnitLatchReleaseHeldP5 = true;
       }
     });
+
+    updateFiveUnitLatchBailP5();
   }
 
   function normalizeKeyCharacter(character) {
@@ -6190,7 +6294,8 @@ export function createSelectricModel() {
         weightedLeverEmbodimentP4: true,
         normalizedOutputsDerivedFromHoleFractions: true,
         floatingLeverMotionP5: true,
-        fiveUnitBailMotion: 'rises into the separate negative-five input; no numeric sign-flip shortcut',
+        fiveUnitBailMotion:
+          'third cycle-shaft cam releases/restores an explicit latch-gated rising N5 bail; selected-state balance input remains the next live-coupling boundary',
         differentialLeverClass: tiltArmAGeometryP4.userData.p4DifferentialLeverClass,
         twoHoleLinkClass: tiltOutputLinkPlatesP4[0].geometry.userData.p4TwoHoleLinkClass,
         tiltDoubleVerticalOutputLink: tiltOutputLinkPlatesP4.length === 2,
@@ -6666,14 +6771,29 @@ export function createSelectricModel() {
             'P5 follower lost-motion calibration chosen to preserve source-backed code-setup-before-latch-bail-sampling; not an IBM timing specification'
         },
         fiveUnitFollowerEmbodiedP4: true,
+        fiveUnitLatchEmbodiedP4: true,
+        fiveUnitLatchOppositeOrdinarySense: true,
+        fiveUnitCamRestoresBail: true,
+        fiveUnitLatchedHomeDistinctFromGeometricCamLow: true,
+        fiveUnitLatchedHomeRiseP5,
+        fiveUnitCamBailTransferRodEmbodiedP4: true,
         fiveUnitFollowerDownstreamBailCoupling:
-          'not yet closed; follower embodies sourced third-cam identity/phase while five-unit latch/bail gating remains separate P5 reconstruction',
+          'closed through explicit phase-offset cam follower -> transfer rod -> latch-gated rising five-unit bail with cam restoration; exact latch pivot, bail travel and cam profile remain P4/P5',
+        fiveUnitLiveBailToSignedBalanceCoupling:
+          'open; signed-balance endpoint still consumes the selected N5 state while the newly cam-driven bail/restoration pose is validated separately',
         poseP5: {
           ordinaryRawLiftP5: [...selectorCamDrivePoseP5.ordinaryRawLiftP5],
           ordinaryFollowerAngleDegP5: [...selectorCamDrivePoseP5.ordinaryFollowerAngleDegP5],
           latchBailSampleP5: selectorCamDrivePoseP5.latchBailSampleP5,
           fiveUnitRawLiftP5: selectorCamDrivePoseP5.fiveUnitRawLiftP5,
           fiveUnitFollowerAngleDegP5: selectorCamDrivePoseP5.fiveUnitFollowerAngleDegP5,
+          fiveUnitCamAvailableRiseP5: selectorCamDrivePoseP5.fiveUnitCamAvailableRiseP5,
+          fiveUnitLatchReleasedP5: selectorCamDrivePoseP5.fiveUnitLatchReleasedP5,
+          fiveUnitLatchAngleDegP5: selectorCamDrivePoseP5.fiveUnitLatchAngleDegP5,
+          fiveUnitBailRiseP5: selectorCamDrivePoseP5.fiveUnitBailRiseP5,
+          fiveUnitEffectiveNegativeP5: selectorCamDrivePoseP5.fiveUnitEffectiveNegativeP5,
+          fiveUnitCamBailTransferRodLengthMmP4:
+            selectorCamDrivePoseP5.fiveUnitCamBailTransferRodLengthMmP4,
           transferRodLengthsMmP4: [...selectorCamDrivePoseP5.transferRodLengthsMmP4]
         },
         geometryClass:
