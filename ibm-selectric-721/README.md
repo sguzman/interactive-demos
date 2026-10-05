@@ -20,7 +20,7 @@ The browser model currently includes:
 - product shell / keyboard with tapered three-stage P4 keycaps replacing cuboid caps while preserving labels and live key travel / platen / 27-tooth representative ratchet / visibly embodied single-vs-double line-spacing selector (one or two ratchet teeth per index; selector travel P5 while mode/function is source-backed) / P2 paper advance derived from platen arc length while feed rolls are engaged / four-front-plus-four-rear feed rollers with visible P4 phase cues driven from the same paper-advance state / common-shaft coupled paper release with manual sheet alignment available only while the feed rolls are released (public +/- uses a P5 2 mm inspection increment and leaves platen/ratchet plus disengaged feed-roll phase unchanged) / five-position copy-control carriage motion with a visible P5 five-detent marker arc and shaft-parented eccentric collars that rotate with the selector shaft / two-stable-state paper bail with independently adjustable P5 roller positions and passive P4-radius roller rotation only while the bail contacts the moving sheet / platen-variable decoupling with manual rotation, persistent re-coupled phase offset, and visible P5 platen-knob phase cues that continue with the physical platen while the ratchet is free / paper;
 - D6 print shaft, current IBM 1164740 bearing family, IBM 1164739 gear envelope and market-unfrozen item-51 C-clip presentation;
 - IBM 1124109 fixed 12P rack with repeated pitch geometry;
-- carrier translating over the 215.9 mm writing line, with the writing-position pointer parented to the carrier so it tracks the fixed 12-CPI rule;
+- carrier translating over the 215.9 mm writing line, with the writing-position pointer parented to the carrier so it tracks the fixed 12-CPI rule; the carrier frame now uses chamfered windowed P4 side plates instead of solid rectangular walls, exposing the sleeve/ribbon/type-element mechanisms while keeping the same constructive envelope;
 - Level-2 upper/lower rear shoe topology;
 - carrier-parented escapement bracket and pawl cue;
 - IBM 1141628 print sleeve;
@@ -54,6 +54,7 @@ The Playwright smoke test checks:
 
 - gallery registration;
 - finite geometry;
+- windowed P4 carrier side frames remain a two-plate carrier structure rather than hiding the mechanism behind solid walls;
 - tapered P4 keyboard keycaps remain compatible with the live key-depression path;
 - type-element 4×22 structure, 34.925 mm nominal diameter anchor, P4 top-cap/latch presentation, beveled pedestal/shoulder/face-land slug sections, chrome-like finish and platen-facing selected-slug alignment;
 - flat tilt/rotate selection-tape cross-sections, explicit stationary/carrier guide counts and carrier-sweep length invariants;
