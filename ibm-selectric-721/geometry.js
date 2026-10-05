@@ -1456,10 +1456,28 @@ export function createSelectricModel() {
   addPickable(printShaft, COMPONENTS.printShaft, pickables);
   printShaftRotor.add(printShaft);
 
-  const currentGear = shaft(13, 14, darkMetal, 'IBM 1164739 current print-shaft gear envelope');
+  const currentGearPresentationTeethP4 = 24;
+  const currentGearGeometryP4 = radialToothedWheelGeometryP4(
+    11.6,
+    2.4,
+    13,
+    currentGearPresentationTeethP4
+  );
+  currentGearGeometryP4.userData.p4ToothedWheel.class =
+    'P4 toothed IBM 1164739 gear envelope with presentation-only tooth count; exact production tooth count/module/profile unresolved';
+  const currentGear = new THREE.Mesh(currentGearGeometryP4, darkMetal);
+  currentGear.rotation.z = Math.PI / 2;
   currentGear.position.x = P4.sideframeX - 16;
+  currentGear.name = 'IBM 1164739 current print-shaft gear · toothed P4 envelope';
+  currentGear.castShadow = true;
+  currentGear.receiveShadow = true;
   addPickable(currentGear, COMPONENTS.d6CurrentSet, pickables);
   printShaftRotor.add(currentGear);
+
+  const currentGearHub = shaft(15, 7.2, metal, 'IBM 1164739 gear hub P4 cue');
+  currentGearHub.position.x = P4.sideframeX - 16;
+  addPickable(currentGearHub, COMPONENTS.d6CurrentSet, pickables);
+  printShaftRotor.add(currentGearHub);
 
   const cClip = new THREE.Mesh(
     new THREE.TorusGeometry(P4.printShaft.visibleRadius + 1.3, 0.9, 8, 28, Math.PI * 1.72),
@@ -4326,6 +4344,9 @@ export function createSelectricModel() {
         shaft: '1164736',
         bearings: '1164740',
         gear: '1164739',
+        gearPresentationTeethP4: currentGearPresentationTeethP4,
+        gearGeometryClass: currentGearGeometryP4.userData.p4ToothedWheel.class,
+        gearHubEmbodied: true,
         item51Clip: '1175220 US / 6520762 WT',
         clipMarketFrozen: false
       },
