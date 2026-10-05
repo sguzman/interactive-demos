@@ -148,6 +148,14 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     '1164240-feed-detent',
     '1124174-print-restoring'
   ]);
+  expect(initial.geometry.sleeveCamProfiles.presentationClass).toContain('smooth P4 radial envelopes');
+  expect(initial.geometry.sleeveCamProfiles.ribbonLift.lobes).toHaveLength(1);
+  expect(initial.geometry.sleeveCamProfiles.combinedFeedDetent1164240.lobes).toHaveLength(2);
+  expect(initial.geometry.sleeveCamProfiles.printRestoring1124174.lobes).toHaveLength(2);
+  expect(initial.geometry.sleeveCamProfiles.combinedFeedDetent1164240.baseRadius).toBeGreaterThan(0);
+  expect(initial.geometry.sleeveCamProfiles.printRestoring1124174.baseRadius).toBeGreaterThan(
+    initial.geometry.sleeveCamProfiles.combinedFeedDetent1164240.baseRadius
+  );
   expect(initial.profile).toContain('12 CPI');
   expect(initial.explosion).toBe(0);
   expect(initial.serviceCoverOpen).toBe(0);
