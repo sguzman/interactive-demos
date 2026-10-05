@@ -436,6 +436,33 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.primaryDrive.beltPathClass).toContain('external-tangent solve');
   expect(initial.geometry.primaryDrive.cycleClutchPulleyHubContinuous).toBe(true);
   expect(initial.geometry.primaryDrive.cycleShaftEventGated).toBe(true);
+  expect(initial.geometry.cycleClutch.embodied).toBe(true);
+  expect(initial.geometry.cycleClutch.continuouslyPoweredDrivingHubEmbodiedP4).toBe(true);
+  expect(initial.geometry.cycleClutch.shaftHubAndCollarEmbodiedP4).toBe(true);
+  expect(initial.geometry.cycleClutch.wrapSpringEmbodiedP4).toBe(true);
+  expect(initial.geometry.cycleClutch.looseSleeveEmbodiedP4).toBe(true);
+  expect(initial.geometry.cycleClutch.sleeveStepCount).toBe(2);
+  expect(initial.geometry.cycleClutch.sleeveStepSpacingDegSourceBacked).toBe(180);
+  expect(initial.geometry.cycleClutch.restoringCamLobeCount).toBe(2);
+  expect(initial.geometry.cycleClutch.restoringRollerEmbodiedP4).toBe(true);
+  expect(initial.geometry.cycleClutch.restoringCamOverthrowStopLugCountP4).toBe(2);
+  expect(initial.geometry.cycleClutch.rubberComplianceMountEmbodiedP4).toBe(true);
+  expect(initial.geometry.cycleClutch.checkRatchetEmbodiedP4).toBe(true);
+  expect(initial.geometry.cycleClutch.checkPawlEmbodiedP4).toBe(true);
+  expect(initial.geometry.cycleClutch.latchReleasedP5).toBe(false);
+  expect(initial.geometry.cycleClutch.springEngagedP5).toBe(false);
+  expect(initial.geometry.cycleClutch.checkPawlEngagedP5).toBe(true);
+  expect(initial.geometry.cycleClutch.secondStepCaptureReadyP5).toBe(true);
+  expect(initial.geometry.cycleClutch.sleevePhaseDegP5).toBeCloseTo(0, 8);
+  expect(initial.geometry.cycleClutch.localAdjustmentsWithinSourceRanges).toBe(true);
+  expect(initial.geometry.cycleClutch.stopShockPath).toEqual([
+    'cycle-shaft',
+    'cycle-clutch-collar',
+    'restoring-cam-overthrow-stop',
+    'loose-clutch-sleeve',
+    'cycle-clutch-latch',
+    'rubber-compliance-mount'
+  ]);
   expect(initial.geometry.powerPresentation.operationalShaftContinuousWhenPowered).toBe(true);
   expect(initial.geometry.powerPresentation.serviceCamsStationaryUntilSelected).toBe(true);
   expect(initial.geometry.powerPresentation.motorConstructionClass).toContain('barrel + twin endbells');
@@ -987,6 +1014,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(keyDownHold).toBe(true);
   const keyDown = await page.evaluate(() => window.__selectricDebug.state);
   expect(keyDown.cycle).toBe('C1_TRIP');
+  expect(keyDown.geometry.cycleClutch.latchReleasedP5).toBe(true);
+  expect(keyDown.geometry.cycleClutch.springEngagedP5).toBe(true);
+  expect(keyDown.geometry.cycleClutch.checkPawlEngagedP5).toBe(false);
+  expect(keyDown.geometry.cycleClutch.sleevePhaseDegP5).toBeGreaterThan(5);
+  expect(keyDown.geometry.cycleClutch.sleevePhaseDegP5).toBeLessThan(20);
   expect(keyDown.keyboardPress.character).toBe('Q');
   expect(keyDown.keyboardPress.depression).toBeGreaterThan(0.7);
   expect(keyDown.geometry.keyboardActuation.keycapClass).toContain('tapered three-stage P4 keycap');
@@ -1115,6 +1147,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(impactHold).toBe(true);
   const impactHeld = await page.evaluate(() => window.__selectricDebug.state);
   expect(impactHeld.cycle).toBe('C5_PRINT_IMPACT');
+  expect(impactHeld.geometry.cycleClutch.latchReleasedP5).toBe(false);
+  expect(impactHeld.geometry.cycleClutch.secondStepCaptureReadyP5).toBe(true);
+  expect(impactHeld.geometry.cycleClutch.sleevePhaseDegP5).toBeGreaterThan(110);
+  expect(impactHeld.geometry.cycleClutch.restoringCamLiftP5).toBeGreaterThanOrEqual(0);
   expect(impactHeld.events.some(event => event.name === 'PRINT_IMPACT')).toBe(true);
   expect(impactHeld.geometry.ribbon.liftFollowerP5).toBeCloseTo(1, 8);
   expect(impactHeld.ribbonLift).toBeCloseTo(0.82, 8);

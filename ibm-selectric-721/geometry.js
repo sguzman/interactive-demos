@@ -2787,6 +2787,360 @@ export function createSelectricModel() {
   pickables.push(cycleTeeth);
   cycleDriveRotor.add(cycleTeeth);
 
+  // The continuously powered pulley hub and event-gated cycle shaft are now connected by an
+  // explicit spring-clutch assembly rather than only by an abstract "event gated" diagnostic.
+  // Absolute diameters/sections remain P4, but the source-backed topology is preserved:
+  // driving hub -> wrap spring -> shaft hub/collar, with a loose two-step sleeve and restored latch.
+  const cycleClutchAxisXP4 = -145;
+  const cycleClutchDrivingHubRadiusP4 = 9.4;
+  const cycleClutchShaftHubRadiusP4 = 8.2;
+  const cycleClutchSpringRadiusP4 = 10.1;
+  const cycleClutchSleeveRadiusP4 = 13.0;
+  const cycleClutchLatchReleasedAngleDegP5 = -22;
+  const cycleClutchLatchBiteRangeMm = [0.762, 0.889];
+  const cycleClutchRestoringOverthrowRangeMm = [0.508, 0.635];
+  const cycleClutchReleaseRangeMm = [0, 0.0508];
+  const cycleClutchLatchBiteMmP4 = 0.8255;
+  const cycleClutchRestoringOverthrowMmP4 = 0.5715;
+  const cycleClutchReleaseMmP4 = 0.0254;
+
+  const cycleClutchDrivingHubP4 = shaft(
+    18,
+    cycleClutchDrivingHubRadiusP4,
+    metal,
+    'cycle-clutch continuously powered driving hub P4'
+  );
+  addPickable(cycleClutchDrivingHubP4, COMPONENTS.drive, pickables);
+  cycleDriveRotor.add(cycleClutchDrivingHubP4);
+
+  const cycleClutchShaftHubP4 = shaft(
+    16,
+    cycleClutchShaftHubRadiusP4,
+    darkMetal,
+    'cycle-shaft clutch hub P4'
+  );
+  cycleClutchShaftHubP4.position.x = cycleClutchAxisXP4;
+  addPickable(cycleClutchShaftHubP4, COMPONENTS.drive, pickables);
+  cycleRotor.add(cycleClutchShaftHubP4);
+
+  const cycleClutchCollarP4 = pulley(
+    10.4,
+    5.5,
+    metal,
+    'cycle-clutch shaft-side spring collar P4'
+  );
+  cycleClutchCollarP4.position.x = cycleClutchAxisXP4 - 10.5;
+  addPickable(cycleClutchCollarP4, COMPONENTS.drive, pickables);
+  cycleRotor.add(cycleClutchCollarP4);
+
+  const cycleClutchSpringFrameP4 = new THREE.Group();
+  cycleClutchSpringFrameP4.name = 'cycle-clutch wrap-spring frame P4';
+  cycleClutchSpringFrameP4.position.x = cycleClutchAxisXP4;
+  cycleRotor.add(cycleClutchSpringFrameP4);
+
+  const cycleClutchSpringPointsP4 = [];
+  const cycleClutchSpringTurnsP4 = 5.25;
+  const cycleClutchSpringLengthP4 = 18;
+  for (let i = 0; i <= 84; i += 1) {
+    const u = i / 84;
+    const a = u * Math.PI * 2 * cycleClutchSpringTurnsP4;
+    cycleClutchSpringPointsP4.push(new THREE.Vector3(
+      THREE.MathUtils.lerp(-cycleClutchSpringLengthP4 / 2, cycleClutchSpringLengthP4 / 2, u),
+      Math.cos(a) * cycleClutchSpringRadiusP4,
+      Math.sin(a) * cycleClutchSpringRadiusP4
+    ));
+  }
+  const cycleClutchSpringP4 = new THREE.Mesh(
+    new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3(cycleClutchSpringPointsP4),
+      112,
+      0.72,
+      7,
+      false
+    ),
+    material(0x8f8d87, 0.72, 0.30)
+  );
+  cycleClutchSpringP4.name = 'cycle-clutch wrap spring P4';
+  cycleClutchSpringP4.castShadow = true;
+  cycleClutchSpringP4.receiveShadow = true;
+  addPickable(cycleClutchSpringP4, COMPONENTS.drive, pickables);
+  cycleClutchSpringFrameP4.add(cycleClutchSpringP4);
+
+  const cycleClutchSleeveP4 = new THREE.Group();
+  cycleClutchSleeveP4.name = 'loose cycle-clutch sleeve with two 180-degree steps P4';
+  cycleClutchSleeveP4.position.set(
+    cycleClutchAxisXP4,
+    P4.cycleShaft.y,
+    P4.cycleShaft.z
+  );
+  driveAssembly.add(cycleClutchSleeveP4);
+
+  const cycleClutchSleeveMaterialP4 = material(0x5a5e60, 0.62, 0.35);
+  cycleClutchSleeveMaterialP4.side = THREE.DoubleSide;
+  const cycleClutchSleeveShellP4 = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      cycleClutchSleeveRadiusP4,
+      cycleClutchSleeveRadiusP4,
+      24,
+      36,
+      1,
+      true
+    ),
+    cycleClutchSleeveMaterialP4
+  );
+  cycleClutchSleeveShellP4.rotation.z = Math.PI / 2;
+  cycleClutchSleeveShellP4.name = 'cycle-clutch loose sleeve shell P4';
+  cycleClutchSleeveShellP4.castShadow = true;
+  cycleClutchSleeveShellP4.receiveShadow = true;
+  addPickable(cycleClutchSleeveShellP4, COMPONENTS.drive, pickables);
+  cycleClutchSleeveP4.add(cycleClutchSleeveShellP4);
+
+  const cycleClutchSleeveStepsP4 = [];
+  const cycleClutchSleeveNotchCuesP4 = [];
+  for (const sign of [-1, 1]) {
+    const step = box(
+      8,
+      3.0,
+      7.0,
+      darkMetal,
+      sign < 0
+        ? 'cycle-clutch sleeve stop step A P4'
+        : 'cycle-clutch sleeve stop step B 180deg P4'
+    );
+    step.position.set(0, sign * (cycleClutchSleeveRadiusP4 + 1.6), 0);
+    addPickable(step, COMPONENTS.drive, pickables);
+    cycleClutchSleeveP4.add(step);
+    cycleClutchSleeveStepsP4.push(step);
+
+    const notch = box(
+      5.2,
+      2.0,
+      4.2,
+      material(0x333638, 0.55, 0.42),
+      sign < 0
+        ? 'cycle-clutch sleeve overthrow notch A P4'
+        : 'cycle-clutch sleeve overthrow notch B P4'
+    );
+    notch.position.set(-10.5, sign * 9.8, 0);
+    addPickable(notch, COMPONENTS.drive, pickables);
+    cycleClutchSleeveP4.add(notch);
+    cycleClutchSleeveNotchCuesP4.push(notch);
+  }
+
+  const cycleClutchRestoringCamP4 = camProfileP4(
+    9.0,
+    9.6,
+    [
+      { angleRad: deg(90), liftMm: 3.4, halfWidthRad: deg(34), sharpness: 2.8 },
+      { angleRad: deg(-90), liftMm: 3.4, halfWidthRad: deg(34), sharpness: 2.8 }
+    ],
+    material(0xb7a36f, 0.10, 0.52),
+    'new-style double-lobed nylon cycle-clutch latch restoring cam P4'
+  );
+  cycleClutchRestoringCamP4.position.x = cycleClutchAxisXP4 + 17;
+  cycleClutchRestoringCamP4.userData.relativePhaseClass =
+    'source-backed double-lobed shaft cam; exact production profile/contact angle unresolved';
+  addPickable(cycleClutchRestoringCamP4, COMPONENTS.drive, pickables);
+  cycleRotor.add(cycleClutchRestoringCamP4);
+
+  const cycleClutchOverthrowStopLugsP4 = [];
+  for (const sign of [-1, 1]) {
+    const lug = box(
+      5.2,
+      3.0,
+      5.2,
+      darkMetal,
+      sign < 0
+        ? 'cycle-clutch restoring-cam overthrow stop lug A P4'
+        : 'cycle-clutch restoring-cam overthrow stop lug B P4'
+    );
+    lug.position.set(
+      cycleClutchAxisXP4 + 11.5,
+      sign * 10.8,
+      0
+    );
+    addPickable(lug, COMPONENTS.drive, pickables);
+    cycleRotor.add(lug);
+    cycleClutchOverthrowStopLugsP4.push(lug);
+  }
+
+  const cycleClutchLatchP4 = new THREE.Group();
+  cycleClutchLatchP4.name = 'cycle-clutch latch and restoring-roller pivot P4';
+  cycleClutchLatchP4.position.set(
+    cycleClutchAxisXP4 + 2,
+    P4.cycleShaft.y + 20,
+    P4.cycleShaft.z + 1.5
+  );
+  cycleClutchLatchP4.userData.baseRotationX = 0;
+  driveAssembly.add(cycleClutchLatchP4);
+
+  const cycleClutchLatchBodyP4 = box(
+    8.0,
+    29,
+    5.5,
+    metal,
+    'cycle-clutch vertical latch body P4'
+  );
+  cycleClutchLatchBodyP4.position.y = -8.5;
+  addPickable(cycleClutchLatchBodyP4, COMPONENTS.drive, pickables);
+  cycleClutchLatchP4.add(cycleClutchLatchBodyP4);
+
+  const cycleClutchLatchFaceP4 = box(
+    9.5,
+    4.0,
+    7.5,
+    darkMetal,
+    'cycle-clutch sleeve-step latch face P4'
+  );
+  cycleClutchLatchFaceP4.position.set(0, -20.0, 0);
+  addPickable(cycleClutchLatchFaceP4, COMPONENTS.drive, pickables);
+  cycleClutchLatchP4.add(cycleClutchLatchFaceP4);
+
+  const cycleClutchRestoringRollerP4 = pulley(
+    3.4,
+    6.4,
+    darkMetal,
+    'cycle-clutch adjustable restoring steel roller P4'
+  );
+  cycleClutchRestoringRollerP4.position.set(0, 2.5, -7.5);
+  addPickable(cycleClutchRestoringRollerP4, COMPONENTS.drive, pickables);
+  cycleClutchLatchP4.add(cycleClutchRestoringRollerP4);
+
+  const cycleClutchLatchPivotPinP4 = shaft(
+    10,
+    1.8,
+    darkMetal,
+    'cycle-clutch latch pivot pin P4'
+  );
+  addPickable(cycleClutchLatchPivotPinP4, COMPONENTS.drive, pickables);
+  cycleClutchLatchP4.add(cycleClutchLatchPivotPinP4);
+
+  const cycleClutchRubberMountP4 = box(
+    13,
+    7,
+    9,
+    material(0x292827, 0.02, 0.86),
+    'cycle-clutch latch vulcanized-rubber compliance mount P4'
+  );
+  cycleClutchRubberMountP4.position.set(
+    cycleClutchAxisXP4 + 2,
+    P4.cycleShaft.y + 25,
+    P4.cycleShaft.z + 8.5
+  );
+  addPickable(cycleClutchRubberMountP4, COMPONENTS.drive, pickables);
+  driveAssembly.add(cycleClutchRubberMountP4);
+
+  const cycleClutchKeeperP4 = box(
+    7,
+    6,
+    8,
+    darkMetal,
+    'cycle-clutch latch keeper P4'
+  );
+  cycleClutchKeeperP4.position.set(
+    cycleClutchAxisXP4 + 2,
+    P4.cycleShaft.y + 7,
+    P4.cycleShaft.z + 14
+  );
+  addPickable(cycleClutchKeeperP4, COMPONENTS.drive, pickables);
+  driveAssembly.add(cycleClutchKeeperP4);
+
+  const cycleCheckRatchetTeethP4 = 12;
+  const cycleCheckRatchetP4 = new THREE.Mesh(
+    radialToothedWheelGeometryP4(10.2, 2.1, 5.2, cycleCheckRatchetTeethP4),
+    darkMetal
+  );
+  cycleCheckRatchetP4.rotation.z = Math.PI / 2;
+  cycleCheckRatchetP4.position.x = -P4.cycleShaft.length / 2 + 10;
+  cycleCheckRatchetP4.name = 'cycle-shaft check ratchet P4';
+  cycleCheckRatchetP4.castShadow = true;
+  cycleCheckRatchetP4.receiveShadow = true;
+  addPickable(cycleCheckRatchetP4, COMPONENTS.drive, pickables);
+  cycleRotor.add(cycleCheckRatchetP4);
+
+  const cycleCheckPawlP4 = new THREE.Group();
+  cycleCheckPawlP4.name = 'cycle-shaft rebound check pawl P4';
+  cycleCheckPawlP4.position.set(
+    -P4.cycleShaft.length / 2 + 10,
+    P4.cycleShaft.y + 16,
+    P4.cycleShaft.z
+  );
+  cycleCheckPawlP4.userData.baseRotationX = 0;
+  driveAssembly.add(cycleCheckPawlP4);
+
+  const cycleCheckPawlBodyP4 = box(
+    6,
+    16,
+    5,
+    metal,
+    'cycle-shaft rebound check-pawl body P4'
+  );
+  cycleCheckPawlBodyP4.position.y = -6;
+  addPickable(cycleCheckPawlBodyP4, COMPONENTS.drive, pickables);
+  cycleCheckPawlP4.add(cycleCheckPawlBodyP4);
+
+  const cycleCheckPawlTipP4 = box(
+    7.5,
+    4,
+    6,
+    darkMetal,
+    'cycle-shaft rebound check-pawl tip P4'
+  );
+  cycleCheckPawlTipP4.position.y = -14;
+  addPickable(cycleCheckPawlTipP4, COMPONENTS.drive, pickables);
+  cycleCheckPawlP4.add(cycleCheckPawlTipP4);
+
+  let cycleClutchRestoringCamLiftP5 = 0;
+  let cycleClutchLatchReleasedP5 = false;
+  let cycleClutchSpringEngagedP5 = false;
+  let cycleClutchSpringRadialScaleP5 = 1.02;
+  let cycleClutchCheckPawlEngagedP5 = true;
+  let cycleClutchSleevePhaseDegP5 = 0;
+  let cycleClutchSecondStepCaptureReadyP5 = true;
+
+  function updateCycleClutchP5() {
+    const phase = state.cyclePhase;
+    const contactAngleRadP5 = Math.PI - cycleRotor.rotation.x;
+    cycleClutchRestoringCamLiftP5 =
+      normalizedCamLiftAtContactP4(cycleClutchRestoringCamP4, contactAngleRadP5);
+
+    // Release is early and cam restoration must win before the second sleeve step arrives.
+    // The keeper holds the restored latch after the cam has done its work; this hysteresis is P5.
+    const releaseWindowP5 = phase > 0.002 && phase < 0.62;
+    const restoreFractionP5 = phase < 0.62
+      ? THREE.MathUtils.clamp((cycleClutchRestoringCamLiftP5 - 0.12) / 0.58, 0, 1)
+      : 1;
+    const releasedFractionP5 = releaseWindowP5 ? 1 - restoreFractionP5 : 0;
+
+    cycleClutchLatchReleasedP5 = releasedFractionP5 > 0.08;
+    cycleClutchLatchP4.rotation.x =
+      deg(cycleClutchLatchReleasedAngleDegP5 * releasedFractionP5);
+
+    cycleClutchSpringEngagedP5 =
+      phase > 0.002 &&
+      phase < 0.985 &&
+      cycleClutchLatchReleasedP5;
+    cycleClutchSpringRadialScaleP5 = cycleClutchSpringEngagedP5 ? 0.975 : 1.02;
+    cycleClutchSpringFrameP4.scale.set(
+      1,
+      cycleClutchSpringRadialScaleP5,
+      cycleClutchSpringRadialScaleP5
+    );
+
+    // The loose sleeve follows the driven spring/shaft through one 180-degree character cycle.
+    // Its two-step symmetry means the next rest is equivalent after the debugger returns phase to 0.
+    cycleClutchSleeveP4.rotation.x = phase * Math.PI;
+    cycleClutchSleevePhaseDegP5 = phase * 180;
+
+    // Rebound check pawl stays clear during the powered stroke and drops back in near checked rest.
+    cycleClutchCheckPawlEngagedP5 = phase < 0.002 || phase >= 0.93;
+    cycleCheckPawlP4.rotation.x = deg(cycleClutchCheckPawlEngagedP5 ? 0 : 18);
+
+    cycleClutchSecondStepCaptureReadyP5 =
+      phase < 0.002 ||
+      (phase >= 0.62 && !cycleClutchLatchReleasedP5);
+  }
+
   const driveBeltPathP4 = openPositiveDriveBeltPathP4(
     -145,
     { y: 39, z: 42 },
@@ -6610,6 +6964,7 @@ export function createSelectricModel() {
     filterShaftRotor.rotation.x = state.cyclePhase * Math.PI;
     printShaftRotor.rotation.x = state.cyclePhase * Math.PI * 2;
     printSleeveRotor.rotation.x = state.cyclePhase * Math.PI * 2;
+    updateCycleClutchP5();
 
     // A selected/stored interposer is transported by the rotating filter shaft before the
     // common selector latch bail samples. The concrete C2 transport curve is P5 timing that
@@ -7409,6 +7764,58 @@ export function createSelectricModel() {
         beltMotionClass: 'P5 visible markers advected along the P4 belt path by motor pitch-circle travel; marker spacing/shape are presentation only',
         beltPathClass: 'P4 external-tangent solve from reconstructed pitch radii/axis centers; positive-drive tooth count ratio source-backed, exact belt pitch and absolute pulley diameters unresolved',
         beltPitchAndAbsolutePulleyDiameters: 'unresolved'
+      },
+      cycleClutch: {
+        embodied: true,
+        continuouslyPoweredDrivingHubEmbodiedP4: true,
+        shaftHubAndCollarEmbodiedP4: true,
+        wrapSpringEmbodiedP4: true,
+        wrapSpringTurnsP4: cycleClutchSpringTurnsP4,
+        looseSleeveEmbodiedP4: true,
+        sleeveStepCount: cycleClutchSleeveStepsP4.length,
+        sleeveStepSpacingDegSourceBacked: 180,
+        sleeveNotchCueCountP4: cycleClutchSleeveNotchCuesP4.length,
+        latchEmbodiedP4: true,
+        latchReleasedP5: cycleClutchLatchReleasedP5,
+        latchAngleDegP5: THREE.MathUtils.radToDeg(cycleClutchLatchP4.rotation.x),
+        restoringCamEmbodiedP4: true,
+        restoringCamLobeCount: cycleClutchRestoringCamP4.userData.p4CamProfile.lobes.length,
+        restoringCamLiftP5: cycleClutchRestoringCamLiftP5,
+        restoringRollerEmbodiedP4: true,
+        restoringCamOverthrowStopLugCountP4: cycleClutchOverthrowStopLugsP4.length,
+        rubberComplianceMountEmbodiedP4: true,
+        keeperEmbodiedP4: true,
+        springEngagedP5: cycleClutchSpringEngagedP5,
+        springRadialScaleP5: cycleClutchSpringRadialScaleP5,
+        sleevePhaseDegP5: cycleClutchSleevePhaseDegP5,
+        secondStepCaptureReadyP5: cycleClutchSecondStepCaptureReadyP5,
+        checkRatchetEmbodiedP4: true,
+        checkRatchetTeethP4: cycleCheckRatchetTeethP4,
+        checkPawlEmbodiedP4: true,
+        checkPawlEngagedP5: cycleClutchCheckPawlEngagedP5,
+        latchBiteMmP4: cycleClutchLatchBiteMmP4,
+        latchBiteSourceRangeMm: [...cycleClutchLatchBiteRangeMm],
+        restoringOverthrowMmP4: cycleClutchRestoringOverthrowMmP4,
+        restoringOverthrowSourceRangeMm: [...cycleClutchRestoringOverthrowRangeMm],
+        releaseMmP4: cycleClutchReleaseMmP4,
+        releaseSourceRangeMm: [...cycleClutchReleaseRangeMm],
+        localAdjustmentsWithinSourceRanges:
+          cycleClutchLatchBiteMmP4 >= cycleClutchLatchBiteRangeMm[0] &&
+          cycleClutchLatchBiteMmP4 <= cycleClutchLatchBiteRangeMm[1] &&
+          cycleClutchRestoringOverthrowMmP4 >= cycleClutchRestoringOverthrowRangeMm[0] &&
+          cycleClutchRestoringOverthrowMmP4 <= cycleClutchRestoringOverthrowRangeMm[1] &&
+          cycleClutchReleaseMmP4 >= cycleClutchReleaseRangeMm[0] &&
+          cycleClutchReleaseMmP4 <= cycleClutchReleaseRangeMm[1],
+        stopShockPath: [
+          'cycle-shaft',
+          'cycle-clutch-collar',
+          'restoring-cam-overthrow-stop',
+          'loose-clutch-sleeve',
+          'cycle-clutch-latch',
+          'rubber-compliance-mount'
+        ],
+        causalClass:
+          'source-backed continuously powered hub -> wrap spring -> shaft hub, two-step 180-degree sleeve termination, double-lobed latch restoration, overthrow stop and rebound check; exact dimensions/profiles and browser hysteresis are P4/P5'
       },
       powerPresentation: {
         operationalShaftContinuousWhenPowered: true,
