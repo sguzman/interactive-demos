@@ -3807,6 +3807,11 @@ export function createSelectricModel() {
       1.15,
       darkMetal
     ),
+    bridge: makeDynamicSelectionRodP4(
+      binding.name + ' selector-latch to differential dogleg bridge P4',
+      1.15,
+      metal
+    ),
     second: makeDynamicSelectionRodP4(
       binding.name + ' selector-latch to differential dogleg segment B P4',
       1.15,
@@ -3819,14 +3824,17 @@ export function createSelectricModel() {
     ordinaryLatchDifferentialBindingsP4.forEach((binding, index) => {
       const latchPoint = objectPointInSelectionAssemblyP4(binding.latch);
       const inputPoint = objectPointInSelectionAssemblyP4(binding.input);
-      const elbow = new THREE.Vector3(
-        latchPoint.x,
-        THREE.MathUtils.lerp(latchPoint.y, inputPoint.y, 0.48 + index * 0.015),
-        binding.laneZ
+      const laneY = THREE.MathUtils.lerp(
+        latchPoint.y,
+        inputPoint.y,
+        0.48 + index * 0.015
       );
+      const latchElbow = new THREE.Vector3(latchPoint.x, laneY, binding.laneZ);
+      const inputElbow = new THREE.Vector3(inputPoint.x, laneY, binding.laneZ);
       ordinaryLatchDifferentialPoseP5[binding.name] = {
-        segmentAMmP4: binding.first.update(latchPoint, elbow),
-        segmentBMmP4: binding.second.update(elbow, inputPoint)
+        segmentAMmP4: binding.first.update(latchPoint, latchElbow),
+        bridgeMmP4: binding.bridge.update(latchElbow, inputElbow),
+        segmentBMmP4: binding.second.update(inputElbow, inputPoint)
       };
     });
   }
@@ -6438,14 +6446,14 @@ export function createSelectricModel() {
         ordinaryLatchToDifferentialLinksEmbodiedP4: true,
         ordinaryLatchToDifferentialChannelCountP4: ordinaryLatchDifferentialBindingsP4.length,
         ordinaryLatchToDifferentialDynamicRodSegmentCountP4:
-          ordinaryLatchDifferentialBindingsP4.length * 2,
+          ordinaryLatchDifferentialBindingsP4.length * 3,
         ordinaryLatchToDifferentialChannelOrderP4:
           ordinaryLatchDifferentialBindingsP4.map(binding => binding.name),
         ordinaryLatchToDifferentialPoseP5: Object.fromEntries(
           Object.entries(ordinaryLatchDifferentialPoseP5).map(([name, pose]) => [name, { ...pose }])
         ),
         ordinaryLatchToDifferentialGeometryClass:
-          'source-backed T1/T2/R1/R2/R2A latch-to-differential topology embodied as separated P4 dogleg transfer lanes; exact IBM link count, route, joints and dimensions unresolved',
+          'source-backed T1/T2/R1/R2/R2A latch-to-differential topology embodied as separated three-segment P4 dogleg transfer lanes; exact IBM link count, route, joints and dimensions unresolved',
         fiveUnitBailDrivesLiveBalanceEndpoint: true,
         fiveUnitBailToBalanceTransferRodEmbodiedP4: true,
         fiveUnitBailToBalanceTransferRodLengthMmP4: fiveUnitBailToBalanceRodLengthMmP4,
