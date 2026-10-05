@@ -152,8 +152,8 @@ export const COMPONENTS = Object.freeze({
   paperFeed: {
     name: 'Paper feed / bail / copy-control system',
     category: 'paper transport',
-    provenance: 'source-grounded topology/state coupling + P4 centers and local dimensions + P5 unsourced copy-control offsets',
-    description: 'Four front and four rear feed rollers couple paper to the platen through a deflector path; the bail has two laterally adjustable rollers. Paper release disengages both feed-roll banks together. Five-position copy control moves the platen plus entire paper-feed carriage front/rear while leaving the carrier/typehead fixed. Exact copy offsets and local dimensions remain unresolved.'
+    provenance: 'source-grounded topology/state coupling + P4 centers/local dimensions and platen-knob grip reconstruction + P5 unsourced copy-control offsets',
+    description: 'Four front and four rear feed rollers couple paper to the platen through a deflector path; the bail has two laterally adjustable rollers. Paper release disengages both feed-roll banks together. The platen knobs now use constructive P4 reduced cores, outer caps and repeated radial grip ribs instead of plain cylinders while retaining live platen-phase cues; exact IBM knob tooling/knurl geometry remains unresolved. Five-position copy control moves the platen plus entire paper-feed carriage front/rear while leaving the carrier/typehead fixed. Exact copy offsets and remaining local dimensions remain unresolved.'
   },
   printShaft: {
     name: 'Print shaft · IBM 1164736',
