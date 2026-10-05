@@ -1590,6 +1590,71 @@ export function createSelectricModel() {
   pickables.push(keyleverPawlsP4, keyleverPawlPivotsP4);
   keyboardMechanismAssembly.add(keyleverPawlsP4, keyleverPawlPivotsP4);
 
+  // One selected P5 tracer makes the sourced keylever -> separate pawl -> matching interposer
+  // causal chain inspectable. The full 51-member banks remain instanced for performance; this
+  // tracer is not a claim about factory key/interposer numbering or exact lever stampings.
+  const selectedKeyleverPivotP5 = new THREE.Group();
+  selectedKeyleverPivotP5.name = 'selected keylever rear-fulcrum tracer P5';
+  selectedKeyleverPivotP5.position.set(0, keyleverFulcrumRod.position.y, keyleverFulcrumRod.position.z);
+  selectedKeyleverPivotP5.visible = false;
+  keyboardMechanismAssembly.add(selectedKeyleverPivotP5);
+
+  const selectedKeyleverBodyP5 = box(
+    4.2,
+    2.8,
+    114,
+    material(0x765f42, 0.48, 0.38),
+    'selected keylever body from rear fulcrum to front guide P5'
+  );
+  selectedKeyleverBodyP5.position.z = 57;
+  addPickable(selectedKeyleverBodyP5, COMPONENTS.keyboardMechanism, pickables);
+  selectedKeyleverPivotP5.add(selectedKeyleverBodyP5);
+
+  const selectedKeyleverPawlPivotP5 = new THREE.Group();
+  selectedKeyleverPawlPivotP5.name = 'selected keylever separate pawl pivot P5';
+  selectedKeyleverPawlPivotP5.position.set(0, 0.8, 17);
+  selectedKeyleverPivotP5.add(selectedKeyleverPawlPivotP5);
+
+  const selectedKeyleverPawlP5 = box(
+    4.4,
+    10,
+    3.4,
+    metal,
+    'selected keylever pawl contact member P5'
+  );
+  selectedKeyleverPawlP5.position.y = -4.7;
+  addPickable(selectedKeyleverPawlP5, COMPONENTS.keyboardMechanism, pickables);
+  selectedKeyleverPawlPivotP5.add(selectedKeyleverPawlP5);
+
+  const selectedKeyleverPawlRivetP5 = shaft(
+    5.4,
+    1.25,
+    darkMetal,
+    'selected keylever pawl shoulder rivet P5'
+  );
+  addPickable(selectedKeyleverPawlRivetP5, COMPONENTS.keyboardMechanism, pickables);
+  selectedKeyleverPawlPivotP5.add(selectedKeyleverPawlRivetP5);
+
+  const selectedKeyleverMaxAngleDegP5 = 7.5;
+  const selectedKeyleverPawlRelativeAngleDegP5 = -5.0;
+  let selectedKeyleverAngleDegP5 = 0;
+  let selectedPawlAngleDegP5 = 0;
+  let selectedPawlContactFractionP5 = 0;
+
+  function updateSelectedKeyleverPawlP5() {
+    const press = THREE.MathUtils.clamp(state.keyboardPress, 0, 1);
+    selectedKeyleverAngleDegP5 = selectedKeyleverMaxAngleDegP5 * press;
+    selectedPawlAngleDegP5 = selectedKeyleverPawlRelativeAngleDegP5 * press;
+    selectedKeyleverPivotP5.rotation.x = deg(selectedKeyleverAngleDegP5);
+    selectedKeyleverPawlPivotP5.rotation.x = deg(selectedPawlAngleDegP5);
+    selectedPawlContactFractionP5 = THREE.MathUtils.clamp(
+      selectedKeyleverAngleDegP5 / selectedKeyleverMaxAngleDegP5,
+      0,
+      1
+    );
+    selectedKeyleverPivotP5.visible = press > 0;
+  }
+
   // Character interposers remain an instanced bank for browser performance, but the support
   // hardware now exposes the distinct front fulcrum and front/rear guide relations required by
   // the OEM theory. This prevents the bank from reading as a free-floating one-axis slider.
@@ -1626,16 +1691,19 @@ export function createSelectricModel() {
   keyboardMechanismAssembly.add(interposers);
 
   // The production interposer lug pattern for a specific Model-721 keyboard is not recovered.
-  // Keep the 51-member bank as the structural background, then expose one selected P5 code
-  // interposer tracer whose six lug cues make the source-backed interposer -> selector-bail
-  // boundary visible without pretending the browser codeword is a factory lug layout.
+  // Keep the 51-member bank as the structural background, then expose one selected P5 interposer
+  // on the sourced compound joint: pivot/down about the front fulcrum plus filter-shaft-driven
+  // forward transport through the elongated-hole allowance.
   const selectedInterposerP5 = new THREE.Group();
-  selectedInterposerP5.name = 'selected character interposer code tracer P5';
-  selectedInterposerP5.position.set(0, 27, 6);
-  selectedInterposerP5.userData.baseY = selectedInterposerP5.position.y;
+  selectedInterposerP5.name = 'selected character interposer translating frame P5';
+  selectedInterposerP5.position.set(0, interposerFulcrumRod.position.y, interposerFulcrumRod.position.z);
   selectedInterposerP5.userData.baseZ = selectedInterposerP5.position.z;
   selectedInterposerP5.visible = false;
   keyboardMechanismAssembly.add(selectedInterposerP5);
+
+  const selectedInterposerPivotP5 = new THREE.Group();
+  selectedInterposerPivotP5.name = 'selected interposer front-fulcrum pivot P5';
+  selectedInterposerP5.add(selectedInterposerPivotP5);
 
   const selectedInterposerBodyP5 = box(
     4.4,
@@ -1644,9 +1712,12 @@ export function createSelectricModel() {
     material(0x8e744b, 0.46, 0.38),
     'selected character interposer body P5'
   );
+  selectedInterposerBodyP5.position.z = -25;
   addPickable(selectedInterposerBodyP5, COMPONENTS.keyboardMechanism, pickables);
-  selectedInterposerP5.add(selectedInterposerBodyP5);
+  selectedInterposerPivotP5.add(selectedInterposerBodyP5);
 
+  // Six ordinary browser code cues remain explicitly P5. They preserve the sourced
+  // interposer-lug -> selector-bail causal boundary without asserting a recovered factory code.
   const selectedInterposerLugsP5 = [];
   for (let channel = 0; channel < 6; channel += 1) {
     const lug = box(
@@ -1654,25 +1725,66 @@ export function createSelectricModel() {
       3.2,
       4.2,
       darkMetal,
-      'selected interposer synthetic code lug C' + (channel + 1) + ' P5'
+      'selected interposer synthetic ordinary lug C' + (channel + 1) + ' P5'
     );
-    lug.position.set(0, 1.0 + channel * 4.0, -12 - channel * 5.0);
+    lug.position.set(0, -2.2, -12 - channel * 5.0);
     lug.visible = false;
     addPickable(lug, COMPONENTS.keyboardMechanism, pickables);
-    selectedInterposerP5.add(lug);
+    selectedInterposerPivotP5.add(lug);
     selectedInterposerLugsP5.push(lug);
   }
 
-  const selectedInterposerDownTravelMmP5 = 3.6;
+  const selectedInterposerSpecialApplicationLugCueP5 = box(
+    6.6,
+    3.0,
+    4.0,
+    material(0x5d6264, 0.58, 0.36),
+    'selected interposer special-application lug-position cue P5'
+  );
+  selectedInterposerSpecialApplicationLugCueP5.position.set(0, -2.2, -44);
+  addPickable(selectedInterposerSpecialApplicationLugCueP5, COMPONENTS.keyboardMechanism, pickables);
+  selectedInterposerPivotP5.add(selectedInterposerSpecialApplicationLugCueP5);
+
+  const selectedInterposerCycleReleaseLugP5 = box(
+    10.5,
+    3.2,
+    5.2,
+    material(0x9a8053, 0.42, 0.4),
+    'selected interposer common wide cycle-release lug cue P5'
+  );
+  selectedInterposerCycleReleaseLugP5.position.set(0, -2.2, -50);
+  addPickable(selectedInterposerCycleReleaseLugP5, COMPONENTS.keyboardMechanism, pickables);
+  selectedInterposerPivotP5.add(selectedInterposerCycleReleaseLugP5);
+
+  const selectedInterposerDownAngleDegP5 = -8.0;
   const selectedInterposerForwardTravelMmP5 = 8.0;
+  const selectedInterposerLatchClearFractionP5 = 0.42;
+  let selectedInterposerFilterTransportFractionP5 = 0;
+  let selectedInterposerLatchedDownP5 = false;
+
+  function selectedInterposerForwardFractionP5() {
+    if (!state.keyboardCodeEngaged) return 0;
+    // Browser timing only: preserve the sourced E1 transport-before-E2/E3 sample order using
+    // the existing C2 code-setup window rather than inventing a factory shaft angle.
+    return THREE.MathUtils.clamp((state.cyclePhase - 0.12) / 0.16, 0, 1);
+  }
 
   function updateSelectedInterposerPoseP5() {
-    selectedInterposerP5.position.y =
-      selectedInterposerP5.userData.baseY - state.keyboardPress * selectedInterposerDownTravelMmP5;
+    selectedInterposerFilterTransportFractionP5 = selectedInterposerForwardFractionP5();
+    selectedInterposerLatchedDownP5 =
+      state.keyboardCodeEngaged &&
+      selectedInterposerFilterTransportFractionP5 < selectedInterposerLatchClearFractionP5;
+
+    const downFractionP5 = Math.max(
+      selectedPawlContactFractionP5,
+      selectedInterposerLatchedDownP5 ? 1 : 0
+    );
+    selectedInterposerPivotP5.rotation.x = deg(selectedInterposerDownAngleDegP5 * downFractionP5);
     selectedInterposerP5.position.z =
       selectedInterposerP5.userData.baseZ +
-      (state.keyboardCodeEngaged ? selectedInterposerForwardTravelMmP5 : 0);
-    selectedInterposerP5.visible = state.keyboardPress > 0 || state.keyboardCodeEngaged;
+      selectedInterposerFilterTransportFractionP5 * selectedInterposerForwardTravelMmP5;
+    selectedInterposerP5.visible =
+      state.keyboardPress > 0 || state.keyboardCodeEngaged;
   }
 
   // Closely spaced steel balls are a source-backed mutual-exclusion medium. The visible ball
@@ -5573,6 +5685,7 @@ export function createSelectricModel() {
   function setKeyboardCode(code, engaged = true) {
     state.keyboardCode = Math.max(0, Math.min(63, Math.trunc(code) || 0));
     state.keyboardCodeEngaged = Boolean(engaged);
+    updateSelectedInterposerPoseP5();
 
     selectorBailMaterials.forEach((mat, index) => {
       const publicDownstreamBit = Boolean(state.keyboardCode & (1 << index));
@@ -5594,13 +5707,16 @@ export function createSelectricModel() {
       // selector bail is nevertheless driven from the visible selected-interposer lug state
       // rather than directly from the public code bit, preserving the sourced causal boundary.
       selectedInterposerLugsP5[index].visible = requestedLug;
-      const active = selectedInterposerLugsP5[index].visible;
+      const activeFractionP5 = requestedLug
+        ? selectedInterposerFilterTransportFractionP5
+        : 0;
 
-      mat.emissive.setHex(active ? 0x2d1b08 : 0x000000);
-      mat.emissiveIntensity = active ? 0.45 : 1;
+      mat.emissive.setHex(activeFractionP5 > 0.01 ? 0x2d1b08 : 0x000000);
+      mat.emissiveIntensity = activeFractionP5 > 0.01 ? 0.45 : 1;
 
       const bail = selectorBails[index];
-      bail.rotation.x = bail.userData.baseRotationX + deg(active ? -12 : 0);
+      bail.rotation.x =
+        bail.userData.baseRotationX + deg(-12 * activeFractionP5);
 
       // Downstream exclusion is now derived from the upstream visible bail pose. The 12-degree
       // bail throw and 5 mm interposer travel are still P5 reconstruction amplitudes.
@@ -5628,7 +5744,6 @@ export function createSelectricModel() {
       }
     });
 
-    updateSelectedInterposerPoseP5();
     updateSelectorBailInterposerLinksP4();
     updateLatchInterposerSelectorLatchLinksP4();
     updateFiveUnitLatchBailP5();
@@ -5657,8 +5772,10 @@ export function createSelectricModel() {
       const activeKeyMechanismPointP5 = new THREE.Vector3();
       activeKey.getWorldPosition(activeKeyMechanismPointP5);
       keyboardMechanismAssembly.worldToLocal(activeKeyMechanismPointP5);
+      selectedKeyleverPivotP5.position.x = activeKeyMechanismPointP5.x;
       selectedInterposerP5.position.x = activeKeyMechanismPointP5.x;
     }
+    updateSelectedKeyleverPawlP5();
     updateSelectedInterposerPoseP5();
   }
 
@@ -6284,6 +6401,11 @@ export function createSelectricModel() {
     printShaftRotor.rotation.x = state.cyclePhase * Math.PI * 2;
     printSleeveRotor.rotation.x = state.cyclePhase * Math.PI * 2;
 
+    // A selected/stored interposer is transported by the rotating filter shaft before the
+    // common selector latch bail samples. The concrete C2 transport curve is P5 timing that
+    // preserves the sourced partial order; it is not an IBM degree specification.
+    updateSelectedInterposerPoseP5();
+
     // The common latch-bail sample is now downstream of the two visible ordinary selector cams
     // and their follower/transfer rods. The reconstructed cam profiles preserve the sourced early
     // dwell and two-cam common drive instead of using an independent piecewise cycle-phase curve.
@@ -6458,19 +6580,38 @@ export function createSelectricModel() {
         interposerPresentationCountP4: interposers.count,
         interposerFrontFulcrumRodEmbodied: true,
         interposerGuideRailCountP4: interposerGuideRailsP4.length,
+        selectedKeyleverTracerEmbodiedP5: true,
+        selectedKeyleverVisibleP5: selectedKeyleverPivotP5.visible,
+        selectedKeyleverAngleDegP5,
+        selectedKeyleverPawlTracerEmbodiedP5: true,
+        selectedKeyleverPawlAngleDegP5: selectedPawlAngleDegP5,
+        selectedKeyleverPawlContactFractionP5: selectedPawlContactFractionP5,
+        selectedKeyleverPawlDrivesInterposerDepressionP5: true,
         selectedInterposerCodeTracerEmbodiedP5: true,
         selectedInterposerVisibleP5: selectedInterposerP5.visible,
+        selectedInterposerCompoundJointEmbodiedP5: true,
+        selectedInterposerPivotAngleDegP5:
+          THREE.MathUtils.radToDeg(selectedInterposerPivotP5.rotation.x),
         selectedInterposerDownTravelMmP5:
-          selectedInterposerP5.userData.baseY - selectedInterposerP5.position.y,
+          Math.abs(Math.sin(selectedInterposerPivotP5.rotation.x)) * 50,
         selectedInterposerForwardTravelMmP5:
           selectedInterposerP5.position.z - selectedInterposerP5.userData.baseZ,
+        selectedInterposerFilterTransportFractionP5,
+        selectedInterposerForwardTransportDerivedFromFilterShaftPhaseP5: true,
+        selectedInterposerLatchedDownP5,
+        selectedInterposerLatchClearFractionP5,
+        selectedInterposerMechanicalStorageClass:
+          'source-backed down -> stored/latched -> filter-shaft forward -> latch clears -> spring restore sequence; latch-clear threshold and amplitudes are P5',
         selectedInterposerSyntheticLugCountP5: selectedInterposerLugsP5.length,
         selectedInterposerActiveLugChannelsP5: selectedInterposerLugsP5
           .map((lug, index) => lug.visible ? index + 1 : null)
           .filter(index => index !== null),
+        selectedInterposerSpecialApplicationLugCueSeparateP5: true,
+        selectedInterposerCycleReleaseLugCueSeparateP5: true,
         selectorBailMotionDerivedFromVisibleSelectedInterposerLugsP5: true,
+        selectorBailMotionScalesWithInterposerForwardTransportP5: true,
         selectedInterposerMappingClass:
-          'source-backed selected-interposer -> selector-bail causal boundary; browser key registration, six synthetic lug pattern and travel amplitudes are P5 and are not a factory Model-721 keyboard code claim',
+          'source-backed keylever -> separate pawl -> interposer down/store -> filter-shaft forward -> selective-lug -> selector-bail topology; browser key registration, ordinary six-lug code pattern, special-application cue, cycle-release cue, latch threshold and travel amplitudes are P5 and are not a factory Model-721 keyboard code claim',
         selectorCompensatorEmbodied: true,
         selectorCompensatorBallCountP4,
         selectorCompensatorClass:

@@ -170,11 +170,24 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.keyboardMechanism.keyleverPawlShoulderRivetCountP4).toBe(51);
   expect(initial.geometry.keyboardMechanism.interposerFrontFulcrumRodEmbodied).toBe(true);
   expect(initial.geometry.keyboardMechanism.interposerGuideRailCountP4).toBe(2);
+  expect(initial.geometry.keyboardMechanism.selectedKeyleverTracerEmbodiedP5).toBe(true);
+  expect(initial.geometry.keyboardMechanism.selectedKeyleverVisibleP5).toBe(false);
+  expect(initial.geometry.keyboardMechanism.selectedKeyleverAngleDegP5).toBeCloseTo(0, 8);
+  expect(initial.geometry.keyboardMechanism.selectedKeyleverPawlTracerEmbodiedP5).toBe(true);
+  expect(initial.geometry.keyboardMechanism.selectedKeyleverPawlContactFractionP5).toBeCloseTo(0, 8);
+  expect(initial.geometry.keyboardMechanism.selectedKeyleverPawlDrivesInterposerDepressionP5).toBe(true);
   expect(initial.geometry.keyboardMechanism.selectedInterposerCodeTracerEmbodiedP5).toBe(true);
   expect(initial.geometry.keyboardMechanism.selectedInterposerVisibleP5).toBe(false);
+  expect(initial.geometry.keyboardMechanism.selectedInterposerCompoundJointEmbodiedP5).toBe(true);
+  expect(initial.geometry.keyboardMechanism.selectedInterposerPivotAngleDegP5).toBeCloseTo(0, 8);
   expect(initial.geometry.keyboardMechanism.selectedInterposerDownTravelMmP5).toBeCloseTo(0, 8);
   expect(initial.geometry.keyboardMechanism.selectedInterposerForwardTravelMmP5).toBeCloseTo(0, 8);
+  expect(initial.geometry.keyboardMechanism.selectedInterposerFilterTransportFractionP5).toBeCloseTo(0, 8);
+  expect(initial.geometry.keyboardMechanism.selectedInterposerForwardTransportDerivedFromFilterShaftPhaseP5).toBe(true);
+  expect(initial.geometry.keyboardMechanism.selectedInterposerLatchedDownP5).toBe(false);
   expect(initial.geometry.keyboardMechanism.selectedInterposerSyntheticLugCountP5).toBe(6);
+  expect(initial.geometry.keyboardMechanism.selectedInterposerSpecialApplicationLugCueSeparateP5).toBe(true);
+  expect(initial.geometry.keyboardMechanism.selectedInterposerCycleReleaseLugCueSeparateP5).toBe(true);
   expect(initial.geometry.keyboardMechanism.selectedInterposerActiveLugChannelsP5).toEqual([]);
   expect(initial.geometry.keyboardMechanism.selectorBailMotionDerivedFromVisibleSelectedInterposerLugsP5).toBe(true);
   expect(initial.geometry.keyboardMechanism.selectedInterposerMappingClass).toContain('not a factory');
@@ -962,9 +975,14 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(keyDown.keyboardCodeBitOrder).toEqual(['T1','T2','R1','R2','R2A','fiveUnit']);
   expect(keyDown.keyboardCodeEngaged).toBe(false);
   expect(keyDown.geometry.keyboardMechanism.codeEngaged).toBe(false);
+  expect(keyDown.geometry.keyboardMechanism.selectedKeyleverVisibleP5).toBe(true);
+  expect(keyDown.geometry.keyboardMechanism.selectedKeyleverAngleDegP5).toBeGreaterThan(5);
+  expect(keyDown.geometry.keyboardMechanism.selectedKeyleverPawlContactFractionP5).toBeGreaterThan(0.7);
   expect(keyDown.geometry.keyboardMechanism.selectedInterposerVisibleP5).toBe(true);
-  expect(keyDown.geometry.keyboardMechanism.selectedInterposerDownTravelMmP5).toBeGreaterThan(2.5);
+  expect(keyDown.geometry.keyboardMechanism.selectedInterposerPivotAngleDegP5).toBeLessThan(-5);
+  expect(keyDown.geometry.keyboardMechanism.selectedInterposerDownTravelMmP5).toBeGreaterThan(4);
   expect(keyDown.geometry.keyboardMechanism.selectedInterposerForwardTravelMmP5).toBeCloseTo(0, 8);
+  expect(keyDown.geometry.keyboardMechanism.selectedInterposerFilterTransportFractionP5).toBeCloseTo(0, 8);
   expect(keyDown.geometry.keyboardMechanism.selectedInterposerActiveLugChannelsP5).toEqual([]);
   expect(keyDown.geometry.keyboardMechanism.selectorBailAnglesDegP5).toEqual([0, 0, 0, 0, 0, 0]);
   expect(keyDown.geometry.keyboardMechanism.latchBailSampleP5).toBeCloseTo(0, 8);
@@ -973,14 +991,37 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
 
+  const midSetupHold = await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.16));
+  expect(midSetupHold).toBe(true);
+  const midSetup = await page.evaluate(() => window.__selectricDebug.state);
+  expect(midSetup.keyboardCodeEngaged).toBe(true);
+  expect(midSetup.geometry.keyboardMechanism.selectedInterposerFilterTransportFractionP5)
+    .toBeGreaterThan(0);
+  expect(midSetup.geometry.keyboardMechanism.selectedInterposerFilterTransportFractionP5)
+    .toBeLessThan(0.42);
+  expect(midSetup.geometry.keyboardMechanism.selectedInterposerLatchedDownP5).toBe(true);
+  expect(midSetup.geometry.keyboardMechanism.selectedInterposerPivotAngleDegP5).toBeLessThan(-7);
+  expect(midSetup.geometry.keyboardMechanism.selectedInterposerForwardTravelMmP5)
+    .toBeGreaterThan(0);
+  expect(midSetup.geometry.keyboardMechanism.selectorBailAnglesDegP5.some(angle => Math.abs(angle) > 0.5))
+    .toBe(true);
+  expect(midSetup.geometry.keyboardMechanism.selectorBailAnglesDegP5.every(angle => Math.abs(angle) < 12.01))
+    .toBe(true);
+  expect(await page.evaluate(() => window.__selectricDebug.cancelCharacterHold())).toBe(true);
+
   const codeReadyCarrier = await page.evaluate(() => window.__selectricDebug.state.carrierX);
   const codeReadyRibbonStep = await page.evaluate(() => window.__selectricDebug.state.ribbonFeedStep);
   const codeReadyHold = await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.28));
   expect(codeReadyHold).toBe(true);
   const codeReady = await page.evaluate(() => window.__selectricDebug.state);
   expect(codeReady.keyboardCodeEngaged).toBe(true);
+  expect(codeReady.geometry.keyboardMechanism.selectedKeyleverVisibleP5).toBe(false);
+  expect(codeReady.geometry.keyboardMechanism.selectedKeyleverPawlContactFractionP5).toBeCloseTo(0, 8);
   expect(codeReady.geometry.keyboardMechanism.selectedInterposerVisibleP5).toBe(true);
   expect(codeReady.geometry.keyboardMechanism.selectedInterposerForwardTravelMmP5).toBeCloseTo(8, 8);
+  expect(codeReady.geometry.keyboardMechanism.selectedInterposerFilterTransportFractionP5).toBeCloseTo(1, 8);
+  expect(codeReady.geometry.keyboardMechanism.selectedInterposerLatchedDownP5).toBe(false);
+  expect(codeReady.geometry.keyboardMechanism.selectedInterposerPivotAngleDegP5).toBeCloseTo(0, 8);
   expect(codeReady.geometry.keyboardMechanism.selectedInterposerActiveLugChannelsP5.length).toBeGreaterThan(0);
   expect(codeReady.geometry.selectorCamDrive.poseP5.ordinaryRawLiftP5.every(lift => lift > 0.15)).toBe(true);
   expect(codeReady.geometry.selectorCamDrive.poseP5.latchBailSampleP5).toBeCloseTo(0, 8);
