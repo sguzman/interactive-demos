@@ -4577,11 +4577,11 @@ export function createSelectricModel() {
     addPickable(phasePin, COMPONENTS.selection, pickables);
     pivot.add(phasePin);
 
-    const tapeAnchorPin = shaft(width + 2.8, 1.05, darkMetal, 'carrier ' + kind + ' tape rim-anchor pin P4');
-    tapeAnchorPin.position.set(0, 0, -radius);
-    addPickable(tapeAnchorPin, COMPONENTS.selection, pickables);
-    pivot.add(tapeAnchorPin);
-    pivot.userData.tapeAnchorPin = tapeAnchorPin;
+    const rimReferencePin = shaft(width + 2.8, 1.05, darkMetal, 'carrier ' + kind + ' rotating rim-reference pin P4');
+    rimReferencePin.position.set(0, 0, -radius);
+    addPickable(rimReferencePin, COMPONENTS.selection, pickables);
+    pivot.add(rimReferencePin);
+    pivot.userData.rimReferencePin = rimReferencePin;
 
     carrierTapeGuides.push(wheel);
     return pivot;
