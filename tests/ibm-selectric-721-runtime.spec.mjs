@@ -62,6 +62,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.ribbon.parent).toBe('carrier');
   expect(initial.geometry.ribbon.mediaWidthMm).toBeCloseTo(14.2875, 6);
   expect(initial.geometry.ribbon.nominalRatchetTeethPerCharacter).toBeCloseTo(2.5, 8);
+  expect(initial.geometry.ribbon.ratchetWheelCount).toBe(2);
+  expect(initial.geometry.ribbon.ratchetPresentationTeethP4).toBe(20);
+  expect(initial.geometry.ribbon.ratchetGeometryClass).toContain('toothed ratchet wheel');
+  expect(initial.geometry.ribbon.ratchetGeometryClass).toContain('exact ribbon-ratchet tooth count/profile unresolved');
   expect(initial.geometry.ribbon.path).toEqual(['left-spool','left-guide','print-point','right-guide','right-spool']);
   expect(initial.geometry.ribbon.reverseTopology).toContain('lost supply-core loop');
   expect(initial.geometry.ribbon.reverseTopology).toContain('pawl/check transfer');
