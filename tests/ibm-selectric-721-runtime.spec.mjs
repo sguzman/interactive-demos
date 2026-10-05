@@ -23,6 +23,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const initial = await page.evaluate(() => window.__selectricDebug.state);
   expect(initial.geometry.finite).toBe(true);
   expect(initial.geometry.revision).toBe('selectric-integrated-public-build');
+  expect(initial.rendering.shadowMapType).toBe('PCFSoftShadowMap');
+  expect(initial.rendering.keyShadowNormalBias).toBeCloseTo(0.65, 8);
+  expect(initial.rendering.keyShadowCameraNear).toBeCloseTo(20, 8);
+  expect(initial.rendering.keyShadowCameraFar).toBeCloseTo(1000, 8);
+  expect(initial.rendering.shadowAcneMitigationClass).toContain('mechanical geometry unchanged');
   expect(initial.geometry.supportTopology).toContain('Level-2');
   expect(initial.geometry.carrierEmbodiment).toContain('windowed chamfered side plates');
   expect(initial.geometry.carrierSidePlateCount).toBe(2);
