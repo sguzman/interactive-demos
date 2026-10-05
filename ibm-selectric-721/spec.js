@@ -255,7 +255,7 @@ export const COMPONENTS = Object.freeze({
     name: 'Drive / operational shafts',
     category: 'power',
     provenance: 'source-grounded shaft topology and 8:29 positive-drive ratio + P4 placement/path geometry + P5 service-follower throw',
-    description: 'Motor, cycle shaft, operational shaft and clutched service cams establish the powerframe reading. Each service cam now visibly drives its own follower lever from the selected cam phase, while exact IBM cam profiles, roller-contact radii and follower throw remain unresolved. The motor-to-cycle positive-drive belt follows an explicit P4 external-tangent solve between reconstructed pitch circles while preserving the source-backed 8:29 ratio; exact belt pitch and absolute pulley diameters remain unresolved. Character cycle rotates the cycle shaft 180° and print sleeve 360°.'
+    description: 'Motor, cycle shaft, operational shaft and clutched service cams establish the powerframe reading. Each service cam visibly drives its own follower lever from the selected cam phase; the backspace linkage and index pawl are now downstream of those follower phases rather than separately animated. Exact IBM cam profiles, roller-contact radii and follower throw remain unresolved. The motor-to-cycle positive-drive belt follows an explicit P4 external-tangent solve between reconstructed pitch circles while preserving the source-backed 8:29 ratio; exact belt pitch and absolute pulley diameters remain unresolved. Character cycle rotates the cycle shaft 180° and print sleeve 360°.'
   },
   paper: {
     name: 'Paper / impression field',
