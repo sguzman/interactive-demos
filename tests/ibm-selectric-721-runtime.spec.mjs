@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 
-// The causal smoke also captures seven full-page inspection artifacts; CI rendering can exceed three minutes.
-test.setTimeout(300_000);
+// The causal smoke captures a growing set of full-page mechanism artifacts. GitHub's software-rendered
+// Chromium can now run slightly beyond five minutes without any individual wait hanging, so keep
+// a bounded six-minute file budget while preserving the much shorter per-operation wait gates.
+test.setTimeout(360_000);
 
 test('IBM Selectric 721 causal foundation and gallery integration', async ({ page }) => {
   const errors = [];
