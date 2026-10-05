@@ -212,8 +212,8 @@ export const COMPONENTS = Object.freeze({
   typeball: {
     name: 'Selectric type element',
     category: 'selection / print',
-    provenance: 'IBM 1⅜-inch overall-diameter anchor + convergent P4 functional-CAD seed + P4 cap/latch surface reconstruction',
-    description: 'Four bands × 22 positions = 88-character structural model constrained by the 34.925 mm nominal diameter, with a recognizable black interchangeable-element top cap/release-latch cue and chrome-like skirt plus repeated surface-normal type-slug cues tangent to the P4 structural ellipsoid. Visible tilt/rotate orientation lands on that same 4×22 structural lattice (11 base rotate coordinates plus the independent 180° shift hemisphere); exact cap sections, keyboard/glyph assignment and glyph-face sections remain unresolved, so this is not factory CAD.'
+    provenance: 'IBM 1⅜-inch overall-diameter anchor + convergent P4 functional-CAD seed + P4 cap/latch and beveled slug-section reconstruction',
+    description: 'Four bands × 22 positions = 88-character structural model constrained by the 34.925 mm nominal diameter, with a recognizable black interchangeable-element top cap/release-latch cue, chrome-like skirt, and repeated surface-normal type-slug cues tangent to the P4 structural ellipsoid. Each slug cue now uses a three-stage beveled pedestal/shoulder/face-land section instead of a plain block, improving the physical reading without claiming exact glyph-face or factory slug geometry. Visible tilt/rotate orientation lands on the same 4×22 structural lattice (11 base rotate coordinates plus the independent 180° shift hemisphere); exact cap sections, keyboard/glyph assignment and glyph-face sections remain unresolved.'
   },
   selection: {
     name: 'Selection transmission',
