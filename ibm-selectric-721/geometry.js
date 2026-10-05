@@ -4553,6 +4553,8 @@ export function createSelectricModel() {
     pivot.position.set(x, y, z);
     pivot.userData.axisClassP4 =
       'P4 carrier-pulley axis selected for explanatory embodiment; exact production axis/center unresolved';
+    pivot.userData.tapeAnchorRadiusP4 = radius;
+    pivot.userData.baseTapeAnchorAngleRadP4 = -Math.PI / 2;
     carrierMotion.add(pivot);
 
     const wheel = pulley(radius, width, mat, 'carrier ' + kind + ' pulley P4');
@@ -4575,8 +4577,24 @@ export function createSelectricModel() {
     addPickable(phasePin, COMPONENTS.selection, pickables);
     pivot.add(phasePin);
 
+    const tapeAnchorPin = shaft(width + 2.8, 1.05, darkMetal, 'carrier ' + kind + ' tape rim-anchor pin P4');
+    tapeAnchorPin.position.set(0, 0, -radius);
+    addPickable(tapeAnchorPin, COMPONENTS.selection, pickables);
+    pivot.add(tapeAnchorPin);
+    pivot.userData.tapeAnchorPin = tapeAnchorPin;
+
     carrierTapeGuides.push(wheel);
     return pivot;
+  }
+
+  function carrierPulleyTapeAnchorP4(pivot, carrierX) {
+    const angle = pivot.userData.baseTapeAnchorAngleRadP4 + pivot.rotation.x;
+    const radius = pivot.userData.tapeAnchorRadiusP4;
+    return new THREE.Vector3(
+      carrierX + pivot.position.x,
+      pivot.position.y + Math.cos(angle) * radius,
+      pivot.position.z + Math.sin(angle) * radius
+    );
   }
 
   const carrierTiltPulleyPivotP4 = makeCarrierPulleyPivotP4(
@@ -4604,6 +4622,15 @@ export function createSelectricModel() {
   carrierMotion.add(carrierTiltAnchorGuideP4);
   carrierTapeGuides.push(carrierTiltAnchorGuideP4);
 
+  const carrierTiltTapeAnchorPinP4 = shaft(7.0, 1.15, darkMetal, 'carrier tilt tape fixed anchor pin P4');
+  carrierTiltTapeAnchorPinP4.position.set(
+    selectionTapeP4.tilt.carrierHalfSpan,
+    selectionTapeP4.tilt.carrierGuideY,
+    selectionTapeP4.tilt.tangentZ
+  );
+  addPickable(carrierTiltTapeAnchorPinP4, COMPONENTS.selection, pickables);
+  carrierMotion.add(carrierTiltTapeAnchorPinP4);
+
   const carrierRotatePulleyPivotP4 = makeCarrierPulleyPivotP4(
     'rotate',
     -selectionTapeP4.rotate.carrierHalfSpan,
@@ -4628,6 +4655,15 @@ export function createSelectricModel() {
   addPickable(carrierRotateAnchorGuideP4, COMPONENTS.selection, pickables);
   carrierMotion.add(carrierRotateAnchorGuideP4);
   carrierTapeGuides.push(carrierRotateAnchorGuideP4);
+
+  const carrierRotateTapeAnchorPinP4 = shaft(6.6, 1.1, darkMetal, 'carrier rotate tape fixed anchor pin P4');
+  carrierRotateTapeAnchorPinP4.position.set(
+    selectionTapeP4.rotate.carrierHalfSpan,
+    selectionTapeP4.rotate.carrierGuideY,
+    selectionTapeP4.rotate.tangentZ
+  );
+  addPickable(carrierRotateTapeAnchorPinP4, COMPONENTS.selection, pickables);
+  carrierMotion.add(carrierRotateTapeAnchorPinP4);
 
   const carrierSelectionP4 = Object.freeze({
     tiltLinkRadiusMm: 1.45,
@@ -4857,15 +4893,15 @@ export function createSelectricModel() {
   }
 
   function selectionTapePointsAt(x) {
-    const qTilt = state.selectionNormalized.qTilt;
-    const qSigned = state.selectionNormalized.qSigned;
-    const shiftOffset = state.shiftAngleDeg / 180 * 8;
-
     const tilt = [
       selectionActuatorAnchorP4(selectionActuatorPivotsP4.tiltLeft),
       new THREE.Vector3(-selectionTapeP4.tilt.sideX, selectionTapeP4.tilt.sideGuideY, selectionTapeP4.tilt.tangentZ),
-      new THREE.Vector3(x - selectionTapeP4.tilt.carrierHalfSpan, selectionTapeP4.tilt.carrierGuideY, selectionTapeP4.tilt.tangentZ),
-      new THREE.Vector3(x + selectionTapeP4.tilt.carrierHalfSpan, selectionTapeP4.tilt.carrierGuideY, selectionTapeP4.tilt.tangentZ),
+      carrierPulleyTapeAnchorP4(carrierTiltPulleyPivotP4, x),
+      new THREE.Vector3(
+        x + selectionTapeP4.tilt.carrierHalfSpan,
+        selectionTapeP4.tilt.carrierGuideY,
+        selectionTapeP4.tilt.tangentZ
+      ),
       new THREE.Vector3(selectionTapeP4.tilt.sideX, selectionTapeP4.tilt.sideGuideY, selectionTapeP4.tilt.tangentZ),
       selectionActuatorAnchorP4(selectionActuatorPivotsP4.tiltRight)
     ];
@@ -4873,8 +4909,12 @@ export function createSelectricModel() {
     const rotate = [
       selectionActuatorAnchorP4(selectionActuatorPivotsP4.rotateLeft),
       new THREE.Vector3(-selectionTapeP4.rotate.sideX, selectionTapeP4.rotate.sideGuideY, selectionTapeP4.rotate.tangentZ),
-      new THREE.Vector3(x - selectionTapeP4.rotate.carrierHalfSpan, selectionTapeP4.rotate.carrierGuideY, selectionTapeP4.rotate.tangentZ),
-      new THREE.Vector3(x + selectionTapeP4.rotate.carrierHalfSpan, selectionTapeP4.rotate.carrierGuideY, selectionTapeP4.rotate.tangentZ),
+      carrierPulleyTapeAnchorP4(carrierRotatePulleyPivotP4, x),
+      new THREE.Vector3(
+        x + selectionTapeP4.rotate.carrierHalfSpan,
+        selectionTapeP4.rotate.carrierGuideY,
+        selectionTapeP4.rotate.tangentZ
+      ),
       new THREE.Vector3(selectionTapeP4.rotate.sideX, selectionTapeP4.rotate.sideGuideY, selectionTapeP4.rotate.tangentZ),
       selectionActuatorAnchorP4(selectionActuatorPivotsP4.rotateRight)
     ];
@@ -5859,6 +5899,9 @@ export function createSelectricModel() {
         oldSectorTubeEmbodied: false,
         tiltRingNotchCount: tiltRingNotchesP4.length,
         carrierTapeGuideOrAnchorCountP4: carrierTapeGuides.length,
+        carrierTapeContactsUseRimAnchors: true,
+        carrierTiltTapeAnchorEmbodied: Boolean(carrierTiltTapeAnchorPinP4),
+        carrierRotateTapeAnchorEmbodied: Boolean(carrierRotateTapeAnchorPinP4),
         parameterSeedP4: { ...carrierSelectionP4 },
         poseP4: { ...carrierSelectionTransmissionPoseP4 },
         tiltChain: [
