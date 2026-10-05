@@ -1761,6 +1761,105 @@ export function createSelectricModel() {
   const selectedInterposerLatchClearFractionP5 = 0.42;
   let selectedInterposerFilterTransportFractionP5 = 0;
   let selectedInterposerLatchedDownP5 = false;
+  let selectedInterposerLatchFingerCaughtP5 = false;
+  let selectedInterposerRestoreSpringLengthMmP5 = 0;
+  let selectedCompensatorOccupancyFractionP5 = 0;
+  let selectorCompensatorBallDisplacementMmP5 = 0;
+  let updateSelectorCompensatorOccupancyP5 = () => {};
+
+  // IBM's keyboard theory includes a latch spring/finger behind every character interposer.
+  // Embody one selected P5 finger as a separate fixed-frame member so the down -> stored ->
+  // forward-clear sequence is visible rather than represented only by a boolean.
+  const selectedInterposerLatchFingerP5 = new THREE.Group();
+  selectedInterposerLatchFingerP5.name = 'selected interposer latch-spring finger P5';
+  selectedInterposerLatchFingerP5.position.set(0, 19.8, -25.5);
+  selectedInterposerLatchFingerP5.userData.baseRotationX = 0;
+  selectedInterposerLatchFingerP5.visible = false;
+  keyboardMechanismAssembly.add(selectedInterposerLatchFingerP5);
+
+  const selectedInterposerLatchLeafP5 = box(
+    4.8,
+    1.1,
+    18,
+    metal,
+    'selected interposer latch leaf-spring body P5'
+  );
+  addPickable(selectedInterposerLatchLeafP5, COMPONENTS.keyboardMechanism, pickables);
+  selectedInterposerLatchFingerP5.add(selectedInterposerLatchLeafP5);
+
+  const selectedInterposerLatchHookP5 = box(
+    6.4,
+    3.4,
+    4.2,
+    darkMetal,
+    'selected interposer latch catch hook P5'
+  );
+  selectedInterposerLatchHookP5.position.set(0, 2.1, 8.0);
+  addPickable(selectedInterposerLatchHookP5, COMPONENTS.keyboardMechanism, pickables);
+  selectedInterposerLatchFingerP5.add(selectedInterposerLatchHookP5);
+
+  // Rearward/upward loading is source-backed. Exact spring turns, wire section, anchor points and
+  // rate are not, so use a lightweight P5 extension-spring tracer with live endpoint geometry.
+  const selectedInterposerRestoreSpringPointsP5 = [];
+  for (let i = 0; i <= 48; i += 1) {
+    const u = i / 48;
+    const a = u * Math.PI * 2 * 5.5;
+    selectedInterposerRestoreSpringPointsP5.push(new THREE.Vector3(
+      Math.cos(a) * 0.85,
+      u - 0.5,
+      Math.sin(a) * 0.85
+    ));
+  }
+  const selectedInterposerRestoreSpringP5 = new THREE.Mesh(
+    new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3(selectedInterposerRestoreSpringPointsP5),
+      64,
+      0.34,
+      6,
+      false
+    ),
+    material(0x77736b, 0.55, 0.34)
+  );
+  selectedInterposerRestoreSpringP5.name = 'selected interposer rear restore extension spring P5';
+  selectedInterposerRestoreSpringP5.visible = false;
+  selectedInterposerRestoreSpringP5.castShadow = true;
+  selectedInterposerRestoreSpringP5.receiveShadow = true;
+  addPickable(selectedInterposerRestoreSpringP5, COMPONENTS.keyboardMechanism, pickables);
+  keyboardMechanismAssembly.add(selectedInterposerRestoreSpringP5);
+
+  const selectedInterposerRestoreSpringYAxisP5 = new THREE.Vector3(0, 1, 0);
+  const selectedInterposerRestoreSpringDeltaP5 = new THREE.Vector3();
+  const selectedInterposerRestoreSpringCenterP5 = new THREE.Vector3();
+  const selectedInterposerRestoreSpringMovingP5 = new THREE.Vector3();
+
+  // One rear hook per interposer enters the selector compensator. This selected P5 hook follows
+  // the compound interposer joint; the surrounding ball train remains the P4 explanatory medium.
+  const selectedInterposerCompensatorHookP5 = new THREE.Group();
+  selectedInterposerCompensatorHookP5.name = 'selected interposer selector-compensator hook P5';
+  selectedInterposerCompensatorHookP5.position.set(0, 1.8, -55.5);
+  selectedInterposerPivotP5.add(selectedInterposerCompensatorHookP5);
+
+  const selectedInterposerCompensatorHookStemP5 = box(
+    4.8,
+    9.0,
+    3.0,
+    darkMetal,
+    'selected interposer compensator hook stem P5'
+  );
+  selectedInterposerCompensatorHookStemP5.position.y = -3.0;
+  addPickable(selectedInterposerCompensatorHookStemP5, COMPONENTS.keyboardMechanism, pickables);
+  selectedInterposerCompensatorHookP5.add(selectedInterposerCompensatorHookStemP5);
+
+  const selectedInterposerCompensatorHookHeadP5 = box(
+    8.0,
+    3.2,
+    5.0,
+    metal,
+    'selected interposer compensator hook head P5'
+  );
+  selectedInterposerCompensatorHookHeadP5.position.set(0, -6.8, -1.6);
+  addPickable(selectedInterposerCompensatorHookHeadP5, COMPONENTS.keyboardMechanism, pickables);
+  selectedInterposerCompensatorHookP5.add(selectedInterposerCompensatorHookHeadP5);
 
   function selectedInterposerForwardFractionP5() {
     if (!state.keyboardCodeEngaged) return 0;
@@ -1785,6 +1884,49 @@ export function createSelectricModel() {
       selectedInterposerFilterTransportFractionP5 * selectedInterposerForwardTravelMmP5;
     selectedInterposerP5.visible =
       state.keyboardPress > 0 || state.keyboardCodeEngaged;
+
+    selectedInterposerLatchFingerCaughtP5 =
+      downFractionP5 > 0.65 &&
+      selectedInterposerFilterTransportFractionP5 < selectedInterposerLatchClearFractionP5;
+    selectedInterposerLatchFingerP5.position.x = selectedInterposerP5.position.x;
+    selectedInterposerLatchFingerP5.rotation.x = deg(
+      selectedInterposerLatchFingerCaughtP5 ? -14 : 0
+    );
+    selectedInterposerLatchFingerP5.visible = selectedInterposerP5.visible;
+
+    // Re-solve the selected restore spring between a rear-guide anchor and the moving interposer
+    // rear. This makes the sourced rearward/upward spring loading inspectable without simulating
+    // an unsourced spring constant.
+    selectedInterposerPivotP5.updateMatrixWorld(true);
+    selectedInterposerRestoreSpringMovingP5.set(0, -0.8, -50);
+    selectedInterposerPivotP5.localToWorld(selectedInterposerRestoreSpringMovingP5);
+    keyboardMechanismAssembly.worldToLocal(selectedInterposerRestoreSpringMovingP5);
+    const restoreAnchorP5 = new THREE.Vector3(selectedInterposerP5.position.x, 22.7, -28);
+    selectedInterposerRestoreSpringDeltaP5
+      .copy(selectedInterposerRestoreSpringMovingP5)
+      .sub(restoreAnchorP5);
+    selectedInterposerRestoreSpringLengthMmP5 = Math.max(
+      selectedInterposerRestoreSpringDeltaP5.length(),
+      1e-6
+    );
+    selectedInterposerRestoreSpringCenterP5
+      .copy(restoreAnchorP5)
+      .add(selectedInterposerRestoreSpringMovingP5)
+      .multiplyScalar(0.5);
+    selectedInterposerRestoreSpringP5.position.copy(selectedInterposerRestoreSpringCenterP5);
+    selectedInterposerRestoreSpringP5.quaternion.setFromUnitVectors(
+      selectedInterposerRestoreSpringYAxisP5,
+      selectedInterposerRestoreSpringDeltaP5.clone().normalize()
+    );
+    selectedInterposerRestoreSpringP5.scale.set(
+      1,
+      selectedInterposerRestoreSpringLengthMmP5,
+      1
+    );
+    selectedInterposerRestoreSpringP5.visible = selectedInterposerP5.visible;
+
+    selectedCompensatorOccupancyFractionP5 = downFractionP5;
+    updateSelectorCompensatorOccupancyP5();
   }
 
   // Closely spaced steel balls are a source-backed mutual-exclusion medium. The visible ball
@@ -1797,8 +1939,10 @@ export function createSelectricModel() {
   );
   selectorCompensatorBallsP4.name = 'selector compensator steel-ball train P4';
   const compensatorBallMatrixP4 = new THREE.Matrix4();
+  const selectorCompensatorBallBaseXP4 = [];
   for (let i = 0; i < selectorCompensatorBallCountP4; i += 1) {
     const x = THREE.MathUtils.lerp(-126, 126, i / (selectorCompensatorBallCountP4 - 1));
+    selectorCompensatorBallBaseXP4.push(x);
     compensatorBallMatrixP4.makeTranslation(x, 18.2, -29);
     selectorCompensatorBallsP4.setMatrixAt(i, compensatorBallMatrixP4);
   }
@@ -1816,6 +1960,25 @@ export function createSelectricModel() {
   compensatorRailBottomP4.position.set(0, 14.8, -29);
   addPickable(compensatorRailBottomP4, COMPONENTS.keyboardMechanism, pickables);
   keyboardMechanismAssembly.add(compensatorRailBottomP4);
+
+  updateSelectorCompensatorOccupancyP5 = () => {
+    // One depressed hook consumes the modeled free-space allowance and pushes the visible ball
+    // train away from the occupied x station. The displacement is P5 presentation geometry; the
+    // one-occupation mutual-exclusion topology is source-backed.
+    selectorCompensatorBallDisplacementMmP5 =
+      selectedCompensatorOccupancyFractionP5 * 1.8;
+    const hookX = selectedInterposerP5.position.x;
+    selectorCompensatorBallBaseXP4.forEach((baseX, index) => {
+      const side = baseX < hookX ? -1 : 1;
+      compensatorBallMatrixP4.makeTranslation(
+        baseX + side * selectorCompensatorBallDisplacementMmP5,
+        18.2,
+        -29
+      );
+      selectorCompensatorBallsP4.setMatrixAt(index, compensatorBallMatrixP4);
+    });
+    selectorCompensatorBallsP4.instanceMatrix.needsUpdate = true;
+  };
 
   // Six source-backed selector-bail channels now pivot about the X axis instead of translating
   // as rectangular bars. Slim end arms make the working Y/Z plane visible during code motion.
@@ -6602,6 +6765,20 @@ export function createSelectricModel() {
         selectedInterposerLatchClearFractionP5,
         selectedInterposerMechanicalStorageClass:
           'source-backed down -> stored/latched -> filter-shaft forward -> latch clears -> spring restore sequence; latch-clear threshold and amplitudes are P5',
+        selectedInterposerLatchSpringFingerEmbodiedP5: true,
+        selectedInterposerLatchFingerCaughtP5,
+        selectedInterposerLatchFingerAngleDegP5:
+          THREE.MathUtils.radToDeg(selectedInterposerLatchFingerP5.rotation.x),
+        selectedInterposerRestoreExtensionSpringEmbodiedP5: true,
+        selectedInterposerRestoreSpringLengthMmP5,
+        selectedInterposerRestoreSpringLoadingClass:
+          'source-backed rearward/upward extension-spring role; P5 coil turns, anchors and no spring-rate claim',
+        selectedInterposerCompensatorHookEmbodiedP5: true,
+        selectedInterposerCompensatorOccupancyFractionP5,
+        selectorCompensatorBallDisplacementMmP5,
+        selectorCompensatorSingleOccupationInvariantP5: true,
+        selectorCompensatorOccupancyClass:
+          'source-backed one-hook-at-a-time ball-train exclusion; P5 selected-hook section, ball displacement and free-space presentation',
         selectedInterposerSyntheticLugCountP5: selectedInterposerLugsP5.length,
         selectedInterposerActiveLugChannelsP5: selectedInterposerLugsP5
           .map((lug, index) => lug.visible ? index + 1 : null)
