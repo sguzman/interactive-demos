@@ -236,8 +236,22 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.selectorCamDrive.setupBeforeSampleCalibrationP5.commonRawLostMotionThresholdP5).toBeCloseTo(0.18, 8);
   expect(initial.geometry.selectorCamDrive.setupBeforeSampleCalibrationP5.class).toContain('code-setup-before-latch-bail-sampling');
   expect(initial.geometry.selectorCamDrive.fiveUnitFollowerEmbodiedP4).toBe(true);
+  expect(initial.geometry.selectorCamDrive.fiveUnitLatchEmbodiedP4).toBe(true);
+  expect(initial.geometry.selectorCamDrive.fiveUnitLatchOppositeOrdinarySense).toBe(true);
+  expect(initial.geometry.selectorCamDrive.fiveUnitCamRestoresBail).toBe(true);
+  expect(initial.geometry.selectorCamDrive.fiveUnitLatchedHomeDistinctFromGeometricCamLow).toBe(true);
+  expect(initial.geometry.selectorCamDrive.fiveUnitLatchedHomeRiseP5).toBeGreaterThan(0);
+  expect(initial.geometry.selectorCamDrive.fiveUnitCamBailTransferRodEmbodiedP4).toBe(true);
+  expect(initial.geometry.selectorCamDrive.fiveUnitFollowerDownstreamBailCoupling).toContain('closed');
+  expect(initial.geometry.selectorCamDrive.fiveUnitLiveBailToSignedBalanceCoupling).toContain('open');
   expect(initial.geometry.selectorCamDrive.poseP5.latchBailSampleP5).toBeCloseTo(0, 8);
   expect(initial.geometry.selectorCamDrive.poseP5.ordinaryRawLiftP5).toEqual([0, 0]);
+  expect(initial.geometry.selectorCamDrive.poseP5.fiveUnitRawLiftP5).toBeCloseTo(1, 8);
+  expect(initial.geometry.selectorCamDrive.poseP5.fiveUnitCamAvailableRiseP5).toBeCloseTo(0, 8);
+  expect(initial.geometry.selectorCamDrive.poseP5.fiveUnitLatchReleasedP5).toBe(false);
+  expect(initial.geometry.selectorCamDrive.poseP5.fiveUnitBailRiseP5).toBeCloseTo(0, 8);
+  expect(initial.geometry.selectorCamDrive.poseP5.fiveUnitEffectiveNegativeP5).toBeCloseTo(0, 8);
+  expect(initial.geometry.selectorCamDrive.poseP5.fiveUnitCamBailTransferRodLengthMmP4).toBeGreaterThan(0);
   expect(initial.geometry.selectorCamDrive.poseP5.transferRodLengthsMmP4.every(length => length > 0)).toBe(true);
   expect(initial.geometry.fineAlignment.coarseSelectionSeparate).toBe(true);
   expect(initial.geometry.fineAlignment.tiltSeatsBeforeRotateInPresentation).toBe(true);
@@ -866,11 +880,40 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(codeReady.geometry.selectorCamDrive.poseP5.ordinaryRawLiftP5.every(lift => lift > 0.15)).toBe(true);
   expect(codeReady.geometry.selectorCamDrive.poseP5.latchBailSampleP5).toBeCloseTo(0, 8);
   expect(codeReady.geometry.keyboardMechanism.latchBailSampleP5).toBeCloseTo(0, 8);
+  expect(codeReady.selection.rotateUnit).toBeLessThan(0);
+  expect(codeReady.selection.selectorInputs.fiveUnit).toBe(1);
+  expect(codeReady.geometry.selectorCamDrive.poseP5.fiveUnitRawLiftP5).toBeLessThan(0.05);
+  expect(codeReady.geometry.selectorCamDrive.poseP5.fiveUnitCamAvailableRiseP5).toBeGreaterThan(0.95);
+  expect(codeReady.geometry.selectorCamDrive.poseP5.fiveUnitLatchReleasedP5).toBe(true);
+  expect(codeReady.geometry.selectorCamDrive.poseP5.fiveUnitLatchAngleDegP5).toBeLessThan(-10);
+  expect(codeReady.geometry.selectorCamDrive.poseP5.fiveUnitBailRiseP5).toBeGreaterThan(0.95);
+  expect(codeReady.geometry.selectorCamDrive.poseP5.fiveUnitEffectiveNegativeP5).toBeGreaterThan(0.95);
   await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
 
   const afterKeyCycle = await page.evaluate(() => window.__selectricDebug.state);
   expect(afterKeyCycle.keyboardPress.depression).toBe(0);
+  expect(afterKeyCycle.geometry.selectorCamDrive.poseP5.fiveUnitLatchReleasedP5).toBe(false);
+  expect(afterKeyCycle.geometry.selectorCamDrive.poseP5.fiveUnitCamAvailableRiseP5).toBeCloseTo(0, 8);
+  expect(afterKeyCycle.geometry.selectorCamDrive.poseP5.fiveUnitBailRiseP5).toBeCloseTo(0, 8);
+  expect(afterKeyCycle.geometry.selectorCamDrive.poseP5.fiveUnitEffectiveNegativeP5).toBeCloseTo(0, 8);
+
+  // Positive rotate keeps the N5 latch engaged. When the cam reaches its release interval the
+  // bail may only rise to the distinct latched-home stop, not the full negative-five position.
+  const positiveHold = await page.evaluate(() => window.__selectricDebug.holdCharacterAt('b', 0.28));
+  expect(positiveHold).toBe(true);
+  const positiveReady = await page.evaluate(() => window.__selectricDebug.state);
+  expect(positiveReady.selection.rotateUnit).toBeGreaterThanOrEqual(0);
+  expect(positiveReady.selection.selectorInputs.fiveUnit).toBe(0);
+  expect(positiveReady.geometry.selectorCamDrive.poseP5.fiveUnitLatchReleasedP5).toBe(false);
+  expect(positiveReady.geometry.selectorCamDrive.poseP5.fiveUnitCamAvailableRiseP5).toBeGreaterThan(0.95);
+  expect(positiveReady.geometry.selectorCamDrive.poseP5.fiveUnitBailRiseP5).toBeCloseTo(
+    positiveReady.geometry.selectorCamDrive.fiveUnitLatchedHomeRiseP5,
+    8
+  );
+  expect(positiveReady.geometry.selectorCamDrive.poseP5.fiveUnitEffectiveNegativeP5).toBeCloseTo(0, 8);
+  await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
+  await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
 
   // Likewise, actual impact QA uses the existing ribbon/print inspection camera with the
   // service cover open so the print-point geometry is visible in the artifact.
