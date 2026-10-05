@@ -3399,15 +3399,29 @@ export function createSelectricModel() {
   ribbonFeedBellcrank.position.set(-4, P4.printShaft.y + 23, P4.printShaft.z + 9);
   carrierMotion.add(ribbonFeedBellcrank);
 
-  const ribbonFeedBellcrankA = box(4.0, 18.0, 4.0, metal, 'ribbon-feed bellcrank follower arm');
-  ribbonFeedBellcrankA.position.set(0, -6.5, 0);
+  const ribbonFeedBellcrankA = cylinderBetweenP4(
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, -13.0, 4.0),
+    2.0,
+    metal,
+    'ribbon-feed bellcrank follower arm · Y/Z P4'
+  );
   addPickable(ribbonFeedBellcrankA, COMPONENTS.ribbon, pickables);
   ribbonFeedBellcrank.add(ribbonFeedBellcrankA);
 
-  const ribbonFeedBellcrankB = box(23.0, 4.0, 4.0, darkMetal, 'ribbon-feed bellcrank pawl arm');
-  ribbonFeedBellcrankB.position.set(9.5, 0, 0);
+  const ribbonFeedBellcrankB = cylinderBetweenP4(
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, -17.0, -7.0),
+    2.0,
+    darkMetal,
+    'ribbon-feed bellcrank pawl arm · Y/Z P4'
+  );
   addPickable(ribbonFeedBellcrankB, COMPONENTS.ribbon, pickables);
   ribbonFeedBellcrank.add(ribbonFeedBellcrankB);
+
+  const ribbonFeedBellcrankPivotPin = shaft(8.2, 2.5, darkMetal, 'ribbon-feed bellcrank pivot pin P4');
+  addPickable(ribbonFeedBellcrankPivotPin, COMPONENTS.ribbon, pickables);
+  ribbonFeedBellcrank.add(ribbonFeedBellcrankPivotPin);
 
   const ribbonFeedFollowerBaseP4 = ribbonFeedFollower.position.clone();
 
@@ -3430,15 +3444,29 @@ export function createSelectricModel() {
   ribbonLiftBellcrank.position.set(-19, P4.printShaft.y + 26, P4.printShaft.z - 7);
   carrierMotion.add(ribbonLiftBellcrank);
 
-  const ribbonLiftBellcrankA = box(4.0, 20.0, 4.0, metal, 'ribbon-lift bellcrank follower arm');
-  ribbonLiftBellcrankA.position.set(0, -7, 0);
+  const ribbonLiftBellcrankA = cylinderBetweenP4(
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, -13.0, 7.0),
+    2.0,
+    metal,
+    'ribbon-lift bellcrank follower arm · Y/Z P4'
+  );
   addPickable(ribbonLiftBellcrankA, COMPONENTS.ribbon, pickables);
   ribbonLiftBellcrank.add(ribbonLiftBellcrankA);
 
-  const ribbonLiftBellcrankB = box(18.0, 4.0, 4.0, darkMetal, 'ribbon-lift bellcrank vibrator arm');
-  ribbonLiftBellcrankB.position.set(7, 0, 0);
+  const ribbonLiftBellcrankB = cylinderBetweenP4(
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, -6.0, -13.0),
+    2.0,
+    darkMetal,
+    'ribbon-lift bellcrank vibrator arm · Y/Z P4'
+  );
   addPickable(ribbonLiftBellcrankB, COMPONENTS.ribbon, pickables);
   ribbonLiftBellcrank.add(ribbonLiftBellcrankB);
+
+  const ribbonLiftBellcrankPivotPin = shaft(8.2, 2.5, darkMetal, 'ribbon-lift bellcrank pivot pin P4');
+  addPickable(ribbonLiftBellcrankPivotPin, COMPONENTS.ribbon, pickables);
+  ribbonLiftBellcrank.add(ribbonLiftBellcrankPivotPin);
 
   const ribbonLiftFollowerBaseYP4 = ribbonLiftFollower.position.y;
 
@@ -4585,6 +4613,9 @@ export function createSelectricModel() {
         liftFollowerEmbodied: true,
         liftFollowerP5: state.ribbonLiftFollowerP5,
         liftBellcrankEmbodied: true,
+        liftBellcrankConstructionClass: 'P4 two-arm Y/Z-plane bellcrank around explicit X-axis pivot pin; working arms now sweep with the live bellcrank rotation',
+        liftBellcrankArmCountP4: 2,
+        liftBellcrankPivotPinEmbodied: true,
         liftCausalChain: ['print-sleeve-rotation', 'ribbon-lift-cam', 'roller-follower', 'bellcrank', 'vibrator-guides', 'ribbon'],
         liftDriveClass: 'P5 cam-envelope timing driven from the print-sleeve phase; P4 follower/bellcrank geometry, exact OEM cam profile and lever lengths unresolved',
         loadLiftClass: 'P5 threading pose above high print lift; service override distinct from print-sleeve cam lift, exact OEM load height unresolved',
@@ -4602,6 +4633,9 @@ export function createSelectricModel() {
         feedFollowerP5: state.ribbonFeedCamFollowerP5,
         feedStrokeP5: state.ribbonFeedStrokeP5,
         feedBellcrankEmbodied: true,
+        feedBellcrankConstructionClass: 'P4 two-arm Y/Z-plane bellcrank around explicit X-axis pivot pin; replaces prior axial pawl arm that could not sweep with bellcrank rotation',
+        feedBellcrankArmCountP4: 2,
+        feedBellcrankPivotPinEmbodied: true,
         feedCausalChain: ['print-sleeve-rotation', '1164240-feed-lobe', 'roller-follower', 'bellcrank', 'feed-plate/pawl', 'ratchet'],
         feedStrokeClass: 'P5 cam-envelope stroke through P4 follower/bellcrank geometry; transport commit occurs at reconstructed peak stroke, exact OEM event angle and follower throw unresolved',
         approximateRatchetTeethAdvanced: state.ribbonFeedApproxRatchetTeeth,
