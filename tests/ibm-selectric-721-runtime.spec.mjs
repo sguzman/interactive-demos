@@ -28,7 +28,12 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.carrierSidePlateCount).toBe(2);
   expect(initial.geometry.carrierSidePlateWindowed).toBe(true);
   expect(initial.geometry.carrierSidePlateClass).toContain('windowed chamfered P4 carrier side frame');
-  expect(initial.geometry.shellTopology).toContain('hinged hood');
+  expect(initial.geometry.shellTopology).toContain('clearance-nested hinged hood');
+  expect(initial.geometry.serviceCoverFitP4.hoodMaxHalfWidthP4).toBeLessThan(
+    initial.geometry.serviceCoverFitP4.cheekInnerXP4 - initial.geometry.serviceCoverFitP4.cheekBevelInsetP4
+  );
+  expect(initial.geometry.serviceCoverFitP4.sideClearanceMmP4).toBeGreaterThanOrEqual(2.7 - 1e-8);
+  expect(initial.geometry.serviceCoverFitP4.overlapRepairClass).toContain('no longer occupies the fixed cheek bevel volume');
   expect(initial.geometry.writingPositionIndicator.carrierParented).toBe(true);
   expect(initial.geometry.writingPositionIndicator.worldX).toBeCloseTo(initial.carrierX, 8);
   expect(initial.geometry.explosionClass).toContain('assembly-separation');
