@@ -3133,9 +3133,12 @@ export function createSelectricModel() {
     const positive = rotatePositiveInputs(compensation);
     state.selectorInputs = { T1, T2, ...positive, fiveUnit };
 
-    const qTilt = (T1 + 2 * T2) / 3;
-    const q1 = (positive.R1 + 2 * positive.R2) / 3;
-    const q2 = (3 * q1 + 2 * positive.R2A) / 5;
+    // Derive the normalized outputs from the same physical hole fractions used by the
+    // visible floating levers. This keeps the mechanical arithmetic and the rendered geometry
+    // on one source-fixed ratio model instead of maintaining parallel hand-coded weights.
+    const qTilt = THREE.MathUtils.lerp(T2, T1, tiltOutputFractionP4);
+    const q1 = THREE.MathUtils.lerp(positive.R1, positive.R2, rotateFirstOutputFractionP4);
+    const q2 = THREE.MathUtils.lerp(positive.R2A, q1, rotateSecondOutputFractionP4);
     const qSigned = q2 - fiveUnit;
     state.selectionNormalized = { qTilt, q1, q2, qSigned };
 
@@ -4792,6 +4795,7 @@ export function createSelectricModel() {
         signedEquation: 'qSigned=q2-fiveUnit',
         rotateUnitsEquation: 'rotateUnits=5*qSigned',
         weightedLeverEmbodimentP4: true,
+        normalizedOutputsDerivedFromHoleFractions: true,
         floatingLeverMotionP5: true,
         fiveUnitBailMotion: 'rises into the separate negative-five input; no numeric sign-flip shortcut',
         differentialLeverClass: tiltArmAGeometryP4.userData.p4DifferentialLeverClass,
