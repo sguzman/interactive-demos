@@ -3616,7 +3616,7 @@ export function createSelectricModel() {
   );
   const tiltHorizontalLinkP4 = makeDynamicSelectionRodP4(
     'tilt bellcrank horizontal link P4',
-    carrierSelectionP4.tiltLinkRadiusMm,
+    1.45,
     metal
   );
   const tiltMultiplierToPulleyRodP4 = makeDynamicSelectionRodP4(
