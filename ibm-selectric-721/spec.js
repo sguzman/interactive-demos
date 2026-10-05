@@ -146,8 +146,8 @@ export const COMPONENTS = Object.freeze({
   platenRatchet: {
     name: '27-tooth platen ratchet',
     category: 'paper / line index',
-    provenance: 'IBM shared Selectric diameter + OEM 7X1 representative 27T profile + asymmetric tapered P4 tooth reconstruction + pivoted P4 index-pawl reconstruction',
-    description: '30.1498 mm ratchet outer diameter with 27 equal angular positions. The public teeth use an asymmetric tapered P4 ratchet silhouette rather than plain boxes. The index pawl is now an explicit tapered/chamfered P4 stamped-link arm rotating about its own reconstructed pivot pin with a separate tooth-contact tip, replacing the former center-rotating rectangular bar. One normal index advances one tooth; exact production tooth flank/profile, pawl stamping and pawl travel remain unresolved.'
+    provenance: 'IBM shared Selectric diameter + OEM 7X1 representative 27T profile + asymmetric tapered P4 tooth reconstruction + pivoted/circumference-constrained P4 index-pawl reconstruction',
+    description: '30.1498 mm ratchet outer diameter with 27 equal angular positions. The public teeth use an asymmetric tapered P4 ratchet silhouette rather than plain boxes. The index pawl is an explicit tapered/chamfered P4 stamped-link arm rotating about its own reconstructed pivot pin with a separate tooth-contact tip; its rest geometry is constrained to the reconstructed ratchet circumference rather than passing through the hub. One normal index advances one tooth; exact production tooth flank/profile, pawl stamping and pawl travel remain unresolved.'
   },
   paperFeed: {
     name: 'Paper feed / bail / copy-control system',
