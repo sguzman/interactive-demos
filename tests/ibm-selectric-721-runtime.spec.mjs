@@ -128,6 +128,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.shaftTiming.cycleShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.filterShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.printShaftDegPerCharacter).toBe(360);
+  expect(initial.geometry.shaftTiming.cycleCamStationCount).toBe(3);
+  expect(initial.geometry.shaftTiming.cycleCamProfilesP4).toHaveLength(3);
+  expect(initial.geometry.shaftTiming.cycleCamProfilesP4.every(cam => cam.baseRadiusMmP4 > 0)).toBe(true);
+  expect(initial.geometry.shaftTiming.cycleCamProfilesP4.every(cam => cam.lobeCountP4 === 1)).toBe(true);
+  expect(initial.geometry.shaftTiming.cycleCamPresentationClass).toContain('smooth P4 radial envelopes');
   expect(initial.geometry.fineAlignment.coarseSelectionSeparate).toBe(true);
   expect(initial.geometry.fineAlignment.tiltSeatsBeforeRotateInPresentation).toBe(true);
   expect(initial.geometry.fineAlignment.driver).toContain('IBM 1164240');
