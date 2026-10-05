@@ -3819,6 +3819,17 @@ export function createSelectricModel() {
   const rotateNegativeFiveInputLink = makeSelectionLinkP4(28, 'negative-five balance input link P4');
   rotateNegativeFiveInputLink.position.set(rotateBalanceSpan / 2, 0, 2.8);
   rotateBalance.add(rotateNegativeFiveInputLink);
+
+  // P4 connector between the sourced five-unit bail role and the right end of the signed balance.
+  // The existence/direction of the N5 action is source-backed; this straight transfer member and
+  // its exact attachment points are explicitly reconstructed rather than asserted as IBM CAD.
+  const fiveUnitBailToBalanceRodP4 = makeDynamicSelectionRodP4(
+    'five-unit bail to signed-balance right-end transfer P4',
+    1.45,
+    metal
+  );
+  let fiveUnitBailToBalanceRodLengthMmP4 = 0;
+
   const rotateBellcrank = makeSelectionLinkP4(34, 'rotate balance midpoint output / bellcrank link P4');
   rotateBellcrank.position.set(0, 0, 2.8);
   rotateBalance.add(rotateBellcrank);
@@ -4186,6 +4197,22 @@ export function createSelectricModel() {
     );
     rotatePositiveInputLink.position.y = balanceLeftYOffset;
     rotateNegativeFiveInputLink.position.y = balanceRightYOffset;
+
+    const fiveUnitBailDrivePointP4 = new THREE.Vector3(
+      fiveUnitBail.position.x + 27,
+      fiveUnitBail.position.y,
+      fiveUnitBail.position.z
+    );
+    const negativeFiveBalancePointP4 = new THREE.Vector3(
+      rotateBalance.position.x + rotateNegativeFiveInputLink.position.x,
+      rotateBalance.position.y + rotateNegativeFiveInputLink.position.y,
+      rotateBalance.position.z + rotateNegativeFiveInputLink.position.z
+    );
+    fiveUnitBailToBalanceRodLengthMmP4 = fiveUnitBailToBalanceRodP4.update(
+      fiveUnitBailDrivePointP4,
+      negativeFiveBalancePointP4
+    );
+
     rotateBellcrank.position.y = balanceOutputYOffset;
     selectionLinkagePoseP5.balance.angleDeg = poseFloatingLeverP5(
       rotateBalanceLeverMotion,
@@ -6359,6 +6386,10 @@ export function createSelectricModel() {
         targetAndMechanicalSelectionSeparated: true,
         ordinaryLatchOutputsDriveLiveDifferential: true,
         fiveUnitBailDrivesLiveBalanceEndpoint: true,
+        fiveUnitBailToBalanceTransferRodEmbodiedP4: true,
+        fiveUnitBailToBalanceTransferRodLengthMmP4,
+        fiveUnitBailToBalanceTransferGeometryClass:
+          'P4 straight transfer bridge from source-backed N5 bail role to signed-balance right endpoint; exact IBM attachment geometry unresolved',
         checkedRestRestoresCharacterSelection: true,
         differentialLeverClass: tiltArmAGeometryP4.userData.p4DifferentialLeverClass,
         twoHoleLinkClass: tiltOutputLinkPlatesP4[0].geometry.userData.p4TwoHoleLinkClass,
