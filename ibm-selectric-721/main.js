@@ -513,7 +513,6 @@ function runCycle(now) {
     model.setKeyboardCode(0);
     model.setKeyPress(runtime.pendingCharacter, Math.min(1, t / 0.07));
     model.setTypeball(0, 0, runtime.selectionTarget.shift);
-    model.setPrintApproach(0);
   } else if (t < 0.28) {
     setCycleState('C2_CODE_SETUP');
     model.setKeyboardCode(runtime.selectionTarget.code6);
@@ -527,30 +526,22 @@ function runCycle(now) {
   } else if (t < 0.54) {
     setCycleState('C4_FINE_ALIGN');
     model.setKeyPress(null, 0);
-    const k = (t - 0.43) / 0.11;
     model.setTypeball(runtime.selectionTarget.tilt, runtime.selectionTarget.rotate, runtime.selectionTarget.shift);
-    model.setPrintApproach(k * 0.55);
   } else if (t < 0.66) {
     setCycleState('C5_PRINT_IMPACT');
     model.setKeyPress(null, 0);
-    const k = (t - 0.54) / 0.12;
-    model.setPrintApproach(Math.min(1, 0.55 + k * 0.45));
   } else if (t < 0.91) {
     setCycleState('C6_ESCAPEMENT_RIBBON_RESTORE');
     model.setKeyboardCode(0);
     model.setKeyPress(null, 0);
-    const k = 1 - (t - 0.66) / 0.25;
-    model.setPrintApproach(Math.max(0, k));
   } else {
     setCycleState('C7_CLUTCH_DISENGAGE_CHECK');
     model.setKeyboardCode(0);
     model.setKeyPress(null, 0);
-    model.setPrintApproach(0);
   }
 
   if (t >= 1) {
     setCycleState('C0_REST');
-    model.setPrintApproach(0);
     model.setKeyPress(null, 0);
     model.setCyclePhase(0);
     if (runtime.storedSpace) {
