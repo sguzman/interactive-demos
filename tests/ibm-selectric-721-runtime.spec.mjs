@@ -38,6 +38,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.d6CurrentSet.clipMarketFrozen).toBe(false);
   expect(initial.geometry.platenRatchet.outerDiameterMm).toBeCloseTo(30.1498, 6);
   expect(initial.geometry.platenRatchet.teeth).toBe(27);
+  expect(initial.geometry.platenRatchet.toothGeometryAsymmetric).toBe(true);
+  expect(initial.geometry.platenRatchet.toothGeometryClass).toContain('asymmetric tapered P4 ratchet tooth');
   expect(initial.geometry.platenRatchet.lineSpacingModes).toEqual(['single', 'double']);
   expect(initial.geometry.platenRatchet.singleIndexTeeth).toBe(1);
   expect(initial.geometry.platenRatchet.doubleIndexTeeth).toBe(2);
