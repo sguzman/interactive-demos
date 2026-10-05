@@ -61,6 +61,53 @@ function box(w, h, d, mat, name) {
   return mesh;
 }
 
+function carrierSidePlateGeometryP4(thickness, height, depth) {
+  const halfH = height / 2;
+  const halfD = depth / 2;
+  const shape = new THREE.Shape();
+
+  // Shape x maps to -Z after rotation; the chamfered outline reads as a cast/stamped frame
+  // rather than the previous solid cuboid wall.
+  shape.moveTo(-halfD + 2.5, -halfH);
+  shape.lineTo( halfD - 2.5, -halfH);
+  shape.lineTo( halfD, -halfH + 2.5);
+  shape.lineTo( halfD,  halfH - 3.5);
+  shape.lineTo( halfD - 4.0, halfH);
+  shape.lineTo(-halfD + 4.0, halfH);
+  shape.lineTo(-halfD, halfH - 3.5);
+  shape.lineTo(-halfD, -halfH + 2.5);
+  shape.closePath();
+
+  const window = new THREE.Path();
+  const windowHalfD = Math.max(5, halfD - 7.0);
+  const windowHalfH = Math.max(3, halfH - 5.0);
+  window.moveTo(-windowHalfD, -windowHalfH + 1.0);
+  window.lineTo(-windowHalfD + 1.5, -windowHalfH);
+  window.lineTo( windowHalfD - 1.5, -windowHalfH);
+  window.lineTo( windowHalfD, -windowHalfH + 1.0);
+  window.lineTo( windowHalfD,  windowHalfH - 1.0);
+  window.lineTo( windowHalfD - 1.5, windowHalfH);
+  window.lineTo(-windowHalfD + 1.5, windowHalfH);
+  window.lineTo(-windowHalfD, windowHalfH - 1.0);
+  window.closePath();
+  shape.holes.push(window);
+
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: thickness,
+    steps: 1,
+    bevelEnabled: true,
+    bevelThickness: 0.45,
+    bevelSize: 0.45,
+    bevelSegments: 2,
+    curveSegments: 2
+  });
+  geometry.rotateY(Math.PI / 2);
+  geometry.translate(-thickness / 2, 0, 0);
+  geometry.computeVertexNormals();
+  geometry.userData.p4CarrierPlateClass = 'windowed chamfered P4 carrier side frame; exact cast/stamped section unresolved';
+  return geometry;
+}
+
 function keycapGeometryP4(width, height, depth) {
   const layers = [
     { y: -height / 2, w: width, d: depth },
@@ -2207,11 +2254,17 @@ export function createSelectricModel() {
 
   const carrierHalfW = P4.carrier.width / 2;
   const carrierHalfD = P4.carrier.depth / 2;
+  const carrierSidePlates = [];
   for (const sign of [-1, 1]) {
-    const sidePlate = box(6.5, P4.carrier.height, P4.carrier.depth, darkMetal, sign < 0 ? 'carrier left side plate' : 'carrier right side plate');
+    const sidePlateGeometry = carrierSidePlateGeometryP4(6.5, P4.carrier.height, P4.carrier.depth);
+    const sidePlate = new THREE.Mesh(sidePlateGeometry, darkMetal);
+    sidePlate.name = sign < 0 ? 'windowed carrier left side frame' : 'windowed carrier right side frame';
+    sidePlate.castShadow = true;
+    sidePlate.receiveShadow = true;
     sidePlate.position.set(sign * (carrierHalfW - 3.25), P4.carrier.y, P4.carrier.z);
     addPickable(sidePlate, COMPONENTS.carrier, pickables);
     carrierMotion.add(sidePlate);
+    carrierSidePlates.push(sidePlate);
   }
   const carrierFrontBridge = box(P4.carrier.width - 10, 6, 7, darkMetal, 'carrier front bridge');
   carrierFrontBridge.position.set(0, P4.carrier.y + 4, P4.carrier.z + carrierHalfD - 3.5);
@@ -3525,7 +3578,10 @@ export function createSelectricModel() {
       explosionClass: 'P5 assembly-separation presentation; not service motion',
       pickableCount: pickables.length,
       supportTopology: 'D6 front + Level-2 upper/lower rack shoes',
-      carrierEmbodiment: 'open P4 frame with side plates and crossmembers; not a solid presentation block',
+      carrierEmbodiment: 'open P4 frame with windowed chamfered side plates and crossmembers; not a solid presentation block',
+      carrierSidePlateCount: carrierSidePlates.length,
+      carrierSidePlateClass: carrierSidePlates[0].geometry.userData.p4CarrierPlateClass,
+      carrierSidePlateWindowed: true,
       shellTopology: 'extruded rounded side-cheek profile + full-width hinged hood ending ahead of platen',
       keyboardActuation: {
         character: state.keyboardPressCharacter,
