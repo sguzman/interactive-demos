@@ -1085,12 +1085,31 @@ export function createSelectricModel() {
     { z: -163, y: 102 },
     { z: -166, y: 22 }
   ];
-  const rightCheek = extrudedSideCheek(cheekProfile, 156, 182, shellMat, 'right rounded shell cheek');
-  rightCheek.position.x = 156;
+  const shellCheekInnerXP4 = 156;
+  const shellCheekOuterXP4 = 182;
+  const shellCheekBevelInsetP4 = 1.8;
+  const serviceCoverSideClearanceP4 = 2.7;
+  const serviceCoverMaxHalfWidthP4 =
+    shellCheekInnerXP4 - shellCheekBevelInsetP4 - serviceCoverSideClearanceP4;
+
+  const rightCheek = extrudedSideCheek(
+    cheekProfile,
+    shellCheekInnerXP4,
+    shellCheekOuterXP4,
+    shellMat,
+    'right rounded shell cheek'
+  );
+  rightCheek.position.x = shellCheekInnerXP4;
   addPickable(rightCheek, COMPONENTS.shell, pickables);
   shellAssembly.add(rightCheek);
-  const leftCheek = extrudedSideCheek(cheekProfile, 156, 182, shellMat, 'left rounded shell cheek');
-  leftCheek.position.x = -182;
+  const leftCheek = extrudedSideCheek(
+    cheekProfile,
+    shellCheekInnerXP4,
+    shellCheekOuterXP4,
+    shellMat,
+    'left rounded shell cheek'
+  );
+  leftCheek.position.x = -shellCheekOuterXP4;
   addPickable(leftCheek, COMPONENTS.shell, pickables);
   shellAssembly.add(leftCheek);
 
@@ -1099,14 +1118,18 @@ export function createSelectricModel() {
   serviceCoverPivot.position.set(0, 122, -142);
   shellAssembly.add(serviceCoverPivot);
 
-  const frontFascia = loftPrism([
-    { z: 38, halfWidth: 158, bottomY: 70, topY: 85 },
-    { z: 18, halfWidth: 161, bottomY: 73, topY: 92 },
-    { z: -8, halfWidth: 164, bottomY: 78, topY: 106 },
-    { z: -34, halfWidth: 169, bottomY: 84, topY: 129 },
-    { z: -58, halfWidth: 170, bottomY: 93, topY: 144 },
-    { z: -72, halfWidth: 168, bottomY: 104, topY: 149 }
-  ], shellMat, 'service cover hood');
+  // Keep the hinged hood fully inside the beveled inner faces of the fixed side cheeks.
+  // The earlier reconstruction extended the hood into the cheek solids by up to ~14 mm,
+  // producing visible z-fighting/bleeding when closed. This is a P4 assembly-clearance repair.
+  const serviceCoverStationsP4 = [
+    { z: 38, halfWidth: 149.0, bottomY: 70, topY: 85 },
+    { z: 18, halfWidth: 150.0, bottomY: 73, topY: 92 },
+    { z: -8, halfWidth: 151.0, bottomY: 78, topY: 106 },
+    { z: -34, halfWidth: 151.5, bottomY: 84, topY: 129 },
+    { z: -58, halfWidth: serviceCoverMaxHalfWidthP4, bottomY: 93, topY: 144 },
+    { z: -72, halfWidth: 151.0, bottomY: 104, topY: 149 }
+  ];
+  const frontFascia = loftPrism(serviceCoverStationsP4, shellMat, 'service cover hood');
   frontFascia.position.set(0, -122, 142);
   addPickable(frontFascia, COMPONENTS.shell, pickables);
   serviceCoverPivot.add(frontFascia);
@@ -3683,7 +3706,17 @@ export function createSelectricModel() {
       carrierSidePlateCount: carrierSidePlates.length,
       carrierSidePlateClass: carrierSidePlates[0].geometry.userData.p4CarrierPlateClass,
       carrierSidePlateWindowed: true,
-      shellTopology: 'extruded rounded side-cheek profile + full-width hinged hood ending ahead of platen',
+      shellTopology: 'extruded rounded side-cheek profile + clearance-nested hinged hood ending ahead of platen',
+      serviceCoverFitP4: {
+        cheekInnerXP4: shellCheekInnerXP4,
+        cheekBevelInsetP4: shellCheekBevelInsetP4,
+        hoodMaxHalfWidthP4: Math.max(...serviceCoverStationsP4.map(station => station.halfWidth)),
+        sideClearanceMmP4:
+          shellCheekInnerXP4 -
+          shellCheekBevelInsetP4 -
+          Math.max(...serviceCoverStationsP4.map(station => station.halfWidth)),
+        overlapRepairClass: 'P4 hood-to-cheek clearance repair; closed hood no longer occupies the fixed cheek bevel volume, exact industrial-design seam width unresolved'
+      },
       keyboardActuation: {
         character: state.keyboardPressCharacter,
         depression: state.keyboardPress,
