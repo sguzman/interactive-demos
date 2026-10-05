@@ -2940,6 +2940,12 @@ export function createSelectricModel() {
       shiftFollower,
       state.operationalFollowerLiftP5.shift
     );
+
+    // The backspace rack and index pawl are follower outputs, not independent animation tracks.
+    // Shift and carrier return deliberately remain separate downstream mechanisms: shift is
+    // over-center, while carrier return latches a sustained drive after its finite cam trigger.
+    setBackspaceLinkage(action === 'backspace' ? state.operationalCamPhase : 0);
+    setIndexPawlPhase(action === 'index' ? state.operationalCamPhase : 0);
   }
 
   function setCyclePhase(value) {
