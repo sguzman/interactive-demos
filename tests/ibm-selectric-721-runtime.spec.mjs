@@ -29,6 +29,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.rendering.keyShadowCameraFar).toBeCloseTo(1000, 8);
   expect(initial.rendering.shadowAcneMitigationClass).toContain('mechanical geometry unchanged');
   expect(initial.geometry.supportTopology).toContain('Level-2');
+  expect(initial.geometry.primarySideframeCount).toBe(2);
+  expect(initial.geometry.primarySideframeWindowCountEach).toBe(3);
+  expect(initial.geometry.primarySideframesWindowed).toBe(true);
+  expect(initial.geometry.primarySideframeClass).toContain('three-window chamfered P4 primary sideframe');
   expect(initial.geometry.carrierEmbodiment).toContain('windowed chamfered side plates');
   expect(initial.geometry.carrierSidePlateCount).toBe(2);
   expect(initial.geometry.carrierSidePlateWindowed).toBe(true);
