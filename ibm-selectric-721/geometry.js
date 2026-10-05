@@ -1999,9 +1999,13 @@ export function createSelectricModel() {
     follower.add(pivotPin);
 
     const armGeometryP4 = leverPlateGeometryP4(28, 6.2, 3.2, 2.8, 1.4);
+    // The follower pivots about X, so its stamped plate must actually occupy the Y/Z
+    // working plane. Rotate the constructive section itself instead of only labeling it Y/Z.
+    armGeometryP4.rotateY(Math.PI / 2);
+    armGeometryP4.rotateX(Math.PI);
+    armGeometryP4.userData.p4WorkingPlane = 'Y/Z with X-axis pivot hole';
     const arm = new THREE.Mesh(armGeometryP4, metal);
     arm.name = name + ' stamped follower lever P4';
-    arm.rotation.z = Math.PI;
     arm.castShadow = true;
     arm.receiveShadow = true;
     addPickable(arm, COMPONENTS.drive, pickables);
@@ -2902,6 +2906,8 @@ export function createSelectricModel() {
   paperFeedCarriage.add(indexPawlPivot);
 
   const indexPawlGeometryP4 = leverPlateGeometryP4(17.5, 7.2, 4.4, 3.2);
+  indexPawlGeometryP4.rotateY(Math.PI / 2);
+  indexPawlGeometryP4.userData.p4WorkingPlane = 'Y/Z with X-axis pivot hole';
   const indexPawl = new THREE.Mesh(indexPawlGeometryP4, darkMetal);
   indexPawl.name = 'platen index pawl stamped-link arm P4';
   indexPawl.castShadow = true;
@@ -4333,6 +4339,8 @@ export function createSelectricModel() {
   tiltDetentPivot.position.set(-23, P4.typeball.y - 11, P4.typeball.zRest + 17);
   carrierMotion.add(tiltDetentPivot);
   const tiltDetentArmGeometryP4 = leverPlateGeometryP4(29, 7.2, 4.8, 3.2);
+  tiltDetentArmGeometryP4.rotateY(Math.PI / 2);
+  tiltDetentArmGeometryP4.userData.p4WorkingPlane = 'Y/Z with X-axis pivot hole';
   const tiltDetentArm = new THREE.Mesh(tiltDetentArmGeometryP4, metal);
   tiltDetentArm.name = 'tilt detent stamped-link arm P4';
   tiltDetentArm.rotation.x = deg(-14);
@@ -4353,6 +4361,8 @@ export function createSelectricModel() {
   rotateDetentPivot.position.set(23, P4.typeball.y - 14, P4.typeball.zRest + 15);
   carrierMotion.add(rotateDetentPivot);
   const rotateDetentArmGeometryP4 = leverPlateGeometryP4(27, 7.0, 4.6, 3.2);
+  rotateDetentArmGeometryP4.rotateY(Math.PI / 2);
+  rotateDetentArmGeometryP4.userData.p4WorkingPlane = 'Y/Z with X-axis pivot hole';
   const rotateDetentArm = new THREE.Mesh(rotateDetentArmGeometryP4, metal);
   rotateDetentArm.name = 'rotate detent stamped-link arm P4';
   rotateDetentArm.rotation.x = deg(-12);
@@ -5744,6 +5754,7 @@ export function createSelectricModel() {
         selectorAngleDegP5: state.lineSpacingTeeth === 2 ? 13 : -13,
         selectorTravelClass: 'P5 visible selector travel; one-vs-two-tooth function source-backed, exact external coordinates unresolved',
         indexPawlConstructionClass: indexPawlGeometryP4.userData.p4LeverPlateClass,
+        indexPawlWorkingPlaneP4: indexPawlGeometryP4.userData.p4WorkingPlane,
         indexPawlPivotEmbodied: true,
         indexPawlTipEmbodied: true,
         indexPawlRestAngleDegP4: THREE.MathUtils.radToDeg(indexPawlPivot.userData.baseRotationX),
@@ -5954,6 +5965,8 @@ export function createSelectricModel() {
         followersEmbodied: true,
         followerPivotAxisP4: spaceBackspaceFollower.userData.pivotAxisP4,
         followerWorkingPlaneP4: spaceBackspaceFollower.userData.workingPlaneP4,
+        followerPlateGeometryWorkingPlaneP4:
+          spaceBackspaceFollower.children.find(child => child.geometry?.userData?.p4WorkingPlane)?.geometry.userData.p4WorkingPlane ?? 'unresolved',
         followerLeverConstructionClassP4: spaceBackspaceFollower.userData.leverConstructionClassP4,
         followerPivotPinsEmbodiedP4: [
           spaceBackspaceFollower,
@@ -6020,6 +6033,7 @@ export function createSelectricModel() {
         detentFollowerLiftP5: state.detentFollowerLiftP5,
         detentCamLobesP4: 2,
         detentArmConstructionClass: tiltDetentArmGeometryP4.userData.p4LeverPlateClass,
+        detentArmWorkingPlaneP4: tiltDetentArmGeometryP4.userData.p4WorkingPlane,
         detentArmCountP4: 2,
         detentPivotPinsEmbodied: true,
         sharedFollowerWithRotateLostMotion: true,
