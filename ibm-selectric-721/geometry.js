@@ -2225,17 +2225,34 @@ export function createSelectricModel() {
   paperFeedCarriage.add(platen);
 
   const platenKnobPivots = [];
+  const platenKnobGripRibCountP4 = 12;
+  const platenKnobGripRibs = [];
   for (const x of [-159, 159]) {
     const pivot = new THREE.Group();
     pivot.name = x < 0 ? 'left platen knob phase pivot' : 'right platen knob phase pivot';
     pivot.position.set(x, P4.platen.y, P4.platen.z);
 
-    const knob = shaft(28, 14, shellDark, x < 0 ? 'left platen knob' : 'right platen knob');
+    const knob = shaft(28, 12.8, shellDark, x < 0 ? 'left platen knob core' : 'right platen knob core');
     addPickable(knob, COMPONENTS.platen, pickables);
     pivot.add(knob);
 
+    const outerCap = shaft(3.4, 13.7, shellDark, x < 0 ? 'left platen knob outer cap' : 'right platen knob outer cap');
+    outerCap.position.x = x < 0 ? -14.8 : 14.8;
+    addPickable(outerCap, COMPONENTS.platen, pickables);
+    pivot.add(outerCap);
+
+    for (let ribIndex = 0; ribIndex < platenKnobGripRibCountP4; ribIndex += 1) {
+      const angle = ribIndex * Math.PI * 2 / platenKnobGripRibCountP4;
+      const rib = box(22, 1.25, 2.15, shellDark, (x < 0 ? 'left' : 'right') + ' platen knob grip rib');
+      rib.position.set(0, Math.cos(angle) * 13.35, Math.sin(angle) * 13.35);
+      rib.rotation.x = angle;
+      addPickable(rib, COMPONENTS.platen, pickables);
+      pivot.add(rib);
+      platenKnobGripRibs.push(rib);
+    }
+
     const phaseCue = box(8.5, 1.2, 1.8, metal, x < 0 ? 'left platen phase cue' : 'right platen phase cue');
-    phaseCue.position.set(0, 13.2, 0);
+    phaseCue.position.set(0, 14.25, 0);
     addPickable(phaseCue, COMPONENTS.platen, pickables);
     pivot.add(phaseCue);
 
@@ -4283,6 +4300,9 @@ export function createSelectricModel() {
         platenPhysicalAngleRad: state.platenIndex + state.manualPlatenAngle,
         platenPhaseCueAngleRad: platenKnobPivots[0].rotation.x,
         platenPhaseCueCount: platenKnobPivots.length,
+        platenKnobConstructionClass: 'P4 reduced core + outer cap + repeated radial grip ribs; exact IBM knob tooling/knurl section unresolved',
+        platenKnobGripRibsPerKnobP4: platenKnobGripRibCountP4,
+        platenKnobGripRibTotal: platenKnobGripRibs.length,
         platenPhaseCueClass: 'P5 visible rotational cue; follows physical platen while ratchet may decouple',
         variableOffsetPersistsWhenRecoupled: true,
         paperAdvanceMm: state.paperAdvanceMm,
