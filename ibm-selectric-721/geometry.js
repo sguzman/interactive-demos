@@ -1625,6 +1625,56 @@ export function createSelectricModel() {
   pickables.push(interposers);
   keyboardMechanismAssembly.add(interposers);
 
+  // The production interposer lug pattern for a specific Model-721 keyboard is not recovered.
+  // Keep the 51-member bank as the structural background, then expose one selected P5 code
+  // interposer tracer whose six lug cues make the source-backed interposer -> selector-bail
+  // boundary visible without pretending the browser codeword is a factory lug layout.
+  const selectedInterposerP5 = new THREE.Group();
+  selectedInterposerP5.name = 'selected character interposer code tracer P5';
+  selectedInterposerP5.position.set(0, 27, 6);
+  selectedInterposerP5.userData.baseY = selectedInterposerP5.position.y;
+  selectedInterposerP5.userData.baseZ = selectedInterposerP5.position.z;
+  selectedInterposerP5.visible = false;
+  keyboardMechanismAssembly.add(selectedInterposerP5);
+
+  const selectedInterposerBodyP5 = box(
+    4.4,
+    3.0,
+    58,
+    material(0x8e744b, 0.46, 0.38),
+    'selected character interposer body P5'
+  );
+  addPickable(selectedInterposerBodyP5, COMPONENTS.keyboardMechanism, pickables);
+  selectedInterposerP5.add(selectedInterposerBodyP5);
+
+  const selectedInterposerLugsP5 = [];
+  for (let channel = 0; channel < 6; channel += 1) {
+    const lug = box(
+      7.2,
+      3.2,
+      4.2,
+      darkMetal,
+      'selected interposer synthetic code lug C' + (channel + 1) + ' P5'
+    );
+    lug.position.set(0, 1.0 + channel * 4.0, -12 - channel * 5.0);
+    lug.visible = false;
+    addPickable(lug, COMPONENTS.keyboardMechanism, pickables);
+    selectedInterposerP5.add(lug);
+    selectedInterposerLugsP5.push(lug);
+  }
+
+  const selectedInterposerDownTravelMmP5 = 3.6;
+  const selectedInterposerForwardTravelMmP5 = 8.0;
+
+  function updateSelectedInterposerPoseP5() {
+    selectedInterposerP5.position.y =
+      selectedInterposerP5.userData.baseY - state.keyboardPress * selectedInterposerDownTravelMmP5;
+    selectedInterposerP5.position.z =
+      selectedInterposerP5.userData.baseZ +
+      (state.keyboardCodeEngaged ? selectedInterposerForwardTravelMmP5 : 0);
+    selectedInterposerP5.visible = state.keyboardPress > 0 || state.keyboardCodeEngaged;
+  }
+
   // Closely spaced steel balls are a source-backed mutual-exclusion medium. The visible ball
   // count and tube envelope are presentation-only P4 because the OEM theory does not give them.
   const selectorCompensatorBallCountP4 = 29;
@@ -5534,11 +5584,17 @@ export function createSelectricModel() {
       // down request while a codeword is present. The sixth public channel is the P5 downstream
       // N5 request used by this explanatory model. It is explicitly not a claim that IBM used a
       // literal sixth keyboard lug/channel in this public bit order.
-      const active = !state.keyboardCodeEngaged
+      const requestedLug = !state.keyboardCodeEngaged
         ? false
         : index < selectorLatchNames.length
           ? !publicDownstreamBit
           : publicDownstreamBit;
+
+      // Exact factory lug geometry is unresolved, so these six cues are explicitly P5. The
+      // selector bail is nevertheless driven from the visible selected-interposer lug state
+      // rather than directly from the public code bit, preserving the sourced causal boundary.
+      selectedInterposerLugsP5[index].visible = requestedLug;
+      const active = selectedInterposerLugsP5[index].visible;
 
       mat.emissive.setHex(active ? 0x2d1b08 : 0x000000);
       mat.emissiveIntensity = active ? 0.45 : 1;
@@ -5572,6 +5628,7 @@ export function createSelectricModel() {
       }
     });
 
+    updateSelectedInterposerPoseP5();
     updateSelectorBailInterposerLinksP4();
     updateLatchInterposerSelectorLatchLinksP4();
     updateFiveUnitLatchBailP5();
@@ -5591,7 +5648,18 @@ export function createSelectricModel() {
       key.position.y = key.userData.baseY;
     });
     const activeKey = state.keyboardPressCharacter ? keyMeshes.get(state.keyboardPressCharacter) : null;
-    if (activeKey) activeKey.position.y = activeKey.userData.baseY - state.keyboardPress * 4.2;
+    if (activeKey) {
+      activeKey.position.y = activeKey.userData.baseY - state.keyboardPress * 4.2;
+
+      // Register the P5 selected-interposer tracer laterally beneath the visible key. This is an
+      // inspectable browser correspondence, not a claim about factory key/interposer numbering.
+      root.updateMatrixWorld(true);
+      const activeKeyMechanismPointP5 = new THREE.Vector3();
+      activeKey.getWorldPosition(activeKeyMechanismPointP5);
+      keyboardMechanismAssembly.worldToLocal(activeKeyMechanismPointP5);
+      selectedInterposerP5.position.x = activeKeyMechanismPointP5.x;
+    }
+    updateSelectedInterposerPoseP5();
   }
 
   function setCarrierReturnDrive(value) {
@@ -6390,6 +6458,19 @@ export function createSelectricModel() {
         interposerPresentationCountP4: interposers.count,
         interposerFrontFulcrumRodEmbodied: true,
         interposerGuideRailCountP4: interposerGuideRailsP4.length,
+        selectedInterposerCodeTracerEmbodiedP5: true,
+        selectedInterposerVisibleP5: selectedInterposerP5.visible,
+        selectedInterposerDownTravelMmP5:
+          selectedInterposerP5.userData.baseY - selectedInterposerP5.position.y,
+        selectedInterposerForwardTravelMmP5:
+          selectedInterposerP5.position.z - selectedInterposerP5.userData.baseZ,
+        selectedInterposerSyntheticLugCountP5: selectedInterposerLugsP5.length,
+        selectedInterposerActiveLugChannelsP5: selectedInterposerLugsP5
+          .map((lug, index) => lug.visible ? index + 1 : null)
+          .filter(index => index !== null),
+        selectorBailMotionDerivedFromVisibleSelectedInterposerLugsP5: true,
+        selectedInterposerMappingClass:
+          'source-backed selected-interposer -> selector-bail causal boundary; browser key registration, six synthetic lug pattern and travel amplitudes are P5 and are not a factory Model-721 keyboard code claim',
         selectorCompensatorEmbodied: true,
         selectorCompensatorBallCountP4,
         selectorCompensatorClass:

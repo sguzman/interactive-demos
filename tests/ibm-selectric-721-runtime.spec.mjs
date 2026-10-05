@@ -170,6 +170,14 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.keyboardMechanism.keyleverPawlShoulderRivetCountP4).toBe(51);
   expect(initial.geometry.keyboardMechanism.interposerFrontFulcrumRodEmbodied).toBe(true);
   expect(initial.geometry.keyboardMechanism.interposerGuideRailCountP4).toBe(2);
+  expect(initial.geometry.keyboardMechanism.selectedInterposerCodeTracerEmbodiedP5).toBe(true);
+  expect(initial.geometry.keyboardMechanism.selectedInterposerVisibleP5).toBe(false);
+  expect(initial.geometry.keyboardMechanism.selectedInterposerDownTravelMmP5).toBeCloseTo(0, 8);
+  expect(initial.geometry.keyboardMechanism.selectedInterposerForwardTravelMmP5).toBeCloseTo(0, 8);
+  expect(initial.geometry.keyboardMechanism.selectedInterposerSyntheticLugCountP5).toBe(6);
+  expect(initial.geometry.keyboardMechanism.selectedInterposerActiveLugChannelsP5).toEqual([]);
+  expect(initial.geometry.keyboardMechanism.selectorBailMotionDerivedFromVisibleSelectedInterposerLugsP5).toBe(true);
+  expect(initial.geometry.keyboardMechanism.selectedInterposerMappingClass).toContain('not a factory');
   expect(initial.geometry.keyboardMechanism.selectorCompensatorEmbodied).toBe(true);
   expect(initial.geometry.keyboardMechanism.selectorCompensatorBallCountP4).toBeGreaterThan(10);
   expect(initial.geometry.keyboardMechanism.selectorCompensatorClass).toContain('mutual-exclusion');
@@ -954,6 +962,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(keyDown.keyboardCodeBitOrder).toEqual(['T1','T2','R1','R2','R2A','fiveUnit']);
   expect(keyDown.keyboardCodeEngaged).toBe(false);
   expect(keyDown.geometry.keyboardMechanism.codeEngaged).toBe(false);
+  expect(keyDown.geometry.keyboardMechanism.selectedInterposerVisibleP5).toBe(true);
+  expect(keyDown.geometry.keyboardMechanism.selectedInterposerDownTravelMmP5).toBeGreaterThan(2.5);
+  expect(keyDown.geometry.keyboardMechanism.selectedInterposerForwardTravelMmP5).toBeCloseTo(0, 8);
+  expect(keyDown.geometry.keyboardMechanism.selectedInterposerActiveLugChannelsP5).toEqual([]);
   expect(keyDown.geometry.keyboardMechanism.selectorBailAnglesDegP5).toEqual([0, 0, 0, 0, 0, 0]);
   expect(keyDown.geometry.keyboardMechanism.latchBailSampleP5).toBeCloseTo(0, 8);
   expect(keyDown.geometry.selectorCamDrive.poseP5.latchBailSampleP5).toBeCloseTo(0, 8);
@@ -967,6 +979,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(codeReadyHold).toBe(true);
   const codeReady = await page.evaluate(() => window.__selectricDebug.state);
   expect(codeReady.keyboardCodeEngaged).toBe(true);
+  expect(codeReady.geometry.keyboardMechanism.selectedInterposerVisibleP5).toBe(true);
+  expect(codeReady.geometry.keyboardMechanism.selectedInterposerForwardTravelMmP5).toBeCloseTo(8, 8);
+  expect(codeReady.geometry.keyboardMechanism.selectedInterposerActiveLugChannelsP5.length).toBeGreaterThan(0);
   expect(codeReady.geometry.selectorCamDrive.poseP5.ordinaryRawLiftP5.every(lift => lift > 0.15)).toBe(true);
   expect(codeReady.geometry.selectorCamDrive.poseP5.latchBailSampleP5).toBeCloseTo(0, 8);
   expect(codeReady.geometry.keyboardMechanism.latchBailSampleP5).toBeCloseTo(0, 8);
