@@ -136,6 +136,42 @@ function ratchetToothGeometryP4(axialWidth, radialHeight, tangentialWidth) {
   return geometry;
 }
 
+function leverPlateGeometryP4(length, pivotWidth, tipWidth, thickness, pivotHoleRadius = 1.45) {
+  const shape = new THREE.Shape();
+  const bottomY = -pivotWidth * 0.52;
+  const topY = length;
+  const chamfer = Math.min(2.2, tipWidth * 0.35);
+
+  shape.moveTo(-pivotWidth / 2 + chamfer, bottomY);
+  shape.lineTo(pivotWidth / 2 - chamfer, bottomY);
+  shape.lineTo(pivotWidth / 2, bottomY + chamfer);
+  shape.lineTo(tipWidth / 2, topY - chamfer);
+  shape.lineTo(tipWidth / 2 - chamfer * 0.45, topY);
+  shape.lineTo(-tipWidth / 2 + chamfer * 0.45, topY);
+  shape.lineTo(-tipWidth / 2, topY - chamfer);
+  shape.lineTo(-pivotWidth / 2, bottomY + chamfer);
+  shape.closePath();
+
+  const pivotHole = new THREE.Path();
+  pivotHole.absarc(0, 0, pivotHoleRadius, 0, Math.PI * 2, false);
+  shape.holes.push(pivotHole);
+
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: thickness,
+    steps: 1,
+    bevelEnabled: true,
+    bevelThickness: 0.28,
+    bevelSize: 0.28,
+    bevelSegments: 2,
+    curveSegments: 16
+  });
+  geometry.translate(0, 0, -thickness / 2);
+  geometry.computeVertexNormals();
+  geometry.userData.p4LeverPlateClass =
+    'tapered chamfered P4 stamped-link plate with explicit pivot hole; exact IBM lever stamping/section unresolved';
+  return geometry;
+}
+
 function carrierSidePlateGeometryP4(thickness, height, depth) {
   const halfH = height / 2;
   const halfD = depth / 2;
@@ -3286,11 +3322,17 @@ export function createSelectricModel() {
   tiltDetentPivot.name = 'tilt detent pivot';
   tiltDetentPivot.position.set(-23, P4.typeball.y - 11, P4.typeball.zRest + 17);
   carrierMotion.add(tiltDetentPivot);
-  const tiltDetentArm = box(5, 30, 5, metal, 'tilt detent arm');
-  tiltDetentArm.position.set(0, 12, -5);
+  const tiltDetentArmGeometryP4 = leverPlateGeometryP4(29, 7.2, 4.8, 3.2);
+  const tiltDetentArm = new THREE.Mesh(tiltDetentArmGeometryP4, metal);
+  tiltDetentArm.name = 'tilt detent stamped-link arm P4';
   tiltDetentArm.rotation.x = deg(-14);
+  tiltDetentArm.castShadow = true;
+  tiltDetentArm.receiveShadow = true;
   addPickable(tiltDetentArm, COMPONENTS.fineAlignment, pickables);
   tiltDetentPivot.add(tiltDetentArm);
+  const tiltDetentPivotPin = shaft(8.2, 2.1, darkMetal, 'tilt detent pivot pin P4');
+  addPickable(tiltDetentPivotPin, COMPONENTS.fineAlignment, pickables);
+  tiltDetentPivot.add(tiltDetentPivotPin);
   const tiltDetentTip = box(5.5, 5.5, 8, darkMetal, 'tilt detent V-tip cue');
   tiltDetentTip.position.set(0, 27, -11);
   addPickable(tiltDetentTip, COMPONENTS.fineAlignment, pickables);
@@ -3300,11 +3342,17 @@ export function createSelectricModel() {
   rotateDetentPivot.name = 'rotate detent pivot';
   rotateDetentPivot.position.set(23, P4.typeball.y - 14, P4.typeball.zRest + 15);
   carrierMotion.add(rotateDetentPivot);
-  const rotateDetentArm = box(5, 28, 5, metal, 'rotate detent arm');
-  rotateDetentArm.position.set(0, 11, -5);
+  const rotateDetentArmGeometryP4 = leverPlateGeometryP4(27, 7.0, 4.6, 3.2);
+  const rotateDetentArm = new THREE.Mesh(rotateDetentArmGeometryP4, metal);
+  rotateDetentArm.name = 'rotate detent stamped-link arm P4';
   rotateDetentArm.rotation.x = deg(-12);
+  rotateDetentArm.castShadow = true;
+  rotateDetentArm.receiveShadow = true;
   addPickable(rotateDetentArm, COMPONENTS.fineAlignment, pickables);
   rotateDetentPivot.add(rotateDetentArm);
+  const rotateDetentPivotPin = shaft(8.2, 2.1, darkMetal, 'rotate detent pivot pin P4');
+  addPickable(rotateDetentPivotPin, COMPONENTS.fineAlignment, pickables);
+  rotateDetentPivot.add(rotateDetentPivotPin);
   const rotateDetentTip = box(5.2, 5.2, 8, darkMetal, 'rotate detent skirt-contact cue');
   rotateDetentTip.position.set(0, 25, -10);
   addPickable(rotateDetentTip, COMPONENTS.fineAlignment, pickables);
@@ -4663,6 +4711,9 @@ export function createSelectricModel() {
         detentFollowerEmbodied: true,
         detentFollowerLiftP5: state.detentFollowerLiftP5,
         detentCamLobesP4: 2,
+        detentArmConstructionClass: tiltDetentArmGeometryP4.userData.p4LeverPlateClass,
+        detentArmCountP4: 2,
+        detentPivotPinsEmbodied: true,
         sharedFollowerWithRotateLostMotion: true,
         tiltTakeupThresholdP5: 0,
         rotateTakeupThresholdP5: 0.20,
