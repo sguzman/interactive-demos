@@ -146,8 +146,8 @@ export const COMPONENTS = Object.freeze({
   platenRatchet: {
     name: '27-tooth platen ratchet',
     category: 'paper / line index',
-    provenance: 'IBM shared Selectric diameter + OEM 7X1 representative 27T profile + P4 tooth shape',
-    description: '30.1498 mm ratchet outer diameter with 27 equal angular positions. The public tooth shape is reconstructive; one normal index advances one tooth.'
+    provenance: 'IBM shared Selectric diameter + OEM 7X1 representative 27T profile + asymmetric tapered P4 tooth reconstruction',
+    description: '30.1498 mm ratchet outer diameter with 27 equal angular positions. The public teeth now use an asymmetric tapered P4 ratchet silhouette rather than plain boxes, while the exact production flank/profile remains unresolved; one normal index advances one tooth.'
   },
   paperFeed: {
     name: 'Paper feed / bail / copy-control system',
