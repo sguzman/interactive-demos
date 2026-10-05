@@ -2559,12 +2559,34 @@ export function createSelectricModel() {
     paperBailPivot.add(toggleSpring);
   }
 
-  const indexPawl = box(5, 20, 4, darkMetal, 'platen index pawl');
-  indexPawl.position.set(P4.platen.length / 2 - 20, P4.platen.y - 2, P4.platen.z + 15);
-  indexPawl.rotation.x = deg(-22);
-  indexPawl.userData.baseRotationX = indexPawl.rotation.x;
+  const indexPawlPivot = new THREE.Group();
+  indexPawlPivot.name = 'platen index pawl pivot P4';
+  indexPawlPivot.position.set(
+    P4.platen.length / 2 - 20,
+    P4.platen.y - 10,
+    P4.platen.z + 22
+  );
+  indexPawlPivot.userData.baseRotationX = deg(-65);
+  indexPawlPivot.rotation.x = indexPawlPivot.userData.baseRotationX;
+  paperFeedCarriage.add(indexPawlPivot);
+
+  const indexPawlGeometryP4 = leverPlateGeometryP4(25, 7.2, 4.4, 3.2);
+  const indexPawl = new THREE.Mesh(indexPawlGeometryP4, darkMetal);
+  indexPawl.name = 'platen index pawl stamped-link arm P4';
+  indexPawl.castShadow = true;
+  indexPawl.receiveShadow = true;
   addPickable(indexPawl, COMPONENTS.platenRatchet, pickables);
-  paperFeedCarriage.add(indexPawl);
+  indexPawlPivot.add(indexPawl);
+
+  const indexPawlPivotPin = shaft(8.5, 2.2, metal, 'platen index pawl pivot pin P4');
+  addPickable(indexPawlPivotPin, COMPONENTS.platenRatchet, pickables);
+  indexPawlPivot.add(indexPawlPivotPin);
+
+  const indexPawlTip = box(5.2, 4.8, 3.2, metal, 'platen index pawl tooth-contact tip P4');
+  indexPawlTip.position.set(0, 25.0, 0);
+  indexPawlTip.rotation.x = deg(-16);
+  addPickable(indexPawlTip, COMPONENTS.platenRatchet, pickables);
+  indexPawlPivot.add(indexPawlTip);
 
   const detentRoller = pulley(4.5, 5, metal, 'platen detent roller');
   detentRoller.position.set(P4.platen.length / 2 - 20, P4.platen.y + 13, P4.platen.z + 8);
@@ -4145,7 +4167,9 @@ export function createSelectricModel() {
   function setIndexPawlPhase(value) {
     const t = THREE.MathUtils.clamp(Number(value) || 0, 0, 1);
     const strokeScaleP5 = state.lineSpacingTeeth === 2 ? 1.24 : 1;
-    indexPawl.rotation.x = indexPawl.userData.baseRotationX + deg(28 * strokeScaleP5 * Math.sin(t * Math.PI));
+    indexPawlPivot.rotation.x =
+      indexPawlPivot.userData.baseRotationX +
+      deg(28 * strokeScaleP5 * Math.sin(t * Math.PI));
   }
 
   function setPlatenIndex(value) {
@@ -4519,7 +4543,11 @@ export function createSelectricModel() {
         selectorEmbodied: true,
         selectorAngleDegP5: state.lineSpacingTeeth === 2 ? 13 : -13,
         selectorTravelClass: 'P5 visible selector travel; one-vs-two-tooth function source-backed, exact external coordinates unresolved',
-        indexPawlStrokeClass: 'P5 presentation amplitude; one-vs-two-tooth function source-backed'
+        indexPawlConstructionClass: indexPawlGeometryP4.userData.p4LeverPlateClass,
+        indexPawlPivotEmbodied: true,
+        indexPawlTipEmbodied: true,
+        indexPawlRestAngleDegP4: THREE.MathUtils.radToDeg(indexPawlPivot.userData.baseRotationX),
+        indexPawlStrokeClass: 'P5 presentation amplitude about explicit P4 pivot; one-vs-two-tooth function source-backed, exact OEM pawl travel unresolved'
       },
       paperFeed: {
         frontRollers: 4,
