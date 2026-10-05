@@ -3591,6 +3591,13 @@ export function createSelectricModel() {
     };
   }
 
+  function objectPointInSelectionAssemblyP4(object, localPoint = new THREE.Vector3()) {
+    selectionAssembly.updateMatrixWorld(true);
+    const world = localPoint.clone();
+    object.localToWorld(world);
+    return selectionAssembly.worldToLocal(world);
+  }
+
   function makeStampedSelectionBellcrankP4(name, armVectors, mat = metal) {
     const group = new THREE.Group();
     group.name = name;
@@ -3782,6 +3789,47 @@ export function createSelectricModel() {
     2.6
   );
   rotateSecond.add(rotateSecondLink);
+
+  // Close the source-backed selector-latch -> differential-input boundary visibly. The source fixes
+  // which latch drives which differential input but not the production routing or link sections.
+  // Use separated P4 dogleg lanes so five live connections remain legible without pretending these
+  // browser coordinates are IBM dimensions or allowing crossing rods to bleed through each other.
+  const ordinaryLatchDifferentialBindingsP4 = [
+    { name: 'T1', latch: selectorLatches.T1, input: tiltT1Input, laneZ: -15 },
+    { name: 'T2', latch: selectorLatches.T2, input: tiltT2Input, laneZ: -18 },
+    { name: 'R1', latch: selectorLatches.R1, input: rotateFirstR1Input, laneZ: -21 },
+    { name: 'R2', latch: selectorLatches.R2, input: rotateFirstR2Input, laneZ: -24 },
+    { name: 'R2A', latch: selectorLatches.R2A, input: rotateSecondR2AInput, laneZ: -27 }
+  ].map(binding => ({
+    ...binding,
+    first: makeDynamicSelectionRodP4(
+      binding.name + ' selector-latch to differential dogleg segment A P4',
+      1.15,
+      darkMetal
+    ),
+    second: makeDynamicSelectionRodP4(
+      binding.name + ' selector-latch to differential dogleg segment B P4',
+      1.15,
+      darkMetal
+    )
+  }));
+  const ordinaryLatchDifferentialPoseP5 = {};
+
+  function updateOrdinaryLatchDifferentialLinksP4() {
+    ordinaryLatchDifferentialBindingsP4.forEach((binding, index) => {
+      const latchPoint = objectPointInSelectionAssemblyP4(binding.latch);
+      const inputPoint = objectPointInSelectionAssemblyP4(binding.input);
+      const elbow = new THREE.Vector3(
+        latchPoint.x,
+        THREE.MathUtils.lerp(latchPoint.y, inputPoint.y, 0.48 + index * 0.015),
+        binding.laneZ
+      );
+      ordinaryLatchDifferentialPoseP5[binding.name] = {
+        segmentAMmP4: binding.first.update(latchPoint, elbow),
+        segmentBMmP4: binding.second.update(elbow, inputPoint)
+      };
+    });
+  }
 
   // Signed balance: positive q2 pulls the left end down while the physically separate N5
   // mechanism raises the right end. The midpoint therefore carries q2-fiveUnit without
@@ -4187,6 +4235,8 @@ export function createSelectricModel() {
     selectionLinkagePoseP5.rotateSecond.error =
       selectionLinkagePoseP5.rotateSecond.outputTravel -
       selectionLinkagePoseP5.rotateSecond.expectedTravel;
+
+    updateOrdinaryLatchDifferentialLinksP4();
 
     const balanceLeftYOffset = -q2 * selectionLinkageTravelP5.balanceEndpoint;
     const balanceRightYOffset = effectiveFiveUnit * selectionLinkageTravelP5.balanceEndpoint;
@@ -6385,6 +6435,17 @@ export function createSelectricModel() {
           'third cycle-shaft cam releases/restores an explicit latch-gated rising five-unit bail whose effective rise drives the live signed-balance right endpoint',
         targetAndMechanicalSelectionSeparated: true,
         ordinaryLatchOutputsDriveLiveDifferential: true,
+        ordinaryLatchToDifferentialLinksEmbodiedP4: true,
+        ordinaryLatchToDifferentialChannelCountP4: ordinaryLatchDifferentialBindingsP4.length,
+        ordinaryLatchToDifferentialDynamicRodSegmentCountP4:
+          ordinaryLatchDifferentialBindingsP4.length * 2,
+        ordinaryLatchToDifferentialChannelOrderP4:
+          ordinaryLatchDifferentialBindingsP4.map(binding => binding.name),
+        ordinaryLatchToDifferentialPoseP5: Object.fromEntries(
+          Object.entries(ordinaryLatchDifferentialPoseP5).map(([name, pose]) => [name, { ...pose }])
+        ),
+        ordinaryLatchToDifferentialGeometryClass:
+          'source-backed T1/T2/R1/R2/R2A latch-to-differential topology embodied as separated P4 dogleg transfer lanes; exact IBM link count, route, joints and dimensions unresolved',
         fiveUnitBailDrivesLiveBalanceEndpoint: true,
         fiveUnitBailToBalanceTransferRodEmbodiedP4: true,
         fiveUnitBailToBalanceTransferRodLengthMmP4: fiveUnitBailToBalanceRodLengthMmP4,
