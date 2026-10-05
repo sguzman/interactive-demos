@@ -729,6 +729,7 @@ export function createSelectricModel() {
     tabStopIndices: [],
     tiltDetent: 0,
     rotateDetent: 0,
+    detentFollowerLiftP5: 0,
     feedRollsEngaged: true,
     platenVariableEngaged: false,
     manualPlatenAngle: 0,
@@ -2202,6 +2203,24 @@ export function createSelectricModel() {
     printSleeveRotor.add(cam);
   }
 
+  // P4 lobe cues make the sourced 1164240 combined feed/detent cam read as an actual cam
+  // rather than a plain round collar. Their exact production profile is deliberately unresolved.
+  const detentCamLobeP4 = box(6.5, 4.8, 5.4, darkMetal, '1164240 detent lobe P4 cue');
+  detentCamLobeP4.position.set(-4, -12.0, 0);
+  addPickable(detentCamLobeP4, COMPONENTS.fineAlignment, pickables);
+  printSleeveRotor.add(detentCamLobeP4);
+
+  const feedCamLobeP4 = box(6.0, 4.2, 5.0, metal, '1164240 ribbon-feed lobe P4 cue');
+  const feedCamLobeAngleP4 = deg(32);
+  feedCamLobeP4.position.set(
+    -4,
+    -11.2 * Math.cos(feedCamLobeAngleP4),
+    -11.2 * Math.sin(feedCamLobeAngleP4)
+  );
+  feedCamLobeP4.rotation.x = feedCamLobeAngleP4;
+  addPickable(feedCamLobeP4, COMPONENTS.sleeve, pickables);
+  printSleeveRotor.add(feedCamLobeP4);
+
   for (const x of [-P4.carrierLocal.bearingX, P4.carrierLocal.bearingX]) {
     const localBearing = pulley(10.5, 7, shoeMat, x < 0 ? 'left carrier sleeve bearing' : 'right carrier sleeve bearing');
     localBearing.position.set(x, P4.printShaft.y, P4.printShaft.z);
@@ -2351,10 +2370,26 @@ export function createSelectricModel() {
   addPickable(rotateDetentTip, COMPONENTS.fineAlignment, pickables);
   rotateDetentPivot.add(rotateDetentTip);
 
-  const detentFollower = box(20, 5, 6, darkMetal, 'print-sleeve detent cam follower cue');
-  detentFollower.position.set(0, P4.printShaft.y + 16, P4.printShaft.z + 8);
-  addPickable(detentFollower, COMPONENTS.fineAlignment, pickables);
+  const detentFollower = new THREE.Group();
+  detentFollower.name = '1164240 detent follower assembly';
+  detentFollower.position.set(-4, P4.printShaft.y + 15.0, P4.printShaft.z);
   carrierMotion.add(detentFollower);
+
+  const detentFollowerRoller = pulley(3.2, 5.5, darkMetal, '1164240 detent follower roller P4 cue');
+  addPickable(detentFollowerRoller, COMPONENTS.fineAlignment, pickables);
+  detentFollower.add(detentFollowerRoller);
+
+  const detentFollowerYoke = box(20, 4.5, 5.0, metal, 'detent follower cross-yoke');
+  detentFollowerYoke.position.set(4, 5.2, 0);
+  addPickable(detentFollowerYoke, COMPONENTS.fineAlignment, pickables);
+  detentFollower.add(detentFollowerYoke);
+
+  const detentFollowerStem = box(4.2, 13.0, 4.2, metal, 'detent follower stem');
+  detentFollowerStem.position.set(0, 7.5, 0);
+  addPickable(detentFollowerStem, COMPONENTS.fineAlignment, pickables);
+  detentFollower.add(detentFollowerStem);
+
+  const detentFollowerBaseYP4 = detentFollower.position.y;
 
   const carrierTapeGuides = [];
   for (const side of [-1, 1]) {
@@ -2730,11 +2765,34 @@ export function createSelectricModel() {
   function setFineAlignment(tiltValue, rotateValue = tiltValue) {
     state.tiltDetent = THREE.MathUtils.clamp(Number(tiltValue) || 0, 0, 1);
     state.rotateDetent = THREE.MathUtils.clamp(Number(rotateValue) || 0, 0, 1);
+    state.detentFollowerLiftP5 = Math.max(state.tiltDetent, state.rotateDetent);
 
     // P5 motion amplitudes only. Source-backed requirement is ordering/contact role, not these angles.
+    // The follower moves radially away from the 1164240 cam center as its reconstructed lobe rises.
     tiltDetentPivot.rotation.x = deg(24 * state.tiltDetent);
     rotateDetentPivot.rotation.x = deg(26 * state.rotateDetent);
-    detentFollower.position.y = P4.printShaft.y + 16 - Math.max(state.tiltDetent, state.rotateDetent) * 5;
+    detentFollower.position.y = detentFollowerBaseYP4 + state.detentFollowerLiftP5 * 5;
+  }
+
+  function fineAlignmentFromSleevePhaseP5(phase) {
+    const t = THREE.MathUtils.clamp(Number(phase) || 0, 0, 1);
+    if (t < 0.43) return { tilt: 0, rotate: 0 };
+    if (t < 0.54) {
+      const k = (t - 0.43) / 0.11;
+      return {
+        tilt: THREE.MathUtils.clamp(k / 0.58, 0, 1),
+        rotate: THREE.MathUtils.clamp((k - 0.20) / 0.62, 0, 1)
+      };
+    }
+    if (t < 0.66) return { tilt: 1, rotate: 1 };
+    if (t < 0.91) {
+      const k = 1 - (t - 0.66) / 0.25;
+      return {
+        tilt: THREE.MathUtils.clamp((k - 0.34) / 0.66, 0, 1),
+        rotate: THREE.MathUtils.clamp((k - 0.46) / 0.54, 0, 1)
+      };
+    }
+    return { tilt: 0, rotate: 0 };
   }
 
   function setPrintApproach(value) {
@@ -2954,6 +3012,11 @@ export function createSelectricModel() {
     filterShaftRotor.rotation.x = state.cyclePhase * Math.PI;
     printShaftRotor.rotation.x = state.cyclePhase * Math.PI * 2;
     printSleeveRotor.rotation.x = state.cyclePhase * Math.PI * 2;
+
+    // Fine alignment is now a downstream output of the rotating print sleeve / 1164240 cam.
+    // Timing remains explicit P5 because exact IBM event angles are not yet sourced.
+    const fineAlignment = fineAlignmentFromSleevePhaseP5(state.cyclePhase);
+    setFineAlignment(fineAlignment.tilt, fineAlignment.rotate);
   }
 
   function setServiceCover(value) {
@@ -3363,8 +3426,14 @@ export function createSelectricModel() {
         tiltSeatsBeforeRotateInPresentation: true,
         fullySeatedBeforeImpact: true,
         releasedBeforeFullSelectionRestore: true,
+        driver: 'IBM 1164240 combined ribbon-feed/detent cam on the rotating print sleeve',
+        printSleevePhaseP5: state.cyclePhase,
+        detentFollowerEmbodied: true,
+        detentFollowerLiftP5: state.detentFollowerLiftP5,
+        detentCamLobesP4: 2,
+        causalChain: ['print-sleeve-rotation', '1164240-cam', 'roller-follower', 'tilt-detent', 'rotate-detent'],
         exactPivotsAndTimingDegrees: 'unresolved',
-        animationPhaseClass: 'P5 preserving source-backed causal ordering'
+        animationPhaseClass: 'P5 event-angle envelope driven from the print-sleeve phase; source-backed topology/order, not OEM timing degrees'
       },
       printRocker: {
         motion: 'revolute',
