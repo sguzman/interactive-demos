@@ -64,6 +64,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.platenRatchet.singleIndexTeeth).toBe(1);
   expect(initial.geometry.platenRatchet.doubleIndexTeeth).toBe(2);
   expect(initial.geometry.platenRatchet.activeIndexTeeth).toBe(1);
+  expect(initial.geometry.platenRatchet.indexPawlConstructionClass).toContain('tapered chamfered P4 stamped-link plate');
+  expect(initial.geometry.platenRatchet.indexPawlPivotEmbodied).toBe(true);
+  expect(initial.geometry.platenRatchet.indexPawlTipEmbodied).toBe(true);
+  expect(initial.geometry.platenRatchet.indexPawlRestAngleDegP4).toBeCloseTo(-65, 8);
+  expect(initial.geometry.platenRatchet.indexPawlStrokeClass).toContain('explicit P4 pivot');
   expect(initial.geometry.platenRatchet.paperAdvancePerRatchetToothMm).toBeCloseTo(2 * Math.PI * 18.1864 / 27, 8);
   expect(initial.geometry.platenRatchet.paperAdvanceDerivation).toContain('P2 arc length');
   expect(initial.paperAdvanceMm).toBe(0);
