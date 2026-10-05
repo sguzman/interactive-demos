@@ -193,6 +193,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.typeElement.topCapRadiusP4Mm).toBeCloseTo(13.4, 8);
   expect(initial.geometry.typeElement.topCapAndLatchPresentation).toBe(true);
   expect(initial.geometry.typeElement.slugFinishClass).toContain('chrome-like');
+  expect(initial.geometry.typeElement.slugSectionClass).toContain('three-stage P4 pedestal/shoulder/face land');
+  expect(initial.geometry.typeElement.slugSectionP4.depthMmP4).toBeCloseTo(1.35, 8);
+  expect(initial.geometry.typeElement.slugSectionP4.bevelDepthMmP4).toBeCloseTo(0.30, 8);
   expect(initial.geometry.typeElement.slugOrientation).toContain('surface-normal');
   expect(initial.geometry.typeElement.rotateSlotStepDegP4).toBeCloseTo(360 / 22, 10);
   expect(initial.geometry.typeElement.bandLatitudesP4).toEqual([-0.58, -0.2, 0.2, 0.58]);
