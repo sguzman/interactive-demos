@@ -1702,6 +1702,28 @@ export function createSelectricModel() {
     selectorLatchInterposers.push(latchInterposer);
   }
 
+  // Make the source-backed selector-bail -> latch-interposer relation visible instead of leaving
+  // two parts to move in parallel with no physical connection. The right-end attachment is P4;
+  // exact IBM eye/link geometry remains unresolved.
+  const selectorBailToLatchInterposerRodsP4 = selectorBails.map((_, index) =>
+    makeRootDynamicRodP4(
+      'selector bail C' + (index + 1) + ' to latch interposer transfer P4',
+      1.05,
+      darkMetal,
+      COMPONENTS.keyboardMechanism
+    )
+  );
+  const selectorBailInterposerRodLengthsMmP4 = Array(6).fill(0);
+
+  function updateSelectorBailInterposerLinksP4() {
+    selectorBails.forEach((bail, index) => {
+      const bailEnd = objectPointInRootP4(bail, new THREE.Vector3(136, 0, 0));
+      const interposerEnd = objectPointInRootP4(selectorLatchInterposers[index], new THREE.Vector3());
+      selectorBailInterposerRodLengthsMmP4[index] =
+        selectorBailToLatchInterposerRodsP4[index].update(bailEnd, interposerEnd);
+    });
+  }
+
   const filterShaftRotor = new THREE.Group();
   filterShaftRotor.position.set(0, 32, 18);
   filterShaftRotor.name = 'filter shaft rotational frame';
@@ -5472,18 +5494,33 @@ export function createSelectricModel() {
       const bail = selectorBails[index];
       bail.rotation.x = bail.userData.baseRotationX + deg(active ? -12 : 0);
 
+      // Downstream exclusion is now derived from the upstream visible bail pose. The 12-degree
+      // bail throw and 5 mm interposer travel are still P5 reconstruction amplitudes.
+      const bailTravelFractionP5 = THREE.MathUtils.clamp(
+        Math.abs(bail.rotation.x - bail.userData.baseRotationX) / deg(12),
+        0,
+        1
+      );
       const latchInterposer = selectorLatchInterposers[index];
-      latchInterposer.position.z = latchInterposer.userData.baseZ + (active ? 5.0 : 0);
+      latchInterposer.position.z =
+        latchInterposer.userData.baseZ + bailTravelFractionP5 * 5.0;
+      const interposerTravelFractionP5 = THREE.MathUtils.clamp(
+        (latchInterposer.position.z - latchInterposer.userData.baseZ) / 5.0,
+        0,
+        1
+      );
 
       if (index < selectorLatchNames.length) {
         const selectorLatch = selectorLatches[selectorLatchNames[index]];
         selectorLatch.position.z =
-          selectorLatch.userData.baseZ + (active ? selectorLatchForwardTravelP5 : 0);
+          selectorLatch.userData.baseZ +
+          interposerTravelFractionP5 * selectorLatchForwardTravelP5;
       } else if (state.keyboardCodeEngaged && publicDownstreamBit) {
         state.fiveUnitLatchReleaseHeldP5 = true;
       }
     });
 
+    updateSelectorBailInterposerLinksP4();
     updateFiveUnitLatchBailP5();
   }
 
@@ -6311,6 +6348,15 @@ export function createSelectricModel() {
         latchInterposerCount: selectorLatchInterposers.length,
         latchInterposerClass:
           'one-to-one two-eye P4 stamped links move forward from the six selector-bail channels; exact production travel/sections unresolved',
+        selectorBailToLatchInterposerTransferEmbodiedP4: true,
+        selectorBailToLatchInterposerTransferCountP4:
+          selectorBailToLatchInterposerRodsP4.length,
+        selectorBailToLatchInterposerRodLengthsMmP4:
+          [...selectorBailInterposerRodLengthsMmP4],
+        latchInterposerTravelDerivedFromBailPoseP5: true,
+        selectorLatchForwardTravelDerivedFromInterposerPoseP5: true,
+        latchInterposerToSelectorLatchVisibleBridge:
+          'open; forward exclusion is now causally derived through the visible latch-interposer pose, but the production interposer-to-latch attachment geometry remains unresolved',
         filterShaftBladeCount: filterShaftBladesP4.length,
         filterShaftBearingCount: filterShaftBearingsP4.length,
         filterShaftBearingMaterialClass: 'bronze P4 visual material on both end supports; exact bearing dimensions unresolved',
