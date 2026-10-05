@@ -243,7 +243,21 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.selectorCamDrive.fiveUnitLatchedHomeRiseP5).toBeGreaterThan(0);
   expect(initial.geometry.selectorCamDrive.fiveUnitCamBailTransferRodEmbodiedP4).toBe(true);
   expect(initial.geometry.selectorCamDrive.fiveUnitFollowerDownstreamBailCoupling).toContain('closed');
-  expect(initial.geometry.selectorCamDrive.fiveUnitLiveBailToSignedBalanceCoupling).toContain('open');
+  expect(initial.geometry.selectorCamDrive.fiveUnitLiveBailToSignedBalanceCoupling).toContain('closed');
+  expect(initial.geometry.selectionMechanicalNormalized).toEqual({
+    qTilt: 0,
+    q1: 0,
+    q2: 0,
+    qSigned: 0,
+    ordinaryLatchSampleP5: 0,
+    fiveUnitEffectiveNegativeP5: 0
+  });
+  expect(initial.geometry.selectionDifferential.targetAndMechanicalSelectionSeparated).toBe(true);
+  expect(initial.geometry.selectionDifferential.ordinaryLatchOutputsDriveLiveDifferential).toBe(true);
+  expect(initial.geometry.selectionDifferential.fiveUnitBailDrivesLiveBalanceEndpoint).toBe(true);
+  expect(initial.geometry.selectionDifferential.checkedRestRestoresCharacterSelection).toBe(true);
+  expect(initial.geometry.typeElement.mechanicalPoseDerivedFromLiveDifferential).toBe(true);
+  expect(initial.geometry.typeElement.checkedRestSelectionHome).toBe(true);
   expect(initial.geometry.selectorCamDrive.poseP5.latchBailSampleP5).toBeCloseTo(0, 8);
   expect(initial.geometry.selectorCamDrive.poseP5.ordinaryRawLiftP5).toEqual([0, 0]);
   expect(initial.geometry.selectorCamDrive.poseP5.fiveUnitRawLiftP5).toBeCloseTo(1, 8);
@@ -819,6 +833,23 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(fineAligned.geometry.selectorCamDrive.poseP5.ordinaryRawLiftP5.every(lift => lift > 0.95)).toBe(true);
   expect(fineAligned.geometry.selectorCamDrive.poseP5.ordinaryFollowerAngleDegP5.every(angle => angle < -12)).toBe(true);
   expect(fineAligned.geometry.selectorCamDrive.poseP5.transferRodLengthsMmP4.every(length => Number.isFinite(length) && length > 0)).toBe(true);
+  expect(fineAligned.geometry.selectionMechanicalNormalized.ordinaryLatchSampleP5).toBeCloseTo(1, 8);
+  expect(fineAligned.geometry.selectionMechanicalNormalized.qTilt).toBeCloseTo(
+    fineAligned.geometry.selectionNormalized.qTilt,
+    8
+  );
+  expect(fineAligned.geometry.selectionMechanicalNormalized.qSigned).toBeCloseTo(
+    fineAligned.geometry.selectionNormalized.qSigned,
+    8
+  );
+  expect(fineAligned.geometry.typeElement.orientationDegP4.tilt).toBeCloseTo(
+    fineAligned.geometry.typeElement.targetOrientationDegP4.tilt,
+    8
+  );
+  expect(fineAligned.geometry.typeElement.orientationDegP4.rotate).toBeCloseTo(
+    fineAligned.geometry.typeElement.targetOrientationDegP4.rotate,
+    8
+  );
   const expectedFineBailAngles = Array.from({ length: 6 }, (_, index) => {
     const bit = Boolean(fineAligned.keyboardCode & (1 << index));
     if (index < 5) return bit ? 0 : -12;
@@ -890,6 +921,13 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(codeReady.geometry.selectorCamDrive.poseP5.fiveUnitLatchAngleDegP5).toBeLessThan(-10);
   expect(codeReady.geometry.selectorCamDrive.poseP5.fiveUnitBailRiseP5).toBeGreaterThan(0.95);
   expect(codeReady.geometry.selectorCamDrive.poseP5.fiveUnitEffectiveNegativeP5).toBeGreaterThan(0.95);
+  // At code-ready the ordinary latch-bail sample is still deliberately zero, so the live balance
+  // is at the N5 baseline (-5) before the positive compensation latches are sampled.
+  expect(codeReady.geometry.selectionMechanicalNormalized.ordinaryLatchSampleP5).toBeCloseTo(0, 8);
+  expect(codeReady.geometry.selectionMechanicalNormalized.q2).toBeCloseTo(0, 8);
+  expect(codeReady.geometry.selectionMechanicalNormalized.fiveUnitEffectiveNegativeP5).toBeGreaterThan(0.95);
+  expect(codeReady.geometry.selectionMechanicalNormalized.qSigned).toBeLessThan(-0.95);
+  expect(codeReady.geometry.selectionNormalized.qSigned).toBeCloseTo(codeReady.selection.rotateUnit / 5, 8);
   expect(await page.evaluate(() => window.__selectricDebug.cancelCharacterHold())).toBe(true);
 
   const afterKeyCycle = await page.evaluate(() => window.__selectricDebug.state);
@@ -900,6 +938,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(afterKeyCycle.geometry.selectorCamDrive.poseP5.fiveUnitCamAvailableRiseP5).toBeCloseTo(0, 8);
   expect(afterKeyCycle.geometry.selectorCamDrive.poseP5.fiveUnitBailRiseP5).toBeCloseTo(0, 8);
   expect(afterKeyCycle.geometry.selectorCamDrive.poseP5.fiveUnitEffectiveNegativeP5).toBeCloseTo(0, 8);
+  expect(afterKeyCycle.geometry.selectionMechanicalNormalized.qTilt).toBeCloseTo(0, 8);
+  expect(afterKeyCycle.geometry.selectionMechanicalNormalized.qSigned).toBeCloseTo(0, 8);
+  expect(afterKeyCycle.geometry.typeElement.checkedRestSelectionHome).toBe(true);
 
   // Positive rotate keeps the N5 latch engaged. When the cam reaches its release interval the
   // bail may only rise to the distinct latched-home stop, not the full negative-five position.
@@ -915,6 +956,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     8
   );
   expect(positiveReady.geometry.selectorCamDrive.poseP5.fiveUnitEffectiveNegativeP5).toBeCloseTo(0, 8);
+  expect(positiveReady.geometry.selectionMechanicalNormalized.ordinaryLatchSampleP5).toBeCloseTo(0, 8);
+  expect(positiveReady.geometry.selectionMechanicalNormalized.qTilt).toBeCloseTo(0, 8);
+  expect(positiveReady.geometry.selectionMechanicalNormalized.qSigned).toBeCloseTo(0, 8);
   expect(await page.evaluate(() => window.__selectricDebug.cancelCharacterHold())).toBe(true);
   const afterPositiveInspection = await page.evaluate(() => window.__selectricDebug.state);
   expect(afterPositiveInspection.carrierX).toBeCloseTo(codeReadyCarrier, 8);
@@ -942,6 +986,24 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     8
   );
   expect(impactHeld.geometry.carrierPrintDrive.keyedRotationPhaseErrorDegP4).toBeCloseTo(0, 10);
+  expect(impactHeld.geometry.selectionMechanicalNormalized.qTilt).toBeCloseTo(
+    impactHeld.geometry.selectionNormalized.qTilt,
+    8
+  );
+  expect(impactHeld.geometry.selectionMechanicalNormalized.qSigned).toBeCloseTo(
+    impactHeld.geometry.selectionNormalized.qSigned,
+    8
+  );
+  expect(impactHeld.geometry.typeElement.orientationDegP4.tilt).toBeCloseTo(
+    impactHeld.geometry.typeElement.targetOrientationDegP4.tilt,
+    8
+  );
+  expect(impactHeld.geometry.typeElement.orientationDegP4.rotate).toBeCloseTo(
+    impactHeld.geometry.typeElement.targetOrientationDegP4.rotate,
+    8
+  );
+  expect(impactHeld.geometry.typeElement.selectedSlugAlignmentErrorDegP4).toBeLessThan(1e-7);
+  expect(impactHeld.geometry.typeElement.selectedSlugFacingVectorP4.z).toBeCloseTo(-1, 8);
   expect(impactHeld.geometry.printRocker.selectedSlugPlatenClearanceAlongZMmP4).toBeLessThan(
     initial.geometry.printRocker.selectedSlugPlatenClearanceAlongZMmP4
   );
@@ -979,6 +1041,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const lowerRotate = typed.selection.rotateUnit;
   const lowerTypeElementTiltDeg = typed.geometry.typeElement.orientationDegP4.tilt;
   const lowerTypeElementRotateDeg = typed.geometry.typeElement.orientationDegP4.rotate;
+  expect(typed.geometry.selectionMechanicalNormalized.qTilt).toBeCloseTo(0, 8);
+  expect(typed.geometry.selectionMechanicalNormalized.qSigned).toBeCloseTo(0, 8);
+  expect(typed.geometry.typeElement.checkedRestSelectionHome).toBe(true);
   await page.evaluate(() => window.__selectricDebug.typeCharacter('Q'));
   await page.waitForFunction(
     () => window.__selectricDebug.state.serviceOperation === null && window.__selectricDebug.state.cycle === 'C0_REST',
@@ -994,8 +1059,17 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(uppercaseTyped.geometry.typeElement.selectedStructuralSlotP4).toBe(
     (typed.geometry.typeElement.selectedStructuralSlotP4 + 11) % 22
   );
-  expect(uppercaseTyped.geometry.typeElement.selectedSlugAlignmentErrorDegP4).toBeLessThan(1e-7);
-  expect(uppercaseTyped.geometry.typeElement.selectedSlugFacingVectorP4.z).toBeCloseTo(-1, 8);
+  expect(uppercaseTyped.geometry.selectionMechanicalNormalized.qTilt).toBeCloseTo(0, 8);
+  expect(uppercaseTyped.geometry.selectionMechanicalNormalized.qSigned).toBeCloseTo(0, 8);
+  expect(uppercaseTyped.geometry.typeElement.checkedRestSelectionHome).toBe(true);
+  expect(uppercaseTyped.geometry.typeElement.targetOrientationDegP4.tilt).toBeCloseTo(
+    typed.geometry.typeElement.targetOrientationDegP4.tilt,
+    8
+  );
+  expect(Math.abs(
+    uppercaseTyped.geometry.typeElement.targetOrientationDegP4.rotate -
+      typed.geometry.typeElement.targetOrientationDegP4.rotate
+  )).toBeCloseTo(180, 8);
   expect(uppercaseTyped.events.some(event => event.name === 'SHIFT_OPERATION_COMPLETE')).toBe(true);
 
   await page.evaluate(() => window.__selectricDebug.typeCharacter('q'));
@@ -1008,6 +1082,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(lowercaseRestored.selection.shiftHemisphere).toBe(0);
   expect(lowercaseRestored.selection.tiltBand).toBe(lowerTilt);
   expect(lowercaseRestored.selection.rotateUnit).toBe(lowerRotate);
+  expect(lowercaseRestored.geometry.selectionMechanicalNormalized.qTilt).toBeCloseTo(0, 8);
+  expect(lowercaseRestored.geometry.selectionMechanicalNormalized.qSigned).toBeCloseTo(0, 8);
+  expect(lowercaseRestored.geometry.typeElement.checkedRestSelectionHome).toBe(true);
+  expect(lowercaseRestored.geometry.typeElement.orientationDegP4.tilt).toBeCloseTo(lowerTypeElementTiltDeg, 8);
+  expect(lowercaseRestored.geometry.typeElement.orientationDegP4.rotate).toBeCloseTo(lowerTypeElementRotateDeg, 8);
 
   const ribbonDirectionBeforeReverse = lowercaseRestored.ribbonFeedDirection;
   const primedReverse = await page.evaluate(() => window.__selectricDebug.primeRibbonAutoReverse());
@@ -1090,12 +1169,12 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.shiftActsOnRightRotatePulley).toBe(true);
   expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.leftTiltAngleDegP5).toBeCloseTo(
     -typed.geometry.selectionDifferential.sidePulleyEmbodiment.tiltCommandAngleScaleDegP5 *
-      typed.geometry.selectionNormalized.qTilt,
+      typed.geometry.selectionMechanicalNormalized.qTilt,
     8
   );
   expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.leftRotateAngleDegP5).toBeCloseTo(
     -typed.geometry.selectionDifferential.sidePulleyEmbodiment.rotateCommandAngleScaleDegP5 *
-      typed.geometry.selectionNormalized.qSigned,
+      typed.geometry.selectionMechanicalNormalized.qSigned,
     8
   );
   expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.rightTiltAngleDegP5).toBeCloseTo(0, 8);
@@ -1116,7 +1195,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     8
   );
   expect(typed.geometry.carrierSelectionTransmission.poseP4.rotatePulleyAngleDegP4).toBeCloseTo(
-    -typed.selection.rotateUnit * (360 / typed.geometry.typeElement.positionsPerBand) +
+    -5 * typed.geometry.selectionMechanicalNormalized.qSigned *
+      (360 / typed.geometry.typeElement.positionsPerBand) +
       typed.selection.shiftAngleDeg,
     8
   );
