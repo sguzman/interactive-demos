@@ -61,6 +61,48 @@ function box(w, h, d, mat, name) {
   return mesh;
 }
 
+function radialToothedWheelGeometryP4(baseRadius, toothDepth, width, teeth) {
+  const points = Math.max(6, Math.round(teeth) * 2);
+  const vertices = [];
+  const indices = [];
+
+  for (const y of [-width / 2, width / 2]) {
+    for (let i = 0; i < points; i += 1) {
+      const angle = i * Math.PI * 2 / points;
+      const radius = baseRadius + (i % 2 ? toothDepth : 0);
+      vertices.push(Math.sin(angle) * radius, y, Math.cos(angle) * radius);
+    }
+  }
+
+  const lowerCenter = vertices.length / 3;
+  vertices.push(0, -width / 2, 0);
+  const upperCenter = vertices.length / 3;
+  vertices.push(0, width / 2, 0);
+
+  for (let i = 0; i < points; i += 1) {
+    const next = (i + 1) % points;
+    const lower = i;
+    const upper = points + i;
+    const lowerNext = next;
+    const upperNext = points + next;
+    indices.push(lowerCenter, lower, lowerNext);
+    indices.push(upperCenter, upperNext, upper);
+    indices.push(lower, upper, upperNext, lower, upperNext, lowerNext);
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.userData.p4ToothedWheel = {
+    presentationTeethP4: teeth,
+    baseRadiusMmP4: baseRadius,
+    toothDepthMmP4: toothDepth,
+    class: 'P4 alternating-radius toothed ratchet wheel; exact ribbon-ratchet tooth count/profile unresolved'
+  };
+  return geometry;
+}
+
 function ratchetToothGeometryP4(axialWidth, radialHeight, tangentialWidth) {
   const hx = axialWidth / 2;
   const hy = radialHeight / 2;
@@ -2369,9 +2411,12 @@ export function createSelectricModel() {
     addPickable(phaseMarker, COMPONENTS.ribbon, pickables);
     spool.add(phaseMarker);
 
-    const ratchet = new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 3.5, 20), darkMetal);
+    const ratchetGeometry = radialToothedWheelGeometryP4(8.4, 1.6, 3.5, 20);
+    const ratchet = new THREE.Mesh(ratchetGeometry, darkMetal);
     ratchet.position.set(x, 88, -49);
-    ratchet.name = x < 0 ? 'left ribbon feed ratchet' : 'right ribbon feed ratchet';
+    ratchet.name = x < 0 ? 'left P4 toothed ribbon feed ratchet' : 'right P4 toothed ribbon feed ratchet';
+    ratchet.castShadow = true;
+    ratchet.receiveShadow = true;
     addPickable(ratchet, COMPONENTS.ribbon, pickables);
     ribbonAssembly.add(ratchet);
     ribbonRatchets.push(ratchet);
@@ -3873,6 +3918,9 @@ export function createSelectricModel() {
         nominalRatchetTeethQualifier: 'approximately',
         feedDirection: state.ribbonFeedDirection,
         feedStrokeInDirection: state.ribbonFeedStrokeInDirection,
+        ratchetWheelCount: ribbonRatchets.length,
+        ratchetPresentationTeethP4: ribbonRatchets[0].geometry.userData.p4ToothedWheel.presentationTeethP4,
+        ratchetGeometryClass: ribbonRatchets[0].geometry.userData.p4ToothedWheel.class,
         spoolFillP5: [...state.ribbonSpoolFillP5],
         spoolRadiusScaleP5: ribbonSpools.map(spool => spool.userData.radiusScaleP5),
         spoolConstructionClass: 'P4 fixed hub/flanges plus independently scaling wound-ribbon pack; phase marker exposes spool rotation',
