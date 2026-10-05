@@ -2193,15 +2193,44 @@ export function createSelectricModel() {
   const ribbonFillMaxP5 = 0.86;
   const ribbonFillStepP5 = (ribbonFillMaxP5 - ribbonFillMinP5) / state.ribbonReverseThresholdStepsP5;
   for (const x of [-P4.ribbon.spoolCenterX, P4.ribbon.spoolCenterX]) {
-    const spool = new THREE.Mesh(
-      new THREE.CylinderGeometry(P4.ribbon.spoolRadiusP4, P4.ribbon.spoolRadiusP4, 10, 36),
-      ribbonMat
-    );
+    const spool = new THREE.Group();
     spool.position.set(x, 93, -49);
-    spool.name = x < 0 ? 'left fabric-ribbon spool' : 'right fabric-ribbon spool';
-    addPickable(spool, COMPONENTS.ribbon, pickables);
+    spool.name = x < 0 ? 'left fabric-ribbon spool assembly' : 'right fabric-ribbon spool assembly';
+    spool.userData.component = COMPONENTS.ribbon;
+    spool.userData.ribbonPackRadiusP4 = P4.ribbon.spoolRadiusP4 * 0.86;
+    spool.userData.radiusScaleP5 = 1;
     ribbonAssembly.add(spool);
     ribbonSpools.push(spool);
+
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(5.4, 5.4, 10, 28), darkMetal);
+    hub.name = x < 0 ? 'left ribbon spool hub' : 'right ribbon spool hub';
+    addPickable(hub, COMPONENTS.ribbon, pickables);
+    spool.add(hub);
+
+    for (const y of [-4.4, 4.4]) {
+      const flange = new THREE.Mesh(
+        new THREE.CylinderGeometry(P4.ribbon.spoolRadiusP4, P4.ribbon.spoolRadiusP4, 1.2, 40),
+        darkMetal
+      );
+      flange.position.y = y;
+      flange.name = (x < 0 ? 'left' : 'right') + (y < 0 ? ' lower' : ' upper') + ' ribbon spool flange';
+      addPickable(flange, COMPONENTS.ribbon, pickables);
+      spool.add(flange);
+    }
+
+    const ribbonPack = new THREE.Mesh(
+      new THREE.CylinderGeometry(spool.userData.ribbonPackRadiusP4, spool.userData.ribbonPackRadiusP4, 7.2, 40),
+      ribbonMat
+    );
+    ribbonPack.name = x < 0 ? 'left wound fabric ribbon pack' : 'right wound fabric ribbon pack';
+    addPickable(ribbonPack, COMPONENTS.ribbon, pickables);
+    spool.add(ribbonPack);
+    spool.userData.ribbonPack = ribbonPack;
+
+    const phaseMarker = box(7.5, 0.8, 1.6, metal, x < 0 ? 'left spool rotation marker' : 'right spool rotation marker');
+    phaseMarker.position.set(10.5, 5.3, 0);
+    addPickable(phaseMarker, COMPONENTS.ribbon, pickables);
+    spool.add(phaseMarker);
 
     const ratchet = new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 3.5, 20), darkMetal);
     ratchet.position.set(x, 88, -49);
@@ -2285,7 +2314,8 @@ export function createSelectricModel() {
   function updateRibbonSpoolFillVisuals() {
     ribbonSpools.forEach((spool, index) => {
       const radiusScale = ribbonRollRadiusScaleP5(state.ribbonSpoolFillP5[index]);
-      spool.scale.set(radiusScale, 1, radiusScale);
+      spool.userData.radiusScaleP5 = radiusScale;
+      spool.userData.ribbonPack.scale.set(radiusScale, 1, radiusScale);
     });
   }
 
@@ -2297,8 +2327,8 @@ export function createSelectricModel() {
       guide.position.y = liftY + guide.userData.ribbonYOffsetP4;
     });
     ribbonGuideBridge.position.y = liftY + ribbonGuideBridge.userData.ribbonYOffsetP4;
-    const leftRadius = P4.ribbon.spoolRadiusP4 * ribbonSpools[0].scale.x;
-    const rightRadius = P4.ribbon.spoolRadiusP4 * ribbonSpools[1].scale.x;
+    const leftRadius = ribbonSpools[0].userData.ribbonPackRadiusP4 * ribbonSpools[0].userData.radiusScaleP5;
+    const rightRadius = ribbonSpools[1].userData.ribbonPackRadiusP4 * ribbonSpools[1].userData.radiusScaleP5;
     updateRibbonSegment(
       ribbonLeftSegment,
       new THREE.Vector3(-P4.ribbon.spoolCenterX + leftRadius * 0.82, 94, -50),
@@ -3679,8 +3709,11 @@ export function createSelectricModel() {
         feedDirection: state.ribbonFeedDirection,
         feedStrokeInDirection: state.ribbonFeedStrokeInDirection,
         spoolFillP5: [...state.ribbonSpoolFillP5],
-        spoolRadiusScaleP5: ribbonSpools.map(spool => spool.scale.x),
-        spoolFillClass: 'P5 compressed supply/take-up fullness presentation; direction and reversal topology source-grounded, physical ribbon length unresolved',
+        spoolRadiusScaleP5: ribbonSpools.map(spool => spool.userData.radiusScaleP5),
+        spoolConstructionClass: 'P4 fixed hub/flanges plus independently scaling wound-ribbon pack; phase marker exposes spool rotation',
+        spoolFlangesFixedWhileRibbonPackChanges: true,
+        spoolRibbonPackBaseRadiusMmP4: ribbonSpools[0].userData.ribbonPackRadiusP4,
+        spoolFillClass: 'P5 compressed supply/take-up wound-pack radius presentation inside fixed P4 spool flanges; direction and reversal topology source-grounded, physical ribbon length unresolved',
         reverseState: state.ribbonReverseState,
         reversePhase: state.ribbonReversePhase,
         reverseCount: state.ribbonReverseCount,
