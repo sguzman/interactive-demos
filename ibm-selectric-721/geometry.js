@@ -2273,12 +2273,32 @@ export function createSelectricModel() {
   const rightGuide = new THREE.Vector3(18, P4.ribbon.yRest, P4.ribbon.z);
   const ribbonLiftGuides = [];
   for (const x of [-18, 18]) {
-    const guide = box(4, 21, 4, metal, x < 0 ? 'left ribbon lift guide' : 'right ribbon lift guide');
+    const sideName = x < 0 ? 'left' : 'right';
+    const guide = new THREE.Group();
+    guide.name = sideName + ' forked ribbon vibrator guide';
     guide.position.set(x, P4.ribbon.yRest - 3, P4.ribbon.z + 1);
     guide.userData.ribbonYOffsetP4 = -3;
-    addPickable(guide, COMPONENTS.ribbon, pickables);
+    guide.userData.prongCount = 2;
+    guide.userData.constructionClass = 'P4 forked vibrator guide with slim stem and front/rear ribbon-slot prongs';
     ribbonAssembly.add(guide);
     ribbonLiftGuides.push(guide);
+
+    const stem = box(2.2, 14.0, 2.2, metal, sideName + ' ribbon-guide stem');
+    stem.position.set(0, -5.0, 0);
+    addPickable(stem, COMPONENTS.ribbon, pickables);
+    guide.add(stem);
+
+    for (const z of [-1.9, 1.9]) {
+      const prong = box(2.2, 6.4, 1.25, metal, sideName + ' ribbon-guide slot prong');
+      prong.position.set(0, 3.1, z);
+      addPickable(prong, COMPONENTS.ribbon, pickables);
+      guide.add(prong);
+    }
+
+    const crown = box(2.2, 1.2, 5.0, darkMetal, sideName + ' ribbon-guide crown');
+    crown.position.set(0, 6.8, 0);
+    addPickable(crown, COMPONENTS.ribbon, pickables);
+    guide.add(crown);
   }
 
   const ribbonGuideBridge = box(42, 2.2, 4.5, darkMetal, 'ribbon lift guide bridge cue');
@@ -3673,12 +3693,14 @@ export function createSelectricModel() {
         loadLiftNormalizedP5: 1.24,
         liftGuideCount: ribbonLiftGuides.length,
         liftGuidesFollowRibbon: true,
+        liftGuideProngsPerGuide: ribbonLiftGuides[0].userData.prongCount,
+        liftGuideConstructionClass: ribbonLiftGuides[0].userData.constructionClass,
         ribbonCenterY: leftGuide.y,
         liftGuideCenterY: ribbonLiftGuides[0].position.y,
         liftGuideRibbonOffsetMmP4: ribbonLiftGuides[0].userData.ribbonYOffsetP4,
         guideBridgeCenterY: ribbonGuideBridge.position.y,
         guideBridgeRibbonOffsetMmP4: ribbonGuideBridge.userData.ribbonYOffsetP4,
-        liftGuideMotionClass: 'P4 carrier-local guide/vibrator topology following the live ribbon lift; exact guide sections and service-pose overtravel unresolved',
+        liftGuideMotionClass: 'P4 carrier-local forked guide/vibrator topology following the live ribbon lift; exact guide sections and service-pose overtravel unresolved',
         liftDriver: 'print-sleeve ribbon-lift cam',
         liftCamLobeP4: true,
         liftFollowerEmbodied: true,
