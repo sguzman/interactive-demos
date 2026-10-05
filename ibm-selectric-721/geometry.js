@@ -1285,6 +1285,8 @@ export function createSelectricModel() {
     lineSpacingTeeth: 1,
     cyclePhase: 0,
     keyboardCode: 0,
+    keyboardCodeEngaged: false,
+    selectorLatchSampleP5: 0,
     cordPhase: 0,
     serviceCoverOpen: 0,
     inspectionCutaway: 'none',
@@ -1728,6 +1730,7 @@ export function createSelectricModel() {
   const latchBail = new THREE.Group();
   latchBail.name = 'selector latch bail open-frame P4';
   latchBail.position.set(0, 45, -42);
+  latchBail.userData.baseY = latchBail.position.y;
   keyboardMechanismAssembly.add(latchBail);
 
   const latchBailCrossbarP4 = box(286, 4.0, 4.2, metal, 'selector latch bail transverse rail P4');
@@ -3229,12 +3232,37 @@ export function createSelectricModel() {
 
   const selectorLatchNames = ['T1', 'T2', 'R1', 'R2', 'R2A'];
   const selectorLatches = {};
+  const selectorLatchForwardTravelP5 = 6.0;
+  const selectorLatchDownTravelP5 = 7.0;
   selectorLatchNames.forEach((name, index) => {
-    const latch = box(8, 28, 4.2, metal, name + ' selector latch');
-    latch.position.set(-60 + index * 30, 54, -24);
+    const latch = new THREE.Group();
+    latch.name = name + ' selector latch constrained motion P4';
+    latch.position.set(-60 + index * 30, 40, -24);
     latch.userData.baseY = latch.position.y;
-    addPickable(latch, COMPONENTS.selection, pickables);
+    latch.userData.baseZ = latch.position.z;
+    latch.userData.motionClassP4 =
+      'source-backed fore/aft exclusion plus downward latch-bail drive; exact guide/pivot construction and travel remain reconstructed';
     selectionAssembly.add(latch);
+
+    const latchPlateGeometryP4 = leverPlateGeometryP4(28, 7.8, 5.0, 3.0, 1.35);
+    const latchPlate = new THREE.Mesh(latchPlateGeometryP4, metal);
+    latchPlate.name = name + ' selector latch stamped body P4';
+    latchPlate.castShadow = true;
+    latchPlate.receiveShadow = true;
+    addPickable(latchPlate, COMPONENTS.selection, pickables);
+    latch.add(latchPlate);
+
+    const latchLip = box(8.5, 3.2, 5.2, darkMetal, name + ' selector latch bail-contact lip P4');
+    latchLip.position.set(0, 24.5, -0.4);
+    addPickable(latchLip, COMPONENTS.selection, pickables);
+    latch.add(latchLip);
+
+    const guidePin = pinZP4(7.0, 1.35, darkMetal, name + ' selector latch guide pin P4');
+    guidePin.position.set(0, 1.2, 0);
+    addPickable(guidePin, COMPONENTS.selection, pickables);
+    latch.add(guidePin);
+
+    latch.userData.geometryClass = latchPlateGeometryP4.userData.p4LeverPlateClass;
     selectorLatches[name] = latch;
   });
 
@@ -3503,11 +3531,16 @@ export function createSelectricModel() {
     selectionActuatorPivotsP4.rotateRight.rotation.x =
       deg(selectionSidePulleyMotionP5.shiftCommandDeg * (state.shiftAngleDeg / 180));
 
-    selectorLatches.T1.position.y = selectorLatches.T1.userData.baseY - T1 * 7;
-    selectorLatches.T2.position.y = selectorLatches.T2.userData.baseY - T2 * 7;
-    selectorLatches.R1.position.y = selectorLatches.R1.userData.baseY - positive.R1 * 7;
-    selectorLatches.R2.position.y = selectorLatches.R2.userData.baseY - positive.R2 * 7;
-    selectorLatches.R2A.position.y = selectorLatches.R2A.userData.baseY - positive.R2A * 7;
+    selectorLatches.T1.position.y =
+      selectorLatches.T1.userData.baseY - T1 * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
+    selectorLatches.T2.position.y =
+      selectorLatches.T2.userData.baseY - T2 * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
+    selectorLatches.R1.position.y =
+      selectorLatches.R1.userData.baseY - positive.R1 * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
+    selectorLatches.R2.position.y =
+      selectorLatches.R2.userData.baseY - positive.R2 * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
+    selectorLatches.R2A.position.y =
+      selectorLatches.R2A.userData.baseY - positive.R2A * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
 
     // The five-unit bail rises for negative selection. The previous presentation moved it
     // downward, opposite the OEM theory description.
@@ -4358,21 +4391,39 @@ export function createSelectricModel() {
     rotateTape.update(points.rotate);
   }
 
-  function setKeyboardCode(code) {
+  function setKeyboardCode(code, engaged = true) {
     state.keyboardCode = Math.max(0, Math.min(63, Math.trunc(code) || 0));
+    state.keyboardCodeEngaged = Boolean(engaged);
+
     selectorBailMaterials.forEach((mat, index) => {
-      const active = Boolean(state.keyboardCode & (1 << index));
+      const publicDownstreamBit = Boolean(state.keyboardCode & (1 << index));
+
+      // The first five public bits are a P5 downstream selector-request vector, not a claim about
+      // one factory interposer lug pattern. OEM theory fixes the inversion boundary: an active
+      // selector bail pulls its ordinary T/R latch forward so the descending latch bail cannot
+      // catch it. Therefore ordinary visible bail motion is the inverse of the downstream latch-
+      // down request while a codeword is present. The sixth public channel remains a presentation
+      // continuation; its exact factory application is unresolved and is not asserted as N5.
+      const active = !state.keyboardCodeEngaged
+        ? false
+        : index < selectorLatchNames.length
+          ? !publicDownstreamBit
+          : publicDownstreamBit;
+
       mat.emissive.setHex(active ? 0x2d1b08 : 0x000000);
       mat.emissiveIntensity = active ? 0.45 : 1;
 
-      // Bail motion is revolute about its transverse X-axis. The linked interposer is a distinct
-      // downstream stamped member with reconstructed forward travel rather than the bail itself
-      // teleporting through Y/Z space.
       const bail = selectorBails[index];
       bail.rotation.x = bail.userData.baseRotationX + deg(active ? -12 : 0);
 
       const latchInterposer = selectorLatchInterposers[index];
       latchInterposer.position.z = latchInterposer.userData.baseZ + (active ? 5.0 : 0);
+
+      if (index < selectorLatchNames.length) {
+        const selectorLatch = selectorLatches[selectorLatchNames[index]];
+        selectorLatch.position.z =
+          selectorLatch.userData.baseZ + (active ? selectorLatchForwardTravelP5 : 0);
+      }
     });
   }
 
@@ -4997,6 +5048,48 @@ export function createSelectricModel() {
     printShaftRotor.rotation.x = state.cyclePhase * Math.PI * 2;
     printSleeveRotor.rotation.x = state.cyclePhase * Math.PI * 2;
 
+    // OEM theory requires keyboard code setup before the common latch bail samples the latches.
+    // These event fractions/throws are P5 presentation only; the ordering and common-driver role
+    // are the source-backed constraints.
+    const sampleStartP5 = 0.18;
+    const sampleSeatP5 = 0.32;
+    const sampleReleaseStartP5 = 0.66;
+    const sampleReleaseEndP5 = 0.84;
+    if (state.cyclePhase < sampleStartP5) {
+      state.selectorLatchSampleP5 = 0;
+    } else if (state.cyclePhase < sampleSeatP5) {
+      state.selectorLatchSampleP5 = THREE.MathUtils.clamp(
+        (state.cyclePhase - sampleStartP5) / (sampleSeatP5 - sampleStartP5),
+        0,
+        1
+      );
+    } else if (state.cyclePhase < sampleReleaseStartP5) {
+      state.selectorLatchSampleP5 = 1;
+    } else if (state.cyclePhase < sampleReleaseEndP5) {
+      state.selectorLatchSampleP5 = THREE.MathUtils.clamp(
+        1 - (state.cyclePhase - sampleReleaseStartP5) / (sampleReleaseEndP5 - sampleReleaseStartP5),
+        0,
+        1
+      );
+    } else {
+      state.selectorLatchSampleP5 = 0;
+    }
+    latchBail.position.y = latchBail.userData.baseY - state.selectorLatchSampleP5 * 6.0;
+
+    // Keep the visible latch-down state on the same common sampling envelope even when cycle
+    // phase changes without a new character selection transform.
+    const inputs = state.selectorInputs;
+    selectorLatches.T1.position.y =
+      selectorLatches.T1.userData.baseY - inputs.T1 * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
+    selectorLatches.T2.position.y =
+      selectorLatches.T2.userData.baseY - inputs.T2 * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
+    selectorLatches.R1.position.y =
+      selectorLatches.R1.userData.baseY - inputs.R1 * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
+    selectorLatches.R2.position.y =
+      selectorLatches.R2.userData.baseY - inputs.R2 * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
+    selectorLatches.R2A.position.y =
+      selectorLatches.R2A.userData.baseY - inputs.R2A * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
+
     // Fine alignment is now a downstream output of the rotating print sleeve / 1164240 cam.
     // Timing remains explicit P5 because exact IBM event angles are not yet sourced.
     const fineAlignment = fineAlignmentFromSleevePhaseP5(state.cyclePhase);
@@ -5161,6 +5254,12 @@ export function createSelectricModel() {
           'six transverse P4 bail frames revolve about their X axes; code activation no longer translates whole bars through Y/Z space',
         selectorBailWorkingPlane: 'Y/Z about transverse X-axis',
         selectorBailAnglesDegP5: selectorBails.map(bail => THREE.MathUtils.radToDeg(bail.rotation.x)),
+        codeEngaged: state.keyboardCodeEngaged,
+        publicCodeSemantic:
+          'P5 downstream selector-request vector; first five visible ordinary bail motions are inverted at the source-backed bail -> latch exclusion boundary',
+        ordinaryBailInversionEmbodied: true,
+        sixthChannelMappingClass:
+          'P5 public continuation only; exact factory application of the sixth ordinary selector channel is unresolved and is not asserted as the negative-five mechanism',
         latchInterposerCount: selectorLatchInterposers.length,
         latchInterposerClass:
           'one-to-one two-eye P4 stamped links move forward from the six selector-bail channels; exact production travel/sections unresolved',
@@ -5170,6 +5269,21 @@ export function createSelectricModel() {
         filterShaftRotationDegPerCharacter: 180,
         latchBailOpenFrameEmbodied: true,
         latchBailContactFingerCountP4: latchBailContactFingersP4.length,
+        latchBailSampleP5: state.selectorLatchSampleP5,
+        latchBailSampleTravelMmP5: 6.0,
+        setupBeforeSampleOrdering: true,
+        selectorLatchCount: selectorLatchNames.length,
+        selectorLatchForwardTravelMmP5: selectorLatchForwardTravelP5,
+        selectorLatchDownTravelMmP5: selectorLatchDownTravelP5,
+        selectorLatchForeAftOffsetMmP5: selectorLatchNames.map(
+          name => selectorLatches[name].position.z - selectorLatches[name].userData.baseZ
+        ),
+        selectorLatchDownOffsetMmP5: selectorLatchNames.map(
+          name => selectorLatches[name].userData.baseY - selectorLatches[name].position.y
+        ),
+        selectorLatchConstructionClass: selectorLatches.T1.userData.geometryClass,
+        selectorLatchMotionClass:
+          'ordinary active bail -> latch forward/excluded; inactive bail -> latch remains rearward and common latch bail may drive it downward',
         geometryClass:
           'P4 source-topology embodiment adds common keylever/interposer supports, separate keylever pawls, selector compensator, revolute selector bails, one-to-one latch interposers and two-blade filter shaft without promoting reconstructed dimensions to OEM CAD'
       },
