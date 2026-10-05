@@ -623,6 +623,12 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(powerInspection.geometry.inspectionCutaway.keyboardVisible).toBe(false);
   expect(powerInspection.geometry.inspectionCutaway.powerframeIsolationClass).toContain('occluder removal');
   await page.screenshot({ path: 'test-results/selectric-power-view.png', fullPage: true });
+  await page.evaluate(() => window.__selectricDebug.setOperationalCam('carrier-return', 0.5));
+  const activePowerFollower = await page.evaluate(() => window.__selectricDebug.state);
+  expect(activePowerFollower.geometry.operationalCams.selectedFollower).toBe('carrier-return/index');
+  expect(activePowerFollower.geometry.operationalCams.followerLiftP5.returnIndex).toBeCloseTo(1, 8);
+  await page.screenshot({ path: 'test-results/selectric-power-follower-active.png', fullPage: true });
+  await page.evaluate(() => window.__selectricDebug.setOperationalCam(null, 0));
   await page.locator('[data-view="product"]').click();
   await expect.poll(async () => page.evaluate(() => window.__selectricDebug.state.serviceCoverOpen)).toBe(0);
   const productInspection = await page.evaluate(() => window.__selectricDebug.state);
