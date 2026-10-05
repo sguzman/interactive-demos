@@ -1292,7 +1292,17 @@ export function createSelectricModel() {
     serviceCoverOpen: 0,
     inspectionCutaway: 'none',
     selectorInputs: { T1: 0, T2: 0, R1: 0, R2: 0, R2A: 0, fiveUnit: 0 },
+    // selectionNormalized is the retained requested/decoded target. The mechanical counterpart
+    // below is the live differential pose after selector-cam sampling and five-unit cam gating.
     selectionNormalized: { qTilt: 0, q1: 0, q2: 0, qSigned: 0 },
+    selectionMechanicalNormalized: {
+      qTilt: 0,
+      q1: 0,
+      q2: 0,
+      qSigned: 0,
+      ordinaryLatchSampleP5: 0,
+      fiveUnitEffectiveNegativeP5: 0
+    },
     ribbonFeedStep: 0,
     ribbonFeedApproxRatchetTeeth: 0,
     ribbonFeedCamFollowerP5: 0,
@@ -4035,18 +4045,48 @@ export function createSelectricModel() {
     const positive = rotatePositiveInputs(compensation);
     state.selectorInputs = { T1, T2, ...positive, fiveUnit };
 
-    // Derive the normalized outputs from the same physical hole fractions used by the
-    // visible floating levers. This keeps the mechanical arithmetic and the rendered geometry
-    // on one source-fixed ratio model instead of maintaining parallel hand-coded weights.
-    const qTilt = THREE.MathUtils.lerp(T2, T1, tiltOutputFractionP4);
-    const q1 = THREE.MathUtils.lerp(positive.R1, positive.R2, rotateFirstOutputFractionP4);
-    const q2 = THREE.MathUtils.lerp(positive.R2A, q1, rotateSecondOutputFractionP4);
-    const qSigned = q2 - fiveUnit;
-    state.selectionNormalized = { qTilt, q1, q2, qSigned };
+    // Retain the decoded target separately from the instantaneous mechanical state. These target
+    // values are useful for character identity and diagnostics, but no longer teleport the visible
+    // differential, tapes, carrier transmission, or type element into the selected pose at rest.
+    const qTiltTarget = THREE.MathUtils.lerp(T2, T1, tiltOutputFractionP4);
+    const q1Target = THREE.MathUtils.lerp(positive.R1, positive.R2, rotateFirstOutputFractionP4);
+    const q2Target = THREE.MathUtils.lerp(positive.R2A, q1Target, rotateSecondOutputFractionP4);
+    const qSignedTarget = q2Target - fiveUnit;
+    state.selectionNormalized = {
+      qTilt: qTiltTarget,
+      q1: q1Target,
+      q2: q2Target,
+      qSigned: qSignedTarget
+    };
 
-    // The public tape commands now terminate on visible side-pulley pivots rather than moving
-    // disembodied tape endpoints. Left tilt and left rotate carry the within-character command;
-    // the right tilt pulley stays fixed, while shift acts only on the right rotate pulley.
+    // The ordinary differential inputs now come from actual latch descent, not merely from the
+    // retained code target. The common latch-bail cam therefore writes the live weighted-lever
+    // pose and later restores it. N5 is independently supplied by the phase-offset five-unit cam
+    // and latch path embodied above. This preserves the source-backed distinction between the
+    // positive selector latches and the opposite-sense negative-five mechanism.
+    const ordinarySampleP5 = state.selectorLatchSampleP5;
+    const effectiveT1 = T1 * ordinarySampleP5;
+    const effectiveT2 = T2 * ordinarySampleP5;
+    const effectiveR1 = positive.R1 * ordinarySampleP5;
+    const effectiveR2 = positive.R2 * ordinarySampleP5;
+    const effectiveR2A = positive.R2A * ordinarySampleP5;
+    const effectiveFiveUnit = selectorCamDrivePoseP5.fiveUnitEffectiveNegativeP5;
+
+    const qTilt = THREE.MathUtils.lerp(effectiveT2, effectiveT1, tiltOutputFractionP4);
+    const q1 = THREE.MathUtils.lerp(effectiveR1, effectiveR2, rotateFirstOutputFractionP4);
+    const q2 = THREE.MathUtils.lerp(effectiveR2A, q1, rotateSecondOutputFractionP4);
+    const qSigned = q2 - effectiveFiveUnit;
+    state.selectionMechanicalNormalized = {
+      qTilt,
+      q1,
+      q2,
+      qSigned,
+      ordinaryLatchSampleP5: ordinarySampleP5,
+      fiveUnitEffectiveNegativeP5: effectiveFiveUnit
+    };
+
+    // The live differential output now drives the side pulleys. Shift remains a separate command
+    // on the right rotate pulley and survives character-selection restoration.
     selectionActuatorPivotsP4.tiltLeft.rotation.x =
       deg(-selectionSidePulleyMotionP5.tiltCommandDeg * qTilt);
     selectionActuatorPivotsP4.tiltRight.rotation.x = 0;
@@ -4056,23 +4096,22 @@ export function createSelectricModel() {
       deg(selectionSidePulleyMotionP5.shiftCommandDeg * (state.shiftAngleDeg / 180));
 
     selectorLatches.T1.position.y =
-      selectorLatches.T1.userData.baseY - T1 * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
+      selectorLatches.T1.userData.baseY - effectiveT1 * selectorLatchDownTravelP5;
     selectorLatches.T2.position.y =
-      selectorLatches.T2.userData.baseY - T2 * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
+      selectorLatches.T2.userData.baseY - effectiveT2 * selectorLatchDownTravelP5;
     selectorLatches.R1.position.y =
-      selectorLatches.R1.userData.baseY - positive.R1 * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
+      selectorLatches.R1.userData.baseY - effectiveR1 * selectorLatchDownTravelP5;
     selectorLatches.R2.position.y =
-      selectorLatches.R2.userData.baseY - positive.R2 * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
+      selectorLatches.R2.userData.baseY - effectiveR2 * selectorLatchDownTravelP5;
     selectorLatches.R2A.position.y =
-      selectorLatches.R2A.userData.baseY - positive.R2A * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
+      selectorLatches.R2A.userData.baseY - effectiveR2A * selectorLatchDownTravelP5;
 
-    // N5 bail travel is not teleported from the requested rotate sign anymore. The third
-    // cycle-shaft cam and explicit five-unit latch own that pose; refresh it here because
-    // keyboard-code gating is updated in the same rendered cycle as the selection target.
+    // N5 bail travel is owned by its cam/latch path. Refresh before using its effective output at
+    // the signed balance endpoint so code changes and cycle-phase changes share one causal source.
     updateFiveUnitLatchBailP5();
 
-    const tiltT2YOffset = -T2 * selectionLinkageTravelP5.tilt;
-    const tiltT1YOffset = -T1 * selectionLinkageTravelP5.tilt;
+    const tiltT2YOffset = -effectiveT2 * selectionLinkageTravelP5.tilt;
+    const tiltT1YOffset = -effectiveT1 * selectionLinkageTravelP5.tilt;
     const tiltOutputYOffset = THREE.MathUtils.lerp(
       tiltT2YOffset,
       tiltT1YOffset,
@@ -4092,8 +4131,8 @@ export function createSelectricModel() {
     selectionLinkagePoseP5.tilt.error =
       selectionLinkagePoseP5.tilt.outputTravel - selectionLinkagePoseP5.tilt.expectedTravel;
 
-    const rotateFirstLeftYOffset = -positive.R1 * selectionLinkageTravelP5.rotateFirst;
-    const rotateFirstRightYOffset = -positive.R2 * selectionLinkageTravelP5.rotateFirst;
+    const rotateFirstLeftYOffset = -effectiveR1 * selectionLinkageTravelP5.rotateFirst;
+    const rotateFirstRightYOffset = -effectiveR2 * selectionLinkageTravelP5.rotateFirst;
     const rotateFirstOutputYOffset = THREE.MathUtils.lerp(
       rotateFirstLeftYOffset,
       rotateFirstRightYOffset,
@@ -4115,7 +4154,7 @@ export function createSelectricModel() {
       selectionLinkagePoseP5.rotateFirst.outputTravel -
       selectionLinkagePoseP5.rotateFirst.expectedTravel;
 
-    const rotateSecondLeftYOffset = -positive.R2A * selectionLinkageTravelP5.rotateSecond;
+    const rotateSecondLeftYOffset = -effectiveR2A * selectionLinkageTravelP5.rotateSecond;
     const rotateSecondRightYOffset = -q1 * selectionLinkageTravelP5.rotateSecond;
     const rotateSecondOutputYOffset = THREE.MathUtils.lerp(
       rotateSecondLeftYOffset,
@@ -4139,7 +4178,7 @@ export function createSelectricModel() {
       selectionLinkagePoseP5.rotateSecond.expectedTravel;
 
     const balanceLeftYOffset = -q2 * selectionLinkageTravelP5.balanceEndpoint;
-    const balanceRightYOffset = fiveUnit * selectionLinkageTravelP5.balanceEndpoint;
+    const balanceRightYOffset = effectiveFiveUnit * selectionLinkageTravelP5.balanceEndpoint;
     const balanceOutputYOffset = THREE.MathUtils.lerp(
       balanceLeftYOffset,
       balanceRightYOffset,
@@ -5218,9 +5257,10 @@ export function createSelectricModel() {
   };
 
   function updateCarrierSelectionTransmissionP4() {
-    const qTilt = state.selectionNormalized.qTilt;
+    const qTilt = state.selectionMechanicalNormalized.qTilt;
+    const qSigned = state.selectionMechanicalNormalized.qSigned;
     const relativeRotateDegP4 =
-      -state.rotateUnit * (360 / CANONICAL.typeElement.positionsPerBand) +
+      -5 * qSigned * (360 / CANONICAL.typeElement.positionsPerBand) +
       state.shiftAngleDeg;
 
     carrierTiltPulleyPivotP4.rotation.x = deg(-carrierSelectionP4.tiltPulleyCommandDegP5 * qTilt);
@@ -5441,16 +5481,31 @@ export function createSelectricModel() {
     updateCordGeometry(state.carrierX);
   }
 
+  function mechanicalTiltAngleRadP5(qTilt) {
+    // The four structural band orientations are fixed by the P4 element surface model. Interpolate
+    // only between adjacent solved band poses while the weighted differential is in flight; this
+    // makes every discrete selected band exact without pretending the transient angular law is OEM.
+    const coordinate = THREE.MathUtils.clamp(qTilt, 0, 1) * 3;
+    const lower = Math.floor(coordinate);
+    const upper = Math.min(3, lower + 1);
+    const frac = coordinate - lower;
+    return THREE.MathUtils.lerp(
+      -typeBandNormalTiltRadP4(lower),
+      -typeBandNormalTiltRadP4(upper),
+      frac
+    );
+  }
+
   function applyTypeElementOrientation() {
     updateSelectionDrive(state.tiltBand, state.rotateUnit);
+    const mechanical = state.selectionMechanicalNormalized;
     const rotateSlotStepDegP4 = 360 / CANONICAL.typeElement.positionsPerBand;
-    typeElement.rotation.x = -typeBandNormalTiltRadP4(state.tiltBand);
-    // 22 structural positions around each band = 11 base rotate coordinates plus the
-    // independent 180° shift hemisphere. The public key-to-slot assignment remains P5,
-    // but the visible ball now lands on the same structural lattice as its 88 slug cues.
+    typeElement.rotation.x = mechanicalTiltAngleRadP5(mechanical.qTilt);
+    // Character rotate now follows the live signed balance output. The independent shift
+    // hemisphere remains on the separate right-side pulley and therefore persists at checked rest.
     typeElement.rotation.y = deg(
       TYPE_PRINT_FACING_OFFSET_DEG_P4 -
-      state.rotateUnit * rotateSlotStepDegP4 +
+      5 * mechanical.qSigned * rotateSlotStepDegP4 +
       state.shiftAngleDeg
     );
     updateCarrierSelectionTransmissionP4();
@@ -5991,19 +6046,11 @@ export function createSelectricModel() {
     // dwell and two-cam common drive instead of using an independent piecewise cycle-phase curve.
     updateSelectorCamDriveP4();
 
-    // Keep the visible latch-down state on the same common sampling envelope even when cycle
-    // phase changes without a new character selection transform.
-    const inputs = state.selectorInputs;
-    selectorLatches.T1.position.y =
-      selectorLatches.T1.userData.baseY - inputs.T1 * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
-    selectorLatches.T2.position.y =
-      selectorLatches.T2.userData.baseY - inputs.T2 * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
-    selectorLatches.R1.position.y =
-      selectorLatches.R1.userData.baseY - inputs.R1 * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
-    selectorLatches.R2.position.y =
-      selectorLatches.R2.userData.baseY - inputs.R2 * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
-    selectorLatches.R2A.position.y =
-      selectorLatches.R2A.userData.baseY - inputs.R2A * selectorLatchDownTravelP5 * state.selectorLatchSampleP5;
+    // Re-solve the entire physical selection chain from the live cam/latch state. This is what
+    // restores the differential, side pulleys, carrier transmission, and type element during the
+    // latter cycle instead of leaving the previous character mechanically selected at checked rest.
+    applyTypeElementOrientation();
+    updateSelectionTapes();
 
     // Fine alignment is now a downstream output of the rotating print sleeve / 1164240 cam.
     // Timing remains explicit P5 because exact IBM event angles are not yet sourced.
@@ -6207,6 +6254,7 @@ export function createSelectricModel() {
       keyboardCode: state.keyboardCode,
       selectorInputs: { ...state.selectorInputs },
       selectionNormalized: { ...state.selectionNormalized },
+      selectionMechanicalNormalized: { ...state.selectionMechanicalNormalized },
       typeElement: {
         characterCount: CANONICAL.typeElement.characterCount,
         bands: CANONICAL.typeElement.bands,
@@ -6227,6 +6275,18 @@ export function createSelectricModel() {
           tilt: THREE.MathUtils.radToDeg(typeElement.rotation.x),
           rotate: THREE.MathUtils.radToDeg(typeElement.rotation.y)
         },
+        targetOrientationDegP4: {
+          tilt: -THREE.MathUtils.radToDeg(typeBandNormalTiltRadP4(state.tiltBand)),
+          rotate:
+            TYPE_PRINT_FACING_OFFSET_DEG_P4 -
+            state.rotateUnit * (360 / CANONICAL.typeElement.positionsPerBand) +
+            state.shiftAngleDeg
+        },
+        mechanicalPoseDerivedFromLiveDifferential: true,
+        checkedRestSelectionHome:
+          state.cyclePhase === 0 &&
+          Math.abs(state.selectionMechanicalNormalized.qTilt) < 1e-9 &&
+          Math.abs(state.selectionMechanicalNormalized.qSigned) < 1e-9,
         selectedStructuralSlotP4,
         selectedSlugAlignmentErrorDegP4,
         selectedSlugFacingVectorP4: {
@@ -6295,7 +6355,11 @@ export function createSelectricModel() {
         normalizedOutputsDerivedFromHoleFractions: true,
         floatingLeverMotionP5: true,
         fiveUnitBailMotion:
-          'third cycle-shaft cam releases/restores an explicit latch-gated rising N5 bail; selected-state balance input remains the next live-coupling boundary',
+          'third cycle-shaft cam releases/restores an explicit latch-gated rising N5 bail whose effective rise drives the live signed-balance right endpoint',
+        targetAndMechanicalSelectionSeparated: true,
+        ordinaryLatchOutputsDriveLiveDifferential: true,
+        fiveUnitBailDrivesLiveBalanceEndpoint: true,
+        checkedRestRestoresCharacterSelection: true,
         differentialLeverClass: tiltArmAGeometryP4.userData.p4DifferentialLeverClass,
         twoHoleLinkClass: tiltOutputLinkPlatesP4[0].geometry.userData.p4TwoHoleLinkClass,
         tiltDoubleVerticalOutputLink: tiltOutputLinkPlatesP4.length === 2,
@@ -6780,7 +6844,7 @@ export function createSelectricModel() {
         fiveUnitFollowerDownstreamBailCoupling:
           'closed through explicit phase-offset cam follower -> transfer rod -> latch-gated rising five-unit bail with cam restoration; exact latch pivot, bail travel and cam profile remain P4/P5',
         fiveUnitLiveBailToSignedBalanceCoupling:
-          'open; signed-balance endpoint still consumes the selected N5 state while the newly cam-driven bail/restoration pose is validated separately',
+          'closed; effective cam/latch-gated five-unit bail rise now drives the signed-balance right endpoint and restores with the cycle cam',
         poseP5: {
           ordinaryRawLiftP5: [...selectorCamDrivePoseP5.ordinaryRawLiftP5],
           ordinaryFollowerAngleDegP5: [...selectorCamDrivePoseP5.ordinaryFollowerAngleDegP5],
