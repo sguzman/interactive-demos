@@ -185,6 +185,14 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.keyboardMechanism.selectedInterposerForwardTravelMmP5).toBeCloseTo(0, 8);
   expect(initial.geometry.keyboardMechanism.selectedInterposerFilterTransportFractionP5).toBeCloseTo(0, 8);
   expect(initial.geometry.keyboardMechanism.selectedInterposerForwardTransportDerivedFromFilterShaftPhaseP5).toBe(true);
+  expect(initial.geometry.keyboardMechanism.selectedInterposerForwardTransportDerivedFromVisibleBladeOrbitP5).toBe(true);
+  expect(initial.geometry.keyboardMechanism.filterShaftBladeSpanMmP4).toBeGreaterThan(250);
+  expect(initial.geometry.keyboardMechanism.filterShaftPickupRestClearanceMmP4)
+    .toBeGreaterThanOrEqual(initial.geometry.keyboardMechanism.filterShaftInterposerClearanceSourceRangeMm[0]);
+  expect(initial.geometry.keyboardMechanism.filterShaftPickupRestClearanceMmP4)
+    .toBeLessThanOrEqual(initial.geometry.keyboardMechanism.filterShaftInterposerClearanceSourceRangeMm[1]);
+  expect(initial.geometry.keyboardMechanism.filterShaftPickupRestClearanceWithinSourceRange).toBe(true);
+  expect(initial.geometry.keyboardMechanism.filterShaftBladeZOverlapAtLatchedPickupP4).toBe(true);
   expect(initial.geometry.keyboardMechanism.selectedInterposerLatchedDownP5).toBe(false);
   expect(initial.geometry.keyboardMechanism.selectedInterposerLatchSpringFingerEmbodiedP5).toBe(true);
   expect(initial.geometry.keyboardMechanism.selectedInterposerLatchFingerCaughtP5).toBe(false);

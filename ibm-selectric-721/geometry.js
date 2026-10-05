@@ -1759,6 +1759,10 @@ export function createSelectricModel() {
   const selectedInterposerDownAngleDegP5 = -8.0;
   const selectedInterposerForwardTravelMmP5 = 8.0;
   const selectedInterposerLatchClearFractionP5 = 0.42;
+  const filterShaftPickupOrbitRadiusMmP4 = 6.0;
+  const filterShaftPickupLostMotionMmP5 = 2.0;
+  const filterShaftEffectiveDriveMmP5 = 2.6;
+  const filterShaftInterposerClearanceSourceRangeMm = [0.127, 0.381];
   let selectedInterposerFilterTransportFractionP5 = 0;
   let selectedInterposerLatchedDownP5 = false;
   let selectedInterposerLatchFingerCaughtP5 = false;
@@ -1863,9 +1867,19 @@ export function createSelectricModel() {
 
   function selectedInterposerForwardFractionP5() {
     if (!state.keyboardCodeEngaged) return 0;
-    // Browser timing only: preserve the sourced E1 transport-before-E2/E3 sample order using
-    // the existing C2 code-setup window rather than inventing a factory shaft angle.
-    return THREE.MathUtils.clamp((state.cyclePhase - 0.12) / 0.16, 0, 1);
+
+    // Drive transport from the visible two-blade filter-shaft rotor rather than from cycle phase
+    // directly. The shaft itself is source-backed at 180 degrees per character. The orbit radius
+    // comes from the visible P4 blade placement; lost motion and effective drive are P5 calibration
+    // chosen only to preserve setup-before-sampling without claiming an IBM event angle.
+    const bladeProjectedForwardMmP5 =
+      filterShaftPickupOrbitRadiusMmP4 * Math.sin(filterShaftRotor.rotation.x);
+    return THREE.MathUtils.clamp(
+      (bladeProjectedForwardMmP5 - filterShaftPickupLostMotionMmP5) /
+        filterShaftEffectiveDriveMmP5,
+      0,
+      1
+    );
   }
 
   function updateSelectedInterposerPoseP5() {
@@ -2050,27 +2064,60 @@ export function createSelectricModel() {
   }
 
   const filterShaftRotor = new THREE.Group();
-  filterShaftRotor.position.set(0, 32, 18);
+
+  // Fit the reconstructed shaft under the latched-down rear interposer pickup envelope. With the
+  // selected P5 -8 degree interposer pose and the upper blade at checked rest, this placement gives
+  // roughly 0.25 mm vertical clearance, inside IBM's documented 0.127..0.381 mm service range.
+  // Absolute keyboard-module registration and exact blade section remain P4 reconstruction.
+  filterShaftRotor.position.set(0, 10.0, -20.0);
   filterShaftRotor.name = 'filter shaft rotational frame';
   keyboardMechanismAssembly.add(filterShaftRotor);
   const filterShaft = shaft(294, 3.4, darkMetal, 'filter shaft');
   addPickable(filterShaft, COMPONENTS.keyboardMechanism, pickables);
   filterShaftRotor.add(filterShaft);
 
+  const filterShaftBladeSpanMmP4 = 284;
+  const filterShaftBladeThicknessYMmP4 = 3.0;
+  const filterShaftBladeDepthZMmP4 = 8.0;
   const filterShaftBladesP4 = [];
   for (const sign of [-1, 1]) {
     const filterBlade = box(
-      18,
-      3.0,
-      8.0,
+      filterShaftBladeSpanMmP4,
+      filterShaftBladeThicknessYMmP4,
+      filterShaftBladeDepthZMmP4,
       metal,
       sign < 0 ? 'filter-shaft blade A P4' : 'filter-shaft blade B P4'
     );
-    filterBlade.position.set(0, sign * 6.0, 0);
+    filterBlade.position.set(0, sign * filterShaftPickupOrbitRadiusMmP4, 0);
     addPickable(filterBlade, COMPONENTS.keyboardMechanism, pickables);
     filterShaftRotor.add(filterBlade);
     filterShaftBladesP4.push(filterBlade);
   }
+
+  // Static checked-rest fit diagnostic for the selected tracer. Use the same P5 down pose as the
+  // visible stored interposer and compare its rear pickup point to the upper blade's top surface.
+  const selectedInterposerLatchedPickupLocalP5 = new THREE.Vector3(0, -0.8, -50)
+    .applyAxisAngle(new THREE.Vector3(1, 0, 0), deg(selectedInterposerDownAngleDegP5));
+  const selectedInterposerLatchedPickupYP4 =
+    interposerFulcrumRod.position.y + selectedInterposerLatchedPickupLocalP5.y;
+  const selectedInterposerLatchedPickupZP4 =
+    interposerFulcrumRod.position.z + selectedInterposerLatchedPickupLocalP5.z;
+  const filterShaftUpperBladeTopYP4 =
+    filterShaftRotor.position.y +
+    filterShaftPickupOrbitRadiusMmP4 +
+    filterShaftBladeThicknessYMmP4 / 2;
+  const filterShaftPickupRestClearanceMmP4 =
+    selectedInterposerLatchedPickupYP4 - filterShaftUpperBladeTopYP4;
+  const filterShaftPickupRestClearanceWithinSourceRange =
+    filterShaftPickupRestClearanceMmP4 >= filterShaftInterposerClearanceSourceRangeMm[0] &&
+    filterShaftPickupRestClearanceMmP4 <= filterShaftInterposerClearanceSourceRangeMm[1];
+  const filterShaftBladeZMinP4 =
+    filterShaftRotor.position.z - filterShaftBladeDepthZMmP4 / 2;
+  const filterShaftBladeZMaxP4 =
+    filterShaftRotor.position.z + filterShaftBladeDepthZMmP4 / 2;
+  const filterShaftBladeZOverlapAtLatchedPickupP4 =
+    selectedInterposerLatchedPickupZP4 >= filterShaftBladeZMinP4 &&
+    selectedInterposerLatchedPickupZP4 <= filterShaftBladeZMaxP4;
 
   const filterShaftBearingsP4 = [];
   const bronzeP4 = material(0x8a6840, 0.48, 0.42);
@@ -6761,6 +6808,17 @@ export function createSelectricModel() {
           selectedInterposerP5.position.z - selectedInterposerP5.userData.baseZ,
         selectedInterposerFilterTransportFractionP5,
         selectedInterposerForwardTransportDerivedFromFilterShaftPhaseP5: true,
+        selectedInterposerForwardTransportDerivedFromVisibleBladeOrbitP5: true,
+        filterShaftPickupOrbitRadiusMmP4,
+        filterShaftPickupLostMotionMmP5,
+        filterShaftEffectiveDriveMmP5,
+        filterShaftBladeSpanMmP4,
+        filterShaftPickupRestClearanceMmP4,
+        filterShaftInterposerClearanceSourceRangeMm: [...filterShaftInterposerClearanceSourceRangeMm],
+        filterShaftPickupRestClearanceWithinSourceRange,
+        filterShaftBladeZOverlapAtLatchedPickupP4,
+        filterShaftPickupFitClass:
+          'P4 shaft/blade placement fits the selected latched-down rear pickup envelope to the IBM 0.127..0.381 mm service-clearance range; exact global keyboard registration and blade section remain unresolved',
         selectedInterposerLatchedDownP5,
         selectedInterposerLatchClearFractionP5,
         selectedInterposerMechanicalStorageClass:
