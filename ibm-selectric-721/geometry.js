@@ -3582,6 +3582,7 @@ export function createSelectricModel() {
     state.inspectionCutaway = mode === 'powerframe' ? 'powerframe' : 'none';
     const isolatePowerframe = state.inspectionCutaway === 'powerframe';
     shellAssembly.visible = !isolatePowerframe;
+    baseShellAssembly.visible = !isolatePowerframe;
     keyboardAssembly.visible = !isolatePowerframe;
   }
 
@@ -3671,8 +3672,9 @@ export function createSelectricModel() {
       inspectionCutaway: {
         mode: state.inspectionCutaway,
         shellVisible: shellAssembly.visible,
+        baseShellVisible: baseShellAssembly.visible,
         keyboardVisible: keyboardAssembly.visible,
-        powerframeIsolationClass: 'P5 inspection-only occluder removal; mechanical geometry and assembly coordinates unchanged'
+        powerframeIsolationClass: 'P5 inspection-only outer-shell + base-shell + keyboard occluder removal; mechanical geometry and assembly coordinates unchanged'
       },
       explosionClass: 'P5 assembly-separation presentation; not service motion',
       pickableCount: pickables.length,
