@@ -74,6 +74,77 @@ function pulley(radius, width, mat, name) {
   return mesh;
 }
 
+function camProfileP4(width, baseRadius, lobes, mat, name, segments = 72) {
+  const vertices = [];
+  const indices = [];
+  const sideXs = [-width / 2, width / 2];
+
+  function wrappedDelta(angle, center) {
+    let delta = angle - center;
+    while (delta > Math.PI) delta -= Math.PI * 2;
+    while (delta < -Math.PI) delta += Math.PI * 2;
+    return delta;
+  }
+
+  function radiusAt(angle) {
+    let radius = baseRadius;
+    lobes.forEach(lobe => {
+      const halfWidth = Math.max(0.08, lobe.halfWidthRad);
+      const delta = Math.abs(wrappedDelta(angle, lobe.angleRad));
+      if (delta >= halfWidth) return;
+      const phase = delta / halfWidth;
+      const window = Math.cos(phase * Math.PI / 2);
+      const contribution = lobe.liftMm * Math.pow(Math.max(0, window), lobe.sharpness ?? 2.4);
+      radius = Math.max(radius, baseRadius + contribution);
+    });
+    return radius;
+  }
+
+  sideXs.forEach(x => {
+    for (let i = 0; i < segments; i += 1) {
+      const angle = i * Math.PI * 2 / segments;
+      const radius = radiusAt(angle);
+      vertices.push(x, Math.cos(angle) * radius, Math.sin(angle) * radius);
+    }
+  });
+
+  const leftCenter = vertices.length / 3;
+  vertices.push(-width / 2, 0, 0);
+  const rightCenter = vertices.length / 3;
+  vertices.push(width / 2, 0, 0);
+
+  for (let i = 0; i < segments; i += 1) {
+    const next = (i + 1) % segments;
+    const left = i;
+    const leftNext = next;
+    const right = segments + i;
+    const rightNext = segments + next;
+
+    indices.push(leftCenter, leftNext, left);
+    indices.push(rightCenter, right, rightNext);
+    indices.push(left, leftNext, rightNext, left, rightNext, right);
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+
+  const mesh = new THREE.Mesh(geometry, mat);
+  mesh.name = name;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.userData.p4CamProfile = {
+    baseRadius,
+    lobes: lobes.map(lobe => ({
+      angleDegP4: THREE.MathUtils.radToDeg(lobe.angleRad),
+      liftMmP4: lobe.liftMm,
+      halfWidthDegP4: THREE.MathUtils.radToDeg(lobe.halfWidthRad)
+    }))
+  };
+  return mesh;
+}
+
 function addPickable(mesh, component, pickables) {
   mesh.userData.component = component;
   pickables.push(mesh);
@@ -2194,57 +2265,47 @@ export function createSelectricModel() {
   addPickable(sleeve, COMPONENTS.sleeve, pickables);
   printSleeveRotor.add(sleeve);
 
-  const camDefs = [
-    [-19, 10.4, 5.5, 'ribbon-lift cam'],
-    [-4, 11.6, 7.0, 'IBM 1164240 combined ribbon-feed/detent cam'],
-    [14, 13.0, 8.5, 'IBM 1124174 double print/restoring cam']
-  ];
-  for (const [x, radius, width, name] of camDefs) {
-    const cam = pulley(radius, width, darkMetal, name);
-    cam.position.x = x;
-    cam.scale.y = name.includes('print') ? 0.68 : 0.78;
-    addPickable(cam, COMPONENTS.sleeve, pickables);
-    printSleeveRotor.add(cam);
-  }
-
-  // P4 lobe cues make the sourced sleeve cams read as actual cams rather than plain round collars.
-  // Their exact production profiles remain deliberately unresolved.
-  const ribbonLiftCamLobeP4 = box(5.2, 4.8, 5.0, metal, 'ribbon-lift cam lobe P4 cue');
-  ribbonLiftCamLobeP4.position.set(-19, -10.8, 0);
-  addPickable(ribbonLiftCamLobeP4, COMPONENTS.ribbon, pickables);
-  printSleeveRotor.add(ribbonLiftCamLobeP4);
-
-  const detentCamLobeP4 = box(6.5, 4.8, 5.4, darkMetal, '1164240 detent lobe P4 cue');
-  detentCamLobeP4.position.set(-4, -12.0, 0);
-  addPickable(detentCamLobeP4, COMPONENTS.fineAlignment, pickables);
-  printSleeveRotor.add(detentCamLobeP4);
-
-  const feedCamLobeP4 = box(6.0, 4.2, 5.0, metal, '1164240 ribbon-feed lobe P4 cue');
-  const feedCamLobeAngleP4 = deg(32);
-  feedCamLobeP4.position.set(
-    -4,
-    -11.2 * Math.cos(feedCamLobeAngleP4),
-    -11.2 * Math.sin(feedCamLobeAngleP4)
+  // P4 smooth cam profiles replace the earlier round collars plus box-shaped lobe cues.
+  // The sourced identities/order are preserved; these radial envelopes remain reconstruction,
+  // not claims about exact IBM production cam sections.
+  const ribbonLiftCam = camProfileP4(
+    5.5,
+    8.6,
+    [{ angleRad: deg(180), liftMm: 2.2, halfWidthRad: deg(54), sharpness: 2.5 }],
+    darkMetal,
+    'ribbon-lift cam · smooth P4 profile'
   );
-  feedCamLobeP4.rotation.x = feedCamLobeAngleP4;
-  addPickable(feedCamLobeP4, COMPONENTS.sleeve, pickables);
-  printSleeveRotor.add(feedCamLobeP4);
+  ribbonLiftCam.position.x = -19;
+  addPickable(ribbonLiftCam, COMPONENTS.ribbon, pickables);
+  printSleeveRotor.add(ribbonLiftCam);
 
-  const printCamLobeP4 = box(7.5, 5.2, 6.0, darkMetal, '1124174 print lobe P4 cue');
-  printCamLobeP4.position.set(14, -13.4, 0);
-  addPickable(printCamLobeP4, COMPONENTS.sleeve, pickables);
-  printSleeveRotor.add(printCamLobeP4);
-
-  const restoreCamLobeAngleP4 = deg(148);
-  const restoreCamLobeP4 = box(7.0, 4.8, 5.6, metal, '1124174 restoring lobe P4 cue');
-  restoreCamLobeP4.position.set(
-    14,
-    -12.8 * Math.cos(restoreCamLobeAngleP4),
-    -12.8 * Math.sin(restoreCamLobeAngleP4)
+  const combinedFeedDetentCam = camProfileP4(
+    7.0,
+    9.0,
+    [
+      { angleRad: deg(180), liftMm: 2.7, halfWidthRad: deg(48), sharpness: 2.6 },
+      { angleRad: deg(212), liftMm: 2.1, halfWidthRad: deg(36), sharpness: 2.8 }
+    ],
+    darkMetal,
+    'IBM 1164240 combined ribbon-feed/detent cam · smooth P4 profile'
   );
-  restoreCamLobeP4.rotation.x = restoreCamLobeAngleP4;
-  addPickable(restoreCamLobeP4, COMPONENTS.sleeve, pickables);
-  printSleeveRotor.add(restoreCamLobeP4);
+  combinedFeedDetentCam.position.x = -4;
+  addPickable(combinedFeedDetentCam, COMPONENTS.sleeve, pickables);
+  printSleeveRotor.add(combinedFeedDetentCam);
+
+  const printRestoringCam = camProfileP4(
+    8.5,
+    9.6,
+    [
+      { angleRad: deg(180), liftMm: 3.4, halfWidthRad: deg(50), sharpness: 2.7 },
+      { angleRad: deg(328), liftMm: 2.8, halfWidthRad: deg(44), sharpness: 2.5 }
+    ],
+    darkMetal,
+    'IBM 1124174 double print/restoring cam · smooth P4 profile'
+  );
+  printRestoringCam.position.x = 14;
+  addPickable(printRestoringCam, COMPONENTS.sleeve, pickables);
+  printSleeveRotor.add(printRestoringCam);
 
   for (const x of [-P4.carrierLocal.bearingX, P4.carrierLocal.bearingX]) {
     const localBearing = pulley(10.5, 7, shoeMat, x < 0 ? 'left carrier sleeve bearing' : 'right carrier sleeve bearing');
@@ -3575,6 +3636,12 @@ export function createSelectricModel() {
         exactLinearFeedMm: 'unresolved'
       },
       sleeveCamOrder: ['ribbon-lift', '1164240-feed-detent', '1124174-print-restoring'],
+      sleeveCamProfiles: {
+        presentationClass: 'smooth P4 radial envelopes replacing round collars plus box lobe cues; sourced identities/order preserved, exact IBM sections unresolved',
+        ribbonLift: ribbonLiftCam.userData.p4CamProfile,
+        combinedFeedDetent1164240: combinedFeedDetentCam.userData.p4CamProfile,
+        printRestoring1124174: printRestoringCam.userData.p4CamProfile
+      },
       primaryDrive: {
         motorPulleyTeeth: CANONICAL.drive.motorPulleyTeeth,
         cycleClutchPulleyTeeth: CANONICAL.drive.cycleClutchPulleyTeethDerived,
