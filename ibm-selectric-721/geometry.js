@@ -690,6 +690,7 @@ export function createSelectricModel() {
     shiftAngleDeg: 0,
     ribbonLift: 0,
     ribbonLiftCommand: 0,
+    ribbonLiftFollowerP5: 0,
     ribbonPrintMode: 'middle',
     ribbonLoadState: false,
     ribbonFeedSuppressedCount: 0,
@@ -2203,8 +2204,13 @@ export function createSelectricModel() {
     printSleeveRotor.add(cam);
   }
 
-  // P4 lobe cues make the sourced 1164240 combined feed/detent cam read as an actual cam
-  // rather than a plain round collar. Their exact production profile is deliberately unresolved.
+  // P4 lobe cues make the sourced sleeve cams read as actual cams rather than plain round collars.
+  // Their exact production profiles remain deliberately unresolved.
+  const ribbonLiftCamLobeP4 = box(5.2, 4.8, 5.0, metal, 'ribbon-lift cam lobe P4 cue');
+  ribbonLiftCamLobeP4.position.set(-19, -10.8, 0);
+  addPickable(ribbonLiftCamLobeP4, COMPONENTS.ribbon, pickables);
+  printSleeveRotor.add(ribbonLiftCamLobeP4);
+
   const detentCamLobeP4 = box(6.5, 4.8, 5.4, darkMetal, '1164240 detent lobe P4 cue');
   detentCamLobeP4.position.set(-4, -12.0, 0);
   addPickable(detentCamLobeP4, COMPONENTS.fineAlignment, pickables);
@@ -2390,6 +2396,37 @@ export function createSelectricModel() {
   detentFollower.add(detentFollowerStem);
 
   const detentFollowerBaseYP4 = detentFollower.position.y;
+
+  const ribbonLiftFollower = new THREE.Group();
+  ribbonLiftFollower.name = 'ribbon-lift cam follower assembly';
+  ribbonLiftFollower.position.set(-19, P4.printShaft.y + 13.7, P4.printShaft.z);
+  carrierMotion.add(ribbonLiftFollower);
+
+  const ribbonLiftFollowerRoller = pulley(3.0, 5.0, darkMetal, 'ribbon-lift follower roller P4 cue');
+  addPickable(ribbonLiftFollowerRoller, COMPONENTS.ribbon, pickables);
+  ribbonLiftFollower.add(ribbonLiftFollowerRoller);
+
+  const ribbonLiftFollowerStem = box(4.0, 13.0, 4.0, metal, 'ribbon-lift follower stem');
+  ribbonLiftFollowerStem.position.set(0, 7.5, 0);
+  addPickable(ribbonLiftFollowerStem, COMPONENTS.ribbon, pickables);
+  ribbonLiftFollower.add(ribbonLiftFollowerStem);
+
+  const ribbonLiftBellcrank = new THREE.Group();
+  ribbonLiftBellcrank.name = 'ribbon-lift follower bellcrank P4';
+  ribbonLiftBellcrank.position.set(-19, P4.printShaft.y + 26, P4.printShaft.z - 7);
+  carrierMotion.add(ribbonLiftBellcrank);
+
+  const ribbonLiftBellcrankA = box(4.0, 20.0, 4.0, metal, 'ribbon-lift bellcrank follower arm');
+  ribbonLiftBellcrankA.position.set(0, -7, 0);
+  addPickable(ribbonLiftBellcrankA, COMPONENTS.ribbon, pickables);
+  ribbonLiftBellcrank.add(ribbonLiftBellcrankA);
+
+  const ribbonLiftBellcrankB = box(18.0, 4.0, 4.0, darkMetal, 'ribbon-lift bellcrank vibrator arm');
+  ribbonLiftBellcrankB.position.set(7, 0, 0);
+  addPickable(ribbonLiftBellcrankB, COMPONENTS.ribbon, pickables);
+  ribbonLiftBellcrank.add(ribbonLiftBellcrankB);
+
+  const ribbonLiftFollowerBaseYP4 = ribbonLiftFollower.position.y;
 
   const carrierTapeGuides = [];
   for (const side of [-1, 1]) {
@@ -2619,12 +2656,28 @@ export function createSelectricModel() {
 
   function setRibbonLift(value) {
     state.ribbonLiftCommand = THREE.MathUtils.clamp(value, 0, 1);
+    state.ribbonLiftFollowerP5 = state.ribbonLiftCommand;
+
     // Threading/load is deliberately a separate service pose above the highest print lift.
     // Its amplitude is P5 because the OEM geometry source establishes ordering, not height.
     state.ribbonLift = state.ribbonLoadState
       ? 1.24
       : state.ribbonLiftCommand * ribbonLiftScaleForMode();
+
+    // P4 follower/bellcrank geometry with P5 throw. This is the visible causal bridge from the
+    // rotating sleeve cam to the carrier-local vibrator; exact IBM lever lengths remain unresolved.
+    ribbonLiftFollower.position.y = ribbonLiftFollowerBaseYP4 + state.ribbonLiftFollowerP5 * 4.4;
+    ribbonLiftBellcrank.rotation.x = deg(-18 * state.ribbonLiftFollowerP5);
     updateRibbonPath(state.ribbonLift);
+  }
+
+  function ribbonLiftFromSleevePhaseP5(phase) {
+    const t = THREE.MathUtils.clamp(Number(phase) || 0, 0, 1);
+    if (t < 0.43) return 0;
+    if (t < 0.54) return THREE.MathUtils.clamp((t - 0.43) / 0.11, 0, 1);
+    if (t < 0.66) return 1;
+    if (t < 0.91) return THREE.MathUtils.clamp(1 - (t - 0.66) / 0.25, 0, 1);
+    return 0;
   }
 
   function applyRibbonFeedSelection(direction = state.ribbonFeedDirection) {
@@ -3026,6 +3079,7 @@ export function createSelectricModel() {
     // Timing remains explicit P5 because exact IBM event angles are not yet sourced.
     const fineAlignment = fineAlignmentFromSleevePhaseP5(state.cyclePhase);
     applyFineAlignment(fineAlignment.tilt, fineAlignment.rotate, fineAlignment.driver);
+    setRibbonLift(ribbonLiftFromSleevePhaseP5(state.cyclePhase));
   }
 
   function setServiceCover(value) {
@@ -3341,7 +3395,14 @@ export function createSelectricModel() {
         guideBridgeCenterY: ribbonGuideBridge.position.y,
         guideBridgeRibbonOffsetMmP4: ribbonGuideBridge.userData.ribbonYOffsetP4,
         liftGuideMotionClass: 'P4 carrier-local guide/vibrator topology following the live ribbon lift; exact guide sections and service-pose overtravel unresolved',
-        loadLiftClass: 'P5 threading pose above high print lift; exact OEM load height unresolved',
+        liftDriver: 'print-sleeve ribbon-lift cam',
+        liftCamLobeP4: true,
+        liftFollowerEmbodied: true,
+        liftFollowerP5: state.ribbonLiftFollowerP5,
+        liftBellcrankEmbodied: true,
+        liftCausalChain: ['print-sleeve-rotation', 'ribbon-lift-cam', 'roller-follower', 'bellcrank', 'vibrator-guides', 'ribbon'],
+        liftDriveClass: 'P5 cam-envelope timing driven from the print-sleeve phase; P4 follower/bellcrank geometry, exact OEM cam profile and lever lengths unresolved',
+        loadLiftClass: 'P5 threading pose above high print lift; service override distinct from print-sleeve cam lift, exact OEM load height unresolved',
         liftCommand: state.ribbonLiftCommand,
         actualLiftNormalizedP5: state.ribbonLift,
         liftHeightClass: 'P5 relative display heights; exact OEM lift heights unresolved',
