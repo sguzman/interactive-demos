@@ -239,6 +239,16 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.operationalCams.tabUsesPoweredCam).toBe(false);
   expect(initial.geometry.operationalCams.shiftInterlocksCharacterCycle).toBe(true);
   expect(initial.geometry.operationalCams.followersEmbodied).toBe(true);
+  expect(initial.geometry.operationalCams.profilePresentationClass).toContain('smooth P4 radial service-cam envelopes');
+  expect(initial.geometry.operationalCams.profileLobeCounts).toEqual({
+    spaceBackspace: 2,
+    carrierReturnIndex: 1,
+    shift: 1
+  });
+  expect(initial.geometry.operationalCams.profileBaseRadiiMmP4.spaceBackspace).toBeGreaterThan(0);
+  expect(initial.geometry.operationalCams.profileBaseRadiiMmP4.carrierReturnIndex).toBeGreaterThan(
+    initial.geometry.operationalCams.profileBaseRadiiMmP4.spaceBackspace
+  );
   expect(initial.geometry.operationalCams.followerLiftP5).toEqual({
     spaceBackspace: 0,
     returnIndex: 0,
