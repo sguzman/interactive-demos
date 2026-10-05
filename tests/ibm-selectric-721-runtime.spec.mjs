@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 // The causal smoke captures a growing set of full-page mechanism artifacts. GitHub's software-rendered
-// Chromium can now run slightly beyond five minutes without any individual wait hanging, so keep
-// a bounded six-minute file budget while preserving the much shorter per-operation wait gates.
-test.setTimeout(360_000);
+// Chromium now reaches the final margin/paper checks at roughly the old six-minute ceiling without
+// any individual wait hanging, so keep a bounded seven-and-a-half-minute file budget while preserving
+// the much shorter per-operation wait gates.
+test.setTimeout(450_000);
 
 test('IBM Selectric 721 causal foundation and gallery integration', async ({ page }) => {
   const errors = [];
