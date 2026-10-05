@@ -2076,7 +2076,11 @@ export function createSelectricModel() {
 
     // P5 follower/contact calibration converts the two actual radial cam samples into the
     // common-bail seated interval while retaining a real zero-lift early dwell.
-    const sample = THREE.MathUtils.clamp((commonRaw - 0.02) / 0.30, 0, 1);
+    // Keep significant bail descent after the browser's code-setup boundary (u=0.28):
+    // the visible cams begin leaving low dwell earlier, but follower lost motion absorbs that
+    // approach until the code is established. This is P5 calibration enforcing the sourced
+    // setup-before-sample invariant rather than claiming factory event degrees.
+    const sample = THREE.MathUtils.clamp((commonRaw - 0.18) / 0.16, 0, 1);
     state.selectorLatchSampleP5 = sample;
     latchBail.position.y = latchBail.userData.baseY - sample * 6.0;
 
@@ -6654,6 +6658,13 @@ export function createSelectricModel() {
         transferRodCountP4: selectorLatchBailTransferRodsP4.length,
         latchBailDrivenFromVisibleCamFollowers: true,
         earlyDwellPreserved: true,
+        setupBeforeSampleCalibrationP5: {
+          browserCodeReadyPhaseP5: 0.28,
+          commonRawLostMotionThresholdP5: 0.18,
+          commonRawSeatSpanP5: 0.16,
+          class:
+            'P5 follower lost-motion calibration chosen to preserve source-backed code-setup-before-latch-bail-sampling; not an IBM timing specification'
+        },
         fiveUnitFollowerEmbodiedP4: true,
         fiveUnitFollowerDownstreamBailCoupling:
           'not yet closed; follower embodies sourced third-cam identity/phase while five-unit latch/bail gating remains separate P5 reconstruction',
