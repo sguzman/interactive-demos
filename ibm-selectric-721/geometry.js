@@ -459,10 +459,87 @@ function dynamicTube(color, radius, name, component, pickables) {
     mesh,
     update(points) {
       const old = mesh.geometry;
-      mesh.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 56, radius, 8, false);
+      mesh.geometry = new THREE.TubeGeometry(
+        new THREE.CatmullRomCurve3(points, false, 'centripetal', 0.5),
+        72,
+        radius,
+        8,
+        false
+      );
       old.dispose();
     }
   };
+}
+
+function pointCircleTangentYZP4(point, center, radius, side = -1) {
+  const dy = point.y - center.y;
+  const dz = point.z - center.z;
+  const d2 = dy * dy + dz * dz;
+  if (d2 <= radius * radius) {
+    throw new Error('P4 point-to-pulley tangent requires the point outside the pulley projection');
+  }
+  const a = radius * radius / d2;
+  const b = radius * Math.sqrt(d2 - radius * radius) / d2;
+  return new THREE.Vector3(
+    center.x,
+    center.y + a * dy + side * b * (-dz),
+    center.z + a * dz + side * b * dy
+  );
+}
+
+function externalCircleTangentYZP4(centerA, radiusA, centerB, radiusB, side = -1) {
+  const dy = centerB.y - centerA.y;
+  const dz = centerB.z - centerA.z;
+  const distance = Math.hypot(dy, dz);
+  if (distance <= Math.abs(radiusA - radiusB)) {
+    throw new Error('P4 pulley projections do not admit the requested external tangent');
+  }
+  const uy = dy / distance;
+  const uz = dz / distance;
+  const py = -uz;
+  const pz = uy;
+  const a = (radiusA - radiusB) / distance;
+  const b = Math.sqrt(Math.max(0, 1 - a * a));
+  const ny = a * uy + side * b * py;
+  const nz = a * uz + side * b * pz;
+  return {
+    pointA: new THREE.Vector3(
+      centerA.x,
+      centerA.y + radiusA * ny,
+      centerA.z + radiusA * nz
+    ),
+    pointB: new THREE.Vector3(
+      centerB.x,
+      centerB.y + radiusB * ny,
+      centerB.z + radiusB * nz
+    )
+  };
+}
+
+function minorArcYZP4(center, start, end, radius, segments = 10) {
+  const startAngle = Math.atan2(start.z - center.z, start.y - center.y);
+  const endAngle = Math.atan2(end.z - center.z, end.y - center.y);
+  const delta = wrappedCamDeltaP4(endAngle, startAngle);
+  const points = [];
+  for (let i = 1; i <= segments; i += 1) {
+    const angle = startAngle + delta * i / segments;
+    points.push(new THREE.Vector3(
+      center.x,
+      center.y + Math.cos(angle) * radius,
+      center.z + Math.sin(angle) * radius
+    ));
+  }
+  return {
+    points,
+    angleRad: Math.abs(delta),
+    lengthMm: Math.abs(delta) * radius
+  };
+}
+
+function tangentOrthogonalityErrorMmP4(center, contact, otherPoint) {
+  const radial = new THREE.Vector3(0, contact.y - center.y, contact.z - center.z);
+  const direction = otherPoint.clone().sub(contact).normalize();
+  return Math.abs(radial.dot(direction));
 }
 
 function dynamicFlatTape(color, width, thickness, name, component, pickables) {
@@ -1026,6 +1103,10 @@ export function createSelectricModel() {
     operationalFollowerLiftP5: { spaceBackspace: 0, returnIndex: 0, shift: 0 },
     backspaceLinkage: 0,
     tensionArmAngleDeg: 0,
+    escapementCordWrapAnglesDegP4: [0, 0],
+    escapementCordTangentErrorMmP4: 0,
+    returnCordWrapAnglesDegP4: [0, 0],
+    returnCordTangentErrorMmP4: 0,
     carrierReturnDrivePhase: 0,
     tabGovernorPhase: 0,
     tabStopIndices: [],
@@ -1814,13 +1895,167 @@ export function createSelectricModel() {
     return new THREE.Vector3(carrierX + 24, 82, -48);
   }
 
-  function escapementCordFreeSpanMmP4(carrierX, armAngleRad) {
-    const pulleyPoint = tensionArmPulleyPointP4(armAngleRad);
-    return (
-      escapementCordDrumPointP4.distanceTo(escapementCordGuidePointP4) +
-      escapementCordGuidePointP4.distanceTo(pulleyPoint) +
-      pulleyPoint.distanceTo(escapementCordCarrierPointP4(carrierX))
+  const escapementGuideRadiusP4 = 7;
+  const tensionPulleyRadiusP4 = 7.5;
+  const escapementTangentSideP4 = -1;
+  const returnPulleyRadiusP4 = 7;
+  const returnCordDrumPointP4 = new THREE.Vector3(
+    -22,
+    P4.cordSystem.shaftY,
+    P4.cordSystem.shaftZ - 9
+  );
+  const returnPulley1CenterP4 = new THREE.Vector3(P4.cordSystem.leftPulleyX, 60, -36);
+  const returnPulley2CenterP4 = new THREE.Vector3(P4.cordSystem.leftPulleyX, 60, -58);
+
+  function escapementCordMetricsP4(carrierX, armAngleRad) {
+    const tensionCenter = tensionArmPulleyPointP4(armAngleRad);
+    const carrierPoint = escapementCordCarrierPointP4(carrierX);
+    const guideIn = pointCircleTangentYZP4(
+      escapementCordDrumPointP4,
+      escapementCordGuidePointP4,
+      escapementGuideRadiusP4,
+      escapementTangentSideP4
     );
+    const guideToTension = externalCircleTangentYZP4(
+      escapementCordGuidePointP4,
+      escapementGuideRadiusP4,
+      tensionCenter,
+      tensionPulleyRadiusP4,
+      escapementTangentSideP4
+    );
+    const tensionOut = pointCircleTangentYZP4(
+      carrierPoint,
+      tensionCenter,
+      tensionPulleyRadiusP4,
+      escapementTangentSideP4
+    );
+    const guideArc = minorArcYZP4(
+      escapementCordGuidePointP4,
+      guideIn,
+      guideToTension.pointA,
+      escapementGuideRadiusP4
+    );
+    const tensionArc = minorArcYZP4(
+      tensionCenter,
+      guideToTension.pointB,
+      tensionOut,
+      tensionPulleyRadiusP4
+    );
+    const lengthMm =
+      escapementCordDrumPointP4.distanceTo(guideIn) +
+      guideArc.lengthMm +
+      guideToTension.pointA.distanceTo(guideToTension.pointB) +
+      tensionArc.lengthMm +
+      tensionOut.distanceTo(carrierPoint);
+    const tangentError = Math.max(
+      tangentOrthogonalityErrorMmP4(
+        escapementCordGuidePointP4,
+        guideIn,
+        escapementCordDrumPointP4
+      ),
+      tangentOrthogonalityErrorMmP4(
+        escapementCordGuidePointP4,
+        guideToTension.pointA,
+        guideToTension.pointB
+      ),
+      tangentOrthogonalityErrorMmP4(
+        tensionCenter,
+        guideToTension.pointB,
+        guideToTension.pointA
+      ),
+      tangentOrthogonalityErrorMmP4(
+        tensionCenter,
+        tensionOut,
+        carrierPoint
+      )
+    );
+    return {
+      tensionCenter,
+      carrierPoint,
+      guideIn,
+      guideOut: guideToTension.pointA,
+      tensionIn: guideToTension.pointB,
+      tensionOut,
+      guideArc,
+      tensionArc,
+      lengthMm,
+      tangentOrthogonalityErrorMmP4: tangentError
+    };
+  }
+
+  function escapementCordPathPointsP4(carrierX, armAngleRad) {
+    const metrics = escapementCordMetricsP4(carrierX, armAngleRad);
+    return {
+      metrics,
+      points: [
+        escapementCordDrumPointP4.clone(),
+        metrics.guideIn.clone(),
+        ...metrics.guideArc.points.map(point => point.clone()),
+        metrics.tensionIn.clone(),
+        ...metrics.tensionArc.points.map(point => point.clone()),
+        metrics.carrierPoint.clone()
+      ]
+    };
+  }
+
+  function returnCordPathP4(carrierX) {
+    const carrierPoint = new THREE.Vector3(carrierX - 24, 78, -45);
+    const pulley1In = pointCircleTangentYZP4(
+      returnCordDrumPointP4,
+      returnPulley1CenterP4,
+      returnPulleyRadiusP4,
+      -1
+    );
+    const betweenPulleys = externalCircleTangentYZP4(
+      returnPulley1CenterP4,
+      returnPulleyRadiusP4,
+      returnPulley2CenterP4,
+      returnPulleyRadiusP4,
+      1
+    );
+    const pulley2Out = pointCircleTangentYZP4(
+      carrierPoint,
+      returnPulley2CenterP4,
+      returnPulleyRadiusP4,
+      -1
+    );
+    const pulley1Arc = minorArcYZP4(
+      returnPulley1CenterP4,
+      pulley1In,
+      betweenPulleys.pointA,
+      returnPulleyRadiusP4
+    );
+    const pulley2Arc = minorArcYZP4(
+      returnPulley2CenterP4,
+      betweenPulleys.pointB,
+      pulley2Out,
+      returnPulleyRadiusP4
+    );
+    const tangentError = Math.max(
+      tangentOrthogonalityErrorMmP4(returnPulley1CenterP4, pulley1In, returnCordDrumPointP4),
+      tangentOrthogonalityErrorMmP4(returnPulley1CenterP4, betweenPulleys.pointA, betweenPulleys.pointB),
+      tangentOrthogonalityErrorMmP4(returnPulley2CenterP4, betweenPulleys.pointB, betweenPulleys.pointA),
+      tangentOrthogonalityErrorMmP4(returnPulley2CenterP4, pulley2Out, carrierPoint)
+    );
+    return {
+      points: [
+        returnCordDrumPointP4.clone(),
+        pulley1In.clone(),
+        ...pulley1Arc.points.map(point => point.clone()),
+        betweenPulleys.pointB.clone(),
+        ...pulley2Arc.points.map(point => point.clone()),
+        carrierPoint.clone()
+      ],
+      wrapAnglesDegP4: [
+        THREE.MathUtils.radToDeg(pulley1Arc.angleRad),
+        THREE.MathUtils.radToDeg(pulley2Arc.angleRad)
+      ],
+      tangentOrthogonalityErrorMmP4: tangentError
+    };
+  }
+
+  function escapementCordFreeSpanMmP4(carrierX, armAngleRad) {
+    return escapementCordMetricsP4(carrierX, armAngleRad).lengthMm;
   }
 
   const escapementCordReferenceSpanMmP4 = escapementCordFreeSpanMmP4(0, 0);
@@ -1903,20 +2138,21 @@ export function createSelectricModel() {
     const armAngle = solveTensionArmAngleRadP4(carrierX);
     state.tensionArmAngleDeg = THREE.MathUtils.radToDeg(armAngle);
     tensionArm.rotation.x = armAngle;
-    const tensionPoint = tensionArmPulleyPointP4(armAngle);
 
-    escapementCord.update([
-      escapementCordDrumPointP4,
-      escapementCordGuidePointP4,
-      tensionPoint,
-      escapementCordCarrierPointP4(carrierX)
-    ]);
-    returnCord.update([
-      new THREE.Vector3(-22, P4.cordSystem.shaftY, P4.cordSystem.shaftZ - 9),
-      new THREE.Vector3(P4.cordSystem.leftPulleyX, 60, -36),
-      new THREE.Vector3(P4.cordSystem.leftPulleyX, 60, -58),
-      new THREE.Vector3(carrierX - 24, 78, -45)
-    ]);
+    const escapementPath = escapementCordPathPointsP4(carrierX, armAngle);
+    const returnPath = returnCordPathP4(carrierX);
+    escapementCord.update(escapementPath.points);
+    returnCord.update(returnPath.points);
+
+    state.escapementCordWrapAnglesDegP4 = [
+      THREE.MathUtils.radToDeg(escapementPath.metrics.guideArc.angleRad),
+      THREE.MathUtils.radToDeg(escapementPath.metrics.tensionArc.angleRad)
+    ];
+    state.escapementCordTangentErrorMmP4 =
+      escapementPath.metrics.tangentOrthogonalityErrorMmP4;
+    state.returnCordWrapAnglesDegP4 = [...returnPath.wrapAnglesDegP4];
+    state.returnCordTangentErrorMmP4 = returnPath.tangentOrthogonalityErrorMmP4;
+
     const travel = carrierX + CANONICAL.writingLineMm / 2;
     state.cordPhase = travel * escapementCordDrumPayoutRatioP4 / Math.max(P4.cordSystem.drumRadius, 1);
     escapementDrum.rotation.x = state.cordPhase;
@@ -3896,7 +4132,13 @@ export function createSelectricModel() {
           state.carrierX,
           tensionArm.rotation.x
         ),
-        tensionModelClass: 'P4 solved spring-arm compensation keeps the visible escapement-cord centerline length consistent with reconstructed drum payout across carrier travel; exact IBM arm pivots, wrap arcs and cord diameter remain unresolved'
+        pulleyContactRoutingP4: true,
+        escapementWrapAnglesDegP4: [...state.escapementCordWrapAnglesDegP4],
+        returnWrapAnglesDegP4: [...state.returnCordWrapAnglesDegP4],
+        escapementTangentOrthogonalityErrorMmP4: state.escapementCordTangentErrorMmP4,
+        returnTangentOrthogonalityErrorMmP4: state.returnCordTangentErrorMmP4,
+        cordPathClass: 'P4 tangent-to-rim routing with sampled minor wrap arcs around the visible guide/tension pulleys; exact IBM groove lanes, wrap direction and cord diameter remain unresolved',
+        tensionModelClass: 'P4 solved spring-arm compensation keeps the tangent-routed escapement-cord free span consistent with reconstructed drum payout across carrier travel; exact IBM arm pivots, groove lanes and cord diameter remain unresolved'
       },
       marginStops: {
         leftPhysical: true,
