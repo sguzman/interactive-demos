@@ -573,6 +573,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(keyDown.cycle).toBe('C1_TRIP');
   expect(keyDown.keyboardPress.character).toBe('Q');
   expect(keyDown.keyboardPress.depression).toBeGreaterThan(0.7);
+  expect(keyDown.geometry.keyboardActuation.keycapClass).toContain('tapered three-stage P4 keycap');
   expect(keyDown.keyboardCodeBitOrder).toEqual(['T1','T2','R1','R2','R2A','fiveUnit']);
   await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
