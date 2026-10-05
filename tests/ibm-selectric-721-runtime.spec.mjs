@@ -174,6 +174,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.serviceCoverOpen).toBe(0);
   expect(initial.geometry.inspectionCutaway.mode).toBe('none');
   expect(initial.geometry.inspectionCutaway.shellVisible).toBe(true);
+  expect(initial.geometry.inspectionCutaway.baseShellVisible).toBe(true);
   expect(initial.geometry.inspectionCutaway.keyboardVisible).toBe(true);
   expect(initial.cycle).toBe('C0_REST');
   expect(initial.powered).toBe(true);
@@ -748,6 +749,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const powerInspection = await page.evaluate(() => window.__selectricDebug.state);
   expect(powerInspection.geometry.inspectionCutaway.mode).toBe('powerframe');
   expect(powerInspection.geometry.inspectionCutaway.shellVisible).toBe(false);
+  expect(powerInspection.geometry.inspectionCutaway.baseShellVisible).toBe(false);
   expect(powerInspection.geometry.inspectionCutaway.keyboardVisible).toBe(false);
   expect(powerInspection.geometry.inspectionCutaway.powerframeIsolationClass).toContain('occluder removal');
   await page.screenshot({ path: 'test-results/selectric-power-view.png', fullPage: true });
@@ -762,6 +764,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const productInspection = await page.evaluate(() => window.__selectricDebug.state);
   expect(productInspection.geometry.inspectionCutaway.mode).toBe('none');
   expect(productInspection.geometry.inspectionCutaway.shellVisible).toBe(true);
+  expect(productInspection.geometry.inspectionCutaway.baseShellVisible).toBe(true);
   expect(productInspection.geometry.inspectionCutaway.keyboardVisible).toBe(true);
 
   const beforeExplosion = await page.evaluate(() => ({
