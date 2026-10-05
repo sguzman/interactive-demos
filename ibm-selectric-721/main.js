@@ -543,11 +543,11 @@ function runCycle(now) {
     model.setKeyPress(null, 0);
   } else if (t < 0.91) {
     setCycleState('C6_ESCAPEMENT_RIBBON_RESTORE');
-    model.setKeyboardCode(0);
+    model.setKeyboardCode(0, false);
     model.setKeyPress(null, 0);
   } else {
     setCycleState('C7_CLUTCH_DISENGAGE_CHECK');
-    model.setKeyboardCode(0);
+    model.setKeyboardCode(0, false);
     model.setKeyPress(null, 0);
   }
 
