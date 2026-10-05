@@ -860,6 +860,25 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(typed.geometry.selectionDifferential.sourceFixedHoleFractions.balanceOutput).toBeCloseTo(1 / 2, 8);
   expect(typed.geometry.selectionDifferential.geometryOutputErrorMaxP5).toBeLessThan(1e-9);
   expect(typed.geometry.selectionDifferential.geometryClass).toContain('floating levers');
+  expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.tapeEndpointsAnchoredToActuatorRims).toBe(true);
+  expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.leftTiltCommandPulleyEmbodied).toBe(true);
+  expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.rightTiltPulleyFixedDuringSelection).toBe(true);
+  expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.leftRotateCommandPulleyEmbodied).toBe(true);
+  expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.shiftActsOnRightRotatePulley).toBe(true);
+  expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.leftTiltAngleDegP5).toBeCloseTo(
+    -typed.geometry.selectionDifferential.sidePulleyEmbodiment.tiltCommandAngleScaleDegP5 *
+      typed.geometry.selectionNormalized.qTilt,
+    8
+  );
+  expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.leftRotateAngleDegP5).toBeCloseTo(
+    -typed.geometry.selectionDifferential.sidePulleyEmbodiment.rotateCommandAngleScaleDegP5 *
+      typed.geometry.selectionNormalized.qSigned,
+    8
+  );
+  expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.rightTiltAngleDegP5).toBeCloseTo(0, 8);
+  expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.rightRotateShiftAngleDegP5).toBeCloseTo(0, 8);
+  expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.sourceTopology).toContain('shift -> right rotate side pulley');
+  expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.geometryClass).toContain('rim tape anchors');
   expect(typed.geometry.selectionDifferential.tapeCarrierInvariantErrorMm.tiltMm).toBeLessThan(1e-8);
   expect(typed.geometry.selectionDifferential.tapeCarrierInvariantErrorMm.rotateMm).toBeLessThan(1e-8);
   expect(typed.geometry.selectionDifferential.tapePresentation.crossSection).toContain('flat strip');
@@ -960,6 +979,13 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const shifted = await page.evaluate(() => window.__selectricDebug.state);
   expect(shifted.selection.shiftHemisphere).toBe(1 - beforeShift);
   expect(shifted.selection.shiftAngleDeg).toBeCloseTo(shifted.selection.shiftHemisphere * 180, 6);
+  expect(shifted.geometry.selectionDifferential.sidePulleyEmbodiment.rightTiltAngleDegP5).toBeCloseTo(0, 8);
+  expect(shifted.geometry.selectionDifferential.sidePulleyEmbodiment.rightRotateShiftAngleDegP5).toBeCloseTo(
+    shifted.geometry.selectionDifferential.sidePulleyEmbodiment.shiftCommandAngleScaleDegP5 *
+      shifted.selection.shiftHemisphere,
+    8
+  );
+  expect(shifted.geometry.selectionDifferential.sidePulleyEmbodiment.shiftActsOnRightRotatePulley).toBe(true);
   expect(shifted.events.some(event => event.name === 'SHIFT_OPERATION_COMPLETE')).toBe(true);
 
   const paperBeforeSingleIndex = (await page.evaluate(() => window.__selectricDebug.state)).paperAdvanceMm;
