@@ -1474,9 +1474,56 @@ export function createSelectricModel() {
 
   const selectorBailMaterials = [];
   const selectorBails = [];
+  const selectorLatchInterposers = [];
   const keyboardMechanismAssembly = makeAssembly('keyboard code mechanism', new THREE.Vector3(0, -78, 62));
   assemblies.push(keyboardMechanismAssembly);
   root.add(keyboardMechanismAssembly);
+
+  // Source-grounded keyboard support topology: character keylevers share a rear fulcrum relation,
+  // are guided at the front between stop rods, and carry separate rear pawls. Absolute coordinates
+  // and individual production stamping profiles remain P4 reconstruction.
+  const keyleverFulcrumRod = shaft(304, 2.1, darkMetal, 'common rear keylever fulcrum rod P4');
+  keyleverFulcrumRod.position.set(0, 28.5, -31);
+  addPickable(keyleverFulcrumRod, COMPONENTS.keyboardMechanism, pickables);
+  keyboardMechanismAssembly.add(keyleverFulcrumRod);
+
+  const keyleverBearingSupport = box(304, 5.5, 7.5, metal, 'keylever lower bearing-support rail P4');
+  keyleverBearingSupport.position.set(0, 23.5, -18);
+  addPickable(keyleverBearingSupport, COMPONENTS.keyboardMechanism, pickables);
+  keyboardMechanismAssembly.add(keyleverBearingSupport);
+
+  const frontGuideCombRail = box(306, 5.0, 5.0, darkMetal, 'front keylever guide-comb rail P4');
+  frontGuideCombRail.position.set(0, 28.2, 83);
+  addPickable(frontGuideCombRail, COMPONENTS.keyboardMechanism, pickables);
+  keyboardMechanismAssembly.add(frontGuideCombRail);
+
+  const keyleverGuideFingerCountP4 = 51;
+  const guideFingerGeometryP4 = new THREE.BoxGeometry(1.15, 7.0, 11.0);
+  const guideFingersP4 = new THREE.InstancedMesh(guideFingerGeometryP4, darkMetal, keyleverGuideFingerCountP4);
+  guideFingersP4.name = 'front guide-comb slot fingers P4';
+  const guideFingerMatrixP4 = new THREE.Matrix4();
+  for (let i = 0; i < keyleverGuideFingerCountP4; i += 1) {
+    const x = THREE.MathUtils.lerp(-143, 143, i / (keyleverGuideFingerCountP4 - 1));
+    guideFingerMatrixP4.makeTranslation(x, 29.0, 83);
+    guideFingersP4.setMatrixAt(i, guideFingerMatrixP4);
+  }
+  guideFingersP4.instanceMatrix.needsUpdate = true;
+  guideFingersP4.castShadow = true;
+  guideFingersP4.userData.component = COMPONENTS.keyboardMechanism;
+  pickables.push(guideFingersP4);
+  keyboardMechanismAssembly.add(guideFingersP4);
+
+  const keyleverStopRods = [];
+  for (const [y, name] of [
+    [34.0, 'upper nylon keylever stop rod P4'],
+    [22.5, 'lower nylon keylever stop rod P4']
+  ]) {
+    const stopRod = shaft(304, 1.35, shoeMat, name);
+    stopRod.position.set(0, y, 78);
+    addPickable(stopRod, COMPONENTS.keyboardMechanism, pickables);
+    keyboardMechanismAssembly.add(stopRod);
+    keyleverStopRods.push(stopRod);
+  }
 
   const keyleverGeometry = new THREE.BoxGeometry(3.0, 2.4, 82);
   const keylevers = new THREE.InstancedMesh(keyleverGeometry, darkMetal, 51);
@@ -1497,6 +1544,59 @@ export function createSelectricModel() {
   pickables.push(keylevers);
   keyboardMechanismAssembly.add(keylevers);
 
+  const keyleverPawlGeometryP4 = new THREE.BoxGeometry(3.2, 8.0, 2.4);
+  const keyleverPawlsP4 = new THREE.InstancedMesh(keyleverPawlGeometryP4, metal, 51);
+  keyleverPawlsP4.name = 'separate rear keylever pawl bank P4';
+  const keyleverPawlPivotGeometryP4 = new THREE.CylinderGeometry(1.15, 1.15, 4.4, 12);
+  keyleverPawlPivotGeometryP4.rotateZ(Math.PI / 2);
+  const keyleverPawlPivotsP4 = new THREE.InstancedMesh(keyleverPawlPivotGeometryP4, darkMetal, 51);
+  keyleverPawlPivotsP4.name = 'keylever pawl shoulder-rivet bank P4';
+  const pawlMatrixP4 = new THREE.Matrix4();
+  const pawlPivotMatrixP4 = new THREE.Matrix4();
+  for (let i = 0; i < 51; i += 1) {
+    const row = Math.floor(i / 11);
+    const col = i % 11;
+    const x = (col - 5) * 24 + (row % 2 ? 7 : 0);
+    const y = 25.5 - row * 1.2;
+    const z = 18 - row * 16;
+    pawlMatrixP4.compose(
+      new THREE.Vector3(x, y, z),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(deg(9), 0, 0)),
+      leverScale
+    );
+    pawlPivotMatrixP4.makeTranslation(x, y + 3.7, z - 0.6);
+    keyleverPawlsP4.setMatrixAt(i, pawlMatrixP4);
+    keyleverPawlPivotsP4.setMatrixAt(i, pawlPivotMatrixP4);
+  }
+  keyleverPawlsP4.instanceMatrix.needsUpdate = true;
+  keyleverPawlPivotsP4.instanceMatrix.needsUpdate = true;
+  keyleverPawlsP4.castShadow = true;
+  keyleverPawlPivotsP4.castShadow = true;
+  keyleverPawlsP4.userData.component = COMPONENTS.keyboardMechanism;
+  keyleverPawlPivotsP4.userData.component = COMPONENTS.keyboardMechanism;
+  pickables.push(keyleverPawlsP4, keyleverPawlPivotsP4);
+  keyboardMechanismAssembly.add(keyleverPawlsP4, keyleverPawlPivotsP4);
+
+  // Character interposers remain an instanced bank for browser performance, but the support
+  // hardware now exposes the distinct front fulcrum and front/rear guide relations required by
+  // the OEM theory. This prevents the bank from reading as a free-floating one-axis slider.
+  const interposerFulcrumRod = shaft(300, 2.7, darkMetal, 'character interposer front fulcrum rod P4');
+  interposerFulcrumRod.position.set(0, 25.5, 31);
+  addPickable(interposerFulcrumRod, COMPONENTS.keyboardMechanism, pickables);
+  keyboardMechanismAssembly.add(interposerFulcrumRod);
+
+  const interposerGuideRailsP4 = [];
+  for (const [z, name] of [
+    [22, 'front interposer guide-comb rail P4'],
+    [-24, 'rear interposer guide-comb rail P4']
+  ]) {
+    const guideRail = box(302, 4.2, 4.4, metal, name);
+    guideRail.position.set(0, 23.5, z);
+    addPickable(guideRail, COMPONENTS.keyboardMechanism, pickables);
+    keyboardMechanismAssembly.add(guideRail);
+    interposerGuideRailsP4.push(guideRail);
+  }
+
   const interposerGeometry = new THREE.BoxGeometry(3.2, 2.2, 54);
   const interposers = new THREE.InstancedMesh(interposerGeometry, metal, 51);
   interposers.name = 'character interposers';
@@ -1512,16 +1612,81 @@ export function createSelectricModel() {
   pickables.push(interposers);
   keyboardMechanismAssembly.add(interposers);
 
+  // Closely spaced steel balls are a source-backed mutual-exclusion medium. The visible ball
+  // count and tube envelope are presentation-only P4 because the OEM theory does not give them.
+  const selectorCompensatorBallCountP4 = 29;
+  const selectorCompensatorBallsP4 = new THREE.InstancedMesh(
+    new THREE.SphereGeometry(2.45, 12, 8),
+    metal,
+    selectorCompensatorBallCountP4
+  );
+  selectorCompensatorBallsP4.name = 'selector compensator steel-ball train P4';
+  const compensatorBallMatrixP4 = new THREE.Matrix4();
+  for (let i = 0; i < selectorCompensatorBallCountP4; i += 1) {
+    const x = THREE.MathUtils.lerp(-126, 126, i / (selectorCompensatorBallCountP4 - 1));
+    compensatorBallMatrixP4.makeTranslation(x, 18.2, -29);
+    selectorCompensatorBallsP4.setMatrixAt(i, compensatorBallMatrixP4);
+  }
+  selectorCompensatorBallsP4.instanceMatrix.needsUpdate = true;
+  selectorCompensatorBallsP4.castShadow = true;
+  selectorCompensatorBallsP4.userData.component = COMPONENTS.keyboardMechanism;
+  pickables.push(selectorCompensatorBallsP4);
+  keyboardMechanismAssembly.add(selectorCompensatorBallsP4);
+
+  const compensatorRailTopP4 = shaft(278, 0.9, darkMetal, 'selector compensator upper tube rail P4');
+  compensatorRailTopP4.position.set(0, 21.6, -29);
+  addPickable(compensatorRailTopP4, COMPONENTS.keyboardMechanism, pickables);
+  keyboardMechanismAssembly.add(compensatorRailTopP4);
+  const compensatorRailBottomP4 = shaft(278, 0.9, darkMetal, 'selector compensator lower tube rail P4');
+  compensatorRailBottomP4.position.set(0, 14.8, -29);
+  addPickable(compensatorRailBottomP4, COMPONENTS.keyboardMechanism, pickables);
+  keyboardMechanismAssembly.add(compensatorRailBottomP4);
+
+  // Six source-backed selector-bail channels now pivot about the X axis instead of translating
+  // as rectangular bars. Slim end arms make the working Y/Z plane visible during code motion.
   for (let channel = 0; channel < 6; channel += 1) {
     const bailMat = material(0x7d8486, 0.58, 0.35);
     selectorBailMaterials.push(bailMat);
-    const bail = box(286, 2.5, 4.2, bailMat, 'selector bail C' + (channel + 1));
+
+    const bail = new THREE.Group();
+    bail.name = 'selector bail C' + (channel + 1) + ' pivot P4';
     bail.position.set(0, 28 + channel * 4.0, -6 - channel * 5.0);
-    bail.userData.baseY = bail.position.y;
-    bail.userData.baseZ = bail.position.z;
-    addPickable(bail, COMPONENTS.keyboardMechanism, pickables);
+    bail.userData.baseRotationX = 0;
     keyboardMechanismAssembly.add(bail);
     selectorBails.push(bail);
+
+    const crossbar = shaft(286, 1.55, bailMat, 'selector bail C' + (channel + 1) + ' crossbar P4');
+    addPickable(crossbar, COMPONENTS.keyboardMechanism, pickables);
+    bail.add(crossbar);
+
+    for (const side of [-1, 1]) {
+      const armGeometryP4 = leverPlateGeometryP4(12.5, 4.6, 3.0, 2.2, 1.0);
+      const arm = new THREE.Mesh(armGeometryP4, bailMat);
+      arm.name = 'selector bail C' + (channel + 1) + (side < 0 ? ' left' : ' right') + ' Y/Z arm P4';
+      arm.rotation.y = Math.PI / 2;
+      arm.position.set(side * 136, 0, 0);
+      arm.castShadow = true;
+      arm.receiveShadow = true;
+      addPickable(arm, COMPONENTS.keyboardMechanism, pickables);
+      bail.add(arm);
+
+      const pivotPin = shaft(6.6, 1.35, darkMetal, arm.name + ' pivot pin');
+      pivotPin.position.set(side * 136, 0, 0);
+      addPickable(pivotPin, COMPONENTS.keyboardMechanism, pickables);
+      bail.add(pivotPin);
+    }
+
+    const latchInterposerGeometryP4 = twoHoleLinkPlateGeometryP4(16, 5.4, 2.4, 1.15);
+    const latchInterposer = new THREE.Mesh(latchInterposerGeometryP4, darkMetal);
+    latchInterposer.name = 'selector bail C' + (channel + 1) + ' one-to-one latch interposer P4';
+    latchInterposer.rotation.x = Math.PI / 2;
+    latchInterposer.position.set(128, 31 + channel * 4.0, -31 - channel * 5.0);
+    latchInterposer.userData.baseZ = latchInterposer.position.z;
+    latchInterposer.castShadow = true;
+    latchInterposer.receiveShadow = true;
+    addPickable(latchInterposer, COMPONENTS.keyboardMechanism, pickables);
+    keyboardMechanismAssembly.add(latchInterposer);
+    selectorLatchInterposers.push(latchInterposer);
   }
 
   const filterShaftRotor = new THREE.Group();
@@ -1531,15 +1696,59 @@ export function createSelectricModel() {
   const filterShaft = shaft(294, 3.4, darkMetal, 'filter shaft');
   addPickable(filterShaft, COMPONENTS.keyboardMechanism, pickables);
   filterShaftRotor.add(filterShaft);
-  const filterBlade = box(18, 3, 8, metal, 'filter-shaft pickup blade cue');
-  filterBlade.position.set(0, 6, 0);
-  addPickable(filterBlade, COMPONENTS.keyboardMechanism, pickables);
-  filterShaftRotor.add(filterBlade);
 
-  const latchBail = box(286, 4.5, 9, metal, 'selector latch bail');
+  const filterShaftBladesP4 = [];
+  for (const sign of [-1, 1]) {
+    const filterBlade = box(
+      18,
+      3.0,
+      8.0,
+      metal,
+      sign < 0 ? 'filter-shaft blade A P4' : 'filter-shaft blade B P4'
+    );
+    filterBlade.position.set(0, sign * 6.0, 0);
+    addPickable(filterBlade, COMPONENTS.keyboardMechanism, pickables);
+    filterShaftRotor.add(filterBlade);
+    filterShaftBladesP4.push(filterBlade);
+  }
+
+  const filterShaftBearingsP4 = [];
+  const bronzeP4 = material(0x8a6840, 0.48, 0.42);
+  for (const side of [-1, 1]) {
+    const bearing = pulley(5.2, 7.0, bronzeP4, side < 0 ? 'left filter-shaft bronze bearing P4' : 'right filter-shaft bronze bearing P4');
+    bearing.position.set(side * 146, 0, 0);
+    addPickable(bearing, COMPONENTS.keyboardMechanism, pickables);
+    filterShaftRotor.add(bearing);
+    filterShaftBearingsP4.push(bearing);
+  }
+
+  // The common selector latch bail is shown as an open U-frame with six contact fingers rather
+  // than a solid slab. Recess/contact spacing is P4; the source-backed fact is the common powered
+  // sampling member with six ordinary channel regions.
+  const latchBail = new THREE.Group();
+  latchBail.name = 'selector latch bail open-frame P4';
   latchBail.position.set(0, 45, -42);
-  addPickable(latchBail, COMPONENTS.keyboardMechanism, pickables);
   keyboardMechanismAssembly.add(latchBail);
+
+  const latchBailCrossbarP4 = box(286, 4.0, 4.2, metal, 'selector latch bail transverse rail P4');
+  addPickable(latchBailCrossbarP4, COMPONENTS.keyboardMechanism, pickables);
+  latchBail.add(latchBailCrossbarP4);
+
+  for (const side of [-1, 1]) {
+    const sideLeg = box(4.2, 17, 5.0, metal, side < 0 ? 'left selector latch-bail side leg P4' : 'right selector latch-bail side leg P4');
+    sideLeg.position.set(side * 140, -7, 0);
+    addPickable(sideLeg, COMPONENTS.keyboardMechanism, pickables);
+    latchBail.add(sideLeg);
+  }
+
+  const latchBailContactFingersP4 = [];
+  for (let channel = 0; channel < 6; channel += 1) {
+    const finger = box(5.2, 8.5, 3.2, darkMetal, 'selector latch-bail contact finger C' + (channel + 1) + ' P4');
+    finger.position.set(-75 + channel * 30, -6.2, 1.0);
+    addPickable(finger, COMPONENTS.keyboardMechanism, pickables);
+    latchBail.add(finger);
+    latchBailContactFingersP4.push(finger);
+  }
 
   const frameAssembly = makeAssembly('primary frame', new THREE.Vector3(0, -24, -92));
   assemblies.push(frameAssembly);
