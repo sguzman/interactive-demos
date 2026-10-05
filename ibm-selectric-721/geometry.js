@@ -2697,19 +2697,30 @@ export function createSelectricModel() {
   lineSpacingSelectorPivot.position.set(P4.platen.length / 2 - 43, P4.platen.y + 17, P4.platen.z + 22);
   paperFeedCarriage.add(lineSpacingSelectorPivot);
 
-  const lineSpacingSelectorArm = box(5, 28, 5, metal, 'line-spacing selector arm');
-  lineSpacingSelectorArm.position.set(0, 12, 0);
+  const lineSpacingSelectorArmGeometryP4 = leverPlateGeometryP4(28, 7.2, 5.0, 2.8, 1.35);
+  const lineSpacingSelectorArm = new THREE.Mesh(lineSpacingSelectorArmGeometryP4, metal);
+  lineSpacingSelectorArm.name = 'line-spacing selector stamped arm P4';
+  lineSpacingSelectorArm.castShadow = true;
+  lineSpacingSelectorArm.receiveShadow = true;
   addPickable(lineSpacingSelectorArm, COMPONENTS.paperFeed, pickables);
   lineSpacingSelectorPivot.add(lineSpacingSelectorArm);
+
+  const lineSpacingSelectorPivotPin = pinZP4(7.4, 1.7, darkMetal, 'line-spacing selector pivot pin P4');
+  addPickable(lineSpacingSelectorPivotPin, COMPONENTS.paperFeed, pickables);
+  lineSpacingSelectorPivot.add(lineSpacingSelectorPivotPin);
 
   const lineSpacingSelectorKnob = box(14, 7, 11, shellDark, 'line-spacing selector knob');
   lineSpacingSelectorKnob.position.set(0, 27, 1);
   addPickable(lineSpacingSelectorKnob, COMPONENTS.paperFeed, pickables);
   lineSpacingSelectorPivot.add(lineSpacingSelectorKnob);
 
-  const lineSpacingSelectorLink = box(4, 18, 4, darkMetal, 'line-spacing selector pawl-stop link cue');
+  const lineSpacingSelectorLinkGeometryP4 = twoHoleLinkPlateGeometryP4(18, 5.2, 2.2, 1.05);
+  const lineSpacingSelectorLink = new THREE.Mesh(lineSpacingSelectorLinkGeometryP4, darkMetal);
+  lineSpacingSelectorLink.name = 'line-spacing selector pawl-stop link P4';
   lineSpacingSelectorLink.position.set(-7, 2, -4);
   lineSpacingSelectorLink.rotation.x = deg(-18);
+  lineSpacingSelectorLink.castShadow = true;
+  lineSpacingSelectorLink.receiveShadow = true;
   addPickable(lineSpacingSelectorLink, COMPONENTS.platenRatchet, pickables);
   lineSpacingSelectorPivot.add(lineSpacingSelectorLink);
 
@@ -2749,13 +2760,22 @@ export function createSelectricModel() {
   }
 
   const paperReleasePivot = new THREE.Group();
-  paperReleasePivot.name = 'right-end paper-release lever';
+  paperReleasePivot.name = 'right-end paper-release lever pivot P4';
   paperReleasePivot.position.set(P4.platen.length / 2 + 7, P4.platen.y - 8, P4.platen.z + 15);
   paperFeedCarriage.add(paperReleasePivot);
-  const paperReleaseLever = box(7, 33, 7, shellDark, 'paper-release lever');
-  paperReleaseLever.position.set(0, 15, 0);
+
+  const paperReleaseLeverGeometryP4 = leverPlateGeometryP4(33, 8.0, 5.8, 3.0, 1.45);
+  const paperReleaseLever = new THREE.Mesh(paperReleaseLeverGeometryP4, shellDark);
+  paperReleaseLever.name = 'paper-release stamped lever P4';
+  paperReleaseLever.rotation.y = Math.PI / 2;
+  paperReleaseLever.castShadow = true;
+  paperReleaseLever.receiveShadow = true;
   addPickable(paperReleaseLever, COMPONENTS.paperFeed, pickables);
   paperReleasePivot.add(paperReleaseLever);
+
+  const paperReleasePivotPin = shaft(8.8, 1.9, darkMetal, 'paper-release lever X-axis pivot pin P4');
+  addPickable(paperReleasePivotPin, COMPONENTS.paperFeed, pickables);
+  paperReleasePivot.add(paperReleasePivotPin);
 
   const copyControlRotor = new THREE.Group();
   copyControlRotor.name = 'copy-control shaft + eccentric rotor';
@@ -2771,10 +2791,18 @@ export function createSelectricModel() {
   copyControlLeverPivot.name = 'left copy-control lever / five-position detent';
   copyControlLeverPivot.position.set(-P4.platen.length / 2 - 11, P4.platen.y - 18, P4.platen.z - 20);
   platenAssembly.add(copyControlLeverPivot);
-  const copyControlLever = box(7, 31, 7, shellDark, 'copy-control lever');
-  copyControlLever.position.set(0, 14, 0);
+  const copyControlLeverGeometryP4 = leverPlateGeometryP4(31, 8.0, 5.8, 3.0, 1.45);
+  const copyControlLever = new THREE.Mesh(copyControlLeverGeometryP4, shellDark);
+  copyControlLever.name = 'copy-control stamped lever P4';
+  copyControlLever.rotation.y = Math.PI / 2;
+  copyControlLever.castShadow = true;
+  copyControlLever.receiveShadow = true;
   addPickable(copyControlLever, COMPONENTS.paperFeed, pickables);
   copyControlLeverPivot.add(copyControlLever);
+
+  const copyControlLeverPivotPin = shaft(8.8, 1.9, darkMetal, 'copy-control lever X-axis pivot pin P4');
+  addPickable(copyControlLeverPivotPin, COMPONENTS.paperFeed, pickables);
+  copyControlLeverPivot.add(copyControlLeverPivotPin);
 
   const copyControlDetentPlate = new THREE.Group();
   copyControlDetentPlate.name = 'five-position copy-control detent presentation';
@@ -4988,6 +5016,11 @@ export function createSelectricModel() {
           rollCoupling: 'passive paper-contact rotation while bail is against platen; P4 radius, exact roller section unresolved'
         },
         frontRearReleaseCoupled: true,
+        lineSpacingSelectorConstructionClass: lineSpacingSelectorArmGeometryP4.userData.p4LeverPlateClass,
+        lineSpacingSelectorLinkConstructionClass: lineSpacingSelectorLinkGeometryP4.userData.p4TwoHoleLinkClass,
+        lineSpacingSelectorPivotPinEmbodied: true,
+        paperReleaseLeverConstructionClass: paperReleaseLeverGeometryP4.userData.p4LeverPlateClass,
+        paperReleasePivotPinEmbodied: true,
         feedRollsEngaged: state.feedRollsEngaged,
         releaseLatchedStateRepresented: true,
         releaseTravel: 'P5 presentation; exact metric travel unresolved',
@@ -5003,6 +5036,8 @@ export function createSelectricModel() {
           detentMarkerCount: copyControlDetentMarkers.length,
           activeDetentSetting: state.copyControlSetting,
           detentPresentationClass: 'P5 visible five-position marker arc; source-backed discrete count, exact lever angles/marker geometry unresolved',
+          leverConstructionClass: copyControlLeverGeometryP4.userData.p4LeverPlateClass,
+          leverPivotPinEmbodied: true,
           shaftRotorAngleDegP5: THREE.MathUtils.radToDeg(copyControlRotor.rotation.x),
           eccentricCollars: copyControlEccentrics.length,
           eccentricCollarsRotateWithShaft: copyControlEccentrics.every(eccentric => eccentric.parent === copyControlRotor),
