@@ -3461,15 +3461,34 @@ export function createSelectricModel() {
   printFollowerBellcrank.position.set(14, P4.printShaft.y + 30, P4.printShaft.z - 8);
   carrierMotion.add(printFollowerBellcrank);
 
-  const printFollowerBellcrankA = box(4.2, 22.0, 4.2, metal, 'print follower bellcrank cam arm');
-  printFollowerBellcrankA.position.set(0, -8, 0);
+  // Rotate about X, so both working arms belong in the local Y/Z plane. The previous second arm
+  // ran along X and therefore could not sweep with bellcrank rotation; replace it with an actual
+  // two-arm P4 bellcrank around the same reconstructed pivot.
+  const printBellcrankCamEndP4 = new THREE.Vector3(0, -17.5, 1.5);
+  const printBellcrankRockerEndP4 = new THREE.Vector3(0, -7.0, 13.5);
+  const printFollowerBellcrankA = cylinderBetweenP4(
+    new THREE.Vector3(0, 0, 0),
+    printBellcrankCamEndP4,
+    2.15,
+    metal,
+    'print follower bellcrank cam arm · Y/Z P4'
+  );
   addPickable(printFollowerBellcrankA, COMPONENTS.typeball, pickables);
   printFollowerBellcrank.add(printFollowerBellcrankA);
 
-  const printFollowerBellcrankB = box(22.0, 4.2, 4.2, darkMetal, 'print follower bellcrank rocker arm');
-  printFollowerBellcrankB.position.set(-9, 0, 0);
+  const printFollowerBellcrankB = cylinderBetweenP4(
+    new THREE.Vector3(0, 0, 0),
+    printBellcrankRockerEndP4,
+    2.15,
+    darkMetal,
+    'print follower bellcrank rocker arm · Y/Z P4'
+  );
   addPickable(printFollowerBellcrankB, COMPONENTS.typeball, pickables);
   printFollowerBellcrank.add(printFollowerBellcrankB);
+
+  const printFollowerBellcrankPivotPin = shaft(8.5, 2.7, darkMetal, 'print follower bellcrank pivot pin P4');
+  addPickable(printFollowerBellcrankPivotPin, COMPONENTS.typeball, pickables);
+  printFollowerBellcrank.add(printFollowerBellcrankPivotPin);
 
   const printCamFollowerBaseYP4 = printCamFollower.position.y;
 
@@ -4728,6 +4747,9 @@ export function createSelectricModel() {
         followerEmbodied: true,
         followerLiftP5: state.printCamFollowerLiftP5,
         bellcrankEmbodied: true,
+        bellcrankConstructionClass: 'P4 two-arm Y/Z-plane bellcrank around explicit X-axis pivot pin; replaces prior axial arm that could not sweep with bellcrank rotation',
+        bellcrankArmCountP4: 2,
+        bellcrankPivotPinEmbodied: true,
         rockerConstructionClass: 'forked P4 yoke: explicit pivot hub + two correctly oriented Y/Z arms + cradle cross-pin/stem; replaces prior mis-oriented X-axis cylinder cue, exact IBM rocker casting unresolved',
         rockerForkArmCountP4: rockerArmsP4.length,
         rockerPivotHubEmbodied: true,
