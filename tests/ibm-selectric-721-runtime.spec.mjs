@@ -167,6 +167,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.printRocker.followerEmbodied).toBe(true);
   expect(initial.geometry.printRocker.followerLiftP5).toBeCloseTo(0, 8);
   expect(initial.geometry.printRocker.bellcrankEmbodied).toBe(true);
+  expect(initial.geometry.printRocker.rockerConstructionClass).toContain('forked P4 yoke');
+  expect(initial.geometry.printRocker.rockerForkArmCountP4).toBe(2);
+  expect(initial.geometry.printRocker.rockerPivotHubEmbodied).toBe(true);
+  expect(initial.geometry.printRocker.rockerCradlePinEmbodied).toBe(true);
+  expect(initial.geometry.printRocker.rockerArmSpanMmP4).toBeGreaterThan(10);
   expect(initial.geometry.printRocker.causalChain).toEqual([
     'print-sleeve-rotation',
     '1124174-print-restoring-cam',
