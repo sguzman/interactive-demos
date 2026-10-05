@@ -1557,9 +1557,9 @@ export function createSelectricModel() {
   const keyboardAssembly = makeAssembly(
     'keyboard assembly',
     new THREE.Vector3(
-      P4.keyboard.assemblyOriginP4.x,
-      P4.keyboard.assemblyOriginP4.y,
-      P4.keyboard.assemblyOriginP4.z
+      P4.keyboard.assemblyExplodeVectorP5.x,
+      P4.keyboard.assemblyExplodeVectorP5.y,
+      P4.keyboard.assemblyExplodeVectorP5.z
     )
   );
   assemblies.push(keyboardAssembly);
@@ -1574,9 +1574,9 @@ export function createSelectricModel() {
   const keyboardMechanismAssembly = makeAssembly(
     'keyboard code mechanism',
     new THREE.Vector3(
-      P4.keyboard.mechanismOriginP4.x,
-      P4.keyboard.mechanismOriginP4.y,
-      P4.keyboard.mechanismOriginP4.z
+      P4.keyboard.mechanismExplodeVectorP5.x,
+      P4.keyboard.mechanismExplodeVectorP5.y,
+      P4.keyboard.mechanismExplodeVectorP5.z
     )
   );
   assemblies.push(keyboardMechanismAssembly);
@@ -7374,8 +7374,20 @@ export function createSelectricModel() {
       keyboardRegistrationP4: {
         ...keyboardSurface.userData.registrationP4,
         envelopeWidthMm: CANONICAL.envelopeMm.width,
-        keyboardAssemblyOriginP4: { ...P4.keyboard.assemblyOriginP4 },
-        mechanismAssemblyOriginP4: { ...P4.keyboard.mechanismOriginP4 },
+        assembledGroupFrameClass:
+          'keyboard and keyboard-mechanism groups have identity/root base positions; component coordinates are currently absolute P4 values in the model frame',
+        keyboardAssemblyBasePositionP4: {
+          x: keyboardAssembly.userData.basePosition.x,
+          y: keyboardAssembly.userData.basePosition.y,
+          z: keyboardAssembly.userData.basePosition.z
+        },
+        keyboardAssemblyExplodeVectorP5: { ...P4.keyboard.assemblyExplodeVectorP5 },
+        mechanismAssemblyBasePositionP4: {
+          x: keyboardMechanismAssembly.userData.basePosition.x,
+          y: keyboardMechanismAssembly.userData.basePosition.y,
+          z: keyboardMechanismAssembly.userData.basePosition.z
+        },
+        mechanismAssemblyExplodeVectorP5: { ...P4.keyboard.mechanismExplodeVectorP5 },
         calibrationRule:
           'photo width fractions are image-plane seeds only; do not rescale physical keyboard directly to them before a shared Q1/Q4 camera solve'
       },

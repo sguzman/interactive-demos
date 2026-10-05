@@ -105,8 +105,8 @@ export const P4 = Object.freeze({
   keyboard: {
     y: 43,
     z: 78,
-    assemblyOriginP4: { x: 0, y: -46, z: 155 },
-    mechanismOriginP4: { x: 0, y: -78, z: 62 },
+    assemblyExplodeVectorP5: { x: 0, y: -46, z: 155 },
+    mechanismExplodeVectorP5: { x: 0, y: -78, z: 62 },
     deckP4: {
       widthMm: 340,
       heightMm: 17,
