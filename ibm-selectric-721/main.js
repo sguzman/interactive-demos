@@ -131,6 +131,7 @@ const runtime = {
   selectionTarget: { tilt: 0, rotate: 0, shift: 0 },
   cycleDurationMs: 1250,
   debugCycleHold: null,
+  debugCycleRestore: null,
   operation: null,
   serviceOperation: null,
   queuedCharacter: null,
@@ -276,6 +277,7 @@ function resetMechanicalState() {
   runtime.cycleImpactCommitted = false;
   runtime.ribbonFeedCommitted = false;
   runtime.debugCycleHold = null;
+  runtime.debugCycleRestore = null;
   runtime.operation = null;
   runtime.serviceOperation = null;
   runtime.queuedCharacter = null;
@@ -963,6 +965,13 @@ window.__selectricDebug = {
   },
   holdCharacterAt(char = 'a', progress = 0.62) {
     if (!runtime.powered || runtime.cycle !== 'C0_REST' || runtime.operation || runtime.serviceOperation) return false;
+    runtime.debugCycleRestore = {
+      pendingCharacter: runtime.pendingCharacter,
+      selectionTarget: { ...runtime.selectionTarget },
+      tiltBand: model.state.tiltBand,
+      rotateUnit: model.state.rotateUnit,
+      shiftHemisphere: model.state.shiftHemisphere
+    };
     startCharacterCycle(char);
     runtime.debugCycleHold = THREE.MathUtils.clamp(Number(progress) || 0, 0, 0.999);
     runCycle(performance.now());
@@ -973,7 +982,32 @@ window.__selectricDebug = {
     if (runtime.debugCycleHold === null || runtime.cycle === 'C0_REST') return false;
     const held = runtime.debugCycleHold;
     runtime.debugCycleHold = null;
+    runtime.debugCycleRestore = null;
     runtime.cycleStart = performance.now() - held * runtime.cycleDurationMs;
+    return true;
+  },
+  cancelCharacterHold() {
+    if (runtime.debugCycleHold === null || runtime.cycle === 'C0_REST') return false;
+    const restore = runtime.debugCycleRestore;
+    runtime.debugCycleHold = null;
+    runtime.debugCycleRestore = null;
+    runtime.cycle = 'C0_REST';
+    runtime.lastRecordedCycle = 'C0_REST';
+    runtime.cycleStart = 0;
+    runtime.cycleAdvanceCommitted = false;
+    runtime.cycleImpactCommitted = false;
+    runtime.ribbonFeedCommitted = false;
+    model.setKeyboardCode(0, false);
+    model.setKeyPress(null, 0);
+    model.setCyclePhase(0);
+    if (restore) {
+      runtime.pendingCharacter = restore.pendingCharacter;
+      runtime.selectionTarget = { ...restore.selectionTarget };
+      model.setTypeball(restore.tiltBand, restore.rotateUnit, restore.shiftHemisphere);
+    }
+    runtime.lastAction = 'debug-cycle-cancelled';
+    recordEvent('DEBUG_CYCLE_CANCELLED');
+    syncUi();
     return true;
   },
   typeCharacter: char => requestCharacter(char || 'a'),
