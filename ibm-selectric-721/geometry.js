@@ -1430,12 +1430,61 @@ export function createSelectricModel() {
     follower.rotation.x = deg(-12 * THREE.MathUtils.clamp(liftP5, 0, 1));
   }
 
-  const motor = new THREE.Mesh(new THREE.CylinderGeometry(24, 24, 58, 36), darkMetal);
-  motor.rotation.z = Math.PI / 2;
+  // P4 motor embodiment: keep the sourced/working shaft center but replace the single
+  // featureless cylinder with a barrel, endbells, vent bands, through-shaft and mounting feet.
+  // These sections are presentation geometry; exact IBM motor housing dimensions remain unresolved.
+  const motor = new THREE.Group();
+  motor.name = 'motor assembly · P4 barrel/endbell reconstruction';
   motor.position.set(P4.motor.x, P4.motor.y, P4.motor.z);
-  motor.name = 'motor';
-  addPickable(motor, COMPONENTS.drive, pickables);
   driveAssembly.add(motor);
+
+  const motorBarrelLengthP4 = 52;
+  const motorBarrelRadiusP4 = 24;
+  const motorEndbellLengthP4 = 6;
+  const motorEndbellRadiusP4 = 25.2;
+
+  const motorBarrel = shaft(motorBarrelLengthP4, motorBarrelRadiusP4, darkMetal, 'motor barrel');
+  addPickable(motorBarrel, COMPONENTS.drive, pickables);
+  motor.add(motorBarrel);
+
+  const motorEndbells = [];
+  for (const sign of [-1, 1]) {
+    const endbell = shaft(
+      motorEndbellLengthP4,
+      motorEndbellRadiusP4,
+      metal,
+      sign < 0 ? 'motor drive-end bell' : 'motor rear end bell'
+    );
+    endbell.position.x = sign * (motorBarrelLengthP4 / 2 + motorEndbellLengthP4 / 2 - 1.2);
+    addPickable(endbell, COMPONENTS.drive, pickables);
+    motor.add(endbell);
+    motorEndbells.push(endbell);
+  }
+
+  const motorVentBands = [];
+  for (const x of [-13, 0, 13]) {
+    const band = new THREE.Mesh(new THREE.TorusGeometry(24.2, 0.72, 8, 40), metal);
+    band.rotation.y = Math.PI / 2;
+    band.position.x = x;
+    band.name = 'motor circumferential vent/rib cue';
+    addPickable(band, COMPONENTS.drive, pickables);
+    motor.add(band);
+    motorVentBands.push(band);
+  }
+
+  const motorShaft = shaft(16, 3.2, metal, 'motor through-shaft / pulley journal');
+  motorShaft.position.x = -29;
+  addPickable(motorShaft, COMPONENTS.drive, pickables);
+  motor.add(motorShaft);
+
+  const motorFeet = [];
+  for (const x of [-15, 15]) {
+    const foot = box(12, 5, 19, darkMetal, 'motor mounting foot P4 cue');
+    foot.position.set(x, -25.5, 0);
+    addPickable(foot, COMPONENTS.drive, pickables);
+    motor.add(foot);
+    motorFeet.push(foot);
+  }
 
   const motorPitchRadiusP4 = 7.0;
   const cyclePitchRadiusP4 = motorPitchRadiusP4 * CANONICAL.drive.positiveBeltReduction;
@@ -4025,6 +4074,11 @@ export function createSelectricModel() {
         operationalShaftContinuousWhenPowered: true,
         serviceCamsStationaryUntilSelected: true,
         motorPhase: state.motorPhase,
+        motorConstructionClass: 'P4 barrel + twin endbells + three vent/rib bands + visible through-shaft + two mounting feet; exact IBM motor housing sections unresolved',
+        motorEndbellCount: motorEndbells.length,
+        motorVentBandCount: motorVentBands.length,
+        motorMountingFootCount: motorFeet.length,
+        motorThroughShaftVisible: true,
         selectedServiceCam: state.operationalCamAction,
         selectedServiceCamPhase: state.operationalCamPhase,
         speedClass: 'P5 slowed presentation'
