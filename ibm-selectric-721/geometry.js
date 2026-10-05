@@ -1885,30 +1885,44 @@ export function createSelectricModel() {
   addPickable(cycle, COMPONENTS.drive, pickables);
   cycleRotor.add(cycle);
 
-  // The three visible cycle-shaft cam stations were previously flattened cylinders. Give them
-  // smooth P4 radial envelopes so the powerframe reads mechanically, while keeping their exact
-  // IBM functions/profiles explicitly unresolved rather than inventing service-manual identities.
+  // IBM service theory fixes the identity of this three-cam selector group more strongly than
+  // the earlier generic presentation admitted: two double-lobed positioning cams drive the
+  // common selector latch bail, while the third double-lobed cam is the five-unit cam and its
+  // high point is phased 90 degrees from the ordinary pair. Absolute cam x positions, profiles,
+  // lifts and the phase of the whole group relative to checked rest remain P4/P5 reconstruction.
+  const ordinarySelectorCamLobesP4 = [
+    { angleRad: deg(90), liftMm: 3.2, halfWidthRad: deg(58), sharpness: 2.4 },
+    { angleRad: deg(-90), liftMm: 3.2, halfWidthRad: deg(58), sharpness: 2.4 }
+  ];
+  const fiveUnitSelectorCamLobesP4 = [
+    { angleRad: deg(0), liftMm: 2.8, halfWidthRad: deg(52), sharpness: 2.45 },
+    { angleRad: deg(180), liftMm: 2.8, halfWidthRad: deg(52), sharpness: 2.45 }
+  ];
   const cycleCamDefsP4 = [
     {
       x: -94,
       width: 8,
       baseRadius: 8.9,
-      lobes: [{ angleRad: deg(-92), liftMm: 2.9, halfWidthRad: deg(52), sharpness: 2.55 }],
-      name: 'left cycle-shaft cam · smooth P4 envelope'
+      lobes: ordinarySelectorCamLobesP4,
+      role: 'ordinary-selector-latch-bail-cam-A',
+      name: 'ordinary selector latch-bail cam A · double-lobed P4 envelope'
     },
     {
       x: 12,
       width: 8,
       baseRadius: 9.3,
-      lobes: [{ angleRad: deg(-28), liftMm: 3.2, halfWidthRad: deg(46), sharpness: 2.7 }],
-      name: 'center cycle-shaft cam · smooth P4 envelope'
+      lobes: ordinarySelectorCamLobesP4,
+      role: 'ordinary-selector-latch-bail-cam-B',
+      name: 'ordinary selector latch-bail cam B · double-lobed P4 envelope'
     },
     {
       x: 97,
       width: 8,
       baseRadius: 8.7,
-      lobes: [{ angleRad: deg(38), liftMm: 2.6, halfWidthRad: deg(56), sharpness: 2.45 }],
-      name: 'right cycle-shaft cam · smooth P4 envelope'
+      lobes: fiveUnitSelectorCamLobesP4,
+      role: 'five-unit-selector-cam',
+      relativePhaseFromOrdinaryDeg: 90,
+      name: 'five-unit selector cam · double-lobed P4 envelope'
     }
   ];
   const cycleCamProfilesP4 = cycleCamDefsP4.map(def => {
@@ -1920,10 +1934,181 @@ export function createSelectricModel() {
       def.name
     );
     cam.position.x = def.x;
+    cam.userData.selectorRole = def.role;
+    cam.userData.relativePhaseFromOrdinaryDeg = def.relativePhaseFromOrdinaryDeg ?? 0;
     addPickable(cam, COMPONENTS.drive, pickables);
     cycleRotor.add(cam);
     return cam;
   });
+
+  function makeRootDynamicRodP4(name, radius = 1.2, mat = darkMetal) {
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 1, 14), mat);
+    mesh.name = name;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    addPickable(mesh, COMPONENTS.drive, pickables);
+    root.add(mesh);
+    const delta = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    const yAxis = new THREE.Vector3(0, 1, 0);
+    return {
+      mesh,
+      lengthMmP4: 0,
+      update(a, b) {
+        delta.copy(b).sub(a);
+        const length = Math.max(delta.length(), 1e-6);
+        center.copy(a).add(b).multiplyScalar(0.5);
+        mesh.position.copy(center);
+        mesh.quaternion.setFromUnitVectors(yAxis, delta.normalize());
+        mesh.scale.set(1, length, 1);
+        this.lengthMmP4 = length;
+        return length;
+      }
+    };
+  }
+
+  function objectPointInRootP4(object, localPoint) {
+    root.updateMatrixWorld(true);
+    const world = localPoint.clone();
+    object.localToWorld(world);
+    return root.worldToLocal(world);
+  }
+
+  function makeSelectorCamFollowerP4(cam, def, label) {
+    const follower = new THREE.Group();
+    follower.name = label + ' follower pivot P4';
+    follower.position.set(def.x, P4.cycleShaft.y - 25, P4.cycleShaft.z);
+    follower.userData.baseRotationX = 0;
+    follower.userData.workingPlaneP4 = 'Y/Z about X-axis pivot';
+    driveAssembly.add(follower);
+
+    const armGeometryP4 = leverPlateGeometryP4(17.5, 6.6, 4.0, 2.8, 1.35);
+    armGeometryP4.rotateY(Math.PI / 2);
+    armGeometryP4.userData.p4WorkingPlane = 'Y/Z with X-axis pivot hole';
+    const arm = new THREE.Mesh(armGeometryP4, metal);
+    arm.name = label + ' stamped follower arm P4';
+    arm.castShadow = true;
+    arm.receiveShadow = true;
+    addPickable(arm, COMPONENTS.drive, pickables);
+    follower.add(arm);
+
+    const pivotPin = shaft(7.2, 1.7, darkMetal, label + ' X-axis pivot pin P4');
+    addPickable(pivotPin, COMPONENTS.drive, pickables);
+    follower.add(pivotPin);
+
+    const roller = pulley(3.2, 6.2, darkMetal, label + ' cam roller P4');
+    roller.position.set(0, 17.0, 0);
+    addPickable(roller, COMPONENTS.drive, pickables);
+    follower.add(roller);
+
+    follower.userData.outputLocalP4 = new THREE.Vector3(0, -9.5, -7.0);
+    follower.userData.cam = cam;
+    follower.userData.camDef = def;
+    follower.userData.armConstructionClass = armGeometryP4.userData.p4LeverPlateClass;
+    return follower;
+  }
+
+  const ordinarySelectorCamFollowersP4 = [
+    makeSelectorCamFollowerP4(
+      cycleCamProfilesP4[0],
+      cycleCamDefsP4[0],
+      'ordinary selector latch-bail cam A'
+    ),
+    makeSelectorCamFollowerP4(
+      cycleCamProfilesP4[1],
+      cycleCamDefsP4[1],
+      'ordinary selector latch-bail cam B'
+    )
+  ];
+  const fiveUnitCamFollowerP4 = makeSelectorCamFollowerP4(
+    cycleCamProfilesP4[2],
+    cycleCamDefsP4[2],
+    'five-unit selector cam'
+  );
+
+  const selectorLatchBailTransferRodsP4 = ordinarySelectorCamFollowersP4.map((follower, index) =>
+    makeRootDynamicRodP4(
+      index === 0
+        ? 'selector latch-bail cam A transfer rod P4'
+        : 'selector latch-bail cam B transfer rod P4',
+      1.25,
+      metal
+    )
+  );
+
+  const selectorCamDrivePoseP5 = {
+    ordinaryRawLiftP5: [0, 0],
+    ordinaryFollowerAngleDegP5: [0, 0],
+    latchBailSampleP5: 0,
+    fiveUnitRawLiftP5: 0,
+    fiveUnitFollowerAngleDegP5: 0,
+    transferRodLengthsMmP4: [0, 0]
+  };
+
+  function normalizedCamLiftAtContactP4(cam, contactAngleRad) {
+    const profile = cam.userData.p4CamProfile;
+    const maxLift = Math.max(...profile.lobes.map(lobe => lobe.liftMmP4), 1e-9);
+    return THREE.MathUtils.clamp(
+      (camRadiusAtP4(
+        profile.baseRadius,
+        profile.lobes.map(lobe => ({
+          angleRad: deg(lobe.angleDegP4),
+          liftMm: lobe.liftMmP4,
+          halfWidthRad: deg(lobe.halfWidthDegP4),
+          sharpness: 2.4
+        })),
+        contactAngleRad
+      ) - profile.baseRadius) / maxLift,
+      0,
+      1
+    );
+  }
+
+  function updateSelectorCamDriveP4() {
+    // Followers are reconstructed beneath the cam group. World-down contact maps to this local
+    // ray as the cycle rotor turns. The source fixes the early dwell/order and the two-cam drive,
+    // not these exact profile/contact angles.
+    const contactAngleRadP5 = Math.PI - cycleRotor.rotation.x;
+    const ordinaryRaw = ordinarySelectorCamFollowersP4.map(follower =>
+      normalizedCamLiftAtContactP4(follower.userData.cam, contactAngleRadP5)
+    );
+    const commonRaw = Math.min(...ordinaryRaw);
+
+    // P5 follower/contact calibration converts the two actual radial cam samples into the
+    // common-bail seated interval while retaining a real zero-lift early dwell.
+    const sample = THREE.MathUtils.clamp((commonRaw - 0.02) / 0.30, 0, 1);
+    state.selectorLatchSampleP5 = sample;
+    latchBail.position.y = latchBail.userData.baseY - sample * 6.0;
+
+    ordinarySelectorCamFollowersP4.forEach((follower, index) => {
+      const angleDegP5 = -13 * ordinaryRaw[index];
+      follower.rotation.x = deg(angleDegP5);
+      selectorCamDrivePoseP5.ordinaryFollowerAngleDegP5[index] = angleDegP5;
+
+      const followerEnd = objectPointInRootP4(
+        follower,
+        follower.userData.outputLocalP4
+      );
+      const bailEnd = objectPointInRootP4(
+        latchBail,
+        new THREE.Vector3(cycleCamDefsP4[index].x, 0, 0)
+      );
+      selectorCamDrivePoseP5.transferRodLengthsMmP4[index] =
+        selectorLatchBailTransferRodsP4[index].update(followerEnd, bailEnd);
+    });
+
+    const fiveRaw = normalizedCamLiftAtContactP4(
+      fiveUnitCamFollowerP4.userData.cam,
+      contactAngleRadP5
+    );
+    const fiveAngleDegP5 = -11 * fiveRaw;
+    fiveUnitCamFollowerP4.rotation.x = deg(fiveAngleDegP5);
+
+    selectorCamDrivePoseP5.ordinaryRawLiftP5 = [...ordinaryRaw];
+    selectorCamDrivePoseP5.latchBailSampleP5 = sample;
+    selectorCamDrivePoseP5.fiveUnitRawLiftP5 = fiveRaw;
+    selectorCamDrivePoseP5.fiveUnitFollowerAngleDegP5 = fiveAngleDegP5;
+  }
 
   const operationalRotor = new THREE.Group();
   operationalRotor.name = 'continuously rotating operational shaft frame';
@@ -5693,33 +5878,10 @@ export function createSelectricModel() {
     printShaftRotor.rotation.x = state.cyclePhase * Math.PI * 2;
     printSleeveRotor.rotation.x = state.cyclePhase * Math.PI * 2;
 
-    // OEM theory requires keyboard code setup before the common latch bail samples the latches.
-    // These event fractions/throws are P5 presentation only; the ordering and common-driver role
-    // are the source-backed constraints.
-    const sampleStartP5 = 0.18;
-    const sampleSeatP5 = 0.32;
-    const sampleReleaseStartP5 = 0.66;
-    const sampleReleaseEndP5 = 0.84;
-    if (state.cyclePhase < sampleStartP5) {
-      state.selectorLatchSampleP5 = 0;
-    } else if (state.cyclePhase < sampleSeatP5) {
-      state.selectorLatchSampleP5 = THREE.MathUtils.clamp(
-        (state.cyclePhase - sampleStartP5) / (sampleSeatP5 - sampleStartP5),
-        0,
-        1
-      );
-    } else if (state.cyclePhase < sampleReleaseStartP5) {
-      state.selectorLatchSampleP5 = 1;
-    } else if (state.cyclePhase < sampleReleaseEndP5) {
-      state.selectorLatchSampleP5 = THREE.MathUtils.clamp(
-        1 - (state.cyclePhase - sampleReleaseStartP5) / (sampleReleaseEndP5 - sampleReleaseStartP5),
-        0,
-        1
-      );
-    } else {
-      state.selectorLatchSampleP5 = 0;
-    }
-    latchBail.position.y = latchBail.userData.baseY - state.selectorLatchSampleP5 * 6.0;
+    // The common latch-bail sample is now downstream of the two visible ordinary selector cams
+    // and their follower/transfer rods. The reconstructed cam profiles preserve the sourced early
+    // dwell and two-cam common drive instead of using an independent piecewise cycle-phase curve.
+    updateSelectorCamDriveP4();
 
     // Keep the visible latch-down state on the same common sampling envelope even when cycle
     // phase changes without a new character selection transform.
@@ -5760,6 +5922,7 @@ export function createSelectricModel() {
   function setExplosion(value) {
     state.explosion = THREE.MathUtils.clamp(value, 0, 1);
     assemblies.forEach(group => setAssemblyExplosion(group, state.explosion));
+    updateSelectorCamDriveP4();
   }
 
   function stampCharacter(character) {
@@ -6472,6 +6635,39 @@ export function createSelectricModel() {
         geometryClass:
           'source-backed separate rotationally keyed sliding print-sleeve architecture; visible key/keyway sections are P4 reconstruction'
       },
+      selectorCamDrive: {
+        cycleShaftDegPerCharacter: 180,
+        positioningCamCount: cycleCamProfilesP4.length,
+        ordinaryLatchBailCamCount: 2,
+        fiveUnitCamCount: 1,
+        allPositioningCamsDoubleLobed:
+          cycleCamProfilesP4.every(cam => cam.userData.p4CamProfile.lobes.length === 2),
+        ordinaryCamRoles: cycleCamProfilesP4.slice(0, 2).map(cam => cam.userData.selectorRole),
+        fiveUnitCamRole: cycleCamProfilesP4[2].userData.selectorRole,
+        fiveUnitRelativePhaseDegSourceBacked:
+          cycleCamProfilesP4[2].userData.relativePhaseFromOrdinaryDeg,
+        ordinaryFollowerCountP4: ordinarySelectorCamFollowersP4.length,
+        ordinaryFollowerWorkingPlaneP4:
+          ordinarySelectorCamFollowersP4[0].userData.workingPlaneP4,
+        ordinaryFollowerArmConstructionClassP4:
+          ordinarySelectorCamFollowersP4[0].userData.armConstructionClass,
+        transferRodCountP4: selectorLatchBailTransferRodsP4.length,
+        latchBailDrivenFromVisibleCamFollowers: true,
+        earlyDwellPreserved: true,
+        fiveUnitFollowerEmbodiedP4: true,
+        fiveUnitFollowerDownstreamBailCoupling:
+          'not yet closed; follower embodies sourced third-cam identity/phase while five-unit latch/bail gating remains separate P5 reconstruction',
+        poseP5: {
+          ordinaryRawLiftP5: [...selectorCamDrivePoseP5.ordinaryRawLiftP5],
+          ordinaryFollowerAngleDegP5: [...selectorCamDrivePoseP5.ordinaryFollowerAngleDegP5],
+          latchBailSampleP5: selectorCamDrivePoseP5.latchBailSampleP5,
+          fiveUnitRawLiftP5: selectorCamDrivePoseP5.fiveUnitRawLiftP5,
+          fiveUnitFollowerAngleDegP5: selectorCamDrivePoseP5.fiveUnitFollowerAngleDegP5,
+          transferRodLengthsMmP4: [...selectorCamDrivePoseP5.transferRodLengthsMmP4]
+        },
+        geometryClass:
+          'source-backed three double-lobed selector-cam roles with two visible ordinary cam followers driving the common latch bail; exact profiles, follower leverage, contact angles and absolute cycle phase remain P4/P5'
+      },
       shaftTiming: {
         cycleShaftDegPerCharacter: 180,
         filterShaftDegPerCharacter: 180,
@@ -6480,11 +6676,13 @@ export function createSelectricModel() {
         cycleCamStationCount: cycleCamProfilesP4.length,
         cycleCamProfilesP4: cycleCamProfilesP4.map((cam, index) => ({
           station: index + 1,
+          role: cam.userData.selectorRole,
           baseRadiusMmP4: cam.userData.p4CamProfile.baseRadius,
           lobeCountP4: cam.userData.p4CamProfile.lobes.length,
-          lobeAngleDegP4: cam.userData.p4CamProfile.lobes[0].angleDegP4
+          lobeAnglesDegP4: cam.userData.p4CamProfile.lobes.map(lobe => lobe.angleDegP4)
         })),
-        cycleCamPresentationClass: 'three smooth P4 radial envelopes replacing flattened cylinders; station count preserved, exact IBM cam identities/functions/profiles unresolved'
+        cycleCamPresentationClass:
+          'three source-identified double-lobed selector positioning cams with P4 smooth radial envelopes; two drive the common latch bail and the third is the five-unit cam at source-backed 90-degree relative phase, while exact production profiles/absolute phase remain unresolved'
       },
       shift: {
         hemisphere: state.shiftHemisphere,
