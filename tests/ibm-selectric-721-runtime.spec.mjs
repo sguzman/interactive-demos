@@ -170,6 +170,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.printRocker.followerEmbodied).toBe(true);
   expect(initial.geometry.printRocker.followerLiftP5).toBeCloseTo(0, 8);
   expect(initial.geometry.printRocker.bellcrankEmbodied).toBe(true);
+  expect(initial.geometry.printRocker.bellcrankConstructionClass).toContain('two-arm Y/Z-plane bellcrank');
+  expect(initial.geometry.printRocker.bellcrankArmCountP4).toBe(2);
+  expect(initial.geometry.printRocker.bellcrankPivotPinEmbodied).toBe(true);
   expect(initial.geometry.printRocker.rockerConstructionClass).toContain('forked P4 yoke');
   expect(initial.geometry.printRocker.rockerForkArmCountP4).toBe(2);
   expect(initial.geometry.printRocker.rockerPivotHubEmbodied).toBe(true);
