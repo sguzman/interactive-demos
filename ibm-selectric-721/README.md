@@ -62,7 +62,7 @@ The Playwright smoke test checks:
 - impact before escapement advance, with the impact screenshot now captured after the actual PRINT_IMPACT threshold and a live selected-slug/platen clearance sanity bound;
 - ribbon selector modes, stencil feed lockout/centering, stencil impact without an ink record on ordinary paper output, distinct load pose, supply/take-up roll fullness transfer, and automatic fabric-ribbon reversal through the animated reverse sequence;
 - explosion independence;
-- operational service-cam embodiment: space/backspace, carrier-return/index and shift each drive only their own visible follower at mid-stroke and all followers restore at rest;
+- operational service-cam embodiment: space/backspace, carrier-return/index and shift each drive only their own visible follower at mid-stroke and all followers restore at rest; the runtime artifact set also captures the powerframe with the carrier-return/index follower held at peak lift for visual inspection;
 - space / backspace, including stored-space interlock release after an active character cycle;
 - adjustable margin-stop positions, including public set-left / set-right-at-carrier / reset controls, right-margin line lock and carrier return to the live left stop;
 - programmable tab-stop set/clear plus capture at the next active stop;
