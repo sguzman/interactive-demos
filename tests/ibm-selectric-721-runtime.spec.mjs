@@ -110,6 +110,20 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.fineAlignment.exactPivotsAndTimingDegrees).toBe('unresolved');
   expect(initial.geometry.fineAlignment.animationPhaseClass).toContain('print-sleeve phase');
   expect(initial.geometry.printRocker.motion).toBe('revolute');
+  expect(initial.geometry.printRocker.driver).toContain('IBM 1124174');
+  expect(initial.geometry.printRocker.camLobesP4).toBe(2);
+  expect(initial.geometry.printRocker.followerEmbodied).toBe(true);
+  expect(initial.geometry.printRocker.followerLiftP5).toBeCloseTo(0, 8);
+  expect(initial.geometry.printRocker.bellcrankEmbodied).toBe(true);
+  expect(initial.geometry.printRocker.causalChain).toEqual([
+    'print-sleeve-rotation',
+    '1124174-print-restoring-cam',
+    'roller-follower',
+    'bellcrank',
+    'print-rocker',
+    'type-element'
+  ]);
+  expect(initial.geometry.printRocker.driveClass).toContain('cam-envelope timing');
   expect(initial.geometry.printRocker.restClearanceMm).toBeGreaterThanOrEqual(6.604);
   expect(initial.geometry.printRocker.restClearanceMm).toBeLessThanOrEqual(6.858);
   expect(initial.geometry.printRocker.poweredEndpointClearanceMm).toBeGreaterThanOrEqual(0.508);
@@ -500,6 +514,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     8
   );
   expect(fineAligned.ribbonLift).toBeCloseTo(fineAligned.geometry.ribbon.liftFollowerP5 * 0.82, 8);
+  expect(fineAligned.geometry.printRocker.followerLiftP5).toBeCloseTo(
+    ((0.50 - 0.43) / 0.11) * 0.55,
+    8
+  );
+  expect(fineAligned.geometry.printRocker.followerLiftP5).toBeCloseTo(fineAligned.printApproach, 8);
   expect(fineAligned.geometry.fineAlignment.sharedFollowerWithRotateLostMotion).toBe(true);
   await page.screenshot({ path: 'test-results/selectric-fine-align.png', fullPage: true });
   await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
@@ -511,6 +530,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(afterFineAlignCycle.fineAlignment.rotateDetent).toBe(0);
   expect(afterFineAlignCycle.geometry.fineAlignment.detentFollowerLiftP5).toBeCloseTo(0, 8);
   expect(afterFineAlignCycle.geometry.fineAlignment.printSleevePhaseP5).toBeCloseTo(0, 8);
+  expect(afterFineAlignCycle.geometry.printRocker.followerLiftP5).toBeCloseTo(0, 8);
+  expect(afterFineAlignCycle.printApproach).toBeCloseTo(0, 8);
 
   await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.06));
   const keyDown = await page.evaluate(() => window.__selectricDebug.state);
@@ -538,6 +559,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const impactHeld = await page.evaluate(() => window.__selectricDebug.state);
   expect(impactHeld.geometry.ribbon.liftFollowerP5).toBeCloseTo(1, 8);
   expect(impactHeld.ribbonLift).toBeCloseTo(0.82, 8);
+  expect(impactHeld.geometry.printRocker.followerLiftP5).toBeCloseTo(impactHeld.printApproach, 8);
+  expect(impactHeld.geometry.printRocker.followerLiftP5).toBeGreaterThan(0.99);
+  expect(impactHeld.geometry.printRocker.driver).toContain('1124174');
   expect(impactHeld.geometry.printRocker.currentAngleDeg).toBeLessThan(-17);
   expect(impactHeld.geometry.printRocker.selectedSlugPlatenClearanceAlongZMmP4).toBeLessThan(
     initial.geometry.printRocker.selectedSlugPlatenClearanceAlongZMmP4
