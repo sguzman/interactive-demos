@@ -873,6 +873,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
   await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
 
+  const codeReadyCarrier = await page.evaluate(() => window.__selectricDebug.state.carrierX);
+  const codeReadyRibbonStep = await page.evaluate(() => window.__selectricDebug.state.ribbonFeedStep);
   const codeReadyHold = await page.evaluate(() => window.__selectricDebug.holdCharacterAt('q', 0.28));
   expect(codeReadyHold).toBe(true);
   const codeReady = await page.evaluate(() => window.__selectricDebug.state);
@@ -888,10 +890,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(codeReady.geometry.selectorCamDrive.poseP5.fiveUnitLatchAngleDegP5).toBeLessThan(-10);
   expect(codeReady.geometry.selectorCamDrive.poseP5.fiveUnitBailRiseP5).toBeGreaterThan(0.95);
   expect(codeReady.geometry.selectorCamDrive.poseP5.fiveUnitEffectiveNegativeP5).toBeGreaterThan(0.95);
-  await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
-  await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
+  expect(await page.evaluate(() => window.__selectricDebug.cancelCharacterHold())).toBe(true);
 
   const afterKeyCycle = await page.evaluate(() => window.__selectricDebug.state);
+  expect(afterKeyCycle.carrierX).toBeCloseTo(codeReadyCarrier, 8);
+  expect(afterKeyCycle.ribbonFeedStep).toBe(codeReadyRibbonStep);
   expect(afterKeyCycle.keyboardPress.depression).toBe(0);
   expect(afterKeyCycle.geometry.selectorCamDrive.poseP5.fiveUnitLatchReleasedP5).toBe(false);
   expect(afterKeyCycle.geometry.selectorCamDrive.poseP5.fiveUnitCamAvailableRiseP5).toBeCloseTo(0, 8);
@@ -912,8 +915,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     8
   );
   expect(positiveReady.geometry.selectorCamDrive.poseP5.fiveUnitEffectiveNegativeP5).toBeCloseTo(0, 8);
-  await page.evaluate(() => window.__selectricDebug.releaseCharacterHold());
-  await page.waitForFunction(() => window.__selectricDebug.state.cycle === 'C0_REST', null, { timeout: 5000 });
+  expect(await page.evaluate(() => window.__selectricDebug.cancelCharacterHold())).toBe(true);
+  const afterPositiveInspection = await page.evaluate(() => window.__selectricDebug.state);
+  expect(afterPositiveInspection.carrierX).toBeCloseTo(codeReadyCarrier, 8);
+  expect(afterPositiveInspection.ribbonFeedStep).toBe(codeReadyRibbonStep);
 
   // Likewise, actual impact QA uses the existing ribbon/print inspection camera with the
   // service cover open so the print-point geometry is visible in the artifact.
