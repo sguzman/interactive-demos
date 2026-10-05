@@ -4587,8 +4587,11 @@ export function createSelectricModel() {
     return pivot;
   }
 
-  function carrierPulleyTapeAnchorP4(pivot, carrierX) {
-    const angle = pivot.userData.baseTapeAnchorAngleRadP4 + pivot.rotation.x;
+  function carrierPulleyTapeTangentP4(pivot, carrierX) {
+    // The tape contact is a geometric tangent on the carrier pulley, not a material pin that
+    // orbits with pulley phase. Holding this tangent in the reconstructed carrier lane preserves
+    // the carrier-translation invariant while the wheel rotates beneath the tape.
+    const angle = pivot.userData.baseTapeAnchorAngleRadP4;
     const radius = pivot.userData.tapeAnchorRadiusP4;
     return new THREE.Vector3(
       carrierX + pivot.position.x,
@@ -4896,7 +4899,7 @@ export function createSelectricModel() {
     const tilt = [
       selectionActuatorAnchorP4(selectionActuatorPivotsP4.tiltLeft),
       new THREE.Vector3(-selectionTapeP4.tilt.sideX, selectionTapeP4.tilt.sideGuideY, selectionTapeP4.tilt.tangentZ),
-      carrierPulleyTapeAnchorP4(carrierTiltPulleyPivotP4, x),
+      carrierPulleyTapeTangentP4(carrierTiltPulleyPivotP4, x),
       new THREE.Vector3(
         x + selectionTapeP4.tilt.carrierHalfSpan,
         selectionTapeP4.tilt.carrierGuideY,
@@ -4909,7 +4912,7 @@ export function createSelectricModel() {
     const rotate = [
       selectionActuatorAnchorP4(selectionActuatorPivotsP4.rotateLeft),
       new THREE.Vector3(-selectionTapeP4.rotate.sideX, selectionTapeP4.rotate.sideGuideY, selectionTapeP4.rotate.tangentZ),
-      carrierPulleyTapeAnchorP4(carrierRotatePulleyPivotP4, x),
+      carrierPulleyTapeTangentP4(carrierRotatePulleyPivotP4, x),
       new THREE.Vector3(
         x + selectionTapeP4.rotate.carrierHalfSpan,
         selectionTapeP4.rotate.carrierGuideY,
@@ -5899,7 +5902,7 @@ export function createSelectricModel() {
         oldSectorTubeEmbodied: false,
         tiltRingNotchCount: tiltRingNotchesP4.length,
         carrierTapeGuideOrAnchorCountP4: carrierTapeGuides.length,
-        carrierTapeContactsUseRimAnchors: true,
+        carrierTapeContactsUsePulleyRimTangencies: true,
         carrierTiltTapeAnchorEmbodied: Boolean(carrierTiltTapeAnchorPinP4),
         carrierRotateTapeAnchorEmbodied: Boolean(carrierRotateTapeAnchorPinP4),
         parameterSeedP4: { ...carrierSelectionP4 },
