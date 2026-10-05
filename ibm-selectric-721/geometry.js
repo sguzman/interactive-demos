@@ -3297,6 +3297,70 @@ export function createSelectricModel() {
     return link;
   }
 
+  function makeDynamicSelectionRodP4(name, radius = 1.35, mat = darkMetal) {
+    const mesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(radius, radius, 1, 16),
+      mat
+    );
+    mesh.name = name;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    addPickable(mesh, COMPONENTS.selection, pickables);
+    selectionAssembly.add(mesh);
+
+    const direction = new THREE.Vector3();
+    const midpoint = new THREE.Vector3();
+    const yAxis = new THREE.Vector3(0, 1, 0);
+    return {
+      mesh,
+      update(a, b) {
+        direction.copy(b).sub(a);
+        const length = Math.max(direction.length(), 1e-6);
+        midpoint.copy(a).add(b).multiplyScalar(0.5);
+        mesh.position.copy(midpoint);
+        mesh.quaternion.setFromUnitVectors(yAxis, direction.normalize());
+        mesh.scale.set(1, length, 1);
+        return length;
+      }
+    };
+  }
+
+  function makeStampedSelectionBellcrankP4(name, armVectors, mat = metal) {
+    const group = new THREE.Group();
+    group.name = name;
+    group.userData.p4ConstructionClass =
+      'multi-arm P4 stamped-link bellcrank with explicit Z-axis pivot; absolute pivot, arm lengths and stamping remain unresolved';
+    selectionAssembly.add(group);
+
+    armVectors.forEach((vector, index) => {
+      const length = Math.hypot(vector.x, vector.y);
+      const geometry = twoHoleLinkPlateGeometryP4(length, 6.2, 2.4, 1.2);
+      const arm = new THREE.Mesh(geometry, mat);
+      arm.name = name + ' arm ' + (index + 1);
+      arm.rotation.z = Math.atan2(-vector.x, vector.y);
+      arm.castShadow = true;
+      arm.receiveShadow = true;
+      addPickable(arm, COMPONENTS.selection, pickables);
+      group.add(arm);
+    });
+
+    const pin = pinZP4(7.0, 1.55, darkMetal, name + ' pivot pin P4');
+    addPickable(pin, COMPONENTS.selection, pickables);
+    group.add(pin);
+    group.userData.pivotPin = pin;
+    return group;
+  }
+
+  function selectionZRotatedEndpointP4(group, localPoint) {
+    const c = Math.cos(group.rotation.z);
+    const sn = Math.sin(group.rotation.z);
+    return new THREE.Vector3(
+      group.position.x + localPoint.x * c - localPoint.y * sn,
+      group.position.y + localPoint.x * sn + localPoint.y * c,
+      group.position.z + localPoint.z
+    );
+  }
+
   function addDifferentialPinsP4(parent, span, fractions, prefix) {
     const pins = [];
     fractions.forEach((fraction, index) => {
@@ -3493,6 +3557,159 @@ export function createSelectricModel() {
   rotateBellcrank.position.set(0, 0, 2.8);
   rotateBalance.add(rotateBellcrank);
 
+  // Source-backed stationary-side output topology is now visible between the weighted
+  // differentials and the side pulleys. Absolute pivots, arm lengths and leverage are still P4/P5;
+  // this chain exists to prevent the differential output from teleporting directly into tape angle.
+  const selectionOutputLinkagePoseP5 = {
+    tiltBellcrankAngleDeg: 0,
+    tiltMultiplyingArmAngleDeg: 0,
+    rotateBellcrankAngleDeg: 0,
+    rotateMultiplyingArmAngleDeg: 0,
+    dynamicRodLengthsMmP4: {}
+  };
+
+  const tiltOutputBellcrankP4 = makeStampedSelectionBellcrankP4(
+    'tilt output bellcrank P4',
+    [new THREE.Vector3(20, 0, 0), new THREE.Vector3(0, -18, 0)]
+  );
+  tiltOutputBellcrankP4.position.set(-106, 104, -35);
+
+  const tiltMultiplyingArmP4 = makeStampedSelectionBellcrankP4(
+    'tilt multiplying arm P4',
+    [new THREE.Vector3(0, 14, 0), new THREE.Vector3(-10, -10, 0)]
+  );
+  tiltMultiplyingArmP4.position.set(-132, 72, -35);
+
+  const rotateOutputBellcrankP4 = makeStampedSelectionBellcrankP4(
+    'rotate output bellcrank P4',
+    [new THREE.Vector3(24, 0, 0), new THREE.Vector3(0, -18, 0)]
+  );
+  rotateOutputBellcrankP4.position.set(84, 111, -39.2);
+
+  const rotateMultiplyingArmP4 = makeStampedSelectionBellcrankP4(
+    'rotate multiplying arm P4',
+    [new THREE.Vector3(0, 14, 0), new THREE.Vector3(-11, -11, 0)]
+  );
+  rotateMultiplyingArmP4.position.set(-120, 79, -36);
+
+  const tiltDifferentialToBellcrankRodP4 = makeDynamicSelectionRodP4(
+    'tilt double-link to bellcrank coupling rod P4'
+  );
+  const tiltHorizontalLinkP4 = makeDynamicSelectionRodP4(
+    'tilt bellcrank horizontal link P4',
+    1.45,
+    metal
+  );
+  const tiltMultiplierToPulleyRodP4 = makeDynamicSelectionRodP4(
+    'tilt multiplying-arm to left side-pulley link P4'
+  );
+  const rotateBalanceToBellcrankRodP4 = makeDynamicSelectionRodP4(
+    'rotate balance to bellcrank coupling rod P4'
+  );
+  const rotateBellcrankTransferRodP4 = makeDynamicSelectionRodP4(
+    'rotate bellcrank to multiplying-arm link P4',
+    1.45,
+    metal
+  );
+  const rotateMultiplierToPulleyRodP4 = makeDynamicSelectionRodP4(
+    'rotate multiplying-arm to left side-pulley link P4'
+  );
+  const selectionOutputTransferRodsP4 = [
+    tiltDifferentialToBellcrankRodP4,
+    tiltHorizontalLinkP4,
+    tiltMultiplierToPulleyRodP4,
+    rotateBalanceToBellcrankRodP4,
+    rotateBellcrankTransferRodP4,
+    rotateMultiplierToPulleyRodP4
+  ];
+
+  function tiltDifferentialOutputTopP4() {
+    return new THREE.Vector3(
+      tiltDifferential.position.x + tiltLink.position.x,
+      tiltDifferential.position.y + tiltLink.position.y + 36,
+      tiltDifferential.position.z
+    );
+  }
+
+  function rotateBalanceOutputTopP4() {
+    return new THREE.Vector3(
+      rotateBalance.position.x + rotateBellcrank.position.x,
+      rotateBalance.position.y + rotateBellcrank.position.y + 34,
+      rotateBalance.position.z + rotateBellcrank.position.z
+    );
+  }
+
+  function updateSelectionOutputLinkageP5(qTilt, qSigned) {
+    const tiltInput = tiltDifferentialOutputTopP4();
+    const tiltInputRestY = 104;
+    tiltOutputBellcrankP4.rotation.z = Math.atan2(
+      tiltInput.y - tiltInputRestY,
+      20
+    );
+    tiltMultiplyingArmP4.rotation.z = deg(-20 * qTilt);
+
+    const tiltBellInput = selectionZRotatedEndpointP4(
+      tiltOutputBellcrankP4,
+      new THREE.Vector3(20, 0, 0)
+    );
+    const tiltBellOutput = selectionZRotatedEndpointP4(
+      tiltOutputBellcrankP4,
+      new THREE.Vector3(0, -18, 0)
+    );
+    const tiltMultiplierInput = selectionZRotatedEndpointP4(
+      tiltMultiplyingArmP4,
+      new THREE.Vector3(0, 14, 0)
+    );
+    const tiltMultiplierOutput = selectionZRotatedEndpointP4(
+      tiltMultiplyingArmP4,
+      new THREE.Vector3(-10, -10, 0)
+    );
+    const tiltPulleyAnchor = selectionActuatorAnchorP4(selectionActuatorPivotsP4.tiltLeft);
+
+    const rotateInput = rotateBalanceOutputTopP4();
+    const rotateInputRestY = 111;
+    rotateOutputBellcrankP4.rotation.z = Math.atan2(
+      rotateInput.y - rotateInputRestY,
+      24
+    );
+    rotateMultiplyingArmP4.rotation.z = deg(-18 * qSigned);
+
+    const rotateBellInput = selectionZRotatedEndpointP4(
+      rotateOutputBellcrankP4,
+      new THREE.Vector3(24, 0, 0)
+    );
+    const rotateBellOutput = selectionZRotatedEndpointP4(
+      rotateOutputBellcrankP4,
+      new THREE.Vector3(0, -18, 0)
+    );
+    const rotateMultiplierInput = selectionZRotatedEndpointP4(
+      rotateMultiplyingArmP4,
+      new THREE.Vector3(0, 14, 0)
+    );
+    const rotateMultiplierOutput = selectionZRotatedEndpointP4(
+      rotateMultiplyingArmP4,
+      new THREE.Vector3(-11, -11, 0)
+    );
+    const rotatePulleyAnchor = selectionActuatorAnchorP4(selectionActuatorPivotsP4.rotateLeft);
+
+    selectionOutputLinkagePoseP5.tiltBellcrankAngleDeg =
+      THREE.MathUtils.radToDeg(tiltOutputBellcrankP4.rotation.z);
+    selectionOutputLinkagePoseP5.tiltMultiplyingArmAngleDeg =
+      THREE.MathUtils.radToDeg(tiltMultiplyingArmP4.rotation.z);
+    selectionOutputLinkagePoseP5.rotateBellcrankAngleDeg =
+      THREE.MathUtils.radToDeg(rotateOutputBellcrankP4.rotation.z);
+    selectionOutputLinkagePoseP5.rotateMultiplyingArmAngleDeg =
+      THREE.MathUtils.radToDeg(rotateMultiplyingArmP4.rotation.z);
+    selectionOutputLinkagePoseP5.dynamicRodLengthsMmP4 = {
+      tiltDifferentialToBellcrank: tiltDifferentialToBellcrankRodP4.update(tiltInput, tiltBellInput),
+      tiltHorizontal: tiltHorizontalLinkP4.update(tiltBellOutput, tiltMultiplierInput),
+      tiltMultiplierToPulley: tiltMultiplierToPulleyRodP4.update(tiltMultiplierOutput, tiltPulleyAnchor),
+      rotateBalanceToBellcrank: rotateBalanceToBellcrankRodP4.update(rotateInput, rotateBellInput),
+      rotateBellcrankTransfer: rotateBellcrankTransferRodP4.update(rotateBellOutput, rotateMultiplierInput),
+      rotateMultiplierToPulley: rotateMultiplierToPulleyRodP4.update(rotateMultiplierOutput, rotatePulleyAnchor)
+    };
+  }
+
   function rotatePositiveInputs(units) {
     const u = Math.max(0, Math.min(5, Math.trunc(units)));
     if (u === 0) return { R1: 0, R2: 0, R2A: 0 };
@@ -3636,6 +3853,8 @@ export function createSelectricModel() {
     selectionLinkagePoseP5.balance.error =
       selectionLinkagePoseP5.balance.signedOutputTravel -
       selectionLinkagePoseP5.balance.expectedTravel;
+
+    updateSelectionOutputLinkageP5(qTilt, qSigned);
   }
 
   const carrierAssembly = makeAssembly('carrier assembly', new THREE.Vector3(-92, 102, -8));
@@ -5367,6 +5586,37 @@ export function createSelectricModel() {
         ),
         geometryClass:
           'P4 stamped multi-eye floating levers and two-eye links preserve OEM differential hole ratios; P5 motion derives visible lever rotation/translation from endpoint displacements rather than sliding decorative bars',
+        outputLinkageP4: {
+          tiltChain: [
+            'tilt differential',
+            'double vertical link',
+            'tilt bellcrank',
+            'horizontal link',
+            'tilt multiplying arm',
+            'left tilt side pulley'
+          ],
+          rotateChain: [
+            'signed balance lever',
+            'rotate bellcrank',
+            'rotate multiplying arm',
+            'left rotate side pulley'
+          ],
+          tiltBellcrankEmbodied: true,
+          tiltHorizontalLinkEmbodied: true,
+          tiltMultiplyingArmEmbodied: true,
+          rotateBellcrankEmbodied: true,
+          rotateMultiplyingArmEmbodied: true,
+          shiftRemainsSeparateRightRotatePulley: true,
+          dynamicTransferRodCountP4: selectionOutputTransferRodsP4.length,
+          tiltBellcrankConstructionClass: tiltOutputBellcrankP4.userData.p4ConstructionClass,
+          rotateBellcrankConstructionClass: rotateOutputBellcrankP4.userData.p4ConstructionClass,
+          poseP5: {
+            ...selectionOutputLinkagePoseP5,
+            dynamicRodLengthsMmP4: { ...selectionOutputLinkagePoseP5.dynamicRodLengthsMmP4 }
+          },
+          geometryClass:
+            'source-backed output-chain topology embodied with P4 stamped bellcranks/multiplying arms and live transfer rods; absolute pivots, lever lengths, leverage and motion amplitudes remain reconstruction'
+        },
         sidePulleyEmbodiment: {
           tapeEndpointsAnchoredToActuatorRims: true,
           leftTiltCommandPulleyEmbodied: true,
