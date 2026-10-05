@@ -111,6 +111,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.ribbon.liftCamLobeP4).toBe(true);
   expect(initial.geometry.ribbon.liftFollowerEmbodied).toBe(true);
   expect(initial.geometry.ribbon.liftBellcrankEmbodied).toBe(true);
+  expect(initial.geometry.ribbon.liftBellcrankConstructionClass).toContain('two-arm Y/Z-plane bellcrank');
+  expect(initial.geometry.ribbon.liftBellcrankArmCountP4).toBe(2);
+  expect(initial.geometry.ribbon.liftBellcrankPivotPinEmbodied).toBe(true);
   expect(initial.geometry.ribbon.liftFollowerP5).toBeCloseTo(0, 8);
   expect(initial.geometry.ribbon.liftCausalChain).toEqual([
     'print-sleeve-rotation',
@@ -124,6 +127,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.ribbon.feedDriver).toContain('IBM 1164240');
   expect(initial.geometry.ribbon.feedFollowerEmbodied).toBe(true);
   expect(initial.geometry.ribbon.feedBellcrankEmbodied).toBe(true);
+  expect(initial.geometry.ribbon.feedBellcrankConstructionClass).toContain('two-arm Y/Z-plane bellcrank');
+  expect(initial.geometry.ribbon.feedBellcrankArmCountP4).toBe(2);
+  expect(initial.geometry.ribbon.feedBellcrankPivotPinEmbodied).toBe(true);
   expect(initial.geometry.ribbon.feedFollowerP5).toBeCloseTo(0, 8);
   expect(initial.geometry.ribbon.feedStrokeP5).toBeCloseTo(0, 8);
   expect(initial.geometry.ribbon.feedCausalChain).toEqual([
