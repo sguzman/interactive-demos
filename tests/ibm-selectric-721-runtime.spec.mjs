@@ -148,6 +148,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.fineAlignment.driver).toContain('IBM 1164240');
   expect(initial.geometry.fineAlignment.detentFollowerEmbodied).toBe(true);
   expect(initial.geometry.fineAlignment.detentCamLobesP4).toBe(2);
+  expect(initial.geometry.fineAlignment.detentArmConstructionClass).toContain('tapered chamfered P4 stamped-link plate');
+  expect(initial.geometry.fineAlignment.detentArmCountP4).toBe(2);
+  expect(initial.geometry.fineAlignment.detentPivotPinsEmbodied).toBe(true);
   expect(initial.geometry.fineAlignment.causalChain).toEqual([
     'print-sleeve-rotation',
     '1164240-cam',
