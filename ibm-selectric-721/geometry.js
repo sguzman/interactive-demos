@@ -295,36 +295,36 @@ function typeSlugGeometryP4(width, height, depth, bevelDepth = 0.30) {
   return geometry;
 }
 
+function wrappedCamDeltaP4(angle, center) {
+  let delta = angle - center;
+  while (delta > Math.PI) delta -= Math.PI * 2;
+  while (delta < -Math.PI) delta += Math.PI * 2;
+  return delta;
+}
+
+function camRadiusAtP4(baseRadius, lobes, angle) {
+  let radius = baseRadius;
+  lobes.forEach(lobe => {
+    const halfWidth = Math.max(0.08, lobe.halfWidthRad);
+    const delta = Math.abs(wrappedCamDeltaP4(angle, lobe.angleRad));
+    if (delta >= halfWidth) return;
+    const phase = delta / halfWidth;
+    const window = Math.cos(phase * Math.PI / 2);
+    const contribution = lobe.liftMm * Math.pow(Math.max(0, window), lobe.sharpness ?? 2.4);
+    radius = Math.max(radius, baseRadius + contribution);
+  });
+  return radius;
+}
+
 function camProfileP4(width, baseRadius, lobes, mat, name, segments = 72) {
   const vertices = [];
   const indices = [];
   const sideXs = [-width / 2, width / 2];
 
-  function wrappedDelta(angle, center) {
-    let delta = angle - center;
-    while (delta > Math.PI) delta -= Math.PI * 2;
-    while (delta < -Math.PI) delta += Math.PI * 2;
-    return delta;
-  }
-
-  function radiusAt(angle) {
-    let radius = baseRadius;
-    lobes.forEach(lobe => {
-      const halfWidth = Math.max(0.08, lobe.halfWidthRad);
-      const delta = Math.abs(wrappedDelta(angle, lobe.angleRad));
-      if (delta >= halfWidth) return;
-      const phase = delta / halfWidth;
-      const window = Math.cos(phase * Math.PI / 2);
-      const contribution = lobe.liftMm * Math.pow(Math.max(0, window), lobe.sharpness ?? 2.4);
-      radius = Math.max(radius, baseRadius + contribution);
-    });
-    return radius;
-  }
-
   sideXs.forEach(x => {
     for (let i = 0; i < segments; i += 1) {
       const angle = i * Math.PI * 2 / segments;
-      const radius = radiusAt(angle);
+      const radius = camRadiusAtP4(baseRadius, lobes, angle);
       vertices.push(x, Math.cos(angle) * radius, Math.sin(angle) * radius);
     }
   });
@@ -1352,13 +1352,15 @@ export function createSelectricModel() {
   doubleServiceCam.position.x = -44;
   doubleServiceCam.name = 'space/backspace double-lobed 180-degree service cam';
   operationalCamFrame.add(doubleServiceCam);
+  const doubleServiceCamBaseRadiusP4 = 8.6;
+  const doubleServiceCamLobesP4 = [
+    { angleRad: -Math.PI / 2, liftMm: 2.8, halfWidthRad: deg(42), sharpness: 2.7 },
+    { angleRad: Math.PI / 2, liftMm: 2.8, halfWidthRad: deg(42), sharpness: 2.7 }
+  ];
   const doubleServiceCamProfile = camProfileP4(
     8,
-    8.6,
-    [
-      { angleRad: 0, liftMm: 2.8, halfWidthRad: deg(42), sharpness: 2.7 },
-      { angleRad: Math.PI, liftMm: 2.8, halfWidthRad: deg(42), sharpness: 2.7 }
-    ],
+    doubleServiceCamBaseRadiusP4,
+    doubleServiceCamLobesP4,
     darkMetal,
     'space/backspace service cam · smooth double-lobed P4 profile'
   );
@@ -1369,10 +1371,14 @@ export function createSelectricModel() {
   returnIndexCam.position.x = 22;
   returnIndexCam.name = 'carrier-return/index single-lobed 360-degree service cam';
   operationalCamFrame.add(returnIndexCam);
+  const returnIndexCamBaseRadiusP4 = 9.2;
+  const returnIndexCamLobesP4 = [
+    { angleRad: -Math.PI, liftMm: 3.3, halfWidthRad: deg(54), sharpness: 2.6 }
+  ];
   const returnIndexCamProfile = camProfileP4(
     9,
-    9.2,
-    [{ angleRad: 0, liftMm: 3.3, halfWidthRad: deg(54), sharpness: 2.6 }],
+    returnIndexCamBaseRadiusP4,
+    returnIndexCamLobesP4,
     darkMetal,
     'carrier-return/index service cam · smooth single-lobed P4 profile'
   );
@@ -1383,10 +1389,14 @@ export function createSelectricModel() {
   shiftCam.position.x = 84;
   shiftCam.name = 'dedicated shift 180-degree cam';
   operationalCamFrame.add(shiftCam);
+  const shiftCamBaseRadiusP4 = 7.9;
+  const shiftCamLobesP4 = [
+    { angleRad: -Math.PI / 2, liftMm: 2.7, halfWidthRad: deg(50), sharpness: 2.6 }
+  ];
   const shiftCamProfile = camProfileP4(
     8,
-    7.9,
-    [{ angleRad: 0, liftMm: 2.7, halfWidthRad: deg(50), sharpness: 2.6 }],
+    shiftCamBaseRadiusP4,
+    shiftCamLobesP4,
     darkMetal,
     'shift service cam · smooth single-lobed P4 profile'
   );
@@ -1429,9 +1439,13 @@ export function createSelectricModel() {
     'shift operational cam follower'
   );
 
-  function followerLiftForCamPhaseP5(phase) {
-    const t = THREE.MathUtils.clamp(Number(phase) || 0, 0, 1);
-    return Math.sin(Math.PI * t);
+  function followerLiftFromCamContactP4(baseRadius, lobes, rotationRad) {
+    // Followers sit above the cam centers in the public reconstruction, so world +Y maps to
+    // local angle -rotation. Normalize the sampled radial rise against the tallest P4 lobe.
+    const localContactAngle = -rotationRad;
+    const maxLift = Math.max(...lobes.map(lobe => lobe.liftMm), 1e-9);
+    const rise = camRadiusAtP4(baseRadius, lobes, localContactAngle) - baseRadius;
+    return THREE.MathUtils.clamp(rise / maxLift, 0, 1);
   }
 
   function applyOperationalFollowerLift(follower, liftP5) {
@@ -3605,16 +3619,27 @@ export function createSelectricModel() {
     state.operationalFollowerLiftP5.returnIndex = 0;
     state.operationalFollowerLiftP5.shift = 0;
 
-    const followerLift = followerLiftForCamPhaseP5(state.operationalCamPhase);
     if (action === 'space' || action === 'backspace') {
       doubleServiceCam.rotation.x = state.operationalCamPhase * Math.PI;
-      state.operationalFollowerLiftP5.spaceBackspace = followerLift;
+      state.operationalFollowerLiftP5.spaceBackspace = followerLiftFromCamContactP4(
+        doubleServiceCamBaseRadiusP4,
+        doubleServiceCamLobesP4,
+        doubleServiceCam.rotation.x
+      );
     } else if (action === 'carrier-return' || action === 'index') {
       returnIndexCam.rotation.x = state.operationalCamPhase * Math.PI * 2;
-      state.operationalFollowerLiftP5.returnIndex = followerLift;
+      state.operationalFollowerLiftP5.returnIndex = followerLiftFromCamContactP4(
+        returnIndexCamBaseRadiusP4,
+        returnIndexCamLobesP4,
+        returnIndexCam.rotation.x
+      );
     } else if (action === 'shift') {
       shiftCam.rotation.x = state.operationalCamPhase * Math.PI;
-      state.operationalFollowerLiftP5.shift = followerLift;
+      state.operationalFollowerLiftP5.shift = followerLiftFromCamContactP4(
+        shiftCamBaseRadiusP4,
+        shiftCamLobesP4,
+        shiftCam.rotation.x
+      );
     }
 
     applyOperationalFollowerLift(
@@ -4110,6 +4135,7 @@ export function createSelectricModel() {
           shift: shiftCamProfile.userData.p4CamProfile.baseRadius
         },
         followerLiftP5: { ...state.operationalFollowerLiftP5 },
+        followerLiftDriverClass: 'P4 fixed-roller contact sample of the rotating smooth cam radius; normalized throw remains P5 because exact OEM follower leverage is unresolved',
         selectedFollower:
           state.operationalCamAction === 'space' || state.operationalCamAction === 'backspace'
             ? 'space/backspace'
