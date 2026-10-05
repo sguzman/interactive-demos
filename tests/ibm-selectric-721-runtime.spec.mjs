@@ -24,6 +24,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.finite).toBe(true);
   expect(initial.geometry.revision).toBe('selectric-integrated-public-build');
   expect(initial.geometry.supportTopology).toContain('Level-2');
+  expect(initial.geometry.carrierEmbodiment).toContain('windowed chamfered side plates');
+  expect(initial.geometry.carrierSidePlateCount).toBe(2);
+  expect(initial.geometry.carrierSidePlateWindowed).toBe(true);
+  expect(initial.geometry.carrierSidePlateClass).toContain('windowed chamfered P4 carrier side frame');
   expect(initial.geometry.shellTopology).toContain('hinged hood');
   expect(initial.geometry.writingPositionIndicator.carrierParented).toBe(true);
   expect(initial.geometry.writingPositionIndicator.worldX).toBeCloseTo(initial.carrierX, 8);
