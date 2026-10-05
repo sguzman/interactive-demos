@@ -65,7 +65,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.ribbon.reverseCount).toBe(0);
   expect(initial.geometry.ribbon.spoolFillP5[0]).toBeCloseTo(0.86, 8);
   expect(initial.geometry.ribbon.spoolFillP5[1]).toBeCloseTo(0.14, 8);
-  expect(initial.geometry.ribbon.spoolFillClass).toContain('P5 compressed');
+  expect(initial.geometry.ribbon.spoolConstructionClass).toContain('fixed hub/flanges');
+  expect(initial.geometry.ribbon.spoolFlangesFixedWhileRibbonPackChanges).toBe(true);
+  expect(initial.geometry.ribbon.spoolRibbonPackBaseRadiusMmP4).toBeGreaterThan(10);
+  expect(initial.geometry.ribbon.spoolFillClass).toContain('wound-pack radius presentation');
   expect(initial.ribbonPrintMode).toBe('middle');
   expect(initial.geometry.ribbon.printModes).toEqual(['stencil', 'low', 'middle', 'high']);
   expect(initial.geometry.ribbon.liftHeightClass).toContain('exact OEM lift heights unresolved');
@@ -620,6 +623,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(typed.geometry.ribbon.spoolFillP5[0]).toBeCloseTo(0.68, 8);
   expect(typed.geometry.ribbon.spoolFillP5[1]).toBeCloseTo(0.32, 8);
   expect(typed.geometry.ribbon.spoolRadiusScaleP5[0]).toBeGreaterThan(typed.geometry.ribbon.spoolRadiusScaleP5[1]);
+  expect(typed.geometry.ribbon.spoolFlangesFixedWhileRibbonPackChanges).toBe(true);
   expect(typed.fineAlignment.tiltDetent).toBe(0);
   expect(typed.fineAlignment.rotateDetent).toBe(0);
   expect(typed.events.some(event => event.name === 'RIBBON_FEED_COMPLETE_EXCEPT_PAWL_RESTORE')).toBe(true);
@@ -677,6 +681,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(ribbonReversed.geometry.ribbon.spoolFillP5[0]).toBeCloseTo(0.14, 8);
   expect(ribbonReversed.geometry.ribbon.spoolFillP5[1]).toBeCloseTo(0.86, 8);
   expect(ribbonReversed.geometry.ribbon.spoolRadiusScaleP5[0]).toBeLessThan(ribbonReversed.geometry.ribbon.spoolRadiusScaleP5[1]);
+  expect(ribbonReversed.geometry.ribbon.spoolFlangesFixedWhileRibbonPackChanges).toBe(true);
   expect(ribbonReversed.events.some(event => event.name === 'RIBBON_AUTO_REVERSE')).toBe(true);
 
   expect(typed.printApproach).toBe(0);
