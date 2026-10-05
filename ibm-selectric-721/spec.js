@@ -128,8 +128,8 @@ export const COMPONENTS = Object.freeze({
   keyboard: {
     name: 'Keyboard',
     category: 'human input',
-    provenance: 'P4 repeated key geometry',
-    description: 'Repeated key field representing the Selectric keyboard as a product-level input surface.'
+    provenance: 'P4 repeated tapered/beveled key geometry + P5 actuation travel',
+    description: 'Repeated Selectric keyboard field with labeled three-stage tapered keycaps instead of cuboid blocks. The cap section is constructive P4 rather than factory tooling, while the existing key-depression behavior remains the live input presentation.'
   },
   keyboardMechanism: {
     name: 'Keyboard code mechanism',
