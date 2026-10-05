@@ -289,6 +289,26 @@ function shaft(length, radius, mat, name) {
   return mesh;
 }
 
+function cylinderBetweenP4(a, b, radius, mat, name, radialSegments = 20) {
+  const start = a.clone();
+  const end = b.clone();
+  const delta = end.clone().sub(start);
+  const length = delta.length();
+  const mesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius, radius, Math.max(length, 1e-6), radialSegments),
+    mat
+  );
+  mesh.position.copy(start).add(end).multiplyScalar(0.5);
+  mesh.quaternion.setFromUnitVectors(
+    new THREE.Vector3(0, 1, 0),
+    delta.normalize()
+  );
+  mesh.name = name;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
 function pulley(radius, width, mat, name) {
   const mesh = shaft(width, radius, mat, name);
   return mesh;
@@ -3184,12 +3204,51 @@ export function createSelectricModel() {
   const typeLocalY = P4.typeball.y - P4.printRocker.pivotY;
   const typeLocalZ = P4.typeball.zRest - P4.printRocker.pivotZ;
 
-  const neck = shaft(Math.hypot(typeLocalY, typeLocalZ) * 0.78, 3.6, metal, 'type-element rocker arm');
-  neck.rotation.z = 0;
-  neck.rotation.x = Math.atan2(-typeLocalZ, typeLocalY);
-  neck.position.set(0, typeLocalY * 0.48, typeLocalZ * 0.48);
-  addPickable(neck, COMPONENTS.typeball, pickables);
-  rocker.add(neck);
+  // The old rocker "arm" was built from the generic X-axis shaft helper and then rotated about
+  // X, so it remained an axial cross-pin instead of physically spanning pivot -> type element.
+  // Embody the print rocker as a forked P4 yoke with an explicit pivot hub, two Y/Z arms and a
+  // cradle cross-pin. Exact IBM rocker casting/lever section remains unresolved.
+  const rockerForkHalfSpanP4 = 5.6;
+  const rockerArmStartP4 = new THREE.Vector3(0, 2.5, 0.4);
+  const rockerArmEndP4 = new THREE.Vector3(0, typeLocalY - 5.0, typeLocalZ + 2.4);
+  const rockerArmsP4 = [];
+
+  const rockerPivotHub = shaft(20, 4.2, darkMetal, 'type-element rocker pivot hub P4');
+  addPickable(rockerPivotHub, COMPONENTS.typeball, pickables);
+  rocker.add(rockerPivotHub);
+
+  for (const sign of [-1, 1]) {
+    const arm = cylinderBetweenP4(
+      new THREE.Vector3(sign * rockerForkHalfSpanP4, rockerArmStartP4.y, rockerArmStartP4.z),
+      new THREE.Vector3(sign * rockerForkHalfSpanP4, rockerArmEndP4.y, rockerArmEndP4.z),
+      2.35,
+      metal,
+      sign < 0 ? 'left type-element rocker fork arm P4' : 'right type-element rocker fork arm P4'
+    );
+    addPickable(arm, COMPONENTS.typeball, pickables);
+    rocker.add(arm);
+    rockerArmsP4.push(arm);
+  }
+
+  const rockerCradlePin = shaft(
+    rockerForkHalfSpanP4 * 2 + 5.5,
+    3.1,
+    metal,
+    'type-element rocker cradle cross-pin P4'
+  );
+  rockerCradlePin.position.set(0, rockerArmEndP4.y, rockerArmEndP4.z);
+  addPickable(rockerCradlePin, COMPONENTS.typeball, pickables);
+  rocker.add(rockerCradlePin);
+
+  const rockerStem = cylinderBetweenP4(
+    new THREE.Vector3(0, rockerArmEndP4.y, rockerArmEndP4.z),
+    new THREE.Vector3(0, typeLocalY - 1.8, typeLocalZ + 0.8),
+    2.55,
+    darkMetal,
+    'type-element rocker cradle stem P4'
+  );
+  addPickable(rockerStem, COMPONENTS.typeball, pickables);
+  rocker.add(rockerStem);
 
   const typeElement = makeTypeElement(ballMat, darkMetal, pickables);
   typeElement.position.set(0, typeLocalY, typeLocalZ);
@@ -4618,6 +4677,11 @@ export function createSelectricModel() {
         followerEmbodied: true,
         followerLiftP5: state.printCamFollowerLiftP5,
         bellcrankEmbodied: true,
+        rockerConstructionClass: 'forked P4 yoke: explicit pivot hub + two correctly oriented Y/Z arms + cradle cross-pin/stem; replaces prior mis-oriented X-axis cylinder cue, exact IBM rocker casting unresolved',
+        rockerForkArmCountP4: rockerArmsP4.length,
+        rockerPivotHubEmbodied: true,
+        rockerCradlePinEmbodied: true,
+        rockerArmSpanMmP4: rockerArmStartP4.distanceTo(rockerArmEndP4),
         causalChain: ['print-sleeve-rotation', '1124174-print-restoring-cam', 'roller-follower', 'bellcrank', 'print-rocker', 'type-element'],
         driveClass: 'P5 cam-envelope timing through P4 follower/bellcrank geometry; exact OEM cam profile and lever lengths unresolved',
         restClearanceMm: P4.printRocker.derivedRestClearanceMm,
