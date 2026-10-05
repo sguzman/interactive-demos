@@ -271,10 +271,18 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.cordSystem.rightTensionArmSpiralSprings).toBe(2);
   expect(initial.geometry.cordSystem.effectiveDrumPayoutRatioP4).toBeGreaterThan(0.9);
   expect(initial.geometry.cordSystem.effectiveDrumPayoutRatioP4).toBeLessThan(1);
-  expect(initial.geometry.cordSystem.tensionArmSweepRangeDegP4[0]).toBeLessThan(-10);
+  expect(initial.geometry.cordSystem.tensionArmSweepRangeDegP4[0]).toBeLessThan(-7);
   expect(initial.geometry.cordSystem.tensionArmSweepRangeDegP4[1]).toBeGreaterThan(0);
   expect(Math.abs(initial.geometry.cordSystem.compensatedLengthErrorMmP4)).toBeLessThan(1e-6);
-  expect(initial.geometry.cordSystem.tensionModelClass).toContain('solved spring-arm compensation');
+  expect(initial.geometry.cordSystem.pulleyContactRoutingP4).toBe(true);
+  expect(initial.geometry.cordSystem.escapementWrapAnglesDegP4).toHaveLength(2);
+  expect(initial.geometry.cordSystem.returnWrapAnglesDegP4).toHaveLength(2);
+  expect(initial.geometry.cordSystem.escapementWrapAnglesDegP4.every(angle => angle > 0)).toBe(true);
+  expect(initial.geometry.cordSystem.returnWrapAnglesDegP4.every(angle => angle > 0)).toBe(true);
+  expect(initial.geometry.cordSystem.escapementTangentOrthogonalityErrorMmP4).toBeLessThan(1e-8);
+  expect(initial.geometry.cordSystem.returnTangentOrthogonalityErrorMmP4).toBeLessThan(1e-8);
+  expect(initial.geometry.cordSystem.cordPathClass).toContain('tangent-to-rim routing');
+  expect(initial.geometry.cordSystem.tensionModelClass).toContain('tangent-routed');
   expect(initial.geometry.marginStops.leftTerminatesCarrierReturn).toBe(true);
   expect(initial.geometry.marginStops.rightLineLockInterface).toBe(true);
   expect(initial.geometry.marginStops.adjustableOnWritingLine).toBe(true);
@@ -651,6 +659,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const typed = await page.evaluate(() => window.__selectricDebug.state);
   expect(typed.carrierX - initialCarrier).toBeCloseTo(typed.geometry.pitchMm * 3, 5);
   expect(Math.abs(typed.geometry.cordSystem.compensatedLengthErrorMmP4)).toBeLessThan(1e-6);
+  expect(typed.geometry.cordSystem.escapementTangentOrthogonalityErrorMmP4).toBeLessThan(1e-8);
+  expect(typed.geometry.cordSystem.returnTangentOrthogonalityErrorMmP4).toBeLessThan(1e-8);
   expect(typed.geometry.cordSystem.tensionArmAngleDeg).not.toBeCloseTo(
     initial.geometry.cordSystem.tensionArmAngleDeg,
     5
