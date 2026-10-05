@@ -695,6 +695,7 @@ export function createSelectricModel() {
     ribbonLoadState: false,
     ribbonFeedSuppressedCount: 0,
     printApproach: 0,
+    printCamFollowerLiftP5: 0,
     platenIndex: 0,
     paperAdvanceMm: 0,
     manualPaperAlignmentMmP5: 0,
@@ -2227,6 +2228,22 @@ export function createSelectricModel() {
   addPickable(feedCamLobeP4, COMPONENTS.sleeve, pickables);
   printSleeveRotor.add(feedCamLobeP4);
 
+  const printCamLobeP4 = box(7.5, 5.2, 6.0, darkMetal, '1124174 print lobe P4 cue');
+  printCamLobeP4.position.set(14, -13.4, 0);
+  addPickable(printCamLobeP4, COMPONENTS.sleeve, pickables);
+  printSleeveRotor.add(printCamLobeP4);
+
+  const restoreCamLobeAngleP4 = deg(148);
+  const restoreCamLobeP4 = box(7.0, 4.8, 5.6, metal, '1124174 restoring lobe P4 cue');
+  restoreCamLobeP4.position.set(
+    14,
+    -12.8 * Math.cos(restoreCamLobeAngleP4),
+    -12.8 * Math.sin(restoreCamLobeAngleP4)
+  );
+  restoreCamLobeP4.rotation.x = restoreCamLobeAngleP4;
+  addPickable(restoreCamLobeP4, COMPONENTS.sleeve, pickables);
+  printSleeveRotor.add(restoreCamLobeP4);
+
   for (const x of [-P4.carrierLocal.bearingX, P4.carrierLocal.bearingX]) {
     const localBearing = pulley(10.5, 7, shoeMat, x < 0 ? 'left carrier sleeve bearing' : 'right carrier sleeve bearing');
     localBearing.position.set(x, P4.printShaft.y, P4.printShaft.z);
@@ -2427,6 +2444,37 @@ export function createSelectricModel() {
   ribbonLiftBellcrank.add(ribbonLiftBellcrankB);
 
   const ribbonLiftFollowerBaseYP4 = ribbonLiftFollower.position.y;
+
+  const printCamFollower = new THREE.Group();
+  printCamFollower.name = '1124174 print/restoring cam follower assembly';
+  printCamFollower.position.set(14, P4.printShaft.y + 16.2, P4.printShaft.z);
+  carrierMotion.add(printCamFollower);
+
+  const printCamFollowerRoller = pulley(3.1, 6.2, darkMetal, '1124174 print cam follower roller P4 cue');
+  addPickable(printCamFollowerRoller, COMPONENTS.typeball, pickables);
+  printCamFollower.add(printCamFollowerRoller);
+
+  const printCamFollowerStem = box(4.2, 15.0, 4.2, metal, '1124174 follower stem');
+  printCamFollowerStem.position.set(0, 8.6, 0);
+  addPickable(printCamFollowerStem, COMPONENTS.typeball, pickables);
+  printCamFollower.add(printCamFollowerStem);
+
+  const printFollowerBellcrank = new THREE.Group();
+  printFollowerBellcrank.name = 'print-rocker follower bellcrank P4';
+  printFollowerBellcrank.position.set(14, P4.printShaft.y + 30, P4.printShaft.z - 8);
+  carrierMotion.add(printFollowerBellcrank);
+
+  const printFollowerBellcrankA = box(4.2, 22.0, 4.2, metal, 'print follower bellcrank cam arm');
+  printFollowerBellcrankA.position.set(0, -8, 0);
+  addPickable(printFollowerBellcrankA, COMPONENTS.typeball, pickables);
+  printFollowerBellcrank.add(printFollowerBellcrankA);
+
+  const printFollowerBellcrankB = box(22.0, 4.2, 4.2, darkMetal, 'print follower bellcrank rocker arm');
+  printFollowerBellcrankB.position.set(-9, 0, 0);
+  addPickable(printFollowerBellcrankB, COMPONENTS.typeball, pickables);
+  printFollowerBellcrank.add(printFollowerBellcrankB);
+
+  const printCamFollowerBaseYP4 = printCamFollower.position.y;
 
   const carrierTapeGuides = [];
   for (const side of [-1, 1]) {
@@ -2859,6 +2907,7 @@ export function createSelectricModel() {
 
   function setPrintApproach(value) {
     state.printApproach = THREE.MathUtils.clamp(value, 0, 1);
+    state.printCamFollowerLiftP5 = state.printApproach;
     const poweredBoundary = 0.90;
     let angleDeg;
     if (state.printApproach <= poweredBoundary) {
@@ -2874,7 +2923,27 @@ export function createSelectricModel() {
         (state.printApproach - poweredBoundary) / (1 - poweredBoundary)
       );
     }
+
+    // P4 follower/bellcrank geometry carries the 1124174 cam output to the rocker. The cam
+    // envelope is P5 while the service-clearance endpoints remain independently constrained.
+    printCamFollower.position.y = printCamFollowerBaseYP4 + state.printCamFollowerLiftP5 * 5.2;
+    printFollowerBellcrank.rotation.x = deg(-21 * state.printCamFollowerLiftP5);
     rocker.rotation.x = deg(angleDeg);
+  }
+
+  function printApproachFromSleevePhaseP5(phase) {
+    const t = THREE.MathUtils.clamp(Number(phase) || 0, 0, 1);
+    if (t < 0.43) return 0;
+    if (t < 0.54) {
+      const driver = THREE.MathUtils.clamp((t - 0.43) / 0.11, 0, 1);
+      return driver * 0.55;
+    }
+    if (t < 0.66) {
+      const driver = THREE.MathUtils.clamp((t - 0.54) / 0.12, 0, 1);
+      return 0.55 + driver * 0.45;
+    }
+    if (t < 0.91) return THREE.MathUtils.clamp(1 - (t - 0.66) / 0.25, 0, 1);
+    return 0;
   }
 
   function applyFeedRollRotation() {
@@ -3080,6 +3149,7 @@ export function createSelectricModel() {
     const fineAlignment = fineAlignmentFromSleevePhaseP5(state.cyclePhase);
     applyFineAlignment(fineAlignment.tilt, fineAlignment.rotate, fineAlignment.driver);
     setRibbonLift(ribbonLiftFromSleevePhaseP5(state.cyclePhase));
+    setPrintApproach(printApproachFromSleevePhaseP5(state.cyclePhase));
   }
 
   function setServiceCover(value) {
@@ -3510,6 +3580,13 @@ export function createSelectricModel() {
       },
       printRocker: {
         motion: 'revolute',
+        driver: 'IBM 1124174 double print/restoring cam on rotating print sleeve',
+        camLobesP4: 2,
+        followerEmbodied: true,
+        followerLiftP5: state.printCamFollowerLiftP5,
+        bellcrankEmbodied: true,
+        causalChain: ['print-sleeve-rotation', '1124174-print-restoring-cam', 'roller-follower', 'bellcrank', 'print-rocker', 'type-element'],
+        driveClass: 'P5 cam-envelope timing through P4 follower/bellcrank geometry; exact OEM cam profile and lever lengths unresolved',
         restClearanceMm: P4.printRocker.derivedRestClearanceMm,
         poweredEndpointClearanceMm: P4.printRocker.derivedPoweredEndpointClearanceMm,
         poweredEndpointAngleDeg: P4.printRocker.poweredEndpointAngleDeg,
