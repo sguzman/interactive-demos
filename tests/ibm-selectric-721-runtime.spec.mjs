@@ -249,6 +249,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.operationalCams.profileBaseRadiiMmP4.carrierReturnIndex).toBeGreaterThan(
     initial.geometry.operationalCams.profileBaseRadiiMmP4.spaceBackspace
   );
+  expect(initial.geometry.operationalCams.followerLiftDriverClass).toContain('fixed-roller contact sample');
   expect(initial.geometry.operationalCams.followerLiftP5).toEqual({
     spaceBackspace: 0,
     returnIndex: 0,
@@ -284,7 +285,12 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.backspace.rackFamily).toEqual(['1124568', '6519139']);
   expect(initial.geometry.backspace.displacementMm).toBeCloseTo(-initial.geometry.pitchMm, 8);
 
-  // Each clutched service cam now has a visible follower tied to that cam's live phase.
+  // Each clutched service follower is now solved from the smooth P4 cam radius at the
+  // fixed roller line rather than from a parallel sinusoidal animation.
+  await page.evaluate(() => window.__selectricDebug.setOperationalCam('space', 0.25));
+  const spaceFollowerBeforeLobe = await page.evaluate(() => window.__selectricDebug.state);
+  expect(spaceFollowerBeforeLobe.geometry.operationalCams.followerLiftP5.spaceBackspace).toBeCloseTo(0, 8);
+
   await page.evaluate(() => window.__selectricDebug.setOperationalCam('space', 0.5));
   const spaceFollower = await page.evaluate(() => window.__selectricDebug.state);
   expect(spaceFollower.geometry.operationalCams.selectedFollower).toBe('space/backspace');
