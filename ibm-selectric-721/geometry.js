@@ -3521,6 +3521,58 @@ export function createSelectricModel() {
     selectorLatches[name] = latch;
   });
 
+  // Close the source-backed latch-interposer -> ordinary selector-latch exclusion boundary with
+  // visible transfer members. The production link count/routing are unresolved, so each channel
+  // uses a separated three-segment P4 dogleg lane rather than inventing a hidden direct joint.
+  const latchInterposerSelectorLatchBindingsP4 = selectorLatchNames.map((name, index) => ({
+    name,
+    interposer: selectorLatchInterposers[index],
+    latch: selectorLatches[name],
+    laneY: -18 + index * 3.2,
+    laneZ: 38 + index * 3.6,
+    first: makeRootDynamicRodP4(
+      name + ' latch-interposer to selector-latch dogleg segment A P4',
+      1.05,
+      darkMetal,
+      COMPONENTS.keyboardMechanism
+    ),
+    bridge: makeRootDynamicRodP4(
+      name + ' latch-interposer to selector-latch dogleg bridge P4',
+      1.05,
+      metal,
+      COMPONENTS.keyboardMechanism
+    ),
+    second: makeRootDynamicRodP4(
+      name + ' latch-interposer to selector-latch dogleg segment B P4',
+      1.05,
+      darkMetal,
+      COMPONENTS.keyboardMechanism
+    )
+  }));
+  const latchInterposerSelectorLatchPoseP5 = {};
+
+  function updateLatchInterposerSelectorLatchLinksP4() {
+    latchInterposerSelectorLatchBindingsP4.forEach(binding => {
+      const interposerPoint = objectPointInRootP4(binding.interposer, new THREE.Vector3());
+      const latchPoint = objectPointInRootP4(binding.latch, new THREE.Vector3());
+      const interposerElbow = new THREE.Vector3(
+        interposerPoint.x,
+        binding.laneY,
+        binding.laneZ
+      );
+      const latchElbow = new THREE.Vector3(
+        latchPoint.x,
+        binding.laneY,
+        binding.laneZ
+      );
+      latchInterposerSelectorLatchPoseP5[binding.name] = {
+        segmentAMmP4: binding.first.update(interposerPoint, interposerElbow),
+        bridgeMmP4: binding.bridge.update(interposerElbow, latchElbow),
+        segmentBMmP4: binding.second.update(latchElbow, latchPoint)
+      };
+    });
+  }
+
   const fiveUnitBail = box(54, 5, 9, darkMetal, 'five-unit bail');
   fiveUnitBail.position.set(58, 45, -31);
   fiveUnitBail.userData.baseY = fiveUnitBail.position.y;
@@ -5521,6 +5573,7 @@ export function createSelectricModel() {
     });
 
     updateSelectorBailInterposerLinksP4();
+    updateLatchInterposerSelectorLatchLinksP4();
     updateFiveUnitLatchBailP5();
   }
 
@@ -6355,8 +6408,18 @@ export function createSelectricModel() {
           [...selectorBailInterposerRodLengthsMmP4],
         latchInterposerTravelDerivedFromBailPoseP5: true,
         selectorLatchForwardTravelDerivedFromInterposerPoseP5: true,
+        latchInterposerToSelectorLatchTransferEmbodiedP4: true,
+        latchInterposerToSelectorLatchTransferChannelCountP4:
+          latchInterposerSelectorLatchBindingsP4.length,
+        latchInterposerToSelectorLatchDynamicRodSegmentCountP4:
+          latchInterposerSelectorLatchBindingsP4.length * 3,
+        latchInterposerToSelectorLatchChannelOrderP4:
+          latchInterposerSelectorLatchBindingsP4.map(binding => binding.name),
+        latchInterposerToSelectorLatchPoseP5: Object.fromEntries(
+          Object.entries(latchInterposerSelectorLatchPoseP5).map(([name, pose]) => [name, { ...pose }])
+        ),
         latchInterposerToSelectorLatchVisibleBridge:
-          'open; forward exclusion is now causally derived through the visible latch-interposer pose, but the production interposer-to-latch attachment geometry remains unresolved',
+          'closed as a source-backed interposer-to-ordinary-latch topology with separated three-segment P4 dogleg transfer lanes; exact IBM link count, joints, route and dimensions unresolved',
         filterShaftBladeCount: filterShaftBladesP4.length,
         filterShaftBearingCount: filterShaftBearingsP4.length,
         filterShaftBearingMaterialClass: 'bronze P4 visual material on both end supports; exact bearing dimensions unresolved',

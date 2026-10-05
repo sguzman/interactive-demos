@@ -191,7 +191,20 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     .every(length => Number.isFinite(length) && length > 0)).toBe(true);
   expect(initial.geometry.keyboardMechanism.latchInterposerTravelDerivedFromBailPoseP5).toBe(true);
   expect(initial.geometry.keyboardMechanism.selectorLatchForwardTravelDerivedFromInterposerPoseP5).toBe(true);
-  expect(initial.geometry.keyboardMechanism.latchInterposerToSelectorLatchVisibleBridge).toContain('open');
+  expect(initial.geometry.keyboardMechanism.latchInterposerToSelectorLatchTransferEmbodiedP4).toBe(true);
+  expect(initial.geometry.keyboardMechanism.latchInterposerToSelectorLatchTransferChannelCountP4).toBe(5);
+  expect(initial.geometry.keyboardMechanism.latchInterposerToSelectorLatchDynamicRodSegmentCountP4).toBe(15);
+  expect(initial.geometry.keyboardMechanism.latchInterposerToSelectorLatchChannelOrderP4).toEqual([
+    'T1', 'T2', 'R1', 'R2', 'R2A'
+  ]);
+  expect(initial.geometry.keyboardMechanism.latchInterposerToSelectorLatchVisibleBridge).toContain('closed');
+  expect(initial.geometry.keyboardMechanism.latchInterposerToSelectorLatchVisibleBridge).toContain('unresolved');
+  expect(Object.values(initial.geometry.keyboardMechanism.latchInterposerToSelectorLatchPoseP5)
+    .every(pose =>
+      pose.segmentAMmP4 > 0 &&
+      pose.bridgeMmP4 > 0 &&
+      pose.segmentBMmP4 > 0
+    )).toBe(true);
   expect(initial.geometry.keyboardMechanism.filterShaftBladeCount).toBe(2);
   expect(initial.geometry.keyboardMechanism.filterShaftBearingCount).toBe(2);
   expect(initial.geometry.keyboardMechanism.filterShaftRotationDegPerCharacter).toBe(180);
@@ -896,6 +909,15 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     .every(length => Number.isFinite(length) && length > 0)).toBe(true);
   expect(fineAligned.geometry.keyboardMechanism.selectorBailToLatchInterposerRodLengthsMmP4).not.toEqual(
     initial.geometry.keyboardMechanism.selectorBailToLatchInterposerRodLengthsMmP4
+  );
+  expect(Object.values(fineAligned.geometry.keyboardMechanism.latchInterposerToSelectorLatchPoseP5)
+    .every(pose =>
+      pose.segmentAMmP4 > 0 &&
+      pose.bridgeMmP4 > 0 &&
+      pose.segmentBMmP4 > 0
+    )).toBe(true);
+  expect(fineAligned.geometry.keyboardMechanism.latchInterposerToSelectorLatchPoseP5).not.toEqual(
+    initial.geometry.keyboardMechanism.latchInterposerToSelectorLatchPoseP5
   );
   const requestedLatchBits = ['T1','T2','R1','R2','R2A'].map(
     name => fineAligned.selection.selectorInputs[name]
