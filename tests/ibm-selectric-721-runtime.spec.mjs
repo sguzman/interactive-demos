@@ -198,6 +198,16 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.keyboardMechanism.selectorLatchMotionClass).toContain('latch forward/excluded');
   expect(initial.geometry.keyboardMechanism.geometryClass).toContain('source-topology embodiment');
 
+  expect(initial.geometry.carrierPrintDrive.printShaftPart).toBe('1164736');
+  expect(initial.geometry.carrierPrintDrive.printSleevePart).toBe('1141628');
+  expect(initial.geometry.carrierPrintDrive.printShaftWidthClass).toBe('7X1');
+  expect(initial.geometry.carrierPrintDrive.printSleeveSeparateSlidingMember).toBe(true);
+  expect(initial.geometry.carrierPrintDrive.printShaftKeywayLandEmbodiedP4).toBe(true);
+  expect(initial.geometry.carrierPrintDrive.printSleeveKeyEmbodiedP4).toBe(true);
+  expect(initial.geometry.carrierPrintDrive.printSleeveKeyConstructionClass).toContain('longitudinal key');
+  expect(initial.geometry.carrierPrintDrive.keyedRotationPhaseErrorDegP4).toBeCloseTo(0, 10);
+  expect(initial.geometry.carrierPrintDrive.geometryClass).toContain('rotationally keyed sliding print-sleeve');
+
   expect(initial.geometry.shaftTiming.cycleShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.filterShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.printShaftDegPerCharacter).toBe(360);
@@ -241,6 +251,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.printRocker.rockerForkArmCountP4).toBe(2);
   expect(initial.geometry.printRocker.rockerPivotHubEmbodied).toBe(true);
   expect(initial.geometry.printRocker.rockerCradlePinEmbodied).toBe(true);
+  expect(initial.geometry.printRocker.returnSpringEmbodiedP4).toBe(true);
+  expect(initial.geometry.printRocker.returnSpringConstructionClassP4).toContain('rocker-return spring');
+  expect(initial.geometry.printRocker.returnSpringTurnsP4).toBeCloseTo(2.25, 8);
+  expect(initial.geometry.printRocker.returnSpringMovingLegAngleDegP5).toBeCloseTo(0, 8);
   expect(initial.geometry.printRocker.rockerArmSpanMmP4).toBeGreaterThan(10);
   expect(initial.geometry.printRocker.causalChain).toEqual([
     'print-sleeve-rotation',
@@ -833,6 +847,11 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(impactHeld.geometry.printRocker.followerLiftP5).toBeGreaterThan(0.99);
   expect(impactHeld.geometry.printRocker.driver).toContain('1124174');
   expect(impactHeld.geometry.printRocker.currentAngleDeg).toBeLessThan(-17);
+  expect(impactHeld.geometry.printRocker.returnSpringMovingLegAngleDegP5).toBeCloseTo(
+    impactHeld.geometry.printRocker.currentAngleDeg,
+    8
+  );
+  expect(impactHeld.geometry.carrierPrintDrive.keyedRotationPhaseErrorDegP4).toBeCloseTo(0, 10);
   expect(impactHeld.geometry.printRocker.selectedSlugPlatenClearanceAlongZMmP4).toBeLessThan(
     initial.geometry.printRocker.selectedSlugPlatenClearanceAlongZMmP4
   );
