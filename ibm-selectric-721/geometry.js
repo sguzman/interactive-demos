@@ -1398,6 +1398,7 @@ export function createSelectricModel() {
   root.add(frameAssembly);
 
   const primarySideframes = [];
+  const lowerShaftBearingBosses = [];
   for (const x of [-P4.sideframeX, P4.sideframeX]) {
     const sideGeometry = primarySideframeGeometryP4(10, 118, 174);
     const side = new THREE.Mesh(sideGeometry, darkMetal);
@@ -1423,6 +1424,17 @@ export function createSelectricModel() {
     bearing.name = 'IBM 1164740 spherical bearing';
     addPickable(bearing, COMPONENTS.bearing, pickables);
     frameAssembly.add(bearing);
+
+    for (const [y, z, radius, name] of [
+      [P4.cycleShaft.y, P4.cycleShaft.z, P4.cycleShaft.radius + 2.8, 'cycle-shaft sideframe bearing boss P4 cue'],
+      [P4.operationalShaft.y, P4.operationalShaft.z, P4.operationalShaft.radius + 2.7, 'operational-shaft sideframe bearing boss P4 cue']
+    ]) {
+      const boss = pulley(radius, 7.5, metal, (x < 0 ? 'left ' : 'right ') + name);
+      boss.position.set(x, y, z);
+      addPickable(boss, COMPONENTS.drive, pickables);
+      frameAssembly.add(boss);
+      lowerShaftBearingBosses.push(boss);
+    }
   }
 
   const printShaftRotor = new THREE.Group();
@@ -4156,6 +4168,8 @@ export function createSelectricModel() {
       primarySideframeWindowCountEach: primarySideframes[0].geometry.userData.p4WindowCount,
       primarySideframeClass: primarySideframes[0].geometry.userData.p4PrimarySideframeClass,
       primarySideframesWindowed: true,
+      lowerShaftBearingBossCountP4: lowerShaftBearingBosses.length,
+      lowerShaftBearingBossClass: 'P4 sideframe-local cycle/operational shaft bearing bosses aligned to the reconstructed shaft axes; exact IBM bearing parts/sections unresolved',
       carrierEmbodiment: 'open P4 frame with windowed chamfered side plates and crossmembers; not a solid presentation block',
       carrierSidePlateCount: carrierSidePlates.length,
       carrierSidePlateClass: carrierSidePlates[0].geometry.userData.p4CarrierPlateClass,
