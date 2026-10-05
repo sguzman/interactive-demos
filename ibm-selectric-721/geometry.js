@@ -74,6 +74,59 @@ function pulley(radius, width, mat, name) {
   return mesh;
 }
 
+function typeSlugGeometryP4(width, height, depth, bevelDepth = 0.30) {
+  const shoulderZ = depth / 2 - bevelDepth;
+  const layers = [
+    { z: -depth / 2, w: width * 0.82, h: height * 0.80 },
+    { z: shoulderZ, w: width, h: height },
+    { z: depth / 2, w: width * 0.86, h: height * 0.84 }
+  ];
+  const vertices = [];
+  const indices = [];
+
+  layers.forEach(layer => {
+    const hw = layer.w / 2;
+    const hh = layer.h / 2;
+    vertices.push(
+      -hw, -hh, layer.z,
+       hw, -hh, layer.z,
+       hw,  hh, layer.z,
+      -hw,  hh, layer.z
+    );
+  });
+
+  // Back and face caps.
+  indices.push(0, 2, 1, 0, 3, 2);
+  indices.push(8, 9, 10, 8, 10, 11);
+
+  // Connect back -> shoulder and shoulder -> face as two beveled side bands.
+  for (let layer = 0; layer < 2; layer += 1) {
+    const a0 = layer * 4;
+    const b0 = (layer + 1) * 4;
+    for (let side = 0; side < 4; side += 1) {
+      const next = (side + 1) % 4;
+      const a = a0 + side;
+      const an = a0 + next;
+      const b = b0 + side;
+      const bn = b0 + next;
+      indices.push(a, an, bn, a, bn, b);
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.userData.p4SlugSection = {
+    widthMmP4: width,
+    heightMmP4: height,
+    depthMmP4: depth,
+    bevelDepthMmP4: bevelDepth,
+    class: 'three-stage P4 pedestal/shoulder/face land; exact glyph face and production slug section unresolved'
+  };
+  return geometry;
+}
+
 function camProfileP4(width, baseRadius, lobes, mat, name, segments = 72) {
   const vertices = [];
   const indices = [];
@@ -553,12 +606,12 @@ function makeTypeElement(ballMat, darkMetal, pickables) {
   group.add(skirt);
 
   const slugDepth = TYPE_SLUG_DEPTH_P4_MM;
-  const slugGeo = new THREE.BoxGeometry(2.9, 2.6, slugDepth);
+  const slugGeo = typeSlugGeometryP4(2.9, 2.6, slugDepth, 0.30);
   const slugMat = ballMat.clone();
   slugMat.metalness = Math.max(slugMat.metalness, 0.68);
   slugMat.roughness = Math.min(slugMat.roughness, 0.24);
   const slugs = new THREE.InstancedMesh(slugGeo, slugMat, CANONICAL.typeElement.characterCount);
-  slugs.name = '88 surface-normal type slug cues';
+  slugs.name = '88 beveled surface-normal type slug cues';
   const matrix = new THREE.Matrix4();
   const rotationMatrix = new THREE.Matrix4();
   const q = new THREE.Quaternion();
@@ -3391,6 +3444,8 @@ export function createSelectricModel() {
         topCapCenterYP4Mm: TYPE_TOP_CAP_CENTER_Y_P4_MM,
         topCapAndLatchPresentation: true,
         slugFinishClass: 'chrome-like raised structural cues continuous with the element shell rather than black checkerboard blocks',
+        slugSectionClass: slugGeo.userData.p4SlugSection.class,
+        slugSectionP4: { ...slugGeo.userData.p4SlugSection },
         slugOrientation: 'P4 surface-normal tangent frames on structural ellipsoid',
         rotateSlotStepDegP4: 360 / CANONICAL.typeElement.positionsPerBand,
         bandLatitudesP4: [...TYPE_BAND_LATITUDES_P4],
