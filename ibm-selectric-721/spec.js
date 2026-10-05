@@ -206,8 +206,8 @@ export const COMPONENTS = Object.freeze({
   fineAlignment: {
     name: 'Tilt / rotate fine-alignment detents',
     category: 'selection / print alignment',
-    provenance: 'OEM service-theory topology and ordering + IBM 1164240 cam identity + P4 local cam/follower geometry + P5 event-angle envelope',
-    description: 'Coarse tilt/rotate selection deliberately hands off to carrier-local detents before impact. The rotating print sleeve drives a visible P4 1164240 cam-lobe cue and one roller/yoke follower; tilt takes up first and rotate follows through explicit P5 lost motion, so the detents share one causal driver rather than parallel UI animation tracks. Exact pivots, notch dimensions, cam profile, follower throw and event angles remain unresolved.'
+    provenance: 'OEM service-theory topology and ordering + IBM 1164240 cam identity + P4 local cam/follower geometry + P4 stamped-link detent-arm reconstruction + P5 event-angle envelope',
+    description: 'Coarse tilt/rotate selection deliberately hands off to carrier-local detents before impact. The rotating print sleeve drives a visible P4 1164240 cam-lobe cue and one roller/yoke follower; tilt takes up first and rotate follows through explicit P5 lost motion. The two detent levers now use tapered/chamfered P4 plate geometry with explicit pivot holes and pins instead of rectangular bars. Exact lever stampings, pivots, notch dimensions, cam profile, follower throw and event angles remain unresolved.'
   },
   typeball: {
     name: 'Selectric type element',
