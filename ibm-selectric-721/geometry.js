@@ -3094,16 +3094,109 @@ export function createSelectricModel() {
     })
   });
 
-  for (const side of [-1, 1]) {
-    const tiltActuator = pulley(9.5, 6, metal, side < 0 ? 'left tilt selection pulley' : 'right tilt selection pulley');
-    tiltActuator.position.set(side * selectionTapeP4.tilt.sideX, selectionTapeP4.tilt.actuatorY, selectionTapeP4.tilt.actuatorZ);
-    addPickable(tiltActuator, COMPONENTS.selection, pickables);
-    selectionAssembly.add(tiltActuator);
+  const selectionSidePulleyMotionP5 = Object.freeze({
+    tiltCommandDeg: 42,
+    rotateCommandDeg: 42,
+    shiftCommandDeg: 58
+  });
+  const selectionActuatorPivotsP4 = {
+    tiltLeft: null,
+    tiltRight: null,
+    rotateLeft: null,
+    rotateRight: null
+  };
 
-    const rotateActuator = pulley(8.5, 5.5, darkMetal, side < 0 ? 'left rotate selection pulley' : 'right rotate selection pulley');
-    rotateActuator.position.set(side * selectionTapeP4.rotate.sideX, selectionTapeP4.rotate.actuatorY, selectionTapeP4.rotate.actuatorZ);
-    addPickable(rotateActuator, COMPONENTS.selection, pickables);
-    selectionAssembly.add(rotateActuator);
+  function makeSelectionActuatorPivotP4(kind, side, radius, width, mat, baseAnchorAngleDegP4) {
+    const sideName = side < 0 ? 'left' : 'right';
+    const pivot = new THREE.Group();
+    pivot.name = sideName + ' ' + kind + ' side-pulley pivot P4';
+    pivot.userData.tapeAnchorRadiusP4 = radius * 0.92;
+    pivot.userData.baseAnchorAngleRadP4 = deg(baseAnchorAngleDegP4);
+    pivot.userData.motionClassP5 =
+      'source-backed side-pulley role with reconstructed angular amplitude and rim-anchor presentation';
+    selectionAssembly.add(pivot);
+
+    const wheel = pulley(radius, width, mat, sideName + ' ' + kind + ' selection side pulley P4');
+    addPickable(wheel, COMPONENTS.selection, pickables);
+    pivot.add(wheel);
+
+    // A visible radial arm/anchor makes X-axis pulley motion legible. Its section and angular
+    // excursion are P4/P5 reconstruction; the source-backed constraint is which pulley each
+    // selection/shift output acts on.
+    const anchorAngle = pivot.userData.baseAnchorAngleRadP4;
+    const armEnd = new THREE.Vector3(
+      0,
+      Math.cos(anchorAngle) * radius * 0.78,
+      Math.sin(anchorAngle) * radius * 0.78
+    );
+    const arm = cylinderBetweenP4(
+      new THREE.Vector3(0, 0, 0),
+      armEnd,
+      1.25,
+      mat,
+      sideName + ' ' + kind + ' side-pulley radial arm P4',
+      16
+    );
+    addPickable(arm, COMPONENTS.selection, pickables);
+    pivot.add(arm);
+
+    const anchorPin = shaft(
+      width + 3.0,
+      1.35,
+      darkMetal,
+      sideName + ' ' + kind + ' tape-anchor pin P4'
+    );
+    anchorPin.position.set(
+      0,
+      Math.cos(anchorAngle) * pivot.userData.tapeAnchorRadiusP4,
+      Math.sin(anchorAngle) * pivot.userData.tapeAnchorRadiusP4
+    );
+    addPickable(anchorPin, COMPONENTS.selection, pickables);
+    pivot.add(anchorPin);
+    pivot.userData.anchorPin = anchorPin;
+    return pivot;
+  }
+
+  function selectionActuatorAnchorP4(pivot) {
+    const angle = pivot.userData.baseAnchorAngleRadP4 + pivot.rotation.x;
+    const radius = pivot.userData.tapeAnchorRadiusP4;
+    return new THREE.Vector3(
+      pivot.position.x,
+      pivot.position.y + Math.cos(angle) * radius,
+      pivot.position.z + Math.sin(angle) * radius
+    );
+  }
+
+  for (const side of [-1, 1]) {
+    const tiltActuatorPivot = makeSelectionActuatorPivotP4(
+      'tilt',
+      side,
+      9.5,
+      6,
+      metal,
+      -27
+    );
+    tiltActuatorPivot.position.set(
+      side * selectionTapeP4.tilt.sideX,
+      selectionTapeP4.tilt.actuatorY,
+      selectionTapeP4.tilt.actuatorZ
+    );
+    selectionActuatorPivotsP4[side < 0 ? 'tiltLeft' : 'tiltRight'] = tiltActuatorPivot;
+
+    const rotateActuatorPivot = makeSelectionActuatorPivotP4(
+      'rotate',
+      side,
+      8.5,
+      5.5,
+      darkMetal,
+      -38
+    );
+    rotateActuatorPivot.position.set(
+      side * selectionTapeP4.rotate.sideX,
+      selectionTapeP4.rotate.actuatorY,
+      selectionTapeP4.rotate.actuatorZ
+    );
+    selectionActuatorPivotsP4[side < 0 ? 'rotateLeft' : 'rotateRight'] = rotateActuatorPivot;
 
     const tiltGuide = pulley(selectionTapeP4.tilt.sideGuideRadius, 4.4, metal, side < 0 ? 'left P4 tilt tape guide sheave' : 'right P4 tilt tape guide sheave');
     tiltGuide.position.set(side * selectionTapeP4.tilt.sideX, selectionTapeP4.tilt.sideGuideY, selectionTapeP4.tilt.sideGuideZ);
@@ -3398,6 +3491,17 @@ export function createSelectricModel() {
     const q2 = THREE.MathUtils.lerp(positive.R2A, q1, rotateSecondOutputFractionP4);
     const qSigned = q2 - fiveUnit;
     state.selectionNormalized = { qTilt, q1, q2, qSigned };
+
+    // The public tape commands now terminate on visible side-pulley pivots rather than moving
+    // disembodied tape endpoints. Left tilt and left rotate carry the within-character command;
+    // the right tilt pulley stays fixed, while shift acts only on the right rotate pulley.
+    selectionActuatorPivotsP4.tiltLeft.rotation.x =
+      deg(-selectionSidePulleyMotionP5.tiltCommandDeg * qTilt);
+    selectionActuatorPivotsP4.tiltRight.rotation.x = 0;
+    selectionActuatorPivotsP4.rotateLeft.rotation.x =
+      deg(-selectionSidePulleyMotionP5.rotateCommandDeg * qSigned);
+    selectionActuatorPivotsP4.rotateRight.rotation.x =
+      deg(selectionSidePulleyMotionP5.shiftCommandDeg * (state.shiftAngleDeg / 180));
 
     selectorLatches.T1.position.y = selectorLatches.T1.userData.baseY - T1 * 7;
     selectorLatches.T2.position.y = selectorLatches.T2.userData.baseY - T2 * 7;
@@ -4213,21 +4317,21 @@ export function createSelectricModel() {
     const shiftOffset = state.shiftAngleDeg / 180 * 8;
 
     const tilt = [
-      new THREE.Vector3(-selectionTapeP4.tilt.sideX, selectionTapeP4.tilt.actuatorY - qTilt * 9, selectionTapeP4.tilt.actuatorZ),
+      selectionActuatorAnchorP4(selectionActuatorPivotsP4.tiltLeft),
       new THREE.Vector3(-selectionTapeP4.tilt.sideX, selectionTapeP4.tilt.sideGuideY, selectionTapeP4.tilt.tangentZ),
       new THREE.Vector3(x - selectionTapeP4.tilt.carrierHalfSpan, selectionTapeP4.tilt.carrierGuideY, selectionTapeP4.tilt.tangentZ),
       new THREE.Vector3(x + selectionTapeP4.tilt.carrierHalfSpan, selectionTapeP4.tilt.carrierGuideY, selectionTapeP4.tilt.tangentZ),
       new THREE.Vector3(selectionTapeP4.tilt.sideX, selectionTapeP4.tilt.sideGuideY, selectionTapeP4.tilt.tangentZ),
-      new THREE.Vector3(selectionTapeP4.tilt.sideX, selectionTapeP4.tilt.actuatorY, selectionTapeP4.tilt.actuatorZ)
+      selectionActuatorAnchorP4(selectionActuatorPivotsP4.tiltRight)
     ];
 
     const rotate = [
-      new THREE.Vector3(-selectionTapeP4.rotate.sideX, selectionTapeP4.rotate.actuatorY - qSigned * 9, selectionTapeP4.rotate.actuatorZ),
+      selectionActuatorAnchorP4(selectionActuatorPivotsP4.rotateLeft),
       new THREE.Vector3(-selectionTapeP4.rotate.sideX, selectionTapeP4.rotate.sideGuideY, selectionTapeP4.rotate.tangentZ),
       new THREE.Vector3(x - selectionTapeP4.rotate.carrierHalfSpan, selectionTapeP4.rotate.carrierGuideY, selectionTapeP4.rotate.tangentZ),
       new THREE.Vector3(x + selectionTapeP4.rotate.carrierHalfSpan, selectionTapeP4.rotate.carrierGuideY, selectionTapeP4.rotate.tangentZ),
       new THREE.Vector3(selectionTapeP4.rotate.sideX, selectionTapeP4.rotate.sideGuideY, selectionTapeP4.rotate.tangentZ),
-      new THREE.Vector3(selectionTapeP4.rotate.sideX, selectionTapeP4.rotate.actuatorY + shiftOffset, selectionTapeP4.rotate.actuatorZ)
+      selectionActuatorAnchorP4(selectionActuatorPivotsP4.rotateRight)
     ];
     return { tilt, rotate };
   }
