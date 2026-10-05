@@ -188,8 +188,8 @@ function primarySideframeGeometryP4(thickness, height, depth) {
   const halfD = depth / 2;
   const shape = new THREE.Shape();
 
-  // P4 cast-frame silhouette. The large former cuboid side wall is opened around two
-  // explicit bearing webs: one for the lower cycle/operational shaft zone and one for D6.
+  // P4 cast-frame silhouette. Keep a broad perimeter rail and open the center; shaft-bearing
+  // support is embodied separately as local webs/bosses instead of leaving most of the side wall solid.
   shape.moveTo(-halfD + 5, -halfH);
   shape.lineTo( halfD - 5, -halfH);
   shape.lineTo( halfD, -halfH + 5);
@@ -200,27 +200,22 @@ function primarySideframeGeometryP4(thickness, height, depth) {
   shape.lineTo(-halfD, -halfH + 5);
   shape.closePath();
 
-  const windowRanges = [
-    [-74, -60],
-    [-26, 8],
-    [31, 74]
-  ];
+  const window = new THREE.Path();
+  const windowLeft = -75;
+  const windowRight = 75;
   const windowBottom = -45;
   const windowTop = 45;
-  const chamfer = 3.0;
-  for (const [left, right] of windowRanges) {
-    const window = new THREE.Path();
-    window.moveTo(left + chamfer, windowBottom);
-    window.lineTo(right - chamfer, windowBottom);
-    window.lineTo(right, windowBottom + chamfer);
-    window.lineTo(right, windowTop - chamfer);
-    window.lineTo(right - chamfer, windowTop);
-    window.lineTo(left + chamfer, windowTop);
-    window.lineTo(left, windowTop - chamfer);
-    window.lineTo(left, windowBottom + chamfer);
-    window.closePath();
-    shape.holes.push(window);
-  }
+  const chamfer = 5.0;
+  window.moveTo(windowLeft + chamfer, windowBottom);
+  window.lineTo(windowRight - chamfer, windowBottom);
+  window.lineTo(windowRight, windowBottom + chamfer);
+  window.lineTo(windowRight, windowTop - chamfer);
+  window.lineTo(windowRight - chamfer, windowTop);
+  window.lineTo(windowLeft + chamfer, windowTop);
+  window.lineTo(windowLeft, windowTop - chamfer);
+  window.lineTo(windowLeft, windowBottom + chamfer);
+  window.closePath();
+  shape.holes.push(window);
 
   const geometry = new THREE.ExtrudeGeometry(shape, {
     depth: thickness,
@@ -235,8 +230,8 @@ function primarySideframeGeometryP4(thickness, height, depth) {
   geometry.translate(-thickness / 2, 0, 0);
   geometry.computeVertexNormals();
   geometry.userData.p4PrimarySideframeClass =
-    'three-window chamfered P4 primary sideframe with retained lower-shaft and D6 bearing webs; exact IBM casting apertures/section unresolved';
-  geometry.userData.p4WindowCount = windowRanges.length;
+    'large-window chamfered P4 primary sideframe perimeter with separate local bearing webs/bosses; exact IBM casting apertures/section unresolved';
+  geometry.userData.p4WindowCount = 1;
   return geometry;
 }
 
@@ -1399,6 +1394,7 @@ export function createSelectricModel() {
 
   const primarySideframes = [];
   const lowerShaftBearingBosses = [];
+  const lowerShaftSupportWebs = [];
   for (const x of [-P4.sideframeX, P4.sideframeX]) {
     const sideGeometry = primarySideframeGeometryP4(10, 118, 174);
     const side = new THREE.Mesh(sideGeometry, darkMetal);
@@ -1434,6 +1430,20 @@ export function createSelectricModel() {
       addPickable(boss, COMPONENTS.drive, pickables);
       frameAssembly.add(boss);
       lowerShaftBearingBosses.push(boss);
+
+      const lowerRailY = 23;
+      const webHeight = Math.max(10, y - lowerRailY);
+      const web = box(
+        4.4,
+        webHeight,
+        7.5,
+        darkMetal,
+        (x < 0 ? 'left ' : 'right ') + name.replace('bearing boss P4 cue', 'bearing support web P4')
+      );
+      web.position.set(x, lowerRailY + webHeight / 2, z);
+      addPickable(web, COMPONENTS.drive, pickables);
+      frameAssembly.add(web);
+      lowerShaftSupportWebs.push(web);
     }
   }
 
@@ -4169,7 +4179,8 @@ export function createSelectricModel() {
       primarySideframeClass: primarySideframes[0].geometry.userData.p4PrimarySideframeClass,
       primarySideframesWindowed: true,
       lowerShaftBearingBossCountP4: lowerShaftBearingBosses.length,
-      lowerShaftBearingBossClass: 'P4 sideframe-local cycle/operational shaft bearing bosses aligned to the reconstructed shaft axes; exact IBM bearing parts/sections unresolved',
+      lowerShaftSupportWebCountP4: lowerShaftSupportWebs.length,
+      lowerShaftBearingBossClass: 'P4 sideframe-local cycle/operational shaft bearing bosses tied to the lower perimeter rail by explicit support webs; exact IBM bearing parts/casting web sections unresolved',
       carrierEmbodiment: 'open P4 frame with windowed chamfered side plates and crossmembers; not a solid presentation block',
       carrierSidePlateCount: carrierSidePlates.length,
       carrierSidePlateClass: carrierSidePlates[0].geometry.userData.p4CarrierPlateClass,
