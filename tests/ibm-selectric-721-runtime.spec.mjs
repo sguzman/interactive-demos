@@ -903,6 +903,33 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(typed.geometry.selectionDifferential.sourceFixedHoleFractions.balanceOutput).toBeCloseTo(1 / 2, 8);
   expect(typed.geometry.selectionDifferential.geometryOutputErrorMaxP5).toBeLessThan(1e-9);
   expect(typed.geometry.selectionDifferential.geometryClass).toContain('floating levers');
+  expect(typed.geometry.selectionDifferential.outputLinkageP4.tiltChain).toEqual([
+    'tilt differential',
+    'double vertical link',
+    'tilt bellcrank',
+    'horizontal link',
+    'tilt multiplying arm',
+    'left tilt side pulley'
+  ]);
+  expect(typed.geometry.selectionDifferential.outputLinkageP4.rotateChain).toEqual([
+    'signed balance lever',
+    'rotate bellcrank',
+    'rotate multiplying arm',
+    'left rotate side pulley'
+  ]);
+  expect(typed.geometry.selectionDifferential.outputLinkageP4.tiltBellcrankEmbodied).toBe(true);
+  expect(typed.geometry.selectionDifferential.outputLinkageP4.tiltHorizontalLinkEmbodied).toBe(true);
+  expect(typed.geometry.selectionDifferential.outputLinkageP4.tiltMultiplyingArmEmbodied).toBe(true);
+  expect(typed.geometry.selectionDifferential.outputLinkageP4.rotateBellcrankEmbodied).toBe(true);
+  expect(typed.geometry.selectionDifferential.outputLinkageP4.rotateMultiplyingArmEmbodied).toBe(true);
+  expect(typed.geometry.selectionDifferential.outputLinkageP4.shiftRemainsSeparateRightRotatePulley).toBe(true);
+  expect(typed.geometry.selectionDifferential.outputLinkageP4.dynamicTransferRodCountP4).toBe(6);
+  expect(typed.geometry.selectionDifferential.outputLinkageP4.tiltBellcrankConstructionClass).toContain('stamped-link bellcrank');
+  expect(typed.geometry.selectionDifferential.outputLinkageP4.rotateBellcrankConstructionClass).toContain('stamped-link bellcrank');
+  expect(Object.values(
+    typed.geometry.selectionDifferential.outputLinkageP4.poseP5.dynamicRodLengthsMmP4
+  ).every(length => Number.isFinite(length) && length > 0)).toBe(true);
+  expect(typed.geometry.selectionDifferential.outputLinkageP4.geometryClass).toContain('source-backed output-chain topology');
   expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.tapeEndpointsAnchoredToActuatorRims).toBe(true);
   expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.leftTiltCommandPulleyEmbodied).toBe(true);
   expect(typed.geometry.selectionDifferential.sidePulleyEmbodiment.rightTiltPulleyFixedDuringSelection).toBe(true);
