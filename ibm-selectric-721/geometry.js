@@ -183,6 +183,63 @@ function carrierSidePlateGeometryP4(thickness, height, depth) {
   return geometry;
 }
 
+function primarySideframeGeometryP4(thickness, height, depth) {
+  const halfH = height / 2;
+  const halfD = depth / 2;
+  const shape = new THREE.Shape();
+
+  // P4 cast-frame silhouette. The large former cuboid side wall is opened around two
+  // explicit bearing webs: one for the lower cycle/operational shaft zone and one for D6.
+  shape.moveTo(-halfD + 5, -halfH);
+  shape.lineTo( halfD - 5, -halfH);
+  shape.lineTo( halfD, -halfH + 5);
+  shape.lineTo( halfD,  halfH - 8);
+  shape.lineTo( halfD - 8, halfH);
+  shape.lineTo(-halfD + 9, halfH);
+  shape.lineTo(-halfD, halfH - 8);
+  shape.lineTo(-halfD, -halfH + 5);
+  shape.closePath();
+
+  const windowRanges = [
+    [-74, -60],
+    [-26, 8],
+    [31, 74]
+  ];
+  const windowBottom = -45;
+  const windowTop = 45;
+  const chamfer = 3.0;
+  for (const [left, right] of windowRanges) {
+    const window = new THREE.Path();
+    window.moveTo(left + chamfer, windowBottom);
+    window.lineTo(right - chamfer, windowBottom);
+    window.lineTo(right, windowBottom + chamfer);
+    window.lineTo(right, windowTop - chamfer);
+    window.lineTo(right - chamfer, windowTop);
+    window.lineTo(left + chamfer, windowTop);
+    window.lineTo(left, windowTop - chamfer);
+    window.lineTo(left, windowBottom + chamfer);
+    window.closePath();
+    shape.holes.push(window);
+  }
+
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: thickness,
+    steps: 1,
+    bevelEnabled: true,
+    bevelThickness: 0.65,
+    bevelSize: 0.65,
+    bevelSegments: 2,
+    curveSegments: 2
+  });
+  geometry.rotateY(Math.PI / 2);
+  geometry.translate(-thickness / 2, 0, 0);
+  geometry.computeVertexNormals();
+  geometry.userData.p4PrimarySideframeClass =
+    'three-window chamfered P4 primary sideframe with retained lower-shaft and D6 bearing webs; exact IBM casting apertures/section unresolved';
+  geometry.userData.p4WindowCount = windowRanges.length;
+  return geometry;
+}
+
 function keycapGeometryP4(width, height, depth) {
   const layers = [
     { y: -height / 2, w: width, d: depth },
@@ -1340,11 +1397,17 @@ export function createSelectricModel() {
   assemblies.push(frameAssembly);
   root.add(frameAssembly);
 
+  const primarySideframes = [];
   for (const x of [-P4.sideframeX, P4.sideframeX]) {
-    const side = box(10, 118, 174, darkMetal, x < 0 ? 'left sideframe' : 'right sideframe');
+    const sideGeometry = primarySideframeGeometryP4(10, 118, 174);
+    const side = new THREE.Mesh(sideGeometry, darkMetal);
+    side.name = x < 0 ? 'windowed left primary sideframe' : 'windowed right primary sideframe';
+    side.castShadow = true;
+    side.receiveShadow = true;
     side.position.set(x, 76, -28);
     addPickable(side, COMPONENTS.printShaft, pickables);
     frameAssembly.add(side);
+    primarySideframes.push(side);
 
     const plate = box(4.5, 31, 35, metal, x < 0 ? 'IBM 1135590 LH bearing plate' : 'IBM 1135591 RH bearing plate');
     plate.position.set(x + (x < 0 ? 5.6 : -5.6), P4.printShaft.y, P4.printShaft.z);
@@ -4089,6 +4152,10 @@ export function createSelectricModel() {
       explosionClass: 'P5 assembly-separation presentation; not service motion',
       pickableCount: pickables.length,
       supportTopology: 'D6 front + Level-2 upper/lower rack shoes',
+      primarySideframeCount: primarySideframes.length,
+      primarySideframeWindowCountEach: primarySideframes[0].geometry.userData.p4WindowCount,
+      primarySideframeClass: primarySideframes[0].geometry.userData.p4PrimarySideframeClass,
+      primarySideframesWindowed: true,
       carrierEmbodiment: 'open P4 frame with windowed chamfered side plates and crossmembers; not a solid presentation block',
       carrierSidePlateCount: carrierSidePlates.length,
       carrierSidePlateClass: carrierSidePlates[0].geometry.userData.p4CarrierPlateClass,
