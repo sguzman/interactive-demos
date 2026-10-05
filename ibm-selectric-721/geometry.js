@@ -1778,14 +1778,20 @@ export function createSelectricModel() {
     const follower = new THREE.Group();
     follower.name = name;
     follower.position.set(x, P4.operationalShaft.y + 30, P4.operationalShaft.z);
+    follower.userData.pivotAxisP4 = 'X';
+    follower.userData.workingPlaneP4 = 'Y/Z';
     driveAssembly.add(follower);
 
     const pivotPin = pulley(3.8, 7, metal, name + ' pivot');
     addPickable(pivotPin, COMPONENTS.drive, pickables);
     follower.add(pivotPin);
 
-    const arm = box(4.5, 28, 3.6, metal, name + ' lever');
-    arm.position.set(0, -11, 0);
+    const armGeometryP4 = leverPlateGeometryP4(28, 6.2, 3.2, 2.8, 1.4);
+    const arm = new THREE.Mesh(armGeometryP4, metal);
+    arm.name = name + ' stamped follower lever P4';
+    arm.rotation.z = Math.PI;
+    arm.castShadow = true;
+    arm.receiveShadow = true;
     addPickable(arm, COMPONENTS.drive, pickables);
     follower.add(arm);
 
@@ -1794,6 +1800,9 @@ export function createSelectricModel() {
     addPickable(roller, COMPONENTS.drive, pickables);
     follower.add(roller);
 
+    follower.userData.leverConstructionClassP4 = armGeometryP4.userData.p4LeverPlateClass;
+    follower.userData.pivotPinEmbodiedP4 = true;
+    follower.userData.rollerEmbodiedP4 = true;
     return follower;
   }
 
@@ -5193,6 +5202,19 @@ export function createSelectricModel() {
         tabUsesPoweredCam: false,
         shiftInterlocksCharacterCycle: true,
         followersEmbodied: true,
+        followerPivotAxisP4: spaceBackspaceFollower.userData.pivotAxisP4,
+        followerWorkingPlaneP4: spaceBackspaceFollower.userData.workingPlaneP4,
+        followerLeverConstructionClassP4: spaceBackspaceFollower.userData.leverConstructionClassP4,
+        followerPivotPinsEmbodiedP4: [
+          spaceBackspaceFollower,
+          returnIndexFollower,
+          shiftFollower
+        ].every(follower => follower.userData.pivotPinEmbodiedP4 === true),
+        followerRollersEmbodiedP4: [
+          spaceBackspaceFollower,
+          returnIndexFollower,
+          shiftFollower
+        ].every(follower => follower.userData.rollerEmbodiedP4 === true),
         profilePresentationClass: 'smooth P4 radial service-cam envelopes; lobe count/operation class preserved, exact IBM profiles unresolved',
         profileLobeCounts: {
           spaceBackspace: doubleServiceCamProfile.userData.p4CamProfile.lobes.length,
