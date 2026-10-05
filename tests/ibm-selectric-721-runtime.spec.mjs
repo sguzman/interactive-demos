@@ -88,6 +88,20 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     'ribbon'
   ]);
   expect(initial.geometry.ribbon.liftDriveClass).toContain('print-sleeve phase');
+  expect(initial.geometry.ribbon.feedDriver).toContain('IBM 1164240');
+  expect(initial.geometry.ribbon.feedFollowerEmbodied).toBe(true);
+  expect(initial.geometry.ribbon.feedBellcrankEmbodied).toBe(true);
+  expect(initial.geometry.ribbon.feedFollowerP5).toBeCloseTo(0, 8);
+  expect(initial.geometry.ribbon.feedStrokeP5).toBeCloseTo(0, 8);
+  expect(initial.geometry.ribbon.feedCausalChain).toEqual([
+    'print-sleeve-rotation',
+    '1164240-feed-lobe',
+    'roller-follower',
+    'bellcrank',
+    'feed-plate/pawl',
+    'ratchet'
+  ]);
+  expect(initial.geometry.ribbon.feedStrokeClass).toContain('transport commit occurs at reconstructed peak stroke');
   expect(initial.geometry.shaftTiming.cycleShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.filterShaftDegPerCharacter).toBe(180);
   expect(initial.geometry.shaftTiming.printShaftDegPerCharacter).toBe(360);
@@ -456,6 +470,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const stencilTyped = await page.evaluate(() => window.__selectricDebug.state);
   expect(stencilTyped.ribbonFeedStep).toBe(feedStepsBeforeStencil);
   expect(stencilTyped.ribbonFeedSuppressedCount).toBe(1);
+  expect(stencilTyped.geometry.ribbon.feedFollowerP5).toBeCloseTo(0, 8);
+  expect(stencilTyped.geometry.ribbon.feedStrokeP5).toBeCloseTo(0, 8);
   expect(stencilTyped.ribbonLift).toBe(0);
   expect(stencilTyped.geometry.paperFeed.paperPath.inkSuppressedInStencil).toBe(true);
   expect(stencilTyped.geometry.paperFeed.paperPath.stampLayout.lastStamp).toBe(null);
@@ -514,6 +530,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     8
   );
   expect(fineAligned.ribbonLift).toBeCloseTo(fineAligned.geometry.ribbon.liftFollowerP5 * 0.82, 8);
+  expect(fineAligned.geometry.ribbon.feedFollowerP5).toBeGreaterThan(0.7);
+  expect(fineAligned.geometry.ribbon.feedFollowerP5).toBeLessThan(0.8);
+  expect(fineAligned.geometry.ribbon.feedStrokeP5).toBeCloseTo(fineAligned.geometry.ribbon.feedFollowerP5, 8);
   expect(fineAligned.geometry.printRocker.followerLiftP5).toBeCloseTo(
     ((0.50 - 0.43) / 0.11) * 0.55,
     8
@@ -559,6 +578,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   const impactHeld = await page.evaluate(() => window.__selectricDebug.state);
   expect(impactHeld.geometry.ribbon.liftFollowerP5).toBeCloseTo(1, 8);
   expect(impactHeld.ribbonLift).toBeCloseTo(0.82, 8);
+  expect(impactHeld.geometry.ribbon.feedFollowerP5).toBeCloseTo(0, 8);
+  expect(impactHeld.geometry.ribbon.feedStrokeP5).toBeCloseTo(0, 8);
   expect(impactHeld.geometry.printRocker.followerLiftP5).toBeCloseTo(impactHeld.printApproach, 8);
   expect(impactHeld.geometry.printRocker.followerLiftP5).toBeGreaterThan(0.99);
   expect(impactHeld.geometry.printRocker.driver).toContain('1124174');
@@ -581,6 +602,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     5
   );
   expect(typed.ribbonLift).toBe(0);
+  expect(typed.geometry.ribbon.feedFollowerP5).toBeCloseTo(0, 8);
+  expect(typed.geometry.ribbon.feedStrokeP5).toBeCloseTo(0, 8);
   expect(typed.ribbonFeedStep).toBe(3);
   expect(typed.geometry.ribbon.approximateRatchetTeethAdvanced).toBeCloseTo(7.5, 8);
   expect(typed.geometry.ribbon.spoolFillP5[0]).toBeCloseTo(0.68, 8);
