@@ -711,6 +711,8 @@ export function createSelectricModel() {
     selectionNormalized: { qTilt: 0, q1: 0, q2: 0, qSigned: 0 },
     ribbonFeedStep: 0,
     ribbonFeedApproxRatchetTeeth: 0,
+    ribbonFeedCamFollowerP5: 0,
+    ribbonFeedStrokeP5: 0,
     ribbonFeedDirection: 1,
     ribbonFeedStrokeInDirection: 0,
     ribbonSpoolFillP5: [0.86, 0.14],
@@ -2414,6 +2416,38 @@ export function createSelectricModel() {
 
   const detentFollowerBaseYP4 = detentFollower.position.y;
 
+  const ribbonFeedFollower = new THREE.Group();
+  ribbonFeedFollower.name = '1164240 ribbon-feed follower assembly';
+  ribbonFeedFollower.position.set(-4, P4.printShaft.y + 9.5, P4.printShaft.z + 12.5);
+  carrierMotion.add(ribbonFeedFollower);
+
+  const ribbonFeedFollowerRoller = pulley(3.0, 5.0, darkMetal, '1164240 ribbon-feed follower roller P4 cue');
+  addPickable(ribbonFeedFollowerRoller, COMPONENTS.ribbon, pickables);
+  ribbonFeedFollower.add(ribbonFeedFollowerRoller);
+
+  const ribbonFeedFollowerStem = box(4.0, 14.0, 4.0, metal, '1164240 ribbon-feed follower stem');
+  ribbonFeedFollowerStem.position.set(0, 6.5, 2.5);
+  ribbonFeedFollowerStem.rotation.x = deg(-18);
+  addPickable(ribbonFeedFollowerStem, COMPONENTS.ribbon, pickables);
+  ribbonFeedFollower.add(ribbonFeedFollowerStem);
+
+  const ribbonFeedBellcrank = new THREE.Group();
+  ribbonFeedBellcrank.name = 'ribbon-feed follower bellcrank P4';
+  ribbonFeedBellcrank.position.set(-4, P4.printShaft.y + 23, P4.printShaft.z + 9);
+  carrierMotion.add(ribbonFeedBellcrank);
+
+  const ribbonFeedBellcrankA = box(4.0, 18.0, 4.0, metal, 'ribbon-feed bellcrank follower arm');
+  ribbonFeedBellcrankA.position.set(0, -6.5, 0);
+  addPickable(ribbonFeedBellcrankA, COMPONENTS.ribbon, pickables);
+  ribbonFeedBellcrank.add(ribbonFeedBellcrankA);
+
+  const ribbonFeedBellcrankB = box(23.0, 4.0, 4.0, darkMetal, 'ribbon-feed bellcrank pawl arm');
+  ribbonFeedBellcrankB.position.set(9.5, 0, 0);
+  addPickable(ribbonFeedBellcrankB, COMPONENTS.ribbon, pickables);
+  ribbonFeedBellcrank.add(ribbonFeedBellcrankB);
+
+  const ribbonFeedFollowerBaseP4 = ribbonFeedFollower.position.clone();
+
   const ribbonLiftFollower = new THREE.Group();
   ribbonLiftFollower.name = 'ribbon-lift cam follower assembly';
   ribbonLiftFollower.position.set(-19, P4.printShaft.y + 13.7, P4.printShaft.z);
@@ -2739,6 +2773,37 @@ export function createSelectricModel() {
     detentLever.position.x = d * 2.5;
   }
 
+  function applyRibbonFeedCamStrokeP5(value) {
+    const stroke = THREE.MathUtils.clamp(Number(value) || 0, 0, 1);
+    state.ribbonFeedCamFollowerP5 = stroke;
+    state.ribbonFeedStrokeP5 = stroke;
+
+    // P4 follower/bellcrank geometry, with a P5 throw envelope. The combined 1164240 cam is
+    // the single visible source of both the detent action and the ribbon-feed stroke.
+    ribbonFeedFollower.position.set(
+      ribbonFeedFollowerBaseP4.x,
+      ribbonFeedFollowerBaseP4.y + stroke * 3.2,
+      ribbonFeedFollowerBaseP4.z + stroke * 3.2
+    );
+    ribbonFeedBellcrank.rotation.x = deg(-17 * stroke);
+    feedPlate.position.z = -45 + stroke * 2.5;
+    feedPawl.rotation.z = deg(12 + stroke * 8);
+  }
+
+  function ribbonFeedStrokeFromSleevePhaseP5(phase) {
+    const t = THREE.MathUtils.clamp(Number(phase) || 0, 0, 1);
+    const feedCommitPhaseP5 = 0.43 + 0.11 * 0.35;
+    const feedRestorePhaseP5 = 0.60;
+    if (t < 0.43) return 0;
+    if (t < feedCommitPhaseP5) {
+      return THREE.MathUtils.clamp((t - 0.43) / (feedCommitPhaseP5 - 0.43), 0, 1);
+    }
+    if (t < feedRestorePhaseP5) {
+      return THREE.MathUtils.clamp((feedRestorePhaseP5 - t) / (feedRestorePhaseP5 - feedCommitPhaseP5), 0, 1);
+    }
+    return 0;
+  }
+
   function setRibbonReversePhase(value) {
     if (state.ribbonReverseState !== 'reversing') {
       state.ribbonReversePhase = 0;
@@ -2812,8 +2877,8 @@ export function createSelectricModel() {
     ribbonSpools[1].rotation.y += presentationStep;
     ribbonRatchets[0].rotation.y -= presentationStep * 1.8;
     ribbonRatchets[1].rotation.y += presentationStep * 1.8;
-    feedPlate.position.z = -45 + (state.ribbonFeedStep % 2 ? 2.5 : 0);
-    feedPawl.rotation.z = deg(12 + (state.ribbonFeedStep % 2 ? 8 : 0));
+    // Pawl/plate stroke is driven continuously from the 1164240 sleeve-cam phase. This commit
+    // only advances the ratchet/spools and records transport state.
     applyRibbonFeedSelection();
 
     if (
@@ -2842,6 +2907,8 @@ export function createSelectricModel() {
   function resetRibbonTransport() {
     state.ribbonFeedStep = 0;
     state.ribbonFeedApproxRatchetTeeth = 0;
+    state.ribbonFeedCamFollowerP5 = 0;
+    state.ribbonFeedStrokeP5 = 0;
     state.ribbonFeedDirection = 1;
     state.ribbonFeedStrokeInDirection = 0;
     state.ribbonSpoolFillP5 = [ribbonFillMaxP5, ribbonFillMinP5];
@@ -2852,9 +2919,8 @@ export function createSelectricModel() {
     ribbonSpools.forEach(spool => { spool.rotation.y = 0; });
     ribbonRatchets.forEach(ratchet => { ratchet.rotation.y = 0; });
     feedPlate.position.x = 0;
-    feedPlate.position.z = -45;
     feedPlate.rotation.y = 0;
-    feedPawl.rotation.z = deg(12);
+    applyRibbonFeedCamStrokeP5(0);
     reverseTriggers.forEach(trigger => {
       trigger.rotation.z = trigger.userData.baseRotationZ;
     });
@@ -3148,6 +3214,7 @@ export function createSelectricModel() {
     // Timing remains explicit P5 because exact IBM event angles are not yet sourced.
     const fineAlignment = fineAlignmentFromSleevePhaseP5(state.cyclePhase);
     applyFineAlignment(fineAlignment.tilt, fineAlignment.rotate, fineAlignment.driver);
+    applyRibbonFeedCamStrokeP5(ribbonFeedStrokeFromSleevePhaseP5(state.cyclePhase));
     setRibbonLift(ribbonLiftFromSleevePhaseP5(state.cyclePhase));
     setPrintApproach(printApproachFromSleevePhaseP5(state.cyclePhase));
   }
@@ -3482,6 +3549,13 @@ export function createSelectricModel() {
         stencilDetentCentered: state.ribbonPrintMode === 'stencil' ? Math.abs(detentLever.position.x) < 1e-9 : null,
         feedSuppressedCount: state.ribbonFeedSuppressedCount,
         feedStepCount: state.ribbonFeedStep,
+        feedDriver: 'IBM 1164240 combined ribbon-feed/detent cam on rotating print sleeve',
+        feedFollowerEmbodied: true,
+        feedFollowerP5: state.ribbonFeedCamFollowerP5,
+        feedStrokeP5: state.ribbonFeedStrokeP5,
+        feedBellcrankEmbodied: true,
+        feedCausalChain: ['print-sleeve-rotation', '1164240-feed-lobe', 'roller-follower', 'bellcrank', 'feed-plate/pawl', 'ratchet'],
+        feedStrokeClass: 'P5 cam-envelope stroke through P4 follower/bellcrank geometry; transport commit occurs at reconstructed peak stroke, exact OEM event angle and follower throw unresolved',
         approximateRatchetTeethAdvanced: state.ribbonFeedApproxRatchetTeeth,
         nominalRatchetTeethPerCharacter: 2.5,
         nominalRatchetTeethQualifier: 'approximately',
