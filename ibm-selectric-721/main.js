@@ -386,7 +386,6 @@ function runCarrierOperation(now) {
 
   if (op.type === 'space' || op.type === 'backspace') {
     model.setOperationalCam(op.type, t);
-    model.setBackspaceLinkage(op.type === 'backspace' ? t : 0);
   } else if (op.type === 'carrier-return') {
     model.setOperationalCam('carrier-return', Math.min(1, t * 4));
     model.setCarrierReturnDrive(t);
@@ -444,7 +443,6 @@ function runServiceOperation(now) {
     model.setShiftTransition(op.fromShift, op.toShift, t);
   } else if (op.type === 'index') {
     model.setOperationalCam('index', t);
-    model.setIndexPawlPhase(t);
     if (!op.committed && t >= 0.58) {
       const teeth = singleIndex();
       op.committed = true;
