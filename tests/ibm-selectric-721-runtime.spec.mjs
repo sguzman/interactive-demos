@@ -460,6 +460,8 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(loadPose.geometry.ribbon.liftFollowerP5).toBeCloseTo(0, 8);
   expect(loadPose.geometry.ribbon.liftGuideCount).toBe(2);
   expect(loadPose.geometry.ribbon.liftGuidesFollowRibbon).toBe(true);
+  expect(loadPose.geometry.ribbon.liftGuideProngsPerGuide).toBe(2);
+  expect(loadPose.geometry.ribbon.liftGuideConstructionClass).toContain('forked vibrator guide');
   expect(loadPose.geometry.ribbon.liftGuideCenterY - loadPose.geometry.ribbon.ribbonCenterY).toBeCloseTo(-3, 8);
   expect(loadPose.geometry.ribbon.guideBridgeCenterY - loadPose.geometry.ribbon.ribbonCenterY).toBeCloseTo(-12, 8);
   expect(loadPose.geometry.ribbon.liftGuideMotionClass).toContain('following the live ribbon lift');
