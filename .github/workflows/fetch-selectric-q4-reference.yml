@@ -1,0 +1,44 @@
+name: Fetch Selectric Q4 reference
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fetch-selectric-q4-reference.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-q4:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch original Wikimedia reference
+        run: |
+          set -euo pipefail
+          mkdir -p reference
+          curl --fail --location --retry 4 --retry-all-errors \
+            'https://upload.wikimedia.org/wikipedia/commons/d/db/IBM_Selectric_I_%284%29.jpg' \
+            --output reference/IBM_Selectric_Q4.jpg
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          from PIL import Image
+          p = Path('reference/IBM_Selectric_Q4.jpg')
+          data = p.read_bytes()
+          print('bytes', len(data))
+          print('sha1', hashlib.sha1(data).hexdigest())
+          print('sha256', hashlib.sha256(data).hexdigest())
+          print('size', Image.open(p).size)
+          if hashlib.sha1(data).hexdigest() != '96bcd2a91292298429e0561da99c0416c1e33155':
+              raise SystemExit('Q4 SHA-1 mismatch')
+          if Image.open(p).size != (2352, 1816):
+              raise SystemExit('Q4 dimensions mismatch')
+          PY
+
+      - name: Upload Q4 reference
+        uses: actions/upload-artifact@v4
+        with:
+          name: selectric-q4-reference
+          path: reference/IBM_Selectric_Q4.jpg
+          if-no-files-found: error
+          compression-level: 0
