@@ -1502,27 +1502,11 @@ export function createSelectricModel() {
   addPickable(base, COMPONENTS.shell, pickables);
   baseShellAssembly.add(base);
 
-  const cheekProfile = [
-    { z: 162, y: 22 },
-    { z: 162, y: 42 },
-    { z: 150, y: 50 },
-    { z: 128, y: 56 },
-    { z: 103, y: 66 },
-    { z: 76, y: 78 },
-    { z: 52, y: 91 },
-    { z: 32, y: 106 },
-    { z: 15, y: 119 },
-    { z: -16, y: 135 },
-    { z: -55, y: 147 },
-    { z: -102, y: 148 },
-    { z: -143, y: 132 },
-    { z: -163, y: 102 },
-    { z: -166, y: 22 }
-  ];
-  const shellCheekInnerXP4 = 156;
-  const shellCheekOuterXP4 = 182;
-  const shellCheekBevelInsetP4 = 1.8;
-  const serviceCoverSideClearanceP4 = 2.7;
+  const cheekProfile = P4.shell.cheekProfileP4.map(point => ({ ...point }));
+  const shellCheekInnerXP4 = P4.shell.cheekInnerXP4;
+  const shellCheekOuterXP4 = P4.shell.cheekOuterXP4;
+  const shellCheekBevelInsetP4 = P4.shell.cheekBevelInsetP4;
+  const serviceCoverSideClearanceP4 = P4.shell.serviceCoverSideClearanceP4;
   const serviceCoverMaxHalfWidthP4 =
     shellCheekInnerXP4 - shellCheekBevelInsetP4 - serviceCoverSideClearanceP4;
 
@@ -1549,22 +1533,23 @@ export function createSelectricModel() {
 
   const serviceCoverPivot = new THREE.Group();
   serviceCoverPivot.name = 'top service cover hinge presentation';
-  serviceCoverPivot.position.set(0, 122, -142);
+  serviceCoverPivot.position.set(
+    P4.shell.serviceCoverPivotP4.x,
+    P4.shell.serviceCoverPivotP4.y,
+    P4.shell.serviceCoverPivotP4.z
+  );
   shellAssembly.add(serviceCoverPivot);
 
   // Keep the hinged hood fully inside the beveled inner faces of the fixed side cheeks.
   // The earlier reconstruction extended the hood into the cheek solids by up to ~14 mm,
   // producing visible z-fighting/bleeding when closed. This is a P4 assembly-clearance repair.
-  const serviceCoverStationsP4 = [
-    { z: 38, halfWidth: 149.0, bottomY: 70, topY: 85 },
-    { z: 18, halfWidth: 150.0, bottomY: 73, topY: 92 },
-    { z: -8, halfWidth: 151.0, bottomY: 78, topY: 106 },
-    { z: -34, halfWidth: 151.5, bottomY: 84, topY: 129 },
-    { z: -58, halfWidth: serviceCoverMaxHalfWidthP4, bottomY: 93, topY: 144 },
-    { z: -72, halfWidth: 151.0, bottomY: 104, topY: 149 }
-  ];
+  const serviceCoverStationsP4 = P4.shell.serviceCoverStationsP4.map(station => ({ ...station }));
   const frontFascia = loftPrism(serviceCoverStationsP4, shellMat, 'service cover hood');
-  frontFascia.position.set(0, -122, 142);
+  frontFascia.position.set(
+    P4.shell.serviceCoverGeometryOffsetP4.x,
+    P4.shell.serviceCoverGeometryOffsetP4.y,
+    P4.shell.serviceCoverGeometryOffsetP4.z
+  );
   addPickable(frontFascia, COMPONENTS.shell, pickables);
   serviceCoverPivot.add(frontFascia);
 
@@ -1574,9 +1559,19 @@ export function createSelectricModel() {
   serviceCoverPivot.add(rearBridge);
 
   const badgeMat = material(0x233b55, 0.28, 0.42);
-  const badge = box(30, 8, 2, badgeMat, 'IBM badge');
-  badge.position.set(0, -18, 154);
-  badge.rotation.x = deg(-31);
+  const badge = box(
+    P4.shell.badgeP4.widthMm,
+    P4.shell.badgeP4.heightMm,
+    P4.shell.badgeP4.depthMm,
+    badgeMat,
+    'IBM badge'
+  );
+  badge.position.set(
+    P4.shell.badgeP4.localToCoverPivot.x,
+    P4.shell.badgeP4.localToCoverPivot.y,
+    P4.shell.badgeP4.localToCoverPivot.z
+  );
+  badge.rotation.x = deg(P4.shell.badgeP4.rotationXDeg);
   addPickable(badge, COMPONENTS.shell, pickables);
   serviceCoverPivot.add(badge);
 
@@ -1592,8 +1587,18 @@ export function createSelectricModel() {
   addPickable(rearLip, COMPONENTS.shell, pickables);
   shellAssembly.add(rearLip);
 
-  const ruler = box(268, 6, 5, metal, '12-CPI writing-position rule');
-  ruler.position.set(0, 82, 30);
+  const ruler = box(
+    P4.shell.writingRuleP4.widthMm,
+    P4.shell.writingRuleP4.heightMm,
+    P4.shell.writingRuleP4.depthMm,
+    metal,
+    '12-CPI writing-position rule'
+  );
+  ruler.position.set(
+    P4.shell.writingRuleP4.center.x,
+    P4.shell.writingRuleP4.center.y,
+    P4.shell.writingRuleP4.center.z
+  );
   addPickable(ruler, COMPONENTS.horizontalMotion, pickables);
   shellAssembly.add(ruler);
 
@@ -1605,7 +1610,11 @@ export function createSelectricModel() {
   for (let i = 0; i < CANONICAL.nominalPositions; i += 1) {
     const x = (i - (CANONICAL.nominalPositions - 1) / 2) * CANONICAL.pitchMm;
     const tickScale = new THREE.Vector3(1, i % 10 === 0 ? 1.55 : i % 5 === 0 ? 1.25 : 0.85, 1);
-    tickMatrix.compose(new THREE.Vector3(x, 84, 27.2), new THREE.Quaternion(), tickScale);
+    tickMatrix.compose(
+      new THREE.Vector3(x, P4.shell.writingRuleP4.tickY, P4.shell.writingRuleP4.tickZ),
+      new THREE.Quaternion(),
+      tickScale
+    );
     ticks.setMatrixAt(i, tickMatrix);
   }
   ticks.userData.component = COMPONENTS.horizontalMotion;
@@ -7413,6 +7422,40 @@ export function createSelectricModel() {
       carrierSidePlateClass: carrierSidePlates[0].geometry.userData.p4CarrierPlateClass,
       carrierSidePlateWindowed: true,
       shellTopology: 'extruded rounded side-cheek profile + clearance-nested hinged hood ending ahead of platen',
+      shellStageBParameterizationP4: {
+        parameterized: true,
+        stageBClass: P4.shell.stageBClass,
+        cheekProfilePointCount: cheekProfile.length,
+        serviceCoverStationCount: serviceCoverStationsP4.length,
+        cheekProfileP4: cheekProfile.map(point => ({ ...point })),
+        serviceCoverStationsP4: serviceCoverStationsP4.map(station => ({ ...station })),
+        serviceCoverPivotP4: { ...P4.shell.serviceCoverPivotP4 },
+        serviceCoverGeometryOffsetP4: { ...P4.shell.serviceCoverGeometryOffsetP4 },
+        crownPointP4: (() => {
+          const crown = serviceCoverStationsP4.reduce(
+            (best, station) => station.topY > best.topY ? station : best,
+            serviceCoverStationsP4[0]
+          );
+          return {
+            x: 0,
+            y:
+              crown.topY +
+              P4.shell.serviceCoverPivotP4.y +
+              P4.shell.serviceCoverGeometryOffsetP4.y,
+            z:
+              crown.z +
+              P4.shell.serviceCoverPivotP4.z +
+              P4.shell.serviceCoverGeometryOffsetP4.z
+          };
+        })(),
+        badgeCenterP4: {
+          x: P4.shell.serviceCoverPivotP4.x + P4.shell.badgeP4.localToCoverPivot.x,
+          y: P4.shell.serviceCoverPivotP4.y + P4.shell.badgeP4.localToCoverPivot.y,
+          z: P4.shell.serviceCoverPivotP4.z + P4.shell.badgeP4.localToCoverPivot.z
+        },
+        writingRuleCenterP4: { ...P4.shell.writingRuleP4.center },
+        publicGeometryChangedByParameterization: false
+      },
       serviceCoverFitP4: {
         cheekInnerXP4: shellCheekInnerXP4,
         cheekBevelInsetP4: shellCheekBevelInsetP4,

@@ -160,7 +160,59 @@ export const P4 = Object.freeze({
   motor: { x: -116, y: 39, z: 42 },
   writingLineRacks: { marginY: 68, marginZ: -80, tabY: 61, tabZ: -86, length: 245 },
   cordSystem: { shaftY: 55, shaftZ: -8, drumRadius: 10, leftPulleyX: -142, rightPulleyX: 142 },
-  shell: { baseY: 12, keyboardDeckY: 44, rearDeckY: 88 },
+  shell: {
+    baseY: 12,
+    keyboardDeckY: 44,
+    rearDeckY: 88,
+    cheekInnerXP4: 156,
+    cheekOuterXP4: 182,
+    cheekBevelInsetP4: 1.8,
+    serviceCoverSideClearanceP4: 2.7,
+    cheekProfileP4: [
+      { z: 162, y: 22 },
+      { z: 162, y: 42 },
+      { z: 150, y: 50 },
+      { z: 128, y: 56 },
+      { z: 103, y: 66 },
+      { z: 76, y: 78 },
+      { z: 52, y: 91 },
+      { z: 32, y: 106 },
+      { z: 15, y: 119 },
+      { z: -16, y: 135 },
+      { z: -55, y: 147 },
+      { z: -102, y: 148 },
+      { z: -143, y: 132 },
+      { z: -163, y: 102 },
+      { z: -166, y: 22 }
+    ],
+    serviceCoverPivotP4: { x: 0, y: 122, z: -142 },
+    serviceCoverGeometryOffsetP4: { x: 0, y: -122, z: 142 },
+    serviceCoverStationsP4: [
+      { z: 38, halfWidth: 149.0, bottomY: 70, topY: 85 },
+      { z: 18, halfWidth: 150.0, bottomY: 73, topY: 92 },
+      { z: -8, halfWidth: 151.0, bottomY: 78, topY: 106 },
+      { z: -34, halfWidth: 151.5, bottomY: 84, topY: 129 },
+      { z: -58, halfWidth: 151.5, bottomY: 93, topY: 144 },
+      { z: -72, halfWidth: 151.0, bottomY: 104, topY: 149 }
+    ],
+    badgeP4: {
+      localToCoverPivot: { x: 0, y: -18, z: 154 },
+      widthMm: 30,
+      heightMm: 8,
+      depthMm: 2,
+      rotationXDeg: -31
+    },
+    writingRuleP4: {
+      center: { x: 0, y: 82, z: 30 },
+      widthMm: 268,
+      heightMm: 6,
+      depthMm: 5,
+      tickY: 84,
+      tickZ: 27.2
+    },
+    stageBClass:
+      'shared P4 shell/control parameter seed for U-GEO-020; values preserve the pre-parameterization public geometry and are not production CAD'
+  },
   carrierLocal: {
     sleeveLength: 57,
     sleeveRadius: 7.2,

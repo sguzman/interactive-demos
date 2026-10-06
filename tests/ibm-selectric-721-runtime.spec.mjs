@@ -44,6 +44,14 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.carrierSidePlateWindowed).toBe(true);
   expect(initial.geometry.carrierSidePlateClass).toContain('windowed chamfered P4 carrier side frame');
   expect(initial.geometry.shellTopology).toContain('clearance-nested hinged hood');
+  expect(initial.geometry.shellStageBParameterizationP4.parameterized).toBe(true);
+  expect(initial.geometry.shellStageBParameterizationP4.cheekProfilePointCount).toBe(15);
+  expect(initial.geometry.shellStageBParameterizationP4.serviceCoverStationCount).toBe(6);
+  expect(initial.geometry.shellStageBParameterizationP4.crownPointP4).toEqual({ x: 0, y: 149, z: -72 });
+  expect(initial.geometry.shellStageBParameterizationP4.badgeCenterP4).toEqual({ x: 0, y: 104, z: 12 });
+  expect(initial.geometry.shellStageBParameterizationP4.writingRuleCenterP4).toEqual({ x: 0, y: 82, z: 30 });
+  expect(initial.geometry.shellStageBParameterizationP4.publicGeometryChangedByParameterization).toBe(false);
+  expect(initial.geometry.shellStageBParameterizationP4.stageBClass).toContain('U-GEO-020');
   expect(initial.geometry.serviceCoverFitP4.hoodMaxHalfWidthP4).toBeLessThan(
     initial.geometry.serviceCoverFitP4.cheekInnerXP4 - initial.geometry.serviceCoverFitP4.cheekBevelInsetP4
   );
