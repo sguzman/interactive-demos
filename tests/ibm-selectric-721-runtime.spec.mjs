@@ -50,6 +50,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.shellStageBParameterizationP4.crownPointP4).toEqual({ x: 0, y: 149, z: -72 });
   expect(initial.geometry.shellStageBParameterizationP4.badgeCenterP4).toEqual({ x: 0, y: 104, z: 12 });
   expect(initial.geometry.shellStageBParameterizationP4.badgeAttachmentP4.currentBadgeContactsCoverP4).toBe(false);
+  expect(initial.geometry.shellStageBParameterizationP4.badgeAttachmentP4.mountingClass).toContain('U-GEO-020 unresolved P4 mounting seed');
   expect(initial.geometry.shellStageBParameterizationP4.badgeAttachmentP4.centerToCoverTopDistanceMmP4).toBeCloseTo(7.721054260855994, 8);
   expect(initial.geometry.shellStageBParameterizationP4.badgeAttachmentP4.minimumBadgeBoxNormalClearanceMmP4).toBeCloseTo(4.819068951382432, 8);
   expect(initial.geometry.shellStageBParameterizationP4.badgeAttachmentP4.tangentAlignedRotationXDegP4).toBeCloseTo(-61.69924423399363, 8);
