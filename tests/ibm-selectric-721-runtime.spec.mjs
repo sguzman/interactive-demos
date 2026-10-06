@@ -49,6 +49,12 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.shellStageBParameterizationP4.serviceCoverStationCount).toBe(6);
   expect(initial.geometry.shellStageBParameterizationP4.crownPointP4).toEqual({ x: 0, y: 149, z: -72 });
   expect(initial.geometry.shellStageBParameterizationP4.badgeCenterP4).toEqual({ x: 0, y: 104, z: 12 });
+  expect(initial.geometry.shellStageBParameterizationP4.badgeAttachmentP4.currentBadgeContactsCoverP4).toBe(false);
+  expect(initial.geometry.shellStageBParameterizationP4.badgeAttachmentP4.centerToCoverTopDistanceMmP4).toBeCloseTo(7.721054260855994, 8);
+  expect(initial.geometry.shellStageBParameterizationP4.badgeAttachmentP4.minimumBadgeBoxNormalClearanceMmP4).toBeCloseTo(4.819068951382432, 8);
+  expect(initial.geometry.shellStageBParameterizationP4.badgeAttachmentP4.tangentAlignedRotationXDegP4).toBeCloseTo(-61.69924423399363, 8);
+  expect(initial.geometry.shellStageBParameterizationP4.badgeAttachmentP4.rotationMismatchToLocalCoverTangentDegP4).toBeCloseTo(-30.699244233993632, 8);
+  expect(initial.geometry.shellStageBParameterizationP4.badgeAttachmentP4.automaticPublicGeometryChange).toBe(false);
   expect(initial.geometry.shellStageBParameterizationP4.writingRuleCenterP4).toEqual({ x: 0, y: 82, z: 30 });
   expect(initial.geometry.shellStageBParameterizationP4.publicGeometryChangedByParameterization).toBe(false);
   expect(initial.geometry.shellStageBParameterizationP4.stageBClass).toContain('U-GEO-020');
