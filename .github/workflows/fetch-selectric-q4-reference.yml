@@ -12,7 +12,7 @@ jobs:
   fetch-q4:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch original Wikimedia reference
+      - name: Fetch and verify original Wikimedia reference
         run: |
           set -euo pipefail
           mkdir -p reference
@@ -22,17 +22,43 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import hashlib
-          from PIL import Image
+
           p = Path('reference/IBM_Selectric_Q4.jpg')
           data = p.read_bytes()
           print('bytes', len(data))
           print('sha1', hashlib.sha1(data).hexdigest())
           print('sha256', hashlib.sha256(data).hexdigest())
-          print('size', Image.open(p).size)
+
           if hashlib.sha1(data).hexdigest() != '96bcd2a91292298429e0561da99c0416c1e33155':
               raise SystemExit('Q4 SHA-1 mismatch')
-          if Image.open(p).size != (2352, 1816):
-              raise SystemExit('Q4 dimensions mismatch')
+          if data[:2] != b'\xff\xd8':
+              raise SystemExit('not JPEG')
+
+          sof = {0xC0,0xC1,0xC2,0xC3,0xC5,0xC6,0xC7,0xC9,0xCA,0xCB,0xCD,0xCE,0xCF}
+          i = 2
+          dims = None
+          while i + 4 <= len(data):
+              if data[i] != 0xFF:
+                  i += 1
+                  continue
+              while i < len(data) and data[i] == 0xFF:
+                  i += 1
+              marker = data[i]
+              i += 1
+              if marker in (0xD8,0xD9):
+                  continue
+              if marker == 0xDA:
+                  break
+              seglen = int.from_bytes(data[i:i+2], 'big')
+              if marker in sof:
+                  h = int.from_bytes(data[i+3:i+5], 'big')
+                  w = int.from_bytes(data[i+5:i+7], 'big')
+                  dims = (w,h)
+                  break
+              i += seglen
+          print('size', dims)
+          if dims != (2352, 1816):
+              raise SystemExit(f'Q4 dimensions mismatch: {dims}')
           PY
 
       - name: Upload Q4 reference
