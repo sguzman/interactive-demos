@@ -160,7 +160,15 @@ export const P4 = Object.freeze({
       { centerY: 49.4, centerZ: 92, spacingX: 21.2422, offsetX: -8.6899, count: 10 },
       { centerY: 46.6, centerZ: 116, spacingX: 21.2422, offsetX: 1.8819, count: 10 }
     ],
-    serviceColumnXP4: 145,
+    serviceColumnXP4: 137.5,
+    serviceColumnClearanceP4: {
+      cheekInnerXP4: 156,
+      cheekBevelInsetP4: 1.8,
+      minimumGapP4: 0.7,
+      widestServiceKeyMm: 32,
+      class:
+        'P4 topology repair: symmetric service-key column moved inboard until the widest nominal cap clears the fixed cheek inner bevel; not an IBM production registration'
+    },
     serviceKeysP4: {
       left: [
         { label: 'TAB', centerY: 52, centerZ: 71, widthMm: 24 },
