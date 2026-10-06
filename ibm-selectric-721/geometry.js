@@ -1672,6 +1672,7 @@ export function createSelectricModel() {
     return {
       class:
         'P4 internal badge-to-service-cover attachment diagnostic; no photographic promotion',
+      mountingClass: P4.shell.badgeP4.mountingClass,
       centerWorldP4: {
         x:
           P4.shell.serviceCoverPivotP4.x +
