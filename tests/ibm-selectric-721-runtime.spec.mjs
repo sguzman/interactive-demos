@@ -195,6 +195,15 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     .toEqual([21.2422, 21.2422, 21.2422, 21.2422]);
   expect(initial.geometry.keyboardRegistrationP4.characterRowsP4.map(row => row.offsetX))
     .toEqual([-1.8871, -13.6235, -8.6899, 1.8819]);
+  expect(initial.geometry.keyboardRegistrationP4.serviceColumnXP4).toBeCloseTo(137.5, 8);
+  expect(initial.geometry.keyboardRegistrationP4.serviceColumnClearanceP4.minimumGapP4).toBeCloseTo(0.7, 8);
+  expect(initial.geometry.keyboardRegistrationP4.serviceColumnClearanceP4.class)
+    .toContain('topology repair');
+  expect(initial.geometry.keyboardRegistrationP4.serviceKeyMaxHalfWidthP4).toBeCloseTo(16, 8);
+  expect(initial.geometry.keyboardRegistrationP4.serviceKeyEffectiveOuterXLimitP4).toBeCloseTo(153.5, 8);
+  expect(initial.geometry.keyboardRegistrationP4.serviceKeyMaxOuterAbsXP4).toBeCloseTo(153.5, 8);
+  expect(initial.geometry.keyboardRegistrationP4.serviceKeyEffectiveClearanceMmP4).toBeGreaterThanOrEqual(-1e-8);
+  expect(initial.geometry.keyboardRegistrationP4.serviceKeyCheekOverlapRepairedP4).toBe(true);
   expect(initial.geometry.keyboardRegistrationP4.rearToFrontRowZsP4).toEqual([47, 69, 92, 116]);
   expect(initial.geometry.keyboardRegistrationP4.rearToFrontZMonotonicP4).toBe(true);
   expect(initial.geometry.keyboardRegistrationP4.spacebarP4.centerZ).toBe(136);
