@@ -1058,6 +1058,13 @@ function makeKeyboard(keysMat, darkMat, pickables) {
     deckSlopeDegP4: keyboardP4.deckP4.slopeDeg,
     frontApronP4: { ...keyboardP4.frontApronP4 },
     characterRowsP4: keyboardP4.characterRowsP4.map(row => ({ ...row })),
+    horizontalCalibrationP4: {
+      ...keyboardP4.horizontalCalibrationP4,
+      pitchSensitivityEnvelopeMm: [
+        ...keyboardP4.horizontalCalibrationP4.pitchSensitivityEnvelopeMm
+      ],
+      rowOffsetsMm: [...keyboardP4.horizontalCalibrationP4.rowOffsetsMm]
+    },
     serviceKeysP4: {
       left: keyboardP4.serviceKeysP4.left.map(key => ({ ...key })),
       right: keyboardP4.serviceKeysP4.right.map(key => ({ ...key }))
