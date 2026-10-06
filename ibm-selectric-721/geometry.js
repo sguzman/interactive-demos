@@ -1575,6 +1575,148 @@ export function createSelectricModel() {
   addPickable(badge, COMPONENTS.shell, pickables);
   serviceCoverPivot.add(badge);
 
+  const badgeAttachmentP4 = (() => {
+    const centerY =
+      P4.shell.serviceCoverPivotP4.y + P4.shell.badgeP4.localToCoverPivot.y;
+    const centerZ =
+      P4.shell.serviceCoverPivotP4.z + P4.shell.badgeP4.localToCoverPivot.z;
+    const coverWorldOffsetY =
+      P4.shell.serviceCoverPivotP4.y + P4.shell.serviceCoverGeometryOffsetP4.y;
+    const coverWorldOffsetZ =
+      P4.shell.serviceCoverPivotP4.z + P4.shell.serviceCoverGeometryOffsetP4.z;
+
+    let nearest = null;
+    for (let index = 0; index < serviceCoverStationsP4.length - 1; index += 1) {
+      const a = serviceCoverStationsP4[index];
+      const b = serviceCoverStationsP4[index + 1];
+      const ay = a.topY + coverWorldOffsetY;
+      const az = a.z + coverWorldOffsetZ;
+      const by = b.topY + coverWorldOffsetY;
+      const bz = b.z + coverWorldOffsetZ;
+      const segmentY = by - ay;
+      const segmentZ = bz - az;
+      const segmentLengthSquared =
+        segmentY * segmentY + segmentZ * segmentZ;
+      if (segmentLengthSquared <= 1e-12) continue;
+
+      const projectionT = THREE.MathUtils.clamp(
+        (
+          (centerY - ay) * segmentY +
+          (centerZ - az) * segmentZ
+        ) / segmentLengthSquared,
+        0,
+        1
+      );
+      const nearestY = ay + projectionT * segmentY;
+      const nearestZ = az + projectionT * segmentZ;
+      const deltaY = centerY - nearestY;
+      const deltaZ = centerZ - nearestZ;
+      const distanceMm = Math.hypot(deltaY, deltaZ);
+      if (nearest && distanceMm >= nearest.distanceMm) continue;
+
+      const segmentLength = Math.sqrt(segmentLengthSquared);
+      let tangentY = segmentY / segmentLength;
+      let tangentZ = segmentZ / segmentLength;
+      if (tangentY < 0) {
+        tangentY *= -1;
+        tangentZ *= -1;
+      }
+      let normalY = -tangentZ;
+      let normalZ = tangentY;
+      if (normalY < 0) {
+        normalY *= -1;
+        normalZ *= -1;
+      }
+
+      nearest = {
+        segmentIndex: index,
+        segmentT: projectionT,
+        nearestY,
+        nearestZ,
+        distanceMm,
+        tangentY,
+        tangentZ,
+        normalY,
+        normalZ,
+        signedCenterNormalDistanceMm:
+          deltaY * normalY + deltaZ * normalZ
+      };
+    }
+
+    if (!nearest) {
+      throw new Error('P4 service-cover top curve has no usable segment for badge attachment QA');
+    }
+
+    const rotationRad = deg(P4.shell.badgeP4.rotationXDeg);
+    const badgeLocalYAxisY = Math.cos(rotationRad);
+    const badgeLocalYAxisZ = Math.sin(rotationRad);
+    const badgeLocalNormalY = -Math.sin(rotationRad);
+    const badgeLocalNormalZ = Math.cos(rotationRad);
+    const halfExtentAlongCoverNormalMm =
+      P4.shell.badgeP4.heightMm / 2 *
+        Math.abs(
+          badgeLocalYAxisY * nearest.normalY +
+          badgeLocalYAxisZ * nearest.normalZ
+        ) +
+      P4.shell.badgeP4.depthMm / 2 *
+        Math.abs(
+          badgeLocalNormalY * nearest.normalY +
+          badgeLocalNormalZ * nearest.normalZ
+        );
+    const minimumNormalClearanceMm =
+      nearest.signedCenterNormalDistanceMm - halfExtentAlongCoverNormalMm;
+    const tangentAlignedRotationXDeg = THREE.MathUtils.radToDeg(
+      Math.atan2(nearest.tangentZ, nearest.tangentY)
+    );
+
+    return {
+      class:
+        'P4 internal badge-to-service-cover attachment diagnostic; no photographic promotion',
+      centerWorldP4: {
+        x:
+          P4.shell.serviceCoverPivotP4.x +
+          P4.shell.badgeP4.localToCoverPivot.x,
+        y: centerY,
+        z: centerZ
+      },
+      nearestCoverTopSegmentIndexP4: nearest.segmentIndex,
+      nearestCoverTopSegmentTP4: nearest.segmentT,
+      nearestCoverTopPointP4: {
+        x:
+          P4.shell.serviceCoverPivotP4.x +
+          P4.shell.badgeP4.localToCoverPivot.x,
+        y: nearest.nearestY,
+        z: nearest.nearestZ
+      },
+      centerToCoverTopDistanceMmP4: nearest.distanceMm,
+      signedCenterNormalDistanceMmP4:
+        nearest.signedCenterNormalDistanceMm,
+      badgeHalfExtentAlongCoverNormalMmP4:
+        halfExtentAlongCoverNormalMm,
+      minimumBadgeBoxNormalClearanceMmP4:
+        minimumNormalClearanceMm,
+      currentBadgeContactsCoverP4:
+        minimumNormalClearanceMm <= 0,
+      currentRotationXDegP4: P4.shell.badgeP4.rotationXDeg,
+      tangentAlignedRotationXDegP4:
+        tangentAlignedRotationXDeg,
+      rotationMismatchToLocalCoverTangentDegP4:
+        tangentAlignedRotationXDeg - P4.shell.badgeP4.rotationXDeg,
+      surfaceContactCenterSeedP4: {
+        x:
+          P4.shell.serviceCoverPivotP4.x +
+          P4.shell.badgeP4.localToCoverPivot.x,
+        y:
+          nearest.nearestY +
+          nearest.normalY * P4.shell.badgeP4.depthMm / 2,
+        z:
+          nearest.nearestZ +
+          nearest.normalZ * P4.shell.badgeP4.depthMm / 2
+      },
+      automaticPublicGeometryChange: false
+    };
+  })();
+
   const rearCowl = box(330, 72, 72, shellMat, 'rear cowl');
   rearCowl.position.set(0, 83, -118);
   rearCowl.rotation.x = deg(-6);
@@ -7489,6 +7631,7 @@ export function createSelectricModel() {
           y: P4.shell.serviceCoverPivotP4.y + P4.shell.badgeP4.localToCoverPivot.y,
           z: P4.shell.serviceCoverPivotP4.z + P4.shell.badgeP4.localToCoverPivot.z
         },
+        badgeAttachmentP4: { ...badgeAttachmentP4 },
         writingRuleCenterP4: { ...P4.shell.writingRuleP4.center },
         publicGeometryChangedByParameterization: false
       },
