@@ -144,11 +144,21 @@ export const P4 = Object.freeze({
       depthMm: 17,
       faceSlopeDeg: -8
     },
+    horizontalCalibrationP4: {
+      sharedPitchMm: 21.2422,
+      pitchSensitivityEnvelopeMm: [21.2089, 21.2695],
+      pitchSensitivitySpanMm: 0.0606,
+      rowOffsetsMm: [-1.8871, -13.6235, -8.6899, 1.8819],
+      sourceClass:
+        'direct native-pixel Q1/Q4 repeated key-top centers; shared horizontal fit stable across accepted and anchor-ablation camera scenarios; vertical row registration remains unresolved',
+      promotionClass:
+        'U-GEO-006 camera-robust horizontal P4 promotion only; row Y/Z, deck/service keys, spacebar and cameras remain diagnostic'
+    },
     characterRowsP4: [
-      { centerY: 55.0, centerZ: 47, spacingX: 22.5, offsetX: 0, count: 12 },
-      { centerY: 52.2, centerZ: 69, spacingX: 24.0, offsetX: 3, count: 10 },
-      { centerY: 49.4, centerZ: 92, spacingX: 24.0, offsetX: 9, count: 10 },
-      { centerY: 46.6, centerZ: 116, spacingX: 24.0, offsetX: 15, count: 10 }
+      { centerY: 55.0, centerZ: 47, spacingX: 21.2422, offsetX: -1.8871, count: 12 },
+      { centerY: 52.2, centerZ: 69, spacingX: 21.2422, offsetX: -13.6235, count: 10 },
+      { centerY: 49.4, centerZ: 92, spacingX: 21.2422, offsetX: -8.6899, count: 10 },
+      { centerY: 46.6, centerZ: 116, spacingX: 21.2422, offsetX: 1.8819, count: 10 }
     ],
     serviceColumnXP4: 145,
     serviceKeysP4: {
@@ -172,7 +182,7 @@ export const P4 = Object.freeze({
         'CAL-F1/CAL-Q4 normalized image-space landmarks; perspective/crop affected and not direct physical-span targets'
     },
     registrationClass:
-      'U-GEO-006 parameterized P4 seed only; camera solve and shared exterior fit required before metric closure'
+      'U-GEO-006 horizontal character-row pitch/X registration promoted from direct native Q1/Q4 evidence; vertical row registration, service keys, spacebar and camera closure remain unresolved'
   },
   motor: { x: -116, y: 39, z: 42 },
   writingLineRacks: { marginY: 68, marginZ: -80, tabY: 61, tabZ: -86, length: 245 },
