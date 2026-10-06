@@ -78,7 +78,24 @@ export const P4 = Object.freeze({
   axes: 'x = writing-line left/right, y = up, z = front(+)/rear(-)',
   sideframeX: 156,
   baseY: 8,
-  platen: { y: 126, z: -92, length: 296 },
+  platen: {
+    y: 126,
+    z: -92,
+    length: 296,
+    knobP4: {
+      centerHalfSpanMm: 159,
+      coreLengthMm: 28,
+      coreRadiusMm: 12.8,
+      outerCapLengthMm: 3.4,
+      outerCapRadiusMm: 13.7,
+      outerCapCenterOffsetMm: 14.8,
+      gripRibCount: 12,
+      gripRibAxialLengthMm: 22,
+      gripRibThicknessMm: 1.25,
+      gripRibDepthMm: 2.15,
+      gripRibRadialOffsetMm: 13.35
+    }
+  },
   printShaft: { y: 79, z: -47, visibleRadius: 4.55, length: 304 },
   cycleShaft: { y: 47, z: 7, radius: 5.5, length: 286 },
   operationalShaft: { y: 61, z: 24, radius: 4.5, length: 276 },
