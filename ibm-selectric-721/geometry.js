@@ -3984,27 +3984,63 @@ export function createSelectricModel() {
   addPickable(platen, COMPONENTS.platen, pickables);
   paperFeedCarriage.add(platen);
 
+  const platenKnobP4 = P4.platen.knobP4;
   const platenKnobPivots = [];
-  const platenKnobGripRibCountP4 = 12;
+  const platenKnobGripRibCountP4 = platenKnobP4.gripRibCount;
   const platenKnobGripRibs = [];
-  for (const x of [-159, 159]) {
+  const platenKnobOuterExtensionMmP4 = Math.max(
+    platenKnobP4.coreLengthMm / 2,
+    platenKnobP4.outerCapCenterOffsetMm + platenKnobP4.outerCapLengthMm / 2,
+    platenKnobP4.gripRibAxialLengthMm / 2
+  );
+  const platenKnobOuterEdgeHalfSpanMmP4 =
+    platenKnobP4.centerHalfSpanMm + platenKnobOuterExtensionMmP4;
+  const castShellProxyHalfWidthMmP4 = Math.max(
+    shellCheekOuterXP4,
+    base.geometry.parameters.width / 2
+  );
+  const platenKnobOuterEdgeBeyondCastShellMmP4 =
+    platenKnobOuterEdgeHalfSpanMmP4 - castShellProxyHalfWidthMmP4;
+
+  for (const x of [-platenKnobP4.centerHalfSpanMm, platenKnobP4.centerHalfSpanMm]) {
     const pivot = new THREE.Group();
     pivot.name = x < 0 ? 'left platen knob phase pivot' : 'right platen knob phase pivot';
     pivot.position.set(x, P4.platen.y, P4.platen.z);
 
-    const knob = shaft(28, 12.8, shellDark, x < 0 ? 'left platen knob core' : 'right platen knob core');
+    const knob = shaft(
+      platenKnobP4.coreLengthMm,
+      platenKnobP4.coreRadiusMm,
+      shellDark,
+      x < 0 ? 'left platen knob core' : 'right platen knob core'
+    );
     addPickable(knob, COMPONENTS.platen, pickables);
     pivot.add(knob);
 
-    const outerCap = shaft(3.4, 13.7, shellDark, x < 0 ? 'left platen knob outer cap' : 'right platen knob outer cap');
-    outerCap.position.x = x < 0 ? -14.8 : 14.8;
+    const outerCap = shaft(
+      platenKnobP4.outerCapLengthMm,
+      platenKnobP4.outerCapRadiusMm,
+      shellDark,
+      x < 0 ? 'left platen knob outer cap' : 'right platen knob outer cap'
+    );
+    outerCap.position.x =
+      x < 0 ? -platenKnobP4.outerCapCenterOffsetMm : platenKnobP4.outerCapCenterOffsetMm;
     addPickable(outerCap, COMPONENTS.platen, pickables);
     pivot.add(outerCap);
 
     for (let ribIndex = 0; ribIndex < platenKnobGripRibCountP4; ribIndex += 1) {
       const angle = ribIndex * Math.PI * 2 / platenKnobGripRibCountP4;
-      const rib = box(22, 1.25, 2.15, shellDark, (x < 0 ? 'left' : 'right') + ' platen knob grip rib');
-      rib.position.set(0, Math.cos(angle) * 13.35, Math.sin(angle) * 13.35);
+      const rib = box(
+        platenKnobP4.gripRibAxialLengthMm,
+        platenKnobP4.gripRibThicknessMm,
+        platenKnobP4.gripRibDepthMm,
+        shellDark,
+        (x < 0 ? 'left' : 'right') + ' platen knob grip rib'
+      );
+      rib.position.set(
+        0,
+        Math.cos(angle) * platenKnobP4.gripRibRadialOffsetMm,
+        Math.sin(angle) * platenKnobP4.gripRibRadialOffsetMm
+      );
       rib.rotation.x = angle;
       addPickable(rib, COMPONENTS.platen, pickables);
       pivot.add(rib);
@@ -8007,7 +8043,17 @@ export function createSelectricModel() {
         platenPhysicalAngleRad: state.platenIndex + state.manualPlatenAngle,
         platenPhaseCueAngleRad: platenKnobPivots[0].rotation.x,
         platenPhaseCueCount: platenKnobPivots.length,
-        platenKnobConstructionClass: 'P4 reduced core + outer cap + repeated radial grip ribs; exact IBM knob tooling/knurl section unresolved',
+        platenKnobConstructionClass:
+          'P4 reduced core + outer cap + repeated radial grip ribs; exact production geometry unresolved',
+        platenKnobCenterHalfSpanMmP4: platenKnobP4.centerHalfSpanMm,
+        platenKnobOuterExtensionMmP4,
+        platenKnobOuterEdgeHalfSpanMmP4,
+        platenKnobCastShellProxyHalfWidthMmP4: castShellProxyHalfWidthMmP4,
+        platenKnobOuterEdgeBeyondCastShellMmP4,
+        platenKnobCurrentHardwareWiderThanCastShellP4:
+          platenKnobOuterEdgeBeyondCastShellMmP4 > 0,
+        platenKnobLateralFitClass:
+          'U-GEO-020 diagnostic only: current physical x seed is explicit; photographed center and hardware-edge projections require camera-conditioned fitting before any span edit',
         platenKnobGripRibsPerKnobP4: platenKnobGripRibCountP4,
         platenKnobGripRibTotal: platenKnobGripRibs.length,
         platenPhaseCueClass: 'P5 visible rotational cue; follows physical platen while ratchet may decouple',
