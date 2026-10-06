@@ -217,7 +217,9 @@ export const P4 = Object.freeze({
       widthMm: 30,
       heightMm: 8,
       depthMm: 2,
-      rotationXDeg: -31
+      rotationXDeg: -31,
+      mountingClass:
+        'U-GEO-020 unresolved P4 mounting seed; current box is diagnostically detached from the reconstructed cover and must not be treated as a fixed physical anchor'
     },
     writingRuleP4: {
       center: { x: 0, y: 82, z: 30 },
