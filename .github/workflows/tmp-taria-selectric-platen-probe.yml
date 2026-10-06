@@ -1,0 +1,34 @@
+name: Temporary Taria Selectric platen probe
+
+on:
+  push:
+    paths:
+      - '.github/workflows/tmp-taria-selectric-platen-probe.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Taria
+        uses: actions/checkout@v4
+        with:
+          repository: sguzman/taria
+          ref: main
+          path: taria-repo
+      - uses: astral-sh/setup-uv@v6
+      - name: Run platen propagation probe
+        working-directory: taria-repo/taria/engineering/specimens/ibm-selectric-721
+        run: |
+          set -euo pipefail
+          uv run --with numpy --with scipy python tools/probe_native_pixel_platen_camera_lateral.py --root . --output /tmp/selectric-platen-probe.json
+          cat /tmp/selectric-platen-probe.json
+      - name: Upload probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: selectric-platen-probe
+          path: /tmp/selectric-platen-probe.json
+          if-no-files-found: error
+          compression-level: 0
