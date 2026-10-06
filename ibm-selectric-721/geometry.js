@@ -1018,6 +1018,20 @@ function makeKeyboard(keysMat, darkMat, pickables) {
     ...allKeycapsP4.map(key => key.position.x + key.userData.nominalWidthMmP4 / 2)
   );
 
+  const serviceKeyWidthsP4 = [
+    ...keyboardP4.serviceKeysP4.left.map(key => key.widthMm),
+    ...keyboardP4.serviceKeysP4.right.map(key => key.widthMm)
+  ];
+  const serviceKeyMaxHalfWidthP4 = Math.max(...serviceKeyWidthsP4) / 2;
+  const serviceKeyEffectiveOuterXLimitP4 =
+    keyboardP4.serviceColumnClearanceP4.cheekInnerXP4 -
+    keyboardP4.serviceColumnClearanceP4.cheekBevelInsetP4 -
+    keyboardP4.serviceColumnClearanceP4.minimumGapP4;
+  const serviceKeyMaxOuterAbsXP4 =
+    keyboardP4.serviceColumnXP4 + serviceKeyMaxHalfWidthP4;
+  const serviceKeyEffectiveClearanceMmP4 =
+    serviceKeyEffectiveOuterXLimitP4 - serviceKeyMaxOuterAbsXP4;
+
   const rearToFrontRowZsP4 = keyboardP4.characterRowsP4.map(row => row.centerZ);
   const rearToFrontZMonotonicP4 = rearToFrontRowZsP4.every(
     (z, index) => index === 0 || z > rearToFrontRowZsP4[index - 1]
@@ -1069,6 +1083,13 @@ function makeKeyboard(keysMat, darkMat, pickables) {
       left: keyboardP4.serviceKeysP4.left.map(key => ({ ...key })),
       right: keyboardP4.serviceKeysP4.right.map(key => ({ ...key }))
     },
+    serviceColumnXP4: keyboardP4.serviceColumnXP4,
+    serviceColumnClearanceP4: { ...keyboardP4.serviceColumnClearanceP4 },
+    serviceKeyMaxHalfWidthP4,
+    serviceKeyEffectiveOuterXLimitP4,
+    serviceKeyMaxOuterAbsXP4,
+    serviceKeyEffectiveClearanceMmP4,
+    serviceKeyCheekOverlapRepairedP4: serviceKeyEffectiveClearanceMmP4 >= -1e-9,
     spacebarP4: { ...keyboardP4.spacebarP4 },
     rearToFrontRowZsP4,
     rearToFrontZMonotonicP4,
