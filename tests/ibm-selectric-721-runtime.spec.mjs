@@ -827,6 +827,13 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(variableFree.geometry.paperFeed.platenRatchetCoupled).toBe(false);
   expect(variableFree.geometry.paperFeed.platenPhaseCueCount).toBe(2);
   expect(variableFree.geometry.paperFeed.platenKnobConstructionClass).toContain('repeated radial grip ribs');
+  expect(variableFree.geometry.paperFeed.platenKnobCenterHalfSpanMmP4).toBeCloseTo(159, 8);
+  expect(variableFree.geometry.paperFeed.platenKnobOuterExtensionMmP4).toBeCloseTo(16.5, 8);
+  expect(variableFree.geometry.paperFeed.platenKnobOuterEdgeHalfSpanMmP4).toBeCloseTo(175.5, 8);
+  expect(variableFree.geometry.paperFeed.platenKnobCastShellProxyHalfWidthMmP4).toBeCloseTo(185, 8);
+  expect(variableFree.geometry.paperFeed.platenKnobOuterEdgeBeyondCastShellMmP4).toBeCloseTo(-9.5, 8);
+  expect(variableFree.geometry.paperFeed.platenKnobCurrentHardwareWiderThanCastShellP4).toBe(false);
+  expect(variableFree.geometry.paperFeed.platenKnobLateralFitClass).toContain('diagnostic only');
   expect(variableFree.geometry.paperFeed.platenKnobGripRibsPerKnobP4).toBe(12);
   expect(variableFree.geometry.paperFeed.platenKnobGripRibTotal).toBe(24);
   expect(variableFree.geometry.paperFeed.platenPhaseCueClass).toContain('P5 visible rotational cue');
