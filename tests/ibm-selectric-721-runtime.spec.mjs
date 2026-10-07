@@ -234,6 +234,18 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.keyboardRegistrationP4.deckFallsTowardOperatorFrontP4).toBe(true);
   expect(initial.geometry.keyboardRegistrationP4.maxAbsKeyCenterDeckTopResidualMmP4).toBeLessThan(0.8);
   expect(initial.geometry.keyboardRegistrationP4.frontApronP4.slopeDeg).toBe(11);
+  expect(initial.geometry.keyboardRegistrationP4.frontApronP4.topologyClass)
+    .toContain('dedicated central spacebar opening');
+  expect(initial.geometry.keyboardRegistrationP4.frontApronSegmentCountP4).toBe(3);
+  expect(initial.geometry.keyboardRegistrationP4.frontApronSegmentXExtentsP4)
+    .toEqual([[-173, -60], [56, 173], [-60, 56]]);
+  expect(initial.geometry.keyboardRegistrationP4.spacebarApertureXExtentP4)
+    .toEqual([-60, 56]);
+  expect(initial.geometry.keyboardRegistrationP4.spacebarNominalXExtentP4)
+    .toEqual([-58, 54]);
+  expect(initial.geometry.keyboardRegistrationP4.spacebarApertureNominalSideClearanceMmP4)
+    .toBeCloseTo(2, 8);
+  expect(initial.geometry.keyboardRegistrationP4.frontApronCenterOpeningEmbodiedP4).toBe(true);
   expect(initial.geometry.keyboardRegistrationP4.ordinaryFieldSpanMmP4).toBeGreaterThan(250);
   expect(initial.geometry.keyboardRegistrationP4.fullKeyControlSpanMmP4).toBeGreaterThan(300);
   expect(initial.geometry.keyboardRegistrationP4.ordinaryFieldWidthFractionOfEnvelopeP4)
