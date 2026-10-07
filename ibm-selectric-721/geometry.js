@@ -1142,9 +1142,18 @@ function makeKeyboard(keysMat, darkMat, pickables) {
       right: keyboardP4.externalSideControlsP4.right.map(control => ({ ...control }))
     },
     externalSideControlCountP4: externalSideControlMeshesP4.length,
-    externalSideControlLabelsP4: externalSideControlMeshesP4.map(control =>
-      control.name.replace('external-side-control-', '').replaceAll('-', ' ')
-    ),
+    externalSideControlLabelsP4: {
+      left: keyboardP4.externalSideControlsP4.left.map(control => control.label),
+      right: keyboardP4.externalSideControlsP4.right.map(control => control.label)
+    },
+    internalServiceKeyLabelsP4: {
+      left: keyboardP4.serviceKeysP4.left.map(key => key.label),
+      right: keyboardP4.serviceKeysP4.right.map(key => key.label)
+    },
+    internalServiceKeyRowAssociationsP4: {
+      left: keyboardP4.serviceKeysP4.left.map(key => key.rowAssociation),
+      right: keyboardP4.serviceKeysP4.right.map(key => key.rowAssociation)
+    },
     externalSideControlInnerEdgeAbsXP4:
       keyboardP4.externalSideControlsP4.columnAbsX -
       keyboardP4.externalSideControlsP4.sideBandP4.nominalControlWidthMm / 2,
