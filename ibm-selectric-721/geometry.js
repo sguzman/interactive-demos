@@ -1159,7 +1159,21 @@ function makeKeyboard(keysMat, darkMat, pickables) {
   group.userData.registrationP4 = {
     parameterized: true,
     deckWidthMmP4: keyboardP4.deckP4.widthMm,
+    deckCenterYP4: keyboardP4.y,
+    deckCenterZP4: keyboardP4.z,
     deckSlopeDegP4: keyboardP4.deckP4.slopeDeg,
+    verticalCalibrationP4: {
+      ...keyboardP4.verticalCalibrationP4,
+      rearCenterYEnvelopeMm: [
+        ...keyboardP4.verticalCalibrationP4.rearCenterYEnvelopeMm
+      ],
+      rearCenterZEnvelopeMm: [
+        ...keyboardP4.verticalCalibrationP4.rearCenterZEnvelopeMm
+      ],
+      rowPlaneSlopeEnvelopeDeg: [
+        ...keyboardP4.verticalCalibrationP4.rowPlaneSlopeEnvelopeDeg
+      ]
+    },
     frontApronP4: {
       ...keyboardP4.frontApronP4,
       spacebarApertureP4: { ...keyboardP4.frontApronP4.spacebarApertureP4 }
