@@ -136,7 +136,19 @@ export const P4 = Object.freeze({
       depthMm: 42,
       y: 32,
       z: 139,
-      slopeDeg: 11
+      slopeDeg: 11,
+      topologyClass:
+        'Q1/Q4-native topology repair: full-height apron splits around a dedicated central spacebar opening while a shallow lower lip remains continuous',
+      spacebarApertureP4: {
+        centerX: -2,
+        widthMm: 116,
+        nominalSideClearanceMm: 2,
+        lowerLipCenterY: 27,
+        lowerLipHeightMm: 10,
+        lowerLipDepthMm: 42,
+        metricClass:
+          'P4 constructive nonintersection clearance; native photographs establish opening topology and positive clearance, not IBM factory aperture dimensions'
+      }
     },
     keycapP4: {
       ordinaryWidthMm: 18,
