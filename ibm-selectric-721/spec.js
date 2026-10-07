@@ -120,7 +120,7 @@ export const P4 = Object.freeze({
     spoolRadiusP4: 20
   },
   keyboard: {
-    y: 57.7721,
+    y: 57.7103,
     z: 78,
     assemblyExplodeVectorP5: { x: 0, y: -46, z: 155 },
     mechanismExplodeVectorP5: { x: 0, y: -78, z: 62 },
@@ -128,7 +128,7 @@ export const P4 = Object.freeze({
       widthMm: 340,
       heightMm: 17,
       depthMm: 142,
-      slopeDeg: 15.2136
+      slopeDeg: 15.9339
     },
     frontApronP4: {
       widthMm: 346,
@@ -157,31 +157,31 @@ export const P4 = Object.freeze({
       faceSlopeDeg: -8
     },
     horizontalCalibrationP4: {
-      sharedPitchMm: 21.2422,
-      pitchSensitivityEnvelopeMm: [21.2089, 21.2695],
-      pitchSensitivitySpanMm: 0.0606,
-      rowOffsetsMm: [-1.8871, -13.6235, -8.6899, 1.8819],
+      sharedPitchMm: 21.2670,
+      pitchSensitivityEnvelopeMm: [21.2325, 21.3141],
+      pitchSensitivitySpanMm: 0.0816,
+      rowOffsetsMm: [-2.0359, -14.0033, -8.8771, 1.8932],
       sourceClass:
-        'direct native-pixel Q1/Q4 repeated key-top centers; shared horizontal fit stable across accepted and anchor-ablation camera scenarios',
+        'direct native-pixel Q1/Q4 repeated key-top centers; Q4 9/0 source-center correction propagated through accepted and anchor-ablation camera scenarios',
       promotionClass:
         'U-GEO-006 camera-robust horizontal P4 promotion'
     },
     verticalCalibrationP4: {
-      rearCenterYEnvelopeMm: [68.8557, 71.7245],
-      rearCenterZEnvelopeMm: [64.3086, 67.4696],
-      rowPlaneSlopeEnvelopeDeg: [13.4893, 16.9639],
-      representativeDeckCenterY: 57.7721,
-      representativeDeckSlopeDeg: 15.2136,
+      rearCenterYEnvelopeMm: [69.1812, 71.7071],
+      rearCenterZEnvelopeMm: [64.8026, 67.4524],
+      rowPlaneSlopeEnvelopeDeg: [13.4747, 17.1312],
+      representativeDeckCenterY: 57.7103,
+      representativeDeckSlopeDeg: 15.9339,
       sourceClass:
         'direct native-pixel Q1/Q4 repeated key-top centers; representative vertical row plane stable across coarse-anchor camera ablations and passed shell/apron/service-control topology gates',
       promotionClass:
         'U-GEO-006 representative vertical P4 promotion; not IBM production row/deck registration'
     },
     characterRowsP4: [
-      { centerY: 69.9426, centerZ: 65.6382, spacingX: 21.2422, offsetX: -1.8871, count: 12 },
-      { centerY: 64.5044, centerZ: 85.6354, spacingX: 21.2422, offsetX: -13.6235, count: 10 },
-      { centerY: 59.6611, centerZ: 103.4450, spacingX: 21.2422, offsetX: -8.6899, count: 10 },
-      { centerY: 55.0355, centerZ: 120.4541, spacingX: 21.2422, offsetX: 1.8819, count: 10 }
+      { centerY: 70.0495, centerZ: 65.7422, spacingX: 21.2670, offsetX: -2.0359, count: 12 },
+      { centerY: 64.4259, centerZ: 85.4399, spacingX: 21.2670, offsetX: -14.0033, count: 10 },
+      { centerY: 59.3557, centerZ: 103.1991, spacingX: 21.2670, offsetX: -8.8771, count: 10 },
+      { centerY: 54.5579, centerZ: 120.0043, spacingX: 21.2670, offsetX: 1.8932, count: 10 }
     ],
     serviceColumnXP4: 137.5,
     serviceColumnClearanceP4: {
@@ -196,21 +196,21 @@ export const P4 = Object.freeze({
       topologyClass:
         'Q4-native topology repair: internal row-aligned service caps are distinct from outer side controls; RETURN is a two-row spanning special',
       left: [
-        { label: 'TAB', centerY: 64.5044, centerZ: 85.6354, widthMm: 24, rowAssociation: 'qwerty' },
-        { label: 'LOCK', centerY: 59.6611, centerZ: 103.4450, widthMm: 24, rowAssociation: 'home' },
-        { label: 'SHIFT', centerY: 55.0355, centerZ: 120.4541, widthMm: 28, rowAssociation: 'lower' }
+        { label: 'TAB', centerY: 64.4259, centerZ: 85.4399, widthMm: 24, rowAssociation: 'qwerty' },
+        { label: 'LOCK', centerY: 59.3557, centerZ: 103.1991, widthMm: 24, rowAssociation: 'home' },
+        { label: 'SHIFT', centerY: 54.5579, centerZ: 120.0043, widthMm: 28, rowAssociation: 'lower' }
       ],
       right: [
-        { label: 'BACK SPACE', centerY: 69.9426, centerZ: 65.6382, widthMm: 28, rowAssociation: 'number' },
+        { label: 'BACK SPACE', centerY: 70.0495, centerZ: 65.7422, widthMm: 28, rowAssociation: 'number' },
         {
           label: 'RETURN',
-          centerY: 62.0828,
-          centerZ: 94.5402,
+          centerY: 61.8908,
+          centerZ: 94.3195,
           widthMm: 32,
           depthMm: 40,
           rowAssociation: 'qwerty-home-spanning'
         },
-        { label: 'SHIFT', centerY: 55.0355, centerZ: 120.4541, widthMm: 28, rowAssociation: 'lower' }
+        { label: 'SHIFT', centerY: 54.5579, centerZ: 120.0043, widthMm: 28, rowAssociation: 'lower' }
       ]
     },
     externalSideControlsP4: {
@@ -233,7 +233,7 @@ export const P4 = Object.freeze({
         { label: 'ON OFF', labels: ['ON', 'OFF'], controlClass: 'two-label-rocker', centerY: 49.4, centerZ: 104, widthMm: 22, depthMm: 52 }
       ]
     },
-    spacebarP4: { centerX: -2, centerY: 50.3655, centerZ: 136, widthMm: 112, depthMm: 18 },
+    spacebarP4: { centerX: -2, centerY: 49.5488, centerZ: 136, widthMm: 112, depthMm: 18 },
     photoProjectedWidthSeeds: {
       fullKeyControlOpeningFractionApprox: [0.70, 0.71],
       ordinaryAlphanumericFieldFractionApprox: [0.62, 0.63],
@@ -241,7 +241,7 @@ export const P4 = Object.freeze({
         'CAL-F1/CAL-Q4 normalized image-space landmarks; perspective/crop affected and not direct physical-span targets'
     },
     registrationClass:
-      'U-GEO-006 horizontal and representative vertical character-row geometry promoted from direct native Q1/Q4 evidence; service-control and spacebar-aperture topology repaired; cameras, shell profile, internal keylever registration and factory tolerances remain unresolved'
+      'U-GEO-006 horizontal and representative vertical character-row geometry refreshed after correcting Q4 9/0 native centers; service-control and spacebar-aperture topology repaired; cameras, shell profile, internal keylever registration and factory tolerances remain unresolved'
   },
   motor: { x: -116, y: 39, z: 42 },
   writingLineRacks: { marginY: 68, marginZ: -80, tabY: 61, tabZ: -86, length: 245 },
