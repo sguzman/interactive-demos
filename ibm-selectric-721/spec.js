@@ -170,16 +170,44 @@ export const P4 = Object.freeze({
         'P4 topology repair: symmetric service-key column moved inboard until the widest nominal cap clears the fixed cheek inner bevel; not an IBM production registration'
     },
     serviceKeysP4: {
+      topologyClass:
+        'Q4-native topology repair: internal row-aligned service caps are distinct from outer side controls; RETURN is a two-row spanning special',
       left: [
-        { label: 'TAB', centerY: 52, centerZ: 71, widthMm: 24 },
-        { label: 'CLR', centerY: 49, centerZ: 95, widthMm: 24 },
-        { label: 'LOCK', centerY: 46, centerZ: 117, widthMm: 24 },
-        { label: 'SHIFT', centerY: 43, centerZ: 139, widthMm: 28 }
+        { label: 'TAB', centerY: 52.2, centerZ: 69, widthMm: 24, rowAssociation: 'qwerty' },
+        { label: 'LOCK', centerY: 49.4, centerZ: 92, widthMm: 24, rowAssociation: 'home' },
+        { label: 'SHIFT', centerY: 46.6, centerZ: 116, widthMm: 28, rowAssociation: 'lower' }
       ],
       right: [
-        { label: 'BKSP', centerY: 52, centerZ: 71, widthMm: 28 },
-        { label: 'RETURN', centerY: 49, centerZ: 98, widthMm: 32 },
-        { label: 'SHIFT', centerY: 44, centerZ: 131, widthMm: 28 }
+        { label: 'BACK SPACE', centerY: 55, centerZ: 47, widthMm: 28, rowAssociation: 'number' },
+        {
+          label: 'RETURN',
+          centerY: 50.8,
+          centerZ: 80.5,
+          widthMm: 32,
+          depthMm: 40,
+          rowAssociation: 'qwerty-home-spanning'
+        },
+        { label: 'SHIFT', centerY: 46.6, centerZ: 116, widthMm: 28, rowAssociation: 'lower' }
+      ]
+    },
+    externalSideControlsP4: {
+      columnAbsX: 169,
+      sourceClass:
+        'direct native Q4 topology; metric placement is constructive P4 inside the fixed side-cheek band, not IBM production registration',
+      sideBandP4: {
+        cheekInnerX: 156,
+        cheekOuterX: 182,
+        nominalControlWidthMm: 22,
+        innerGapMm: 2,
+        outerGapMm: 2
+      },
+      left: [
+        { label: 'MAR REL', controlClass: 'single-cap', centerY: 55, centerZ: 47, widthMm: 22, depthMm: 18 },
+        { label: 'CLR SET', controlClass: 'two-label-rocker', centerY: 49.4, centerZ: 104, widthMm: 22, depthMm: 52 }
+      ],
+      right: [
+        { label: 'INDEX', controlClass: 'single-cap', centerY: 55, centerZ: 47, widthMm: 22, depthMm: 18 },
+        { label: 'ON OFF', controlClass: 'two-label-rocker', centerY: 49.4, centerZ: 104, widthMm: 22, depthMm: 52 }
       ]
     },
     spacebarP4: { centerX: -2, centerY: 44, centerZ: 136, widthMm: 112, depthMm: 18 },
@@ -190,7 +218,7 @@ export const P4 = Object.freeze({
         'CAL-F1/CAL-Q4 normalized image-space landmarks; perspective/crop affected and not direct physical-span targets'
     },
     registrationClass:
-      'U-GEO-006 horizontal character-row pitch/X registration promoted from direct native Q1/Q4 evidence; vertical row registration, service keys, spacebar and camera closure remain unresolved'
+      'U-GEO-006 horizontal character-row pitch/X registration promoted from direct native Q1/Q4 evidence; service-control topology repaired from native Q4; vertical metric row/deck/service/spacebar registration and camera closure remain unresolved'
   },
   motor: { x: -116, y: 39, z: 42 },
   writingLineRacks: { marginY: 68, marginZ: -80, tabY: 61, tabZ: -86, length: 245 },
