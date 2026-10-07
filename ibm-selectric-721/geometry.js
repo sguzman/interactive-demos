@@ -1186,6 +1186,27 @@ function makeKeyboard(keysMat, darkMat, pickables) {
         ...keyboardP4.verticalCalibrationP4.rowPlaneSlopeEnvelopeDeg
       ]
     },
+    jointCalibrationP4: {
+      ...keyboardP4.jointCalibrationP4,
+      sharedPitchEnvelopeMm: [
+        ...keyboardP4.jointCalibrationP4.sharedPitchEnvelopeMm
+      ],
+      rearCenterYEnvelopeMm: [
+        ...keyboardP4.jointCalibrationP4.rearCenterYEnvelopeMm
+      ],
+      rearCenterZEnvelopeMm: [
+        ...keyboardP4.jointCalibrationP4.rearCenterZEnvelopeMm
+      ],
+      rowPlaneSlopeEnvelopeDeg: [
+        ...keyboardP4.jointCalibrationP4.rowPlaneSlopeEnvelopeDeg
+      ],
+      representativePointRmsPx: {
+        ...keyboardP4.jointCalibrationP4.representativePointRmsPx
+      },
+      priorDecoupledPointRmsPx: {
+        ...keyboardP4.jointCalibrationP4.priorDecoupledPointRmsPx
+      }
+    },
     frontApronP4: {
       ...keyboardP4.frontApronP4,
       spacebarApertureP4: { ...keyboardP4.frontApronP4.spacebarApertureP4 }
