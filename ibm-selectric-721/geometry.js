@@ -898,17 +898,57 @@ function makeKeyboard(keysMat, darkMat, pickables) {
   addPickable(deck, COMPONENTS.keyboard, pickables);
   group.add(deck);
 
-  const frontApron = box(
-    keyboardP4.frontApronP4.widthMm,
-    keyboardP4.frontApronP4.heightMm,
-    keyboardP4.frontApronP4.depthMm,
-    darkMat,
-    'keyboard front apron'
+  const frontApronSegmentsP4 = [];
+  const apronP4 = keyboardP4.frontApronP4;
+  const apertureP4 = apronP4.spacebarApertureP4;
+  const apronLeftX = -apronP4.widthMm / 2;
+  const apronRightX = apronP4.widthMm / 2;
+  const apertureLeftX = apertureP4.centerX - apertureP4.widthMm / 2;
+  const apertureRightX = apertureP4.centerX + apertureP4.widthMm / 2;
+
+  function addFrontApronSegment(name, minX, maxX, centerY, heightMm, depthMm) {
+    const widthMm = maxX - minX;
+    const segment = box(
+      widthMm,
+      heightMm,
+      depthMm,
+      darkMat,
+      name
+    );
+    segment.position.set((minX + maxX) / 2, centerY, apronP4.z);
+    segment.rotation.x = deg(apronP4.slopeDeg);
+    segment.userData.apronTopologyClass = apronP4.topologyClass;
+    segment.userData.apronXExtentP4 = [minX, maxX];
+    addPickable(segment, COMPONENTS.shell, pickables);
+    group.add(segment);
+    frontApronSegmentsP4.push(segment);
+    return segment;
+  }
+
+  addFrontApronSegment(
+    'keyboard front apron left pier',
+    apronLeftX,
+    apertureLeftX,
+    apronP4.y,
+    apronP4.heightMm,
+    apronP4.depthMm
   );
-  frontApron.position.set(0, keyboardP4.frontApronP4.y, keyboardP4.frontApronP4.z);
-  frontApron.rotation.x = deg(keyboardP4.frontApronP4.slopeDeg);
-  addPickable(frontApron, COMPONENTS.shell, pickables);
-  group.add(frontApron);
+  addFrontApronSegment(
+    'keyboard front apron right pier',
+    apertureRightX,
+    apronRightX,
+    apronP4.y,
+    apronP4.heightMm,
+    apronP4.depthMm
+  );
+  addFrontApronSegment(
+    'keyboard front apron lower spacebar lip',
+    apertureLeftX,
+    apertureRightX,
+    apertureP4.lowerLipCenterY,
+    apertureP4.lowerLipHeightMm,
+    apertureP4.lowerLipDepthMm
+  );
 
   function addLabeledKey(
     keyText,
@@ -1120,7 +1160,22 @@ function makeKeyboard(keysMat, darkMat, pickables) {
     parameterized: true,
     deckWidthMmP4: keyboardP4.deckP4.widthMm,
     deckSlopeDegP4: keyboardP4.deckP4.slopeDeg,
-    frontApronP4: { ...keyboardP4.frontApronP4 },
+    frontApronP4: {
+      ...keyboardP4.frontApronP4,
+      spacebarApertureP4: { ...keyboardP4.frontApronP4.spacebarApertureP4 }
+    },
+    frontApronSegmentCountP4: frontApronSegmentsP4.length,
+    frontApronSegmentXExtentsP4: frontApronSegmentsP4.map(segment => [
+      ...segment.userData.apronXExtentP4
+    ]),
+    spacebarApertureXExtentP4: [apertureLeftX, apertureRightX],
+    spacebarNominalXExtentP4: [
+      keyboardP4.spacebarP4.centerX - keyboardP4.spacebarP4.widthMm / 2,
+      keyboardP4.spacebarP4.centerX + keyboardP4.spacebarP4.widthMm / 2
+    ],
+    spacebarApertureNominalSideClearanceMmP4:
+      (apertureP4.widthMm - keyboardP4.spacebarP4.widthMm) / 2,
+    frontApronCenterOpeningEmbodiedP4: true,
     characterRowsP4: keyboardP4.characterRowsP4.map(row => ({ ...row })),
     horizontalCalibrationP4: {
       ...keyboardP4.horizontalCalibrationP4,
