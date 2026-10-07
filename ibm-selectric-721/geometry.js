@@ -883,6 +883,7 @@ function makeKeyboard(keysMat, darkMat, pickables) {
   const group = new THREE.Group();
   const keyMeshes = new Map();
   const allKeycapsP4 = [];
+  const externalSideControlMeshesP4 = [];
   const keyboardP4 = P4.keyboard;
 
   const deck = box(
@@ -950,6 +951,45 @@ function makeKeyboard(keysMat, darkMat, pickables) {
     return key;
   }
 
+  function addExternalSideControl(controlP4, x) {
+    const depth = controlP4.depthMm ?? keyboardP4.keycapP4.depthMm;
+    const keyGeometry = keycapGeometryP4(
+      controlP4.widthMm,
+      keyboardP4.keycapP4.heightMm,
+      depth
+    );
+    const control = new THREE.Mesh(keyGeometry, keysMat);
+    control.name = 'external-side-control-' + controlP4.label.toLowerCase().replaceAll(' ', '-');
+    control.castShadow = true;
+    control.receiveShadow = true;
+    control.position.set(x, controlP4.centerY, controlP4.centerZ);
+    control.rotation.x = deg(keyboardP4.keycapP4.faceSlopeDeg);
+    control.userData.component = COMPONENTS.keyboard;
+    control.userData.controlClass = controlP4.controlClass;
+    control.userData.topologyClass = 'external-shell-side-control';
+    control.userData.nominalWidthMmP4 = controlP4.widthMm;
+    control.userData.nominalDepthMmP4 = depth;
+    addPickable(control, COMPONENTS.keyboard, pickables);
+
+    const labelMaterial = new THREE.MeshBasicMaterial({
+      map: keyLabelTexture(controlP4.label),
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    const labelPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(Math.max(16, controlP4.widthMm - 2), 7.4),
+      labelMaterial
+    );
+    labelPlane.rotation.x = -Math.PI / 2;
+    labelPlane.position.y = 4.15;
+    labelPlane.name = 'external control label ' + controlP4.label;
+    control.add(labelPlane);
+    group.add(control);
+    externalSideControlMeshesP4.push(control);
+    return control;
+  }
+
   const rows = [
     ['1','2','3','4','5','6','7','8','9','0','-','='],
     ['Q','W','E','R','T','Y','U','I','O','P'],
@@ -978,7 +1018,8 @@ function makeKeyboard(keysMat, darkMat, pickables) {
       -serviceX,
       keyP4.centerY,
       keyP4.centerZ,
-      keyP4.widthMm
+      keyP4.widthMm,
+      keyP4.depthMm ?? keyboardP4.keycapP4.depthMm
     );
   });
   keyboardP4.serviceKeysP4.right.forEach(keyP4 => {
@@ -987,8 +1028,17 @@ function makeKeyboard(keysMat, darkMat, pickables) {
       serviceX,
       keyP4.centerY,
       keyP4.centerZ,
-      keyP4.widthMm
+      keyP4.widthMm,
+      keyP4.depthMm ?? keyboardP4.keycapP4.depthMm
     );
+  });
+
+  const externalControlX = keyboardP4.externalSideControlsP4.columnAbsX;
+  keyboardP4.externalSideControlsP4.left.forEach(controlP4 => {
+    addExternalSideControl(controlP4, -externalControlX);
+  });
+  keyboardP4.externalSideControlsP4.right.forEach(controlP4 => {
+    addExternalSideControl(controlP4, externalControlX);
   });
 
   const spacebar = addLabeledKey(
@@ -1080,9 +1130,39 @@ function makeKeyboard(keysMat, darkMat, pickables) {
       rowOffsetsMm: [...keyboardP4.horizontalCalibrationP4.rowOffsetsMm]
     },
     serviceKeysP4: {
+      topologyClass: keyboardP4.serviceKeysP4.topologyClass,
       left: keyboardP4.serviceKeysP4.left.map(key => ({ ...key })),
       right: keyboardP4.serviceKeysP4.right.map(key => ({ ...key }))
     },
+    externalSideControlsP4: {
+      columnAbsX: keyboardP4.externalSideControlsP4.columnAbsX,
+      sourceClass: keyboardP4.externalSideControlsP4.sourceClass,
+      sideBandP4: { ...keyboardP4.externalSideControlsP4.sideBandP4 },
+      left: keyboardP4.externalSideControlsP4.left.map(control => ({ ...control })),
+      right: keyboardP4.externalSideControlsP4.right.map(control => ({ ...control }))
+    },
+    externalSideControlCountP4: externalSideControlMeshesP4.length,
+    externalSideControlLabelsP4: externalSideControlMeshesP4.map(control =>
+      control.name.replace('external-side-control-', '').replaceAll('-', ' ')
+    ),
+    externalSideControlInnerEdgeAbsXP4:
+      keyboardP4.externalSideControlsP4.columnAbsX -
+      keyboardP4.externalSideControlsP4.sideBandP4.nominalControlWidthMm / 2,
+    externalSideControlOuterEdgeAbsXP4:
+      keyboardP4.externalSideControlsP4.columnAbsX +
+      keyboardP4.externalSideControlsP4.sideBandP4.nominalControlWidthMm / 2,
+    externalSideControlsContainedInCheekBandP4:
+      keyboardP4.externalSideControlsP4.columnAbsX -
+        keyboardP4.externalSideControlsP4.sideBandP4.nominalControlWidthMm / 2 >=
+        keyboardP4.externalSideControlsP4.sideBandP4.cheekInnerX +
+          keyboardP4.externalSideControlsP4.sideBandP4.innerGapMm - 1e-9 &&
+      keyboardP4.externalSideControlsP4.columnAbsX +
+        keyboardP4.externalSideControlsP4.sideBandP4.nominalControlWidthMm / 2 <=
+        keyboardP4.externalSideControlsP4.sideBandP4.cheekOuterX -
+          keyboardP4.externalSideControlsP4.sideBandP4.outerGapMm + 1e-9,
+    returnServiceDepthMmP4:
+      keyboardP4.serviceKeysP4.right.find(key => key.label === 'RETURN')?.depthMm ??
+      keyboardP4.keycapP4.depthMm,
     serviceColumnXP4: keyboardP4.serviceColumnXP4,
     serviceColumnClearanceP4: { ...keyboardP4.serviceColumnClearanceP4 },
     serviceKeyMaxHalfWidthP4,
