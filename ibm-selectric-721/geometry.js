@@ -1011,20 +1011,32 @@ function makeKeyboard(keysMat, darkMat, pickables) {
     control.userData.nominalDepthMmP4 = depth;
     addPickable(control, COMPONENTS.keyboard, pickables);
 
-    const labelMaterial = new THREE.MeshBasicMaterial({
-      map: keyLabelTexture(controlP4.label),
-      transparent: true,
-      depthWrite: false,
-      side: THREE.DoubleSide
+    const labelTexts =
+      Array.isArray(controlP4.labels) && controlP4.labels.length
+        ? controlP4.labels
+        : [controlP4.label];
+    const labelOffsetsZ =
+      labelTexts.length === 2
+        ? [-depth * 0.24, depth * 0.24]
+        : [0];
+    labelTexts.forEach((labelText, index) => {
+      const labelMaterial = new THREE.MeshBasicMaterial({
+        map: keyLabelTexture(labelText),
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const labelPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(Math.max(16, controlP4.widthMm - 2), 7.4),
+        labelMaterial
+      );
+      labelPlane.rotation.x = -Math.PI / 2;
+      labelPlane.position.set(0, 4.15, labelOffsetsZ[index]);
+      labelPlane.name = 'external control label ' + labelText;
+      control.add(labelPlane);
     });
-    const labelPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(Math.max(16, controlP4.widthMm - 2), 7.4),
-      labelMaterial
-    );
-    labelPlane.rotation.x = -Math.PI / 2;
-    labelPlane.position.y = 4.15;
-    labelPlane.name = 'external control label ' + controlP4.label;
-    control.add(labelPlane);
+    control.userData.legendCountP4 = labelTexts.length;
+    control.userData.legendTextsP4 = [...labelTexts];
     group.add(control);
     externalSideControlMeshesP4.push(control);
     return control;
@@ -1214,6 +1226,14 @@ function makeKeyboard(keysMat, darkMat, pickables) {
     externalSideControlLabelsP4: {
       left: keyboardP4.externalSideControlsP4.left.map(control => control.label),
       right: keyboardP4.externalSideControlsP4.right.map(control => control.label)
+    },
+    externalSideControlLegendGroupsP4: {
+      left: keyboardP4.externalSideControlsP4.left.map(control =>
+        control.labels ? [...control.labels] : [control.label]
+      ),
+      right: keyboardP4.externalSideControlsP4.right.map(control =>
+        control.labels ? [...control.labels] : [control.label]
+      )
     },
     internalServiceKeyLabelsP4: {
       left: keyboardP4.serviceKeysP4.left.map(key => key.label),
