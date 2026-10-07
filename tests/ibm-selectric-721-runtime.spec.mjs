@@ -299,7 +299,7 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.keyboardRegistrationP4.directPhysicalToProjectedComparisonForbidden).toBe(true);
   expect(initial.geometry.keyboardRegistrationP4.cameraSolveRequired).toBe(true);
   expect(initial.geometry.keyboardRegistrationP4.registrationClosed).toBe(false);
-  expect(initial.geometry.keyboardRegistrationP4.registrationClass).toContain('representative vertical');
+  expect(initial.geometry.keyboardRegistrationP4.registrationClass).toContain('coherent simultaneous U/V');
   expect(initial.geometry.keyboardRegistrationP4.registrationClass).toContain('U-GEO-006');
   expect(initial.geometry.keyboardRegistrationP4.assembledGroupFrameClass).toContain('identity/root');
   expect(initial.geometry.keyboardRegistrationP4.keyboardAssemblyBasePositionP4).toEqual({ x: 0, y: 0, z: 0 });
