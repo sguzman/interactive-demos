@@ -234,6 +234,10 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
     .toEqual(['MAR REL', 'CLR SET']);
   expect(initial.geometry.keyboardRegistrationP4.externalSideControlLabelsP4.right)
     .toEqual(['INDEX', 'ON OFF']);
+  expect(initial.geometry.keyboardRegistrationP4.externalSideControlLegendGroupsP4.left)
+    .toEqual([['MAR REL'], ['CLR', 'SET']]);
+  expect(initial.geometry.keyboardRegistrationP4.externalSideControlLegendGroupsP4.right)
+    .toEqual([['INDEX'], ['ON', 'OFF']]);
   expect(initial.geometry.keyboardRegistrationP4.externalSideControlInnerEdgeAbsXP4).toBeCloseTo(158, 8);
   expect(initial.geometry.keyboardRegistrationP4.externalSideControlOuterEdgeAbsXP4).toBeCloseTo(180, 8);
   expect(initial.geometry.keyboardRegistrationP4.externalSideControlsContainedInCheekBandP4).toBe(true);
