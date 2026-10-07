@@ -226,11 +226,11 @@ export const P4 = Object.freeze({
       },
       left: [
         { label: 'MAR REL', controlClass: 'single-cap', centerY: 55, centerZ: 47, widthMm: 22, depthMm: 18 },
-        { label: 'CLR SET', controlClass: 'two-label-rocker', centerY: 49.4, centerZ: 104, widthMm: 22, depthMm: 52 }
+        { label: 'CLR SET', labels: ['CLR', 'SET'], controlClass: 'two-label-rocker', centerY: 49.4, centerZ: 104, widthMm: 22, depthMm: 52 }
       ],
       right: [
         { label: 'INDEX', controlClass: 'single-cap', centerY: 55, centerZ: 47, widthMm: 22, depthMm: 18 },
-        { label: 'ON OFF', controlClass: 'two-label-rocker', centerY: 49.4, centerZ: 104, widthMm: 22, depthMm: 52 }
+        { label: 'ON OFF', labels: ['ON', 'OFF'], controlClass: 'two-label-rocker', centerY: 49.4, centerZ: 104, widthMm: 22, depthMm: 52 }
       ]
     },
     spacebarP4: { centerX: -2, centerY: 50.3655, centerZ: 136, widthMm: 112, depthMm: 18 },
