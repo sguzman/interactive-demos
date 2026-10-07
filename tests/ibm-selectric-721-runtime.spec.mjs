@@ -204,6 +204,29 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.keyboardRegistrationP4.serviceKeyMaxOuterAbsXP4).toBeCloseTo(153.5, 8);
   expect(initial.geometry.keyboardRegistrationP4.serviceKeyEffectiveClearanceMmP4).toBeGreaterThanOrEqual(-1e-8);
   expect(initial.geometry.keyboardRegistrationP4.serviceKeyCheekOverlapRepairedP4).toBe(true);
+  expect(initial.geometry.keyboardRegistrationP4.serviceKeysP4.topologyClass)
+    .toContain('Q4-native topology repair');
+  expect(initial.geometry.keyboardRegistrationP4.internalServiceKeyLabelsP4.left)
+    .toEqual(['TAB', 'LOCK', 'SHIFT']);
+  expect(initial.geometry.keyboardRegistrationP4.internalServiceKeyLabelsP4.right)
+    .toEqual(['BACK SPACE', 'RETURN', 'SHIFT']);
+  expect(initial.geometry.keyboardRegistrationP4.internalServiceKeyLabelsP4.left)
+    .not.toContain('CLR');
+  expect(initial.geometry.keyboardRegistrationP4.internalServiceKeyRowAssociationsP4.left)
+    .toEqual(['qwerty', 'home', 'lower']);
+  expect(initial.geometry.keyboardRegistrationP4.internalServiceKeyRowAssociationsP4.right)
+    .toEqual(['number', 'qwerty-home-spanning', 'lower']);
+  expect(initial.geometry.keyboardRegistrationP4.returnServiceDepthMmP4).toBeCloseTo(40, 8);
+  expect(initial.geometry.keyboardRegistrationP4.returnServiceDepthMmP4)
+    .toBeGreaterThan(2 * initial.geometry.keyboardRegistrationP4.serviceKeysP4.left[0].widthMm / 3);
+  expect(initial.geometry.keyboardRegistrationP4.externalSideControlCountP4).toBe(4);
+  expect(initial.geometry.keyboardRegistrationP4.externalSideControlLabelsP4.left)
+    .toEqual(['MAR REL', 'CLR SET']);
+  expect(initial.geometry.keyboardRegistrationP4.externalSideControlLabelsP4.right)
+    .toEqual(['INDEX', 'ON OFF']);
+  expect(initial.geometry.keyboardRegistrationP4.externalSideControlInnerEdgeAbsXP4).toBeCloseTo(158, 8);
+  expect(initial.geometry.keyboardRegistrationP4.externalSideControlOuterEdgeAbsXP4).toBeCloseTo(180, 8);
+  expect(initial.geometry.keyboardRegistrationP4.externalSideControlsContainedInCheekBandP4).toBe(true);
   expect(initial.geometry.keyboardRegistrationP4.rearToFrontRowZsP4).toEqual([47, 69, 92, 116]);
   expect(initial.geometry.keyboardRegistrationP4.rearToFrontZMonotonicP4).toBe(true);
   expect(initial.geometry.keyboardRegistrationP4.spacebarP4.centerZ).toBe(136);
