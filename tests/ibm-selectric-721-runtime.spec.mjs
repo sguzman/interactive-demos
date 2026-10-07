@@ -180,31 +180,47 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.keyboardRegistrationP4.parameterized).toBe(true);
   expect(initial.geometry.keyboardRegistrationP4.envelopeWidthMm).toBeCloseTo(381, 8);
   expect(initial.geometry.keyboardRegistrationP4.deckWidthMmP4).toBeCloseTo(340, 8);
-  expect(initial.geometry.keyboardRegistrationP4.deckCenterYP4).toBeCloseTo(57.6244, 8);
+  expect(initial.geometry.keyboardRegistrationP4.deckCenterYP4).toBeCloseTo(57.2309, 8);
   expect(initial.geometry.keyboardRegistrationP4.deckCenterZP4).toBeCloseTo(78, 8);
-  expect(initial.geometry.keyboardRegistrationP4.deckSlopeDegP4).toBeCloseTo(16.2819, 8);
+  expect(initial.geometry.keyboardRegistrationP4.deckSlopeDegP4).toBeCloseTo(16.2643, 8);
   expect(initial.geometry.keyboardRegistrationP4.verticalCalibrationP4.rearCenterYEnvelopeMm)
-    .toEqual([69.1761, 71.7092]);
+    .toEqual([69.4578, 70.3388]);
   expect(initial.geometry.keyboardRegistrationP4.verticalCalibrationP4.rearCenterZEnvelopeMm)
-    .toEqual([64.803, 67.4544]);
+    .toEqual([65.1128, 66.0434]);
   expect(initial.geometry.keyboardRegistrationP4.verticalCalibrationP4.rowPlaneSlopeEnvelopeDeg)
-    .toEqual([13.4749, 17.4416]);
+    .toEqual([15.696, 17.5955]);
   expect(initial.geometry.keyboardRegistrationP4.verticalCalibrationP4.promotionClass)
-    .toContain('representative vertical P4 promotion');
+    .toContain('coherent joint U/V representative P4 promotion');
+  expect(initial.geometry.keyboardRegistrationP4.jointCalibrationP4.promotionClass)
+    .toContain('coherent joint native-keyboard P4 promotion');
+  expect(initial.geometry.keyboardRegistrationP4.jointCalibrationP4.sharedPitchEnvelopeMm)
+    .toEqual([20.7825, 20.8212]);
+  expect(initial.geometry.keyboardRegistrationP4.jointCalibrationP4.rearCenterYEnvelopeMm)
+    .toEqual([69.4578, 70.3388]);
+  expect(initial.geometry.keyboardRegistrationP4.jointCalibrationP4.rearCenterZEnvelopeMm)
+    .toEqual([65.1128, 66.0434]);
+  expect(initial.geometry.keyboardRegistrationP4.jointCalibrationP4.rowPlaneSlopeEnvelopeDeg)
+    .toEqual([15.696, 17.5955]);
+  expect(initial.geometry.keyboardRegistrationP4.jointCalibrationP4.representativePointRmsPx.keyboardOnly)
+    .toBeCloseTo(2.351, 8);
+  expect(initial.geometry.keyboardRegistrationP4.jointCalibrationP4.priorDecoupledPointRmsPx.keyboardOnly)
+    .toBeCloseTo(9.609, 8);
+  expect(initial.geometry.keyboardRegistrationP4.jointCalibrationP4.representativePointRmsPx.keyboardOnly)
+    .toBeLessThan(initial.geometry.keyboardRegistrationP4.jointCalibrationP4.priorDecoupledPointRmsPx.keyboardOnly);
   expect(initial.geometry.keyboardRegistrationP4.characterRowsP4).toHaveLength(4);
-  expect(initial.geometry.keyboardRegistrationP4.horizontalCalibrationP4.sharedPitchMm).toBeCloseTo(21.2687, 8);
+  expect(initial.geometry.keyboardRegistrationP4.horizontalCalibrationP4.sharedPitchMm).toBeCloseTo(20.7938, 8);
   expect(initial.geometry.keyboardRegistrationP4.horizontalCalibrationP4.pitchSensitivityEnvelopeMm)
-    .toEqual([21.2395, 21.3178]);
+    .toEqual([20.7825, 20.8212]);
   expect(initial.geometry.keyboardRegistrationP4.horizontalCalibrationP4.pitchSensitivitySpanMm)
-    .toBeCloseTo(0.0784, 8);
+    .toBeCloseTo(0.0387, 8);
   expect(initial.geometry.keyboardRegistrationP4.horizontalCalibrationP4.rowOffsetsMm)
-    .toEqual([-2.0112, -13.9802, -8.7967, 1.9156]);
+    .toEqual([-3.0161, -14.2624, -9.0418, 1.2761]);
   expect(initial.geometry.keyboardRegistrationP4.horizontalCalibrationP4.promotionClass)
-    .toContain('camera-robust horizontal P4 promotion');
+    .toContain('coherent joint U/V P4 promotion');
   expect(initial.geometry.keyboardRegistrationP4.characterRowsP4.map(row => row.spacingX))
-    .toEqual([21.2687, 21.2687, 21.2687, 21.2687]);
+    .toEqual([20.7938, 20.7938, 20.7938, 20.7938]);
   expect(initial.geometry.keyboardRegistrationP4.characterRowsP4.map(row => row.offsetX))
-    .toEqual([-2.0112, -13.9802, -8.7967, 1.9156]);
+    .toEqual([-3.0161, -14.2624, -9.0418, 1.2761]);
   expect(initial.geometry.keyboardRegistrationP4.serviceColumnXP4).toBeCloseTo(137.5, 8);
   expect(initial.geometry.keyboardRegistrationP4.serviceColumnClearanceP4.minimumGapP4).toBeCloseTo(0.7, 8);
   expect(initial.geometry.keyboardRegistrationP4.serviceColumnClearanceP4.class)
@@ -242,15 +258,15 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.keyboardRegistrationP4.externalSideControlOuterEdgeAbsXP4).toBeCloseTo(180, 8);
   expect(initial.geometry.keyboardRegistrationP4.externalSideControlsContainedInCheekBandP4).toBe(true);
   expect(initial.geometry.keyboardRegistrationP4.characterRowsP4.map(row => row.centerY))
-    .toEqual([70.056, 64.3312, 59.1675, 54.2808]);
+    .toEqual([69.7469, 64.021, 58.8629, 53.9813]);
   expect(initial.geometry.keyboardRegistrationP4.rearToFrontRowZsP4)
-    .toEqual([65.7554, 85.3554, 103.0348, 119.7655]);
+    .toEqual([65.4494, 85.0756, 102.7557, 119.4883]);
   expect(initial.geometry.keyboardRegistrationP4.rearToFrontZMonotonicP4).toBe(true);
   expect(initial.geometry.keyboardRegistrationP4.serviceKeysP4.left.map(key => [key.centerY, key.centerZ]))
-    .toEqual([[64.3312, 85.3554], [59.1675, 103.0348], [54.2808, 119.7655]]);
+    .toEqual([[64.021, 85.0756], [58.8629, 102.7557], [53.9813, 119.4883]]);
   expect(initial.geometry.keyboardRegistrationP4.serviceKeysP4.right.map(key => [key.centerY, key.centerZ]))
-    .toEqual([[70.056, 65.7554], [61.7494, 94.1951], [54.2808, 119.7655]]);
-  expect(initial.geometry.keyboardRegistrationP4.spacebarP4.centerY).toBeCloseTo(49.0967, 8);
+    .toEqual([[69.7469, 65.4494], [61.442, 93.9156], [53.9813, 119.4883]]);
+  expect(initial.geometry.keyboardRegistrationP4.spacebarP4.centerY).toBeCloseTo(48.7218, 8);
   expect(initial.geometry.keyboardRegistrationP4.spacebarP4.centerZ).toBe(136);
   expect(initial.geometry.keyboardRegistrationP4.spacebarFrontOfCharacterRowsP4).toBe(true);
   expect(initial.geometry.keyboardRegistrationP4.deckFallsTowardOperatorFrontP4).toBe(true);
