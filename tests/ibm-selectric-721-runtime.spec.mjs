@@ -284,7 +284,9 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.keyboardRegistrationP4.spacebarApertureNominalSideClearanceMmP4)
     .toBeCloseTo(2, 8);
   expect(initial.geometry.keyboardRegistrationP4.frontApronCenterOpeningEmbodiedP4).toBe(true);
-  expect(initial.geometry.keyboardRegistrationP4.ordinaryFieldSpanMmP4).toBeGreaterThan(250);
+  expect(initial.geometry.keyboardRegistrationP4.ordinaryFieldSpanMmP4)
+    .toBeCloseTo(11 * 20.7938 + 18, 8);
+  expect(initial.geometry.keyboardRegistrationP4.ordinaryFieldSpanMmP4).toBeGreaterThan(240);
   expect(initial.geometry.keyboardRegistrationP4.fullKeyControlSpanMmP4).toBeGreaterThan(300);
   expect(initial.geometry.keyboardRegistrationP4.ordinaryFieldWidthFractionOfEnvelopeP4)
     .toBeCloseTo(initial.geometry.keyboardRegistrationP4.ordinaryFieldSpanMmP4 / 381, 10);
