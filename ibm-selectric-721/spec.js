@@ -120,7 +120,7 @@ export const P4 = Object.freeze({
     spoolRadiusP4: 20
   },
   keyboard: {
-    y: 57.6244,
+    y: 57.2309,
     z: 78,
     assemblyExplodeVectorP5: { x: 0, y: -46, z: 155 },
     mechanismExplodeVectorP5: { x: 0, y: -78, z: 62 },
@@ -128,7 +128,7 @@ export const P4 = Object.freeze({
       widthMm: 340,
       heightMm: 17,
       depthMm: 142,
-      slopeDeg: 16.2819
+      slopeDeg: 16.2643
     },
     frontApronP4: {
       widthMm: 346,
@@ -157,31 +157,57 @@ export const P4 = Object.freeze({
       faceSlopeDeg: -8
     },
     horizontalCalibrationP4: {
-      sharedPitchMm: 21.2687,
-      pitchSensitivityEnvelopeMm: [21.2395, 21.3178],
-      pitchSensitivitySpanMm: 0.0784,
-      rowOffsetsMm: [-2.0112, -13.9802, -8.7967, 1.9156],
+      sharedPitchMm: 20.7938,
+      pitchSensitivityEnvelopeMm: [20.7825, 20.8212],
+      pitchSensitivitySpanMm: 0.0387,
+      rowOffsetsMm: [-3.0161, -14.2624, -9.0418, 1.2761],
       sourceClass:
-        'direct native-pixel Q1/Q4 repeated key-top centers; Q4 9/0 plus W/E/K row-projective source corrections propagated through accepted and anchor-ablation camera scenarios',
+        'direct native-pixel Q1/Q4 repeated key-top centers; simultaneous U/V joint fit after Q4 9/0/W/E/K row-projective source cleanup across accepted and anchor-ablation camera scenarios',
       promotionClass:
-        'U-GEO-006 camera-robust horizontal P4 promotion'
+        'U-GEO-006 coherent joint U/V P4 promotion; horizontal terms are no longer fit independently'
     },
     verticalCalibrationP4: {
-      rearCenterYEnvelopeMm: [69.1761, 71.7092],
-      rearCenterZEnvelopeMm: [64.8030, 67.4544],
-      rowPlaneSlopeEnvelopeDeg: [13.4749, 17.4416],
-      representativeDeckCenterY: 57.6244,
-      representativeDeckSlopeDeg: 16.2819,
+      rearCenterYEnvelopeMm: [69.4578, 70.3388],
+      rearCenterZEnvelopeMm: [65.1128, 66.0434],
+      rowPlaneSlopeEnvelopeDeg: [15.6960, 17.5955],
+      representativeDeckCenterY: 57.2309,
+      representativeDeckSlopeDeg: 16.2643,
       sourceClass:
-        'direct native-pixel Q1/Q4 repeated key-top centers; representative vertical row plane stable across coarse-anchor camera ablations and passed shell/apron/service-control topology gates',
+        'direct native-pixel Q1/Q4 repeated key-top centers; simultaneous U/V joint solution stable across coarse-anchor camera ablations and passed shell/apron/service-control topology gates',
       promotionClass:
-        'U-GEO-006 representative vertical P4 promotion; not IBM production row/deck registration'
+        'U-GEO-006 coherent joint U/V representative P4 promotion; not IBM production row/deck registration'
+    },
+    jointCalibrationP4: {
+      sourceClass:
+        'simultaneous native-pixel U/V fit across accepted Stage-A plus five camera-anchor ablation pairs; supersedes independent horizontal/vertical fitting because row Z changes horizontal perspective',
+      sharedPitchEnvelopeMm: [20.7825, 20.8212],
+      rearCenterYEnvelopeMm: [69.4578, 70.3388],
+      rearCenterZEnvelopeMm: [65.1128, 66.0434],
+      rowPlaneSlopeEnvelopeDeg: [15.6960, 17.5955],
+      representativePointRmsPx: {
+        acceptedStageA: 11.7655,
+        legacyReduced: 2.4975,
+        noFront: 2.4676,
+        noPlaten: 2.8029,
+        horizontalSilhouetteOnly: 2.6423,
+        keyboardOnly: 2.3510
+      },
+      priorDecoupledPointRmsPx: {
+        acceptedStageA: 15.5565,
+        legacyReduced: 10.0682,
+        noFront: 9.8931,
+        noPlaten: 10.2064,
+        horizontalSilhouetteOnly: 10.0769,
+        keyboardOnly: 9.6090
+      },
+      promotionClass:
+        'U-GEO-006 coherent joint native-keyboard P4 promotion; representative reconstruction, not IBM production metrology'
     },
     characterRowsP4: [
-      { centerY: 70.0560, centerZ: 65.7554, spacingX: 21.2687, offsetX: -2.0112, count: 12 },
-      { centerY: 64.3312, centerZ: 85.3554, spacingX: 21.2687, offsetX: -13.9802, count: 10 },
-      { centerY: 59.1675, centerZ: 103.0348, spacingX: 21.2687, offsetX: -8.7967, count: 10 },
-      { centerY: 54.2808, centerZ: 119.7655, spacingX: 21.2687, offsetX: 1.9156, count: 10 }
+      { centerY: 69.7469, centerZ: 65.4494, spacingX: 20.7938, offsetX: -3.0161, count: 12 },
+      { centerY: 64.0210, centerZ: 85.0756, spacingX: 20.7938, offsetX: -14.2624, count: 10 },
+      { centerY: 58.8629, centerZ: 102.7557, spacingX: 20.7938, offsetX: -9.0418, count: 10 },
+      { centerY: 53.9813, centerZ: 119.4883, spacingX: 20.7938, offsetX: 1.2761, count: 10 }
     ],
     serviceColumnXP4: 137.5,
     serviceColumnClearanceP4: {
@@ -196,21 +222,21 @@ export const P4 = Object.freeze({
       topologyClass:
         'Q4-native topology repair: internal row-aligned service caps are distinct from outer side controls; RETURN is a two-row spanning special',
       left: [
-        { label: 'TAB', centerY: 64.3312, centerZ: 85.3554, widthMm: 24, rowAssociation: 'qwerty' },
-        { label: 'LOCK', centerY: 59.1675, centerZ: 103.0348, widthMm: 24, rowAssociation: 'home' },
-        { label: 'SHIFT', centerY: 54.2808, centerZ: 119.7655, widthMm: 28, rowAssociation: 'lower' }
+        { label: 'TAB', centerY: 64.0210, centerZ: 85.0756, widthMm: 24, rowAssociation: 'qwerty' },
+        { label: 'LOCK', centerY: 58.8629, centerZ: 102.7557, widthMm: 24, rowAssociation: 'home' },
+        { label: 'SHIFT', centerY: 53.9813, centerZ: 119.4883, widthMm: 28, rowAssociation: 'lower' }
       ],
       right: [
-        { label: 'BACK SPACE', centerY: 70.0560, centerZ: 65.7554, widthMm: 28, rowAssociation: 'number' },
+        { label: 'BACK SPACE', centerY: 69.7469, centerZ: 65.4494, widthMm: 28, rowAssociation: 'number' },
         {
           label: 'RETURN',
-          centerY: 61.7494,
-          centerZ: 94.1951,
+          centerY: 61.4420,
+          centerZ: 93.9156,
           widthMm: 32,
           depthMm: 40,
           rowAssociation: 'qwerty-home-spanning'
         },
-        { label: 'SHIFT', centerY: 54.2808, centerZ: 119.7655, widthMm: 28, rowAssociation: 'lower' }
+        { label: 'SHIFT', centerY: 53.9813, centerZ: 119.4883, widthMm: 28, rowAssociation: 'lower' }
       ]
     },
     externalSideControlsP4: {
@@ -233,7 +259,7 @@ export const P4 = Object.freeze({
         { label: 'ON OFF', labels: ['ON', 'OFF'], controlClass: 'two-label-rocker', centerY: 49.4, centerZ: 104, widthMm: 22, depthMm: 52 }
       ]
     },
-    spacebarP4: { centerX: -2, centerY: 49.0967, centerZ: 136, widthMm: 112, depthMm: 18 },
+    spacebarP4: { centerX: -2, centerY: 48.7218, centerZ: 136, widthMm: 112, depthMm: 18 },
     photoProjectedWidthSeeds: {
       fullKeyControlOpeningFractionApprox: [0.70, 0.71],
       ordinaryAlphanumericFieldFractionApprox: [0.62, 0.63],
@@ -241,7 +267,7 @@ export const P4 = Object.freeze({
         'CAL-F1/CAL-Q4 normalized image-space landmarks; perspective/crop affected and not direct physical-span targets'
     },
     registrationClass:
-      'U-GEO-006 horizontal and representative vertical character-row geometry refreshed after Q4 row-projective source cleanup (9/0/W/E/K); service-control and spacebar-aperture topology repaired; cameras, shell profile, internal keylever registration and factory tolerances remain unresolved'
+      'U-GEO-006 coherent simultaneous U/V character-row geometry promoted after Q4 row-projective source cleanup (9/0/W/E/K); service-control and spacebar-aperture topology repaired; cameras, shell profile, internal keylever registration and factory tolerances remain unresolved'
   },
   motor: { x: -116, y: 39, z: 42 },
   writingLineRacks: { marginY: 68, marginZ: -80, tabY: 61, tabZ: -86, length: 245 },
