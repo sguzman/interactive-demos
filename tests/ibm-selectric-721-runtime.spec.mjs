@@ -180,31 +180,31 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.keyboardRegistrationP4.parameterized).toBe(true);
   expect(initial.geometry.keyboardRegistrationP4.envelopeWidthMm).toBeCloseTo(381, 8);
   expect(initial.geometry.keyboardRegistrationP4.deckWidthMmP4).toBeCloseTo(340, 8);
-  expect(initial.geometry.keyboardRegistrationP4.deckCenterYP4).toBeCloseTo(57.7721, 8);
+  expect(initial.geometry.keyboardRegistrationP4.deckCenterYP4).toBeCloseTo(57.7103, 8);
   expect(initial.geometry.keyboardRegistrationP4.deckCenterZP4).toBeCloseTo(78, 8);
-  expect(initial.geometry.keyboardRegistrationP4.deckSlopeDegP4).toBeCloseTo(15.2136, 8);
+  expect(initial.geometry.keyboardRegistrationP4.deckSlopeDegP4).toBeCloseTo(15.9339, 8);
   expect(initial.geometry.keyboardRegistrationP4.verticalCalibrationP4.rearCenterYEnvelopeMm)
-    .toEqual([68.8557, 71.7245]);
+    .toEqual([69.1812, 71.7071]);
   expect(initial.geometry.keyboardRegistrationP4.verticalCalibrationP4.rearCenterZEnvelopeMm)
-    .toEqual([64.3086, 67.4696]);
+    .toEqual([64.8026, 67.4524]);
   expect(initial.geometry.keyboardRegistrationP4.verticalCalibrationP4.rowPlaneSlopeEnvelopeDeg)
-    .toEqual([13.4893, 16.9639]);
+    .toEqual([13.4747, 17.1312]);
   expect(initial.geometry.keyboardRegistrationP4.verticalCalibrationP4.promotionClass)
     .toContain('representative vertical P4 promotion');
   expect(initial.geometry.keyboardRegistrationP4.characterRowsP4).toHaveLength(4);
-  expect(initial.geometry.keyboardRegistrationP4.horizontalCalibrationP4.sharedPitchMm).toBeCloseTo(21.2422, 8);
+  expect(initial.geometry.keyboardRegistrationP4.horizontalCalibrationP4.sharedPitchMm).toBeCloseTo(21.2670, 8);
   expect(initial.geometry.keyboardRegistrationP4.horizontalCalibrationP4.pitchSensitivityEnvelopeMm)
-    .toEqual([21.2089, 21.2695]);
+    .toEqual([21.2325, 21.3141]);
   expect(initial.geometry.keyboardRegistrationP4.horizontalCalibrationP4.pitchSensitivitySpanMm)
-    .toBeCloseTo(0.0606, 8);
+    .toBeCloseTo(0.0816, 8);
   expect(initial.geometry.keyboardRegistrationP4.horizontalCalibrationP4.rowOffsetsMm)
-    .toEqual([-1.8871, -13.6235, -8.6899, 1.8819]);
+    .toEqual([-2.0359, -14.0033, -8.8771, 1.8932]);
   expect(initial.geometry.keyboardRegistrationP4.horizontalCalibrationP4.promotionClass)
     .toContain('camera-robust horizontal P4 promotion');
   expect(initial.geometry.keyboardRegistrationP4.characterRowsP4.map(row => row.spacingX))
-    .toEqual([21.2422, 21.2422, 21.2422, 21.2422]);
+    .toEqual([21.2670, 21.2670, 21.2670, 21.2670]);
   expect(initial.geometry.keyboardRegistrationP4.characterRowsP4.map(row => row.offsetX))
-    .toEqual([-1.8871, -13.6235, -8.6899, 1.8819]);
+    .toEqual([-2.0359, -14.0033, -8.8771, 1.8932]);
   expect(initial.geometry.keyboardRegistrationP4.serviceColumnXP4).toBeCloseTo(137.5, 8);
   expect(initial.geometry.keyboardRegistrationP4.serviceColumnClearanceP4.minimumGapP4).toBeCloseTo(0.7, 8);
   expect(initial.geometry.keyboardRegistrationP4.serviceColumnClearanceP4.class)
@@ -242,15 +242,15 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   expect(initial.geometry.keyboardRegistrationP4.externalSideControlOuterEdgeAbsXP4).toBeCloseTo(180, 8);
   expect(initial.geometry.keyboardRegistrationP4.externalSideControlsContainedInCheekBandP4).toBe(true);
   expect(initial.geometry.keyboardRegistrationP4.characterRowsP4.map(row => row.centerY))
-    .toEqual([69.9426, 64.5044, 59.6611, 55.0355]);
+    .toEqual([70.0495, 64.4259, 59.3557, 54.5579]);
   expect(initial.geometry.keyboardRegistrationP4.rearToFrontRowZsP4)
-    .toEqual([65.6382, 85.6354, 103.445, 120.4541]);
+    .toEqual([65.7422, 85.4399, 103.1991, 120.0043]);
   expect(initial.geometry.keyboardRegistrationP4.rearToFrontZMonotonicP4).toBe(true);
   expect(initial.geometry.keyboardRegistrationP4.serviceKeysP4.left.map(key => [key.centerY, key.centerZ]))
-    .toEqual([[64.5044, 85.6354], [59.6611, 103.445], [55.0355, 120.4541]]);
+    .toEqual([[64.4259, 85.4399], [59.3557, 103.1991], [54.5579, 120.0043]]);
   expect(initial.geometry.keyboardRegistrationP4.serviceKeysP4.right.map(key => [key.centerY, key.centerZ]))
-    .toEqual([[69.9426, 65.6382], [62.0828, 94.5402], [55.0355, 120.4541]]);
-  expect(initial.geometry.keyboardRegistrationP4.spacebarP4.centerY).toBeCloseTo(50.3655, 8);
+    .toEqual([[70.0495, 65.7422], [61.8908, 94.3195], [54.5579, 120.0043]]);
+  expect(initial.geometry.keyboardRegistrationP4.spacebarP4.centerY).toBeCloseTo(49.5488, 8);
   expect(initial.geometry.keyboardRegistrationP4.spacebarP4.centerZ).toBe(136);
   expect(initial.geometry.keyboardRegistrationP4.spacebarFrontOfCharacterRowsP4).toBe(true);
   expect(initial.geometry.keyboardRegistrationP4.deckFallsTowardOperatorFrontP4).toBe(true);
