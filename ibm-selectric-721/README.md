@@ -289,3 +289,22 @@ The independent Playwright suite covers 90 controlled carrier/rocker/
 cover/cheek-preview states and exports a classified JSON report. It
 restores physical state and the opt-in cheek preview after the sweep.
 No factory shell tolerance or source-calibrated camera data is inferred.
+
+
+## Instance-aware hood/type-element triangle-box SAT probe
+
+A new opt-in, **nonpromoting** 90-pose diagnostic checks the actual
+individual triangles of each of the eight type-element submeshes,
+including **all 88 instanced type slugs**, against the P4 hood's
+44 world-transformed triangles. Two independent necessary SAT
+conditions must hold for a candidate triangle pair: the type triangle
+must intersect the hood triangle's AABB, and the hood triangle must
+intersect the type triangle's AABB. A negative result in either direction
+excludes triangle-surface contact for that pair. A positive result is
+**inconclusive**: this is not an exact triangle-vs-triangle intersection
+test, not an enclosed-solid containment test, and not an IBM cover
+clearance certification.
+
+An isolated Playwright workflow archives all 90 model poses and counts.
+P4 geometry, the reversible P5 smoothing view, camera calibration and
+mechanical behavior are unchanged.

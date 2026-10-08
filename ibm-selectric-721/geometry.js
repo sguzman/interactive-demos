@@ -8431,6 +8431,164 @@ export function createSelectricModel() {
     };
   }
 
+  // Instance-aware, triangle-level broadphase for unpromoted P4 hood/type
+  // collision research. For each rendered type-element primitive (including
+  // every instanced slug), intersect its actual world-space triangles with
+  // the hood triangle's AABB using Three.js triangle-vs-box SAT. Apply the
+  // same necessary test in reverse: hood triangle vs type triangle AABB.
+  // Failing either SAT test proves *that triangle pair* cannot intersect.
+  // Passing both is only a CANDIDATE, not an exact triangle intersection.
+  function hoodTypeElementTriangleBoxSATProbe() {
+    root.updateMatrixWorld(true);
+    const hoodGeom = frontFascia.geometry;
+    const hoodIdx = hoodGeom.index, hoodPos = hoodGeom.getAttribute('position');
+    if (!hoodIdx || hoodIdx.count !== 132 || hoodPos.count !== 24) {
+      throw new Error('P4 hood triangle topology changed');
+    }
+    const hoodTriangles = [];
+    for (let i = 0; i < hoodIdx.count; i += 3) {
+      const vertices = [0, 1, 2].map(k =>
+        new THREE.Vector3().fromBufferAttribute(hoodPos, hoodIdx.getX(i + k))
+          .applyMatrix4(frontFascia.matrixWorld));
+      hoodTriangles.push({
+        triangle: new THREE.Triangle(...vertices),
+        box: new THREE.Box3().setFromPoints(vertices)
+      });
+    }
+    const meshParts = [];
+    typeElement.traverse(node => {
+      if (node.isMesh && node.geometry?.getAttribute?.('position')) meshParts.push(node);
+    });
+    if (meshParts.length !== 8) {
+      throw new Error('P4 type element source mesh anatomy drift');
+    }
+    let primitiveCount = 0, primitiveHoodBoundsCandidates = 0;
+    let primitiveTriangleAABBCandidates = 0, primitiveTriangleSATCandidates = 0;
+    let examinedGeometryTrianglePairs = 0, initialSubmeshCandidates = 0;
+    const candidateExampleNames = [];
+    const typeTri = new THREE.Triangle(
+      new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3());
+    const typeBox = new THREE.Box3();
+    const instMatrix = new THREE.Matrix4(), worldMatrix = new THREE.Matrix4();
+    for (const part of meshParts) {
+      const geometry = part.geometry;
+      if (!geometry.boundingBox) geometry.computeBoundingBox();
+      const position = geometry.getAttribute('position');
+      const index = geometry.index;
+      const triangleVertices = index ? index.count : position.count;
+      if (triangleVertices % 3 !== 0) {
+        throw new Error('P4 type submesh triangle count is not integral');
+      }
+      const instances = part.isInstancedMesh ? part.count : 1;
+      for (let instance = 0; instance < instances; instance++) {
+        primitiveCount++;
+        if (part.isInstancedMesh) {
+          part.getMatrixAt(instance, instMatrix);
+          worldMatrix.multiplyMatrices(part.matrixWorld, instMatrix);
+        } else {
+          worldMatrix.copy(part.matrixWorld);
+        }
+        const instanceBox = geometry.boundingBox.clone().applyMatrix4(worldMatrix);
+        const touchedHoods = hoodTriangles.filter(h => instanceBox.intersectsBox(h.box));
+        if (!touchedHoods.length) continue;
+        primitiveHoodBoundsCandidates++;
+        let aabbCandidate = false, satCandidate = false;
+        for (const hood of touchedHoods) {
+          if (satCandidate) break;
+          for (let i = 0; i < triangleVertices; i += 3) {
+            const vertex = offset => index ? index.getX(i + offset) : i + offset;
+            typeTri.a.fromBufferAttribute(position, vertex(0)).applyMatrix4(worldMatrix);
+            typeTri.b.fromBufferAttribute(position, vertex(1)).applyMatrix4(worldMatrix);
+            typeTri.c.fromBufferAttribute(position, vertex(2)).applyMatrix4(worldMatrix);
+            typeBox.setFromPoints([typeTri.a, typeTri.b, typeTri.c]);
+            if (!typeBox.intersectsBox(hood.box)) continue;
+            aabbCandidate = true;
+            examinedGeometryTrianglePairs++;
+            if (hood.box.intersectsTriangle(typeTri) &&
+                typeBox.intersectsTriangle(hood.triangle)) {
+              satCandidate = true;
+              if (candidateExampleNames.length < 8) {
+                candidateExampleNames.push(
+                  part.name + (part.isInstancedMesh ? '[' + instance + ']' : ''));
+              }
+              break;
+            }
+          }
+        }
+        if (aabbCandidate) primitiveTriangleAABBCandidates++;
+        if (satCandidate) primitiveTriangleSATCandidates++;
+      }
+    }
+    const prior = hoodTypeElementSubmeshBroadphaseProbe();
+    initialSubmeshCandidates = prior.typeSubmeshTriangleAABBCandidates;
+    if (primitiveHoodBoundsCandidates > primitiveCount ||
+        primitiveTriangleSATCandidates > primitiveTriangleAABBCandidates ||
+        (initialSubmeshCandidates === 0 && primitiveTriangleSATCandidates > 0)) {
+      throw new Error('triangle hierarchy violated its coarse bounds');
+    }
+    return {
+      serviceCoverOpen: state.serviceCoverOpen,
+      cheekPreviewEnabled: state.cheekSmoothingPreview,
+      carrierXmm: state.carrierX,
+      printApproach: state.printApproach,
+      parentSubmeshCount: meshParts.length,
+      renderedTypePrimitiveCount: primitiveCount,
+      hoodTriangleCount: hoodTriangles.length,
+      priorSubmeshAABBCandidates: initialSubmeshCandidates,
+      primitiveHoodBoundsCandidates,
+      primitiveTriangleAABBCandidates,
+      primitiveTriangleSATCandidates,
+      examinedTypeHoodTriangleBoxPairs: examinedGeometryTrianglePairs,
+      examples: candidateExampleNames,
+      surfaceIntersectionExcludedByTwoWaySAT: primitiveTriangleSATCandidates === 0,
+      fullyTriangulatedSlugInstancesIncluded: true,
+      exactTriangleTriangleIntersectionTested: false,
+      filledSolidContainmentRuledOut: false,
+      historicSourceGeometryCalibrated: false,
+      factoryClearanceCertified: false,
+      geometryPromoted: false,
+      class: 'necessary but insufficient two-way triangle-vs-opposite-AABB SAT, including every instanced P4 slug; zero candidates excludes modeled surface intersection'
+    };
+  }
+
+  function hoodTypeElementTriangleBoxSATSweepProbe() {
+    const saved = {
+      carrier: state.carrierX, rocker: state.printApproach,
+      cover: state.serviceCoverOpen, preview: state.cheekSmoothingPreview
+    };
+    const carriers = [-CANONICAL.writingLineMm / 2, 0, CANONICAL.writingLineMm / 2];
+    const rockerPhases = [0,.9,1], coverFractions = [0,.25,.5,.75,1];
+    const cases = [];
+    try {
+      for (const preview of [false,true]) {
+        setCheekSmoothingPreview(preview);
+        for (const carrier of carriers) {
+          setCarrierX(carrier);
+          for (const rocker of rockerPhases) {
+            setPrintApproach(rocker);
+            for (const cover of coverFractions) {
+              setServiceCover(cover);
+              cases.push(hoodTypeElementTriangleBoxSATProbe());
+            }
+          }
+        }
+      }
+    } finally {
+      setCarrierX(saved.carrier);
+      setPrintApproach(saved.rocker);
+      setServiceCover(saved.cover);
+      setCheekSmoothingPreview(saved.preview);
+    }
+    return {
+      totalCases: cases.length, carrierPositionsMm: carriers,
+      rockerPhases, coverFractions, cheekPreviewModes: [false,true],
+      cases, restoredStateByFinally: true,
+      sourcePhotoGeometryAccepted: false,
+      exactTriangleTriangleIntersectionTested: false,
+      geometryPromoted: false
+    };
+  }
+
   function geometryDiagnostics() {
     root.updateMatrixWorld(true);
     const bounds = new THREE.Box3().setFromObject(root);
@@ -9605,6 +9763,8 @@ export function createSelectricModel() {
     hoodTypeElementProjectedRectangleProbe,
     hoodTypeElementSubmeshBroadphaseProbe,
     hoodTypeElementSubmeshBroadphaseSweepProbe,
+    hoodTypeElementTriangleBoxSATProbe,
+    hoodTypeElementTriangleBoxSATSweepProbe,
     setInspectionCutaway,
     setExplosion,
     stampCharacter,
