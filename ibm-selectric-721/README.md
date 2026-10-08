@@ -59,6 +59,20 @@ or proof that the P4 type-element physically strikes at every setting. The
 camera, shell and keyboard geometry are not changed.
 
 
+## Reproducible cheek-smoothing visual comparison
+
+An **independent** P5 comparison suite pairs the default polygonal P4 shell
+with the unpromoted smooth-cheek experiment at the exact same deterministic
+left, right and rear inspection cameras. It exports six PNGs and a manifest
+of SHA-256 checksums, viewer camera poses and unchanged mechanical state.
+Original P4 geometry is restored by exact UUID identity after each pair.
+
+All images live in the separate `selectric-cheek-comparison` GitHub Actions
+artifact, not the official 13-view screenshot archive. Different image
+hashes establish a visible renderer difference, not a higher-fidelity
+historical profile or manufactured clearance. This experimental preview
+cannot change the official P4 geometry without Taria's source gates.
+
 ## Renderer-world lateral cover clearance probe
 
 The browser exposes a diagnostic-only

@@ -1134,6 +1134,13 @@ window.__selectricDebug = {
     return enabled;
   },
   shellMeshSeparationProbe: () => model.shellMeshSeparationProbe(),
+  inspectionCameraPose: () => ({
+    position: camera.position.toArray(),
+    target: orbit.target.toArray(),
+    fov: camera.fov,
+    aspect: camera.aspect,
+    class: 'P5 deterministic viewer orbit, not source-calibrated historical photo optics'
+  }),
   setServiceCover: value => {
     model.setServiceCover(value);
     syncUi();

@@ -1,0 +1,45 @@
+name: IBM Selectric P5 cheek visual comparison
+
+concurrency:
+  group: selectric-cheek-comparison
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ibm-selectric-721/geometry.js'
+      - 'ibm-selectric-721/main.js'
+      - 'ibm-selectric-721/spec.js'
+      - 'tests/ibm-selectric-721-cheek-comparison.spec.mjs'
+      - '.github/workflows/ibm-selectric-cheek-comparison.yml'
+  workflow_dispatch:
+
+jobs:
+  cheek-comparison:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: |
+          npm install --no-save @playwright/test
+          npx playwright install --with-deps chromium
+      - name: Serve site
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/selectric-cheek-http.log 2>&1 &
+          echo $! > /tmp/selectric-cheek-http.pid
+      - name: Capture matched-pose P4/P5 cheek pairs
+        run: npx playwright test tests/ibm-selectric-721-cheek-comparison.spec.mjs --reporter=line --workers=1
+      - name: Upload experimental matched-pose cheek comparison
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selectric-cheek-comparison
+          path: |
+            test-results/selectric-cheek-*.png
+            test-results/selectric-cheek-comparison-manifest.json
+          if-no-files-found: ignore
