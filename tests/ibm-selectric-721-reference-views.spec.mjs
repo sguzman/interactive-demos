@@ -39,6 +39,27 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
   await page.keyboard.press('F2');
   await page.screenshot({path: 'test-results/selectric-reference-carrier-focus.png', fullPage: true});
   await page.keyboard.press('F2');
+
+  // A deliberately shallow P5 separation fills the final 13-view capture slot.
+  // This is NOT the old 55%-exploded mechanism screenshot and does not mutate
+  // source-backed part geometry or any mechanical actuator state.
+  await page.locator('[data-view="product"]').click();
+  await page.evaluate(() => window.__selectricDebug.setExplosion(0.15));
+  const shallow = await page.evaluate(() => window.__selectricDebug.state);
+  expect(shallow.explosion).toBeCloseTo(0.15, 7);
+  expect(shallow.geometry.finite).toBe(true);
+  expect(shallow.geometry.inspectionCutaway.mode).toBe('none');
+  expect([shallow.carrierX, shallow.cycle, shallow.line, shallow.copyControlSetting]).toEqual(fixedState);
+  await page.waitForTimeout(220);
+  await page.keyboard.press('F2');
+  await expect(page.locator('#focusToggle')).toHaveAttribute('aria-pressed', 'true');
+  await page.screenshot({path: 'test-results/selectric-reference-shallow-exploded.png', fullPage: true});
+  await page.keyboard.press('F2');
+  await page.evaluate(() => window.__selectricDebug.setExplosion(0));
+  const restored = await page.evaluate(() => window.__selectricDebug.state);
+  expect(restored.explosion).toBeCloseTo(0, 8);
+  expect(restored.geometry.finite).toBe(true);
+  expect([restored.carrierX, restored.cycle, restored.line, restored.copyControlSetting]).toEqual(fixedState);
   const after = await page.evaluate(() => {
     const s = window.__selectricDebug.state;
     return [s.carrierX, s.cycle, s.line, s.copyControlSetting];
