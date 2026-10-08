@@ -37,13 +37,16 @@ test('platen/hood central cross section preserves source geometry and returns fi
           }
           if(!(p.platenRadiusMmP4>0) || p.hoodCentralStationCount!==6
              || p.sectionPolygonEdgeCount!==12)throw new Error('loft station anatomy drift');
-          expect(p.paperWrapRadiusMmP4 - p.platenRadiusMmP4).toBeCloseTo(0.65,8);
-          expect(p.paperWrapIsConcentricP4Arc).toBe(true);
-          expect(p.originalPaperWrapArcConfirmed).toBe(false);
-          expect(p.fullOutputPaperCollisionCertified).toBe(false);
-          expect(p.paperWrapSectionDistanceLowerBoundMmP4).toBeGreaterThan(0);
-          expect(p.paperWrapSectionDistanceLowerBoundMmP4)
-            .toBeCloseTo(p.signedHoodSurfaceToPlatenCylinderMmP4 - 0.65, 6);
+          // Browser page.evaluate has no Playwright 'expect' global.
+          if (Math.abs(p.paperWrapRadiusMmP4 - p.platenRadiusMmP4 - 0.65) > 1e-8
+              || p.paperWrapIsConcentricP4Arc !== true
+              || p.originalPaperWrapArcConfirmed !== false
+              || p.fullOutputPaperCollisionCertified !== false
+              || !(p.paperWrapSectionDistanceLowerBoundMmP4 > 0)
+              || Math.abs(p.paperWrapSectionDistanceLowerBoundMmP4 -
+                 (p.signedHoodSurfaceToPlatenCylinderMmP4 - 0.65)) > 1e-6) {
+            throw new Error('P4 concentric-wrap radius or conservative bound drift');
+          }
           if(p.factoryClearanceCertified!==false || p.sourceCoverLevelVerified!==false
               || p.whole3DMeshCollisionCertified!==false){
             throw new Error('unearned factory certification');
