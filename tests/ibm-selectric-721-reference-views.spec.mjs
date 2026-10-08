@@ -11,6 +11,10 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
   await page.goto('http://127.0.0.1:4173/ibm-selectric-721/', {waitUntil: 'domcontentloaded'});
   await page.waitForFunction(() => Boolean(window.__selectricDebug?.state?.running), null, {timeout: 20_000});
   await expect(page.locator('#loading')).toBeHidden();
+  // A capture-only QA stylesheet suppresses the focus-toggle pill in
+  // exported PNGs while preserving the live viewer's visible F2 control.
+  // Window keydown still handles F2 even when the test-only pill is hidden.
+  await page.addStyleTag({ content: 'body.focus-mode #focusToggle { visibility: hidden !important; }' });
   const fixedState = await page.evaluate(() => {
     const s = window.__selectricDebug.state;
     return [s.carrierX, s.cycle, s.line, s.copyControlSetting];
@@ -28,9 +32,11 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
     expect([state.carrierX, state.cycle, state.line, state.copyControlSetting]).toEqual(fixedState);
     await page.keyboard.press('F2');
     await expect(page.locator('#focusToggle')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#focusToggle')).toBeHidden();
     await expect(page.locator('.controls')).toBeHidden();
     await page.screenshot({path: 'test-results/selectric-reference-' + view + '.png', fullPage: true});
     await page.keyboard.press('F2');
+    await expect(page.locator('#focusToggle')).toBeVisible();
     await expect(page.locator('.controls')).toBeVisible();
   }
 
