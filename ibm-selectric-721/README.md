@@ -77,8 +77,11 @@ cannot change the official P4 geometry without Taria's source gates.
 
 The public reference-view regression probes the actual Three.js world-space
 bounding boxes of the **hood and rear bridge** against seven selected
-internal parts: platen, paper, paper-bail bar, front and rear feed rolls,
-ribbon guide bridge, and moving type element.
+internal mesh surfaces: platen, output-paper sheet, platen-wrap strip,
+paper-bail bar, front and rear feed rolls, ribbon guide bridge, and
+moving type element. Sheet and wrap have separate measured AABBs:
+the union of their parent group encloses empty space and exaggerates
+cover-contact candidate counts.
 
 Twenty pose configurations cover original/P5 candidate cheeks, service
 cover fractions 0–1 and copy-control positions 0/4. The diagnostic JSON is

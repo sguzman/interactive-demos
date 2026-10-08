@@ -207,7 +207,7 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
         expect(probe.explosion).toBeCloseTo(0, 8);
         expect(probe.sourceGeometryCalibrated).toBe(false);
         expect(probe.fullTriangleCollisionTest).toBe(false);
-        expect(probe.testedPartPairs).toHaveLength(14);
+        expect(probe.testedPartPairs).toHaveLength(16);
         for (const pair of probe.testedPartPairs) {
           for (const field of ['axisGapXmm','axisGapYmm','axisGapZmm','aabbSeparationLowerBoundMm']) {
             expect(Number.isFinite(pair[field])).toBe(true);
@@ -236,7 +236,7 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
     JSON.stringify({
       version: 1,
       gitCommit: process.env.GITHUB_SHA || null,
-      analysis: '20 renderer-world AABB poses, 2 hood parts × 7 internal meshes each',
+      analysis: '20 renderer-world AABB poses, 2 cover parts × 8 individual internal meshes each; paper sheet and wrap are separate',
       sourcePhotoFit: false,
       exactTriangleCollision: false,
       candidateOverlapIsCollision: false,

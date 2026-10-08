@@ -1649,6 +1649,10 @@ function makePaper(pickables) {
   setAdvance(0);
   return {
     mesh: root,
+    // Only the diagnostic uses sheet and wrap separately. Their parent
+    // group's overall AABB includes large empty space between both planes.
+    sheet,
+    wrap,
     clear,
     stamp,
     setAdvance,
@@ -7855,7 +7859,8 @@ export function createSelectricModel() {
     ];
     const internals = [
       ['platen', platen],
-      ['paper', paper.mesh],
+      ['paperSheet', paper.sheet],
+      ['paperWrap', paper.wrap],
       ['bailBar', bailBar],
       ['frontFeedRoll', frontFeedRollers[0]],
       ['rearFeedRoll', rearFeedRollers[0]],
