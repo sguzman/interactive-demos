@@ -30,7 +30,7 @@ test('model P4 hood/type 90-pose segment and coplanar triangle contact witnesses
  expect(d.modeledSurfaceContactWitnessOnly).toBe(true);
  const summary={witnessedModelSurfacePoseCount:0,unwitnessedSATAmbiguous:0,
   priorSATDisjoint:0,maximumWitnessPrimitives:0,maximumWitnessTriangleChecks:0,
-  contactExamples:[]};
+  contactExamples:[],hoodPanelExampleCounts:{},maximumPointToSurfaceDistanceMmP4:0};
  const byMode=new Map();
  for(const p of d.cases){
   expect(p.parentSubmeshCount).toBe(8);
@@ -44,6 +44,27 @@ test('model P4 hood/type 90-pose segment and coplanar triangle contact witnesses
    expect(candidate.worldPointMmP4).toHaveLength(3);
    expect(candidate.worldPointMmP4.every(Number.isFinite)).toBe(true);
    expect(['type-triangle-edge-to-hood-face','hood-triangle-edge-to-type-face','coplanar-face-overlap']).toContain(candidate.method);
+   expect(Number.isInteger(candidate.hoodTriangleIndex)).toBe(true);
+   expect(candidate.hoodTriangleIndex).toBeGreaterThanOrEqual(0);
+   expect(candidate.hoodTriangleIndex).toBeLessThan(44);
+   const span=candidate.hoodStationSpanIndexP4;
+   const panel=candidate.hoodPanelClassP4;
+   if(candidate.hoodTriangleIndex<40){
+    expect(span).toBe(Math.floor(candidate.hoodTriangleIndex/8));
+    expect(panel).toBe(['underside','right-wall','top-panel','left-wall'][
+     Math.floor(candidate.hoodTriangleIndex/2)%4]);
+   }else {
+    expect(span).toBe(null);
+    expect(panel).toBe(candidate.hoodTriangleIndex<42?'front-cap':'rear-cap');
+   }
+   for(const name of ['typeSurfaceDistanceMmP4','hoodSurfaceDistanceMmP4']){
+    expect(Number.isFinite(candidate[name])).toBe(true);
+    expect(candidate[name]).toBeGreaterThanOrEqual(0);
+    expect(candidate[name]).toBeLessThan(1e-4);
+    summary.maximumPointToSurfaceDistanceMmP4=Math.max(
+      summary.maximumPointToSurfaceDistanceMmP4,candidate[name]);
+   }
+   summary.hoodPanelExampleCounts[panel]=(summary.hoodPanelExampleCounts[panel]||0)+1;
   }
   expect(p.sourceManufacturingContactCertified).toBe(false);
   expect(p.filledSolidContainmentRuledOut).toBe(false);

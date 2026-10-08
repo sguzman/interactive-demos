@@ -8622,7 +8622,14 @@ export function createSelectricModel() {
       const vertices = [0, 1, 2].map(k =>
         new THREE.Vector3().fromBufferAttribute(hoodPos, hoodIdx.getX(i + k))
           .applyMatrix4(frontFascia.matrixWorld));
+      const triangleIndex = i / 3;
+      const stationSpan = triangleIndex < 40 ? Math.floor(triangleIndex / 8) : null;
+      const panelClass = triangleIndex >= 40 ?
+        (triangleIndex < 42 ? 'front-cap' : 'rear-cap') :
+        ['underside', 'right-wall', 'top-panel', 'left-wall'][
+          Math.floor(triangleIndex / 2) % 4];
       hoodTriangles.push({
+        triangleIndex, stationSpan, panelClass,
         triangle: new THREE.Triangle(...vertices),
         box: new THREE.Box3().setFromPoints(vertices)
       });
@@ -8698,10 +8705,24 @@ export function createSelectricModel() {
                 if (witness) {
                   witnessFound = true;
                   if (firstWitnesses.length < 12) {
+                    const contactPoint = new THREE.Vector3(...witness.worldPointMmP4);
+                    const nearType = typeTri.closestPointToPoint(contactPoint, new THREE.Vector3());
+                    const nearHood = hood.triangle.closestPointToPoint(contactPoint, new THREE.Vector3());
+                    const typeSurfaceDistanceMmP4 = contactPoint.distanceTo(nearType);
+                    const hoodSurfaceDistanceMmP4 = contactPoint.distanceTo(nearHood);
+                    if (typeSurfaceDistanceMmP4 > 1e-4 ||
+                        hoodSurfaceDistanceMmP4 > 1e-4) {
+                      throw new Error('P4 reported contact point not on both source triangles');
+                    }
                     firstWitnesses.push({
                       submesh: part.name || '(unnamed submesh)',
                       instance: part.isInstancedMesh ? instance : null,
                       typeTriangle: i / 3,
+                      hoodTriangleIndex: hood.triangleIndex,
+                      hoodPanelClassP4: hood.panelClass,
+                      hoodStationSpanIndexP4: hood.stationSpan,
+                      typeSurfaceDistanceMmP4,
+                      hoodSurfaceDistanceMmP4,
                       method: witness.method,
                       ...witness
                     });

@@ -329,6 +329,22 @@ to alter IBM geometry. The 90-pose browser artifact is independent from
 long mechanical causal and visual tests.
 
 
+## Indexed surface-interference witnesses on the original P4 hood
+
+The hood/type-element contact diagnostic now tags each example intersection
+with the **actual source triangle index**, loft station span and generated
+panel class (underside, right/left wall, top panel or front/rear cap).
+It also independently projects every reported 3D contact point back to
+both participating triangles and rejects more than 0.0001 mm geometric
+error. The 90-pose Playwright report aggregates witness-example panel
+counts; these counts are a sample capped at 12 examples per pose, not an
+area-of-overlap measurement.
+
+This diagnostic distinguishes potentially artificial end caps/underside
+faces from the hood top and sidewalls before proposing any shape repair.
+It does not establish factory geometry, filled-solid collision or the
+correct original-721 cover relief.
+
 ## Non-promoting modeled hood/type triangle contact witnesses
 
 A separate browser diagnostic attempts to turn the 42 3D-SAT
