@@ -8431,6 +8431,64 @@ export function createSelectricModel() {
     };
   }
 
+  // Convex triangle/triangle SAT candidate test. A genuinely separating axis
+  // proves two *triangle surfaces* disjoint. Axes include both face normals,
+  // all nine edge cross-products, and in-plane edge normals so coplanar
+  // triangles do not spuriously count as overlapping. Near-contact tolerance
+  // deliberately retains possible contacts; this is not OEM solid clearance.
+  function triangleTrianglePossibleContactSAT(left, right, epsilonMm = 1e-6) {
+    const aa = [left.a, left.b, left.c], bb = [right.a, right.b, right.c];
+    const edges = vertices => vertices.map((v,i) =>
+      new THREE.Vector3().subVectors(vertices[(i+1)%3],v));
+    const ea = edges(aa), eb = edges(bb);
+    const na = new THREE.Vector3().crossVectors(ea[0],ea[1]);
+    const nb = new THREE.Vector3().crossVectors(eb[0],eb[1]);
+    if (na.lengthSq() < 1e-18 || nb.lengthSq() < 1e-18) {
+      return true; // Degenerate triangle: INCONCLUSIVE, never excluded.
+    }
+    const axes = [na,nb];
+    for (const a of ea) for (const b of eb) {
+      axes.push(new THREE.Vector3().crossVectors(a,b));
+    }
+    // Required for valid coplanar in-plane polygon separation; harmless as
+    // necessary separation axes even for non-coplanar triangle pairs.
+    for (const a of ea) axes.push(new THREE.Vector3().crossVectors(na,a));
+    for (const b of eb) axes.push(new THREE.Vector3().crossVectors(nb,b));
+    for (const axis of axes) {
+      const lengthSq = axis.lengthSq();
+      if (lengthSq < 1e-18) continue;
+      const aProj = aa.map(v => v.dot(axis));
+      const bProj = bb.map(v => v.dot(axis));
+      const tolerance = epsilonMm * Math.sqrt(lengthSq);
+      if (Math.max(...aProj) + tolerance < Math.min(...bProj) ||
+          Math.max(...bProj) + tolerance < Math.min(...aProj)) {
+        return false; // A necessary geometric separation proved.
+      }
+    }
+    return true; // Potential contact; never claim physical intersection.
+  }
+
+  function syntheticTriangleSATRegressionP4() {
+    const tri = vertices => new THREE.Triangle(...vertices.map(p =>
+      new THREE.Vector3(...p)));
+    const base = tri([[0,0,0],[2,0,0],[0,2,0]]);
+    const parallelDisjoint = tri([[0,0,1],[2,0,1],[0,2,1]]);
+    const coplanarOverlap = tri([[.2,.2,0],[1,.2,0],[.2,1,0]]);
+    const coplanarDisjoint = tri([[4,0,0],[6,0,0],[4,2,0]]);
+    const transverseContact = tri([[.5,.5,-1],[.5,.5,1],[1.5,.5,0]]);
+    const outcome = {
+      parallelDisjoint: triangleTrianglePossibleContactSAT(base,parallelDisjoint),
+      coplanarOverlap: triangleTrianglePossibleContactSAT(base,coplanarOverlap),
+      coplanarDisjoint: triangleTrianglePossibleContactSAT(base,coplanarDisjoint),
+      transverseContact: triangleTrianglePossibleContactSAT(base,transverseContact)
+    };
+    if (outcome.parallelDisjoint || !outcome.coplanarOverlap ||
+        outcome.coplanarDisjoint || !outcome.transverseContact) {
+      throw new Error('P4 triangle SAT synthetic geometric preflight failed');
+    }
+    return outcome;
+  }
+
   // Instance-aware, triangle-level broadphase for unpromoted P4 hood/type
   // collision research. For each rendered type-element primitive (including
   // every instanced slug), intersect its actual world-space triangles with
@@ -8438,7 +8496,7 @@ export function createSelectricModel() {
   // same necessary test in reverse: hood triangle vs type triangle AABB.
   // Failing either SAT test proves *that triangle pair* cannot intersect.
   // Passing both is only a CANDIDATE, not an exact triangle intersection.
-  function hoodTypeElementTriangleBoxSATProbe() {
+  function hoodTypeElementTriangleBoxSATProbe(refineTrianglePairs = false) {
     root.updateMatrixWorld(true);
     const hoodGeom = frontFascia.geometry;
     const hoodIdx = hoodGeom.index, hoodPos = hoodGeom.getAttribute('position');
@@ -8465,6 +8523,8 @@ export function createSelectricModel() {
     let primitiveCount = 0, primitiveHoodBoundsCandidates = 0;
     let primitiveTriangleAABBCandidates = 0, primitiveTriangleSATCandidates = 0;
     let examinedGeometryTrianglePairs = 0, initialSubmeshCandidates = 0;
+    let preciseTriangleCandidatePrimitiveCount = 0;
+    let candidateTrianglePairTests = 0;
     const candidateExampleNames = [];
     const typeTri = new THREE.Triangle(
       new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3());
@@ -8492,9 +8552,9 @@ export function createSelectricModel() {
         const touchedHoods = hoodTriangles.filter(h => instanceBox.intersectsBox(h.box));
         if (!touchedHoods.length) continue;
         primitiveHoodBoundsCandidates++;
-        let aabbCandidate = false, satCandidate = false;
+        let aabbCandidate = false, satCandidate = false, trianglePairCandidate = false;
         for (const hood of touchedHoods) {
-          if (satCandidate) break;
+          if (satCandidate && !refineTrianglePairs || trianglePairCandidate) break;
           for (let i = 0; i < triangleVertices; i += 3) {
             const vertex = offset => index ? index.getX(i + offset) : i + offset;
             typeTri.a.fromBufferAttribute(position, vertex(0)).applyMatrix4(worldMatrix);
@@ -8506,17 +8566,23 @@ export function createSelectricModel() {
             examinedGeometryTrianglePairs++;
             if (hood.box.intersectsTriangle(typeTri) &&
                 typeBox.intersectsTriangle(hood.triangle)) {
-              satCandidate = true;
-              if (candidateExampleNames.length < 8) {
+              if (!satCandidate && candidateExampleNames.length < 8) {
                 candidateExampleNames.push(
                   part.name + (part.isInstancedMesh ? '[' + instance + ']' : ''));
               }
-              break;
+              satCandidate = true;
+              if (!refineTrianglePairs) break;
+              candidateTrianglePairTests++;
+              if (triangleTrianglePossibleContactSAT(typeTri,hood.triangle)) {
+                trianglePairCandidate = true;
+                break;
+              }
             }
           }
         }
         if (aabbCandidate) primitiveTriangleAABBCandidates++;
         if (satCandidate) primitiveTriangleSATCandidates++;
+        if (trianglePairCandidate) preciseTriangleCandidatePrimitiveCount++;
       }
     }
     const prior = hoodTypeElementSubmeshBroadphaseProbe();
@@ -8539,6 +8605,11 @@ export function createSelectricModel() {
       primitiveTriangleAABBCandidates,
       primitiveTriangleSATCandidates,
       examinedTypeHoodTriangleBoxPairs: examinedGeometryTrianglePairs,
+      refinedTrianglePairTests: candidateTrianglePairTests,
+      refinedTriangleCandidatePrimitives: preciseTriangleCandidatePrimitiveCount,
+      refinedSurfacePairProvenDisjoint: refineTrianglePairs ?
+        preciseTriangleCandidatePrimitiveCount === 0 : null,
+      refinedTriangleSATEnabled: refineTrianglePairs,
       examples: candidateExampleNames,
       surfaceIntersectionExcludedByTwoWaySAT: primitiveTriangleSATCandidates === 0,
       fullyTriangulatedSlugInstancesIncluded: true,
@@ -8587,6 +8658,42 @@ export function createSelectricModel() {
       exactTriangleTriangleIntersectionTested: false,
       geometryPromoted: false
     };
+  }
+
+  function hoodTypeElementTriangleContactSATSweepProbe() {
+    const saved={
+      carrier:state.carrierX,rocker:state.printApproach,
+      cover:state.serviceCoverOpen,preview:state.cheekSmoothingPreview
+    };
+    const carriers=[-CANONICAL.writingLineMm/2,0,CANONICAL.writingLineMm/2];
+    const rockerPhases=[0,.9,1],coverFractions=[0,.25,.5,.75,1];
+    const cases=[];
+    try {
+      for(const preview of [false,true]){
+        setCheekSmoothingPreview(preview);
+        for(const carrier of carriers){
+          setCarrierX(carrier);
+          for(const rocker of rockerPhases){
+            setPrintApproach(rocker);
+            for(const cover of coverFractions){
+              setServiceCover(cover);
+              cases.push(hoodTypeElementTriangleBoxSATProbe(true));
+            }
+          }
+        }
+      }
+    }finally{
+      setCarrierX(saved.carrier);
+      setPrintApproach(saved.rocker);
+      setServiceCover(saved.cover);
+      setCheekSmoothingPreview(saved.preview);
+    }
+    return {totalCases:cases.length,carrierPositionsMm:carriers,
+      rockerPhases,coverFractions,cheekPreviewModes:[false,true],
+      cases,sourceCameraCalibrated:false,
+      productionCollisionCertified:false,
+      fullFilledSolidContainmentCertified:false,
+      publicGeometryPromoted:false};
   }
 
   function geometryDiagnostics() {
@@ -9765,6 +9872,8 @@ export function createSelectricModel() {
     hoodTypeElementSubmeshBroadphaseSweepProbe,
     hoodTypeElementTriangleBoxSATProbe,
     hoodTypeElementTriangleBoxSATSweepProbe,
+    hoodTypeElementTriangleContactSATSweepProbe,
+    syntheticTriangleSATRegressionP4,
     setInspectionCutaway,
     setExplosion,
     stampCharacter,

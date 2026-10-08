@@ -308,3 +308,22 @@ clearance certification.
 An isolated Playwright workflow archives all 90 model poses and counts.
 P4 geometry, the reversible P5 smoothing view, camera calibration and
 mechanical behavior are unchanged.
+
+
+## Type-element / service-hood actual triangle-pair SAT candidates
+
+A separate source-unpromoted diagnostic evaluates actual world-transform
+triangles from all 95 rendered type-element primitives against the 44
+P4 hood triangles, including each instanced type slug. After the earlier
+conservative two-way triangle/opposite-AABB filter, it runs 3D convex
+triangle SAT with triangle face normals, 9 edge-pair cross axes, and
+coplanar in-plane edge axes; near-contact and degenerate geometry are
+kept inconclusive. Synthetic separated, coplanar and transverse cases
+test the SAT conventions.
+
+A separating axis is sufficient to **exclude modeled surface
+intersection** for that triangle pair; no separating axis means a
+candidate within a declared numerical tolerance, not a source-verified
+physical collision, a filled-solid containment certificate or permission
+to alter IBM geometry. The 90-pose browser artifact is independent from
+long mechanical causal and visual tests.
