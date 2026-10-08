@@ -65,6 +65,7 @@ const ui = {
   typeBtn: document.querySelector('#typeBtn'),
   shiftBtn: document.querySelector('#shiftBtn'),
   coverBtn: document.querySelector('#coverBtn'),
+  cheekSmoothingPreviewBtn: document.querySelector('#cheekSmoothingPreviewBtn'),
   spaceBtn: document.querySelector('#spaceBtn'),
   tabBtn: document.querySelector('#tabBtn'),
   tabSetBtn: document.querySelector('#tabSetBtn'),
@@ -255,6 +256,8 @@ function syncUi() {
   ui.explodeValue.textContent = Math.round(model.state.explosion * 100) + '%';
   ui.shiftBtn.textContent = model.state.shiftHemisphere ? 'Shift: upper' : 'Shift: lower';
   ui.coverBtn.textContent = model.state.serviceCoverOpen > 0.5 ? 'Close service cover' : 'Open service cover';
+  ui.cheekSmoothingPreviewBtn.textContent = model.state.cheekSmoothingPreview ? 'Preview smooth cheeks: on (P5)' : 'Preview smooth cheeks: off';
+  ui.cheekSmoothingPreviewBtn.setAttribute('aria-pressed', String(model.state.cheekSmoothingPreview));
   ui.paperReleaseBtn.textContent = model.state.feedRollsEngaged ? 'Release paper feed' : 'Engage paper feed';
   ui.paperAlignBackBtn.disabled = model.state.feedRollsEngaged;
   ui.paperAlignForwardBtn.disabled = model.state.feedRollsEngaged;
@@ -309,6 +312,8 @@ function resetMechanicalState() {
   model.setCyclePhase(0);
   model.setInspectionCutaway('none');
   model.setServiceCover(0);
+  // Reset returns to the published P4 shell, including its original meshes.
+  model.setCheekSmoothingPreview(false);
   model.clearPaper();
   syncUi();
 }
@@ -592,6 +597,10 @@ ui.typeBtn.addEventListener('click', () => requestCharacter(runtime.pendingChara
 ui.coverBtn.addEventListener('click', () => {
   model.setServiceCover(model.state.serviceCoverOpen > 0.5 ? 0 : 1);
   runtime.lastAction = model.state.serviceCoverOpen ? 'service-cover-open' : 'service-cover-close';
+  syncUi();
+});
+ui.cheekSmoothingPreviewBtn.addEventListener('click', () => {
+  model.setCheekSmoothingPreview(!model.state.cheekSmoothingPreview);
   syncUi();
 });
 ui.shiftBtn.addEventListener('click', () => {
@@ -1119,6 +1128,11 @@ window.__selectricDebug = {
     return true;
   },
   toggleServiceCover: () => ui.coverBtn.click(),
+  setCheekSmoothingPreview: value => {
+    const enabled = model.setCheekSmoothingPreview(value);
+    syncUi();
+    return enabled;
+  },
   setServiceCover: value => {
     model.setServiceCover(value);
     syncUi();

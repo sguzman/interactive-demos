@@ -58,6 +58,23 @@ display scaling**, not a production copy thickness, platen-gap measurement,
 or proof that the P4 type-element physically strikes at every setting. The
 camera, shell and keyboard geometry are not changed.
 
+
+## Unpromoted smooth side-cheek preview
+
+**Preview smooth cheeks: off** is an explicit, reversible P5 inspection
+switch. Off is the published/default original 15-station polygonal P4 shell.
+On draws a monotone PCHIP interpolation through the same frozen upper
+stations (front/rear intentional breaks retained), without modifying the
+P4 controls, hinged cover mesh, typewriter state or photo/camera fits.
+
+The original right/left `BufferGeometry` objects remain allocated and
+are reinstated **by exact object identity** when switched off or reset.
+The runtime diagnostic field
+`geometry.cheekSmoothingPreviewP5` exposes enablement and original/
+active mesh UUIDs. No physical collision/swept-volume or historical
+production calibration is declared; the rear-bridge lateral clearance
+proxy is just 0.2 mm and the rear seam remains misregistered.
+
 ## Deterministic reference cameras
 
 The reference capture workflow also generates a JSON audit manifest with

@@ -624,6 +624,53 @@ function loftPrism(stations, mat, name) {
   return mesh;
 }
 
+// P5 visual RESEARCH preview only: Fritsch-Butland shape-preserving cubic
+// between the EXISTING P4 upper-cheek stations. The input endpoints and
+// all intermediate control stations remain unchanged. This is not an
+// evidence-based surface/collision/photographic promotion.
+function smoothCheekProfilePreviewP5(points, subdivisions = 10) {
+  const interior = points.slice(1, -1);
+  const xs = interior.map(point => -point.z);
+  const ys = interior.map(point => point.y);
+  const h = xs.slice(1).map((x, i) => x - xs[i]);
+  if (h.some(value => !(value > 0)) || subdivisions < 2) {
+    throw new Error('P5 cheek smoothing: unordered P4 profile stations');
+  }
+  const d = h.map((step, i) => (ys[i + 1] - ys[i]) / step);
+  const tangent = Array(xs.length).fill(0);
+  for (let i = 1; i < xs.length - 1; i++) {
+    if (d[i - 1] * d[i] <= 0) continue;
+    const w1 = 2 * h[i] + h[i - 1];
+    const w2 = h[i] + 2 * h[i - 1];
+    tangent[i] = (w1 + w2) / (w1 / d[i - 1] + w2 / d[i]);
+  }
+  const endpoint = (h0, h1, d0, d1) => {
+    let value = ((2 * h0 + h1) * d0 - h0 * d1) / (h0 + h1);
+    if (value * d0 <= 0) return 0;
+    if (d0 * d1 < 0 && Math.abs(value) > 3 * Math.abs(d0)) value = 3 * d0;
+    return value;
+  };
+  tangent[0] = endpoint(h[0], h[1], d[0], d[1]);
+  tangent[tangent.length - 1] = endpoint(h[h.length - 1], h[h.length - 2],
+    d[d.length - 1], d[d.length - 2]);
+  const result = [{ ...points[0] }];
+  for (let i = 0; i < h.length; i++) {
+    for (let j = 0; j < subdivisions; j++) {
+      const t = j / subdivisions, t2 = t * t, t3 = t2 * t;
+      const y = (2 * t3 - 3 * t2 + 1) * ys[i]
+        + (t3 - 2 * t2 + t) * h[i] * tangent[i]
+        + (-2 * t3 + 3 * t2) * ys[i + 1]
+        + (t3 - t2) * h[i] * tangent[i + 1];
+      result.push({ z: -(xs[i] + t * h[i]), y });
+    }
+  }
+  result.push({ ...interior[interior.length - 1] }, { ...points[points.length - 1] });
+  if (!result.every(p => Number.isFinite(p.z) && Number.isFinite(p.y))) {
+    throw new Error('P5 cheek smoothing created a nonfinite station');
+  }
+  return result;
+}
+
 function extrudedSideCheek(profile, innerX, outerX, mat, name) {
   const shape = new THREE.Shape();
   profile.forEach((point, index) => {
@@ -1621,6 +1668,7 @@ export function createSelectricModel() {
   const assemblies = [];
   const state = {
     explosion: 0,
+    cheekSmoothingPreview: false,
     carrierX: 0,
     leftMarginInsetColumns: 0,
     rightMarginInsetColumns: 0,
@@ -1757,6 +1805,25 @@ export function createSelectricModel() {
   leftCheek.position.x = -shellCheekOuterXP4;
   addPickable(leftCheek, COMPONENTS.shell, pickables);
   shellAssembly.add(leftCheek);
+
+  // Preserve the exact source-parameterized default BufferGeometry objects.
+  // Only explicit preview opt-in swaps the two cheek mesh geometry pointers.
+  // Keeping originals alive guarantees an exact reference/geometry restoration.
+  const originalRightCheekGeometry = rightCheek.geometry;
+  const originalLeftCheekGeometry = leftCheek.geometry;
+  let experimentalCheekGeometry = null;
+  function setCheekSmoothingPreview(value) {
+    const enable = Boolean(value);
+    if (enable && !experimentalCheekGeometry) {
+      const candidate = smoothCheekProfilePreviewP5(cheekProfile);
+      experimentalCheekGeometry = extrudedSideCheek(candidate, shellCheekInnerXP4,
+        shellCheekOuterXP4, shellMat, 'P5 cheek smoothing research geometry').geometry;
+    }
+    rightCheek.geometry = enable ? experimentalCheekGeometry : originalRightCheekGeometry;
+    leftCheek.geometry = enable ? experimentalCheekGeometry : originalLeftCheekGeometry;
+    state.cheekSmoothingPreview = enable;
+    return enable;
+  }
 
   const serviceCoverPivot = new THREE.Group();
   serviceCoverPivot.name = 'top service cover hinge presentation';
@@ -7779,6 +7846,14 @@ export function createSelectricModel() {
     const selectedSlugAlignmentErrorDegP4 = THREE.MathUtils.radToDeg(Math.acos(selectedSlugAlignmentDotP4));
     return {
       revision: 'selectric-integrated-public-build',
+      cheekSmoothingPreviewP5: {
+        enabled: state.cheekSmoothingPreview,
+        originalRightGeometryUuid: originalRightCheekGeometry.uuid,
+        originalLeftGeometryUuid: originalLeftCheekGeometry.uuid,
+        activeRightGeometryUuid: rightCheek.geometry.uuid,
+        activeLeftGeometryUuid: leftCheek.geometry.uuid,
+        class: 'P5 opt-in visual smooth-cheek candidate through unchanged P4 stations; no clearance, historical camera or factory surface promotion'
+      },
       finite: [size.x, size.y, size.z].every(Number.isFinite),
       bounds: { width: size.x, height: size.y, depth: size.z },
       carrierX: state.carrierX,
@@ -8904,6 +8979,7 @@ export function createSelectricModel() {
     setOperationalCam,
     setCyclePhase,
     setServiceCover,
+    setCheekSmoothingPreview,
     setInspectionCutaway,
     setExplosion,
     stampCharacter,
