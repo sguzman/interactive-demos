@@ -8648,6 +8648,7 @@ export function createSelectricModel() {
     let candidateTrianglePairTests = 0;
     let witnessedContactPrimitiveCount = 0;
     let checkedWitnessTrianglePairs = 0;
+    let degenerateTrianglePairCandidates = 0;
     const firstWitnesses = [];
     const candidateExampleNames = [];
     const typeTri = new THREE.Triangle(
@@ -8700,6 +8701,13 @@ export function createSelectricModel() {
               if (triangleTrianglePossibleContactSAT(typeTri,hood.triangle)) {
                 trianglePairCandidate = true;
                 if (!checkContactWitnesses) break;
+                // A zero-area BufferGeometry triangle may contain edges that
+                // cross the hood, but has no rendered triangular face. Keep
+                // it as a SAT candidate, never as a surface-intersection witness.
+                if (typeTri.getArea() <= 1e-10 || hood.triangle.getArea() <= 1e-10) {
+                  degenerateTrianglePairCandidates++;
+                  continue;
+                }
                 checkedWitnessTrianglePairs++;
                 const witness = triangleSurfaceContactWitnessP4(typeTri,hood.triangle);
                 if (witness) {
@@ -8774,6 +8782,7 @@ export function createSelectricModel() {
       refinedTriangleSATEnabled: refineTrianglePairs,
       witnessProbeEnabled: checkContactWitnesses,
       trianglePairWitnessTests: checkedWitnessTrianglePairs,
+      degenerateTrianglePairCandidates,
       modeledSurfaceContactWitnessPrimitives: witnessedContactPrimitiveCount,
       contactWitnessExamples: firstWitnesses,
       modeledSurfaceContactWitnessed: witnessedContactPrimitiveCount > 0,

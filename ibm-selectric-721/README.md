@@ -329,6 +329,19 @@ to alter IBM geometry. The 90-pose browser artifact is independent from
 long mechanical causal and visual tests.
 
 
+## Degenerate primitive triangles are not surface-contact evidence
+
+The renderer exposes some intentionally or incidentally zero-area triangles
+(e.g. a top-cap triangle whose first two vertices coincide). Such a triangle
+may have an edge crossing a hood face, but it has no rendered triangle
+surface. The witness narrowphase now **skips zero-area candidate triangles
+for positive surface contact**, while retaining them in the broader SAT
+candidate accounting. It reports degenerate candidate-pair counts separately.
+A point from two nondegenerate triangles must lie within 0.0001 mm of
+both source faces. This corrects the earlier overly permissive method:
+its 42 positive poses are retained as a historical versioned artifact,
+not silently reused as a strict surface-contact conclusion.
+
 ## Indexed surface-interference witnesses on the original P4 hood
 
 The hood/type-element contact diagnostic now tags each example intersection

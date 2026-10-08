@@ -30,6 +30,7 @@ test('model P4 hood/type 90-pose segment and coplanar triangle contact witnesses
  expect(d.modeledSurfaceContactWitnessOnly).toBe(true);
  const summary={witnessedModelSurfacePoseCount:0,unwitnessedSATAmbiguous:0,
   priorSATDisjoint:0,maximumWitnessPrimitives:0,maximumWitnessTriangleChecks:0,
+  totalDegenerateSATPairs:0,posesWithDegenerateSATPairs:0,
   contactExamples:[],hoodPanelExampleCounts:{},maximumPointToSurfaceDistanceMmP4:0};
  const byMode=new Map();
  for(const p of d.cases){
@@ -38,6 +39,10 @@ test('model P4 hood/type 90-pose segment and coplanar triangle contact witnesses
   expect(p.hoodTriangleCount).toBe(44);
   expect(p.refinedTriangleSATEnabled).toBe(true);
   expect(p.witnessProbeEnabled).toBe(true);
+  expect(Number.isInteger(p.degenerateTrianglePairCandidates)).toBe(true);
+  expect(p.degenerateTrianglePairCandidates).toBeGreaterThanOrEqual(0);
+  summary.totalDegenerateSATPairs+=p.degenerateTrianglePairCandidates;
+  if(p.degenerateTrianglePairCandidates>0)summary.posesWithDegenerateSATPairs++;
   expect(p.modeledSurfaceContactWitnessed).toBe(p.modeledSurfaceContactWitnessPrimitives>0);
   expect(p.modeledSurfaceContactWitnessPrimitives).toBeLessThanOrEqual(p.refinedTriangleCandidatePrimitives);
   for(const candidate of p.contactWitnessExamples){
