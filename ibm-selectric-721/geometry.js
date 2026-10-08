@@ -8310,6 +8310,127 @@ export function createSelectricModel() {
     };
   }
 
+  // One-way surface-contact broadphase for the actual modeled type-element
+  // subtree, rather than one oversized AABB-enclosing sphere.
+  // If none of its individual world-space mesh AABBs overlaps ANY world-space
+  // hood-triangle AABB, the two triangle surfaces cannot intersect.
+  // Positive candidate counts do NOT prove a collision, and disjoint
+  // surfaces alone do not certify filled-solid containment.
+  function hoodTypeElementSubmeshBroadphaseProbe() {
+    root.updateMatrixWorld(true);
+    const hoodGeometry = frontFascia.geometry;
+    const hoodPosition = hoodGeometry.getAttribute('position');
+    const hoodIndices = hoodGeometry.index;
+    if (!hoodIndices || hoodIndices.count !== 132) {
+      throw new Error('unexpected P4 hood topology for submesh broadphase');
+    }
+    const hoodTriangles = [];
+    for (let offset = 0; offset < hoodIndices.count; offset += 3) {
+      const world = [];
+      for (let k = 0; k < 3; k++) {
+        world.push(new THREE.Vector3().fromBufferAttribute(
+          hoodPosition, hoodIndices.getX(offset + k)
+        ).applyMatrix4(frontFascia.matrixWorld));
+      }
+      hoodTriangles.push(new THREE.Box3().setFromPoints(world));
+    }
+    const hoodFullBox = new THREE.Box3().setFromObject(frontFascia);
+    let submeshCount = 0;
+    let boundsOverlappingHood = 0;
+    let submeshTriangleCandidateCount = 0;
+    let candidateTriangleAABBPairs = 0;
+    const candidateSubmeshes = [];
+    typeElement.traverse(part => {
+      if (!part.isMesh || !part.geometry?.getAttribute?.('position')) return;
+      submeshCount++;
+      const bounds = new THREE.Box3().setFromObject(part);
+      if (!bounds.min.toArray().concat(bounds.max.toArray()).every(Number.isFinite)) {
+        throw new Error('nonfinite P4 type-element child mesh bounds');
+      }
+      if (!bounds.intersectsBox(hoodFullBox)) return;
+      boundsOverlappingHood++;
+      let touched = 0;
+      for (const box of hoodTriangles) {
+        if (bounds.intersectsBox(box)) {
+          touched++;
+          candidateTriangleAABBPairs++;
+        }
+      }
+      if (touched) {
+        submeshTriangleCandidateCount++;
+        if (candidateSubmeshes.length < 8) {
+          candidateSubmeshes.push({partName: part.name || '(unnamed submesh)',
+            hoodTriangleAABBCandidates: touched});
+        }
+      }
+    });
+    if (submeshCount === 0) throw new Error('missing modeled type-element child meshes');
+    if (submeshTriangleCandidateCount > boundsOverlappingHood ||
+        candidateTriangleAABBPairs > submeshCount * hoodTriangles.length) {
+      throw new Error('invalid broadphase hierarchy');
+    }
+    return {
+      serviceCoverOpen: state.serviceCoverOpen,
+      cheekPreviewEnabled: state.cheekSmoothingPreview,
+      carrierXmm: state.carrierX,
+      printApproach: state.printApproach,
+      typeSubmeshCount: submeshCount,
+      hoodTriangleCount: hoodTriangles.length,
+      typeSubmeshBoundsOverlappingHoodBounds: boundsOverlappingHood,
+      typeSubmeshTriangleAABBCandidates: submeshTriangleCandidateCount,
+      hoodTriangleSubmeshAABBCandidatePairs: candidateTriangleAABBPairs,
+      candidateSubmeshExamples: candidateSubmeshes,
+      noTypeSubmeshAABBOverlapsAnyHoodTriangleAABB:
+        submeshTriangleCandidateCount === 0,
+      modeledSurfaceTriangleIntersectionExcluded:
+        submeshTriangleCandidateCount === 0,
+      modeledSolidInterpenetrationCertifiedAbsent: false,
+      actualTriangleTriangleIntersectionTested: false,
+      historicalSourceCalibrated: false,
+      factoryClearanceCertified: false,
+      geometryPromoted: false,
+      class: 'P4 transformed submesh AABB against each real hood-triangle AABB; zero candidates excludes surface-triangle intersections only'
+    };
+  }
+
+  function hoodTypeElementSubmeshBroadphaseSweepProbe() {
+    const saved = {
+      carrier: state.carrierX, rocker: state.printApproach,
+      hood: state.serviceCoverOpen, preview: state.cheekSmoothingPreview
+    };
+    const carrierPositions = [-CANONICAL.writingLineMm / 2, 0,
+      CANONICAL.writingLineMm / 2];
+    const rockerPhases = [0, .9, 1], coverFractions = [0, .25, .5, .75, 1];
+    const cases = [];
+    try {
+      for (const preview of [false, true]) {
+        setCheekSmoothingPreview(preview);
+        for (const carrier of carrierPositions) {
+          setCarrierX(carrier);
+          for (const rocker of rockerPhases) {
+            setPrintApproach(rocker);
+            for (const hood of coverFractions) {
+              setServiceCover(hood);
+              cases.push(hoodTypeElementSubmeshBroadphaseProbe());
+            }
+          }
+        }
+      }
+    } finally {
+      setCarrierX(saved.carrier);
+      setPrintApproach(saved.rocker);
+      setServiceCover(saved.hood);
+      setCheekSmoothingPreview(saved.preview);
+    }
+    return {
+      totalCases: cases.length, carrierPositionsMm: carrierPositions,
+      rockerPhases, coverFractions, cheekPreviewModes: [false, true],
+      cases, originalPhysicalStateRestored: true,
+      factoryClearanceCertified: false,
+      sourcePhotoGeometryAccepted: false, geometryPromoted: false
+    };
+  }
+
   function geometryDiagnostics() {
     root.updateMatrixWorld(true);
     const bounds = new THREE.Box3().setFromObject(root);
@@ -9482,6 +9603,8 @@ export function createSelectricModel() {
     hoodTypeElementTriangleProbe,
     hoodTypeElementMotionSweepProbe,
     hoodTypeElementProjectedRectangleProbe,
+    hoodTypeElementSubmeshBroadphaseProbe,
+    hoodTypeElementSubmeshBroadphaseSweepProbe,
     setInspectionCutaway,
     setExplosion,
     stampCharacter,

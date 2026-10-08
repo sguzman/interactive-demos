@@ -273,3 +273,19 @@ The independent browser suite tests 90 combinations of carrier, rocker,
 cover and cheek preview, and keeps both the older enclosing-sphere and
 new rectangle classifications. Its JSON artifact is a geometric diagnostic,
 not historical IBM cover geometry or production fit.
+
+
+## Type-element submesh / hood-triangle surface broadphase
+
+An independent diagnostic now compares **each actual type-element child
+mesh's world-space AABB** against **each actual transformed P4 hood
+triangle's world-space AABB**, not just the large enclosing type-element
+sphere. A zero-candidate sample excludes triangle-*surface* contact for
+the named hood/type-element mesh pair at that pose. An AABB overlap is
+only a **candidate**, not a contact claim. Even disjoint triangle
+surfaces do not, by themselves, prove two filled solids are not nested.
+
+The independent Playwright suite covers 90 controlled carrier/rocker/
+cover/cheek-preview states and exports a classified JSON report. It
+restores physical state and the opt-in cheek preview after the sweep.
+No factory shell tolerance or source-calibrated camera data is inferred.
