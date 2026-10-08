@@ -3,7 +3,10 @@ import { createHash } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 
 // P5 view capture only; the long causal runtime suite tests mechanical physics.
-test.setTimeout(180_000);
+// WebGL screenshots are expensive in headless software renderers; keep the
+// capture diagnostic separate from the causal smoke test and give it an
+// explicit, bounded seven-minute budget.
+test.setTimeout(420_000);
 
 test('13-view reference QA: cardinal and keyboard captures do not change mechanism state', async ({ page }) => {
   const errors = [];
@@ -28,6 +31,7 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
   const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
   async function capture(view) {
     const filename = 'selectric-reference-' + view + '.png';
+    const captureStarted = Date.now();
     const buffer = await page.screenshot({path: 'test-results/' + filename, fullPage: true});
     expect(buffer.subarray(0, 8).equals(pngSignature)).toBe(true);
     const width = buffer.readUInt32BE(16);
@@ -43,7 +47,8 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
         copyControlSetting:s.copyControlSetting, serviceCoverOpen:s.serviceCoverOpen,
         explosion:s.explosion};
     });
-    captures.push({view, filename, sha256, width, height, bytes:buffer.length, mechanical});
+    captures.push({view, filename, sha256, width, height, bytes:buffer.length,
+      captureDurationMs: Date.now() - captureStarted, mechanical});
   }
 
   for (const view of ['front', 'rear', 'left', 'right', 'top', 'keyboard']) {

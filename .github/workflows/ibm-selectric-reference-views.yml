@@ -16,7 +16,7 @@ on:
 jobs:
   visual-reference:
     runs-on: ubuntu-latest
-    timeout-minutes: 9
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
