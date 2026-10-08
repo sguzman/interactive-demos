@@ -37,5 +37,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: selectric-reference-views
-          path: test-results/selectric-reference-*.png
+          path: |
+            test-results/selectric-reference-*.png
+            test-results/selectric-reference-manifest.json
           if-no-files-found: ignore

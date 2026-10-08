@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { createHash } from 'node:crypto';
+import { writeFile } from 'node:fs/promises';
 
 // P5 view capture only; the long causal runtime suite tests mechanical physics.
 test.setTimeout(180_000);
@@ -20,6 +22,30 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
     return [s.carrierX, s.cycle, s.line, s.copyControlSetting];
   });
 
+  // Each captured PNG must be the expected viewport, nonblank and distinct.
+  const captures = [];
+  const seenHashes = new Set();
+  const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  async function capture(view) {
+    const filename = 'selectric-reference-' + view + '.png';
+    const buffer = await page.screenshot({path: 'test-results/' + filename, fullPage: true});
+    expect(buffer.subarray(0, 8).equals(pngSignature)).toBe(true);
+    const width = buffer.readUInt32BE(16);
+    const height = buffer.readUInt32BE(20);
+    expect([width, height]).toEqual([1440, 900]);
+    expect(buffer.length).toBeGreaterThan(20_000);
+    const sha256 = createHash('sha256').update(buffer).digest('hex');
+    expect(seenHashes.has(sha256)).toBe(false);
+    seenHashes.add(sha256);
+    const mechanical = await page.evaluate(() => {
+      const s = window.__selectricDebug.state;
+      return {carrierX:s.carrierX, cycle:s.cycle, line:s.line,
+        copyControlSetting:s.copyControlSetting, serviceCoverOpen:s.serviceCoverOpen,
+        explosion:s.explosion};
+    });
+    captures.push({view, filename, sha256, width, height, bytes:buffer.length, mechanical});
+  }
+
   for (const view of ['front', 'rear', 'left', 'right', 'top', 'keyboard']) {
     const button = page.locator('[data-view="' + view + '"]');
     await button.click();
@@ -34,7 +60,7 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
     await expect(page.locator('#focusToggle')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#focusToggle')).toBeHidden();
     await expect(page.locator('.controls')).toBeHidden();
-    await page.screenshot({path: 'test-results/selectric-reference-' + view + '.png', fullPage: true});
+    await capture(view);
     await page.keyboard.press('F2');
     await expect(page.locator('#focusToggle')).toBeVisible();
     await expect(page.locator('.controls')).toBeVisible();
@@ -43,7 +69,7 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
   await page.locator('[data-view="carrier"]').click();
   await expect.poll(() => page.evaluate(() => window.__selectricDebug.state.serviceCoverOpen)).toBe(1);
   await page.keyboard.press('F2');
-  await page.screenshot({path: 'test-results/selectric-reference-carrier-focus.png', fullPage: true});
+  await capture('carrier-focus');
   await page.keyboard.press('F2');
 
   // A deliberately shallow P5 separation fills the final 13-view capture slot.
@@ -59,7 +85,7 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
   await page.waitForTimeout(220);
   await page.keyboard.press('F2');
   await expect(page.locator('#focusToggle')).toHaveAttribute('aria-pressed', 'true');
-  await page.screenshot({path: 'test-results/selectric-reference-shallow-exploded.png', fullPage: true});
+  await capture('shallow-exploded');
   await page.keyboard.press('F2');
   await page.evaluate(() => window.__selectricDebug.setExplosion(0));
   const restored = await page.evaluate(() => window.__selectricDebug.state);
@@ -71,5 +97,20 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
     return [s.carrierX, s.cycle, s.line, s.copyControlSetting];
   });
   expect(after).toEqual(fixedState);
+  expect(captures).toHaveLength(8);
+  for (const shot of captures) {
+    const s = shot.mechanical;
+    expect([s.carrierX, s.cycle, s.line, s.copyControlSetting]).toEqual(fixedState);
+  }
   expect(errors).toEqual([]);
+  const manifest = {
+    format: 'selectric-reference-capture-v1',
+    purpose: 'P5 rendering integrity, not historic camera or factory geometry calibration',
+    gitCommit: process.env.GITHUB_SHA || null,
+    sourceComparatorsAssigned: false,
+    geometryReviewed: false,
+    captures
+  };
+  await writeFile('test-results/selectric-reference-manifest.json',
+    JSON.stringify(manifest, null, 2) + '\n', 'utf8');
 });

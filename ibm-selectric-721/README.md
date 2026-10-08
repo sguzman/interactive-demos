@@ -60,6 +60,12 @@ camera, shell and keyboard geometry are not changed.
 
 ## Deterministic reference cameras
 
+The reference capture workflow also generates a JSON audit manifest with
+SHA-256 hashes, true PNG dimensions and bytes, and the actual mechanical state
+for each of the eight screenshots. The test rejects blank-sized, wrong-size
+and duplicated images. This ensures repeatable rendering evidence; it does
+not constitute a source-photograph comparison or establish real geometry.
+
 Six additional P5 inspection presets provide front, rear, left, right,
 top-oblique and keyboard-close-up views. These are *repeatable public
 viewer camera poses*, **not** historically calibrated Q1/Q4 intrinsics.
