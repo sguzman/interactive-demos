@@ -8125,6 +8125,111 @@ export function createSelectricModel() {
     };
   }
 
+  // Diagnostic: distance to every actual transformed loft triangle, using a
+  // sphere enclosing the full type-element mesh subtree. A positive surface
+  // gap certifies SOLID disjointness only with an outside-YZ center; if the
+  // center may lie inside the solid, surface-distance alone is insufficient.
+  function hoodTypeElementTriangleProbe() {
+    root.updateMatrixWorld(true);
+    const section = hoodTypeElementSectionProbe();
+    const bounds = new THREE.Box3().setFromObject(typeElement);
+    const sphere = new THREE.Sphere();
+    bounds.getBoundingSphere(sphere);
+    const geometry = frontFascia.geometry, position = geometry.getAttribute('position');
+    const index = geometry.index;
+    if (!index || index.count !== 132 || position.count !== 24) {
+      throw new Error('unexpected service hood loft triangle topology');
+    }
+    const a = new THREE.Vector3(), b = new THREE.Vector3();
+    const c = new THREE.Vector3(), closest = new THREE.Vector3();
+    const triangle = new THREE.Triangle();
+    let minDistance = Infinity, nearestTriangle = -1;
+    for (let offset = 0; offset < index.count; offset += 3) {
+      a.fromBufferAttribute(position, index.getX(offset)).applyMatrix4(frontFascia.matrixWorld);
+      b.fromBufferAttribute(position, index.getX(offset + 1)).applyMatrix4(frontFascia.matrixWorld);
+      c.fromBufferAttribute(position, index.getX(offset + 2)).applyMatrix4(frontFascia.matrixWorld);
+      triangle.set(a, b, c);
+      triangle.closestPointToPoint(sphere.center, closest);
+      const distance = sphere.center.distanceTo(closest);
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestTriangle = offset / 3;
+      }
+    }
+    const surfaceGap = minDistance - sphere.radius;
+    const certifiedDisjoint = !section.typeCenterInsideHoodYZSection && surfaceGap > 0;
+    if (![minDistance, surfaceGap, sphere.radius].every(Number.isFinite)) {
+      throw new Error('nonfinite hood/type-element 3D distance');
+    }
+    return {
+      serviceCoverOpen: state.serviceCoverOpen,
+      cheekPreviewEnabled: state.cheekSmoothingPreview,
+      carrierXmm: state.carrierX,
+      printApproach: state.printApproach,
+      hoodTriangleCount: index.count / 3,
+      nearestHoodTriangleIndex: nearestTriangle,
+      enclosingTypeElementSphereRadiusMm: sphere.radius,
+      minimumHoodTriangleSurfaceDistanceMm: minDistance,
+      signedEnclosingSphereSurfaceGapMm: surfaceGap,
+      typeCenterInsideHoodYZSection: section.typeCenterInsideHoodYZSection,
+      originalYZSectionBoundMm: section.conservativeHoodTypeElementGapLowerBoundMm,
+      originalYZSectionProvenDisjoint: section.boundedModelPairProvenDisjoint,
+      modeledHoodTypePairCertifiedDisjoint: certifiedDisjoint,
+      modeledIntersectionProven: false,
+      productionContactCertified: false,
+      historicalCoverGeometryVerified: false,
+      fullTriangleVsTriangleCollisionCertified: false,
+      class: 'actual world-transformed hood triangles versus conservative type-element AABB sphere; positive outside-YZ surface gap proves modeled pair disjointness; all else inconclusive'
+    };
+  }
+
+  // Controlled inspection of 3 carrier stops x 3 rocker phases x 5 cover
+  // positions x 2 P5 cheek modes. Always restore model state even on error.
+  function hoodTypeElementMotionSweepProbe() {
+    const original = {
+      carrierX: state.carrierX,
+      printApproach: state.printApproach,
+      serviceCoverOpen: state.serviceCoverOpen,
+      cheekSmoothingPreview: state.cheekSmoothingPreview
+    };
+    const cases = [];
+    const carrierPositions = [-CANONICAL.writingLineMm / 2, 0,
+      CANONICAL.writingLineMm / 2];
+    try {
+      for (const preview of [false, true]) {
+        setCheekSmoothingPreview(preview);
+        for (const carrier of carrierPositions) {
+          setCarrierX(carrier);
+          for (const rocker of [0, 0.9, 1]) {
+            setPrintApproach(rocker);
+            for (const cover of [0, .25, .5, .75, 1]) {
+              setServiceCover(cover);
+              cases.push(hoodTypeElementTriangleProbe());
+            }
+          }
+        }
+      }
+    } finally {
+      setCarrierX(original.carrierX);
+      setPrintApproach(original.printApproach);
+      setServiceCover(original.serviceCoverOpen);
+      setCheekSmoothingPreview(original.cheekSmoothingPreview);
+    }
+    return {
+      totalCases: cases.length,
+      carrierPositionsMm: carrierPositions,
+      rockerPhases: [0, .9, 1],
+      coverFractions: [0, .25, .5, .75, 1],
+      cheekPreviewModes: [false, true],
+      cases,
+      historicalSourceCalibrated: false,
+      productionContactCertified: false,
+      actualMachineCycleCertified: false,
+      geometryPromoted: false,
+      class: '90-pose P4 hood/type-element conservative triangle-to-sphere research sweep'
+    };
+  }
+
   function geometryDiagnostics() {
     root.updateMatrixWorld(true);
     const bounds = new THREE.Box3().setFromObject(root);
@@ -9294,6 +9399,8 @@ export function createSelectricModel() {
     bridgeSheetPlaneIntersectionProbe,
     hoodPlatenCenterSectionProbe,
     hoodTypeElementSectionProbe,
+    hoodTypeElementTriangleProbe,
+    hoodTypeElementMotionSweepProbe,
     setInspectionCutaway,
     setExplosion,
     stampCharacter,
