@@ -7963,6 +7963,83 @@ export function createSelectricModel() {
     };
   }
 
+  // Independently narrower than world-AABB broadphase: compare the P4
+  // platen cylinder radius with the actual Y/Z central profile section of
+  // the hinged P4 service hood at X=0. The station loft contains X=0
+  // at every station, so its central cross-section can be constructed
+  // directly from the existing hood BufferGeometry. This remains a MODEL
+  // sectional test, not an IBM factory cover/print clearance certificate.
+  function hoodPlatenCenterSectionProbe() {
+    root.updateMatrixWorld(true);
+    const pos = frontFascia.geometry.getAttribute('position');
+    const stations = pos.count / 4;
+    if (!Number.isInteger(stations) || stations < 3) {
+      throw new Error('unexpected public service hood station structure');
+    }
+    const top = [], bottom = [];
+    for (let i = 0; i < stations; i++) {
+      const start = i * 4;
+      // At each station, the four vertices are (±width, bottom/top, z).
+      // Interior central X=0 inherits the same Y/Z section at that z.
+      const z = pos.getZ(start);
+      const bottomY = pos.getY(start);
+      const topY = pos.getY(start + 2);
+      const b = new THREE.Vector3(0, bottomY, z).applyMatrix4(frontFascia.matrixWorld);
+      const t = new THREE.Vector3(0, topY, z).applyMatrix4(frontFascia.matrixWorld);
+      bottom.push([b.y, b.z]);
+      top.push([t.y, t.z]);
+    }
+    const outline = bottom.concat(top.reverse());
+    const platenCenter = new THREE.Vector3();
+    platen.getWorldPosition(platenCenter);
+    const center = [platenCenter.y, platenCenter.z];
+    const distanceToSegment = (point, a, b) => {
+      const v = [b[0] - a[0], b[1] - a[1]];
+      const l2 = v[0] * v[0] + v[1] * v[1];
+      if (l2 <= 1e-12) return Math.hypot(point[0] - a[0], point[1] - a[1]);
+      const t = THREE.MathUtils.clamp(((point[0] - a[0]) * v[0] +
+        (point[1] - a[1]) * v[1]) / l2, 0, 1);
+      return Math.hypot(point[0] - a[0] - t * v[0],
+        point[1] - a[1] - t * v[1]);
+    };
+    let minSurfaceDistance = Infinity;
+    let centerInsideHood = false;
+    for (let i = 0, k = outline.length - 1; i < outline.length; k = i, i++) {
+      const a = outline[k], b = outline[i];
+      minSurfaceDistance = Math.min(minSurfaceDistance, distanceToSegment(center, a, b));
+      if ((a[0] > center[0]) !== (b[0] > center[0])) {
+        const atZ = a[1] + (center[0] - a[0]) * (b[1] - a[1]) / (b[0] - a[0]);
+        if (atZ > center[1]) centerInsideHood = !centerInsideHood;
+      }
+    }
+    const platenRadius = CANONICAL.platen.radiusMm;
+    const signedSectionSurfaceGap = centerInsideHood ?
+      -(minSurfaceDistance + platenRadius) :
+      (minSurfaceDistance - platenRadius);
+    if (![minSurfaceDistance, signedSectionSurfaceGap].every(Number.isFinite)) {
+      throw new Error('nonfinite platen/hood section diagnosis');
+    }
+    return {
+      cheekPreviewEnabled: state.cheekSmoothingPreview,
+      copyControlSetting: state.copyControlSetting,
+      serviceCoverOpen: state.serviceCoverOpen,
+      explosion: state.explosion,
+      platenCenterWorldYmm: center[0],
+      platenCenterWorldZmm: center[1],
+      platenRadiusMmP4: platenRadius,
+      hoodCentralStationCount: stations,
+      sectionPolygonEdgeCount: outline.length,
+      platenAxisCenterWithinHoodSection: centerInsideHood,
+      minHoodSurfaceToPlatenAxisMm: minSurfaceDistance,
+      signedHoodSurfaceToPlatenCylinderMmP4: signedSectionSurfaceGap,
+      centralSectionIndicatesModelOverlap: signedSectionSurfaceGap <= 0,
+      factoryClearanceCertified: false,
+      sourceCoverLevelVerified: false,
+      whole3DMeshCollisionCertified: false,
+      class: 'actual 2D X=0 hood-loft section versus P4 platen cylinder; not exact factory clearance or full dynamic mesh collision'
+    };
+  }
+
   function geometryDiagnostics() {
     root.updateMatrixWorld(true);
     const bounds = new THREE.Box3().setFromObject(root);
@@ -9130,6 +9207,7 @@ export function createSelectricModel() {
     shellMeshSeparationProbe,
     shellInternalBroadphaseProbe,
     bridgeSheetPlaneIntersectionProbe,
+    hoodPlatenCenterSectionProbe,
     setInspectionCutaway,
     setExplosion,
     stampCharacter,

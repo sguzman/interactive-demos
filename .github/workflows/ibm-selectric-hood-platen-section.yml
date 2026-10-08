@@ -1,0 +1,43 @@
+name: IBM Selectric P4 hood-platen section
+
+concurrency:
+  group: selectric-hood-platen-section
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ibm-selectric-721/geometry.js'
+      - 'ibm-selectric-721/main.js'
+      - 'ibm-selectric-721/spec.js'
+      - 'tests/ibm-selectric-721-hood-platen-section.spec.mjs'
+      - '.github/workflows/ibm-selectric-hood-platen-section.yml'
+  workflow_dispatch:
+
+jobs:
+  hood-platen-section:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: |
+          npm install --no-save @playwright/test
+          npx playwright install --with-deps chromium
+      - name: Serve demo
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/selectric-platen-http.log 2>&1 &
+          echo $! > /tmp/selectric-platen-http.pid
+      - name: Sample P4 hood-platen central-section clearance
+        run: npx playwright test tests/ibm-selectric-721-hood-platen-section.spec.mjs --reporter=line --workers=1
+      - name: Upload nonpromoting hood/platen section diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selectric-hood-platen-section
+          path: test-results/selectric-hood-platen-section.json
+          if-no-files-found: ignore

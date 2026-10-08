@@ -225,3 +225,14 @@ The Playwright smoke test checks:
 - browser error absence.
 
 This remains an active build. Visual/mechanical refinement continues before Taria can close the public-projection milestone.
+
+## Platen-to-service-hood central-section diagnostic
+
+The public debug-only `hoodPlatenCenterSectionProbe()` computes the
+world-space Y/Z central plane of the existing hinged P4 hood loft and
+compares its polygonal surface against the actual P4 platen-cylinder
+radius. The explicit signed section gap narrows broadphase candidate
+warnings without changing meshes. An independent browser workflow
+samples normal/far-rear copy-control, cover opening, and smooth-cheek
+preview. Positive values are *section-level* separation, not a blanket
+factory shell collision clearance or physical cover-level assignment.
