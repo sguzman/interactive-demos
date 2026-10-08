@@ -102,6 +102,43 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
     return [s.carrierX, s.cycle, s.line, s.copyControlSetting];
   });
   expect(after).toEqual(fixedState);
+
+  // Non-promoting P5 shell research: opt-in mesh swap MUST be reversible
+  // by exact original geometry UUID, and reset must disable the experiment.
+  const previewButton = page.locator('#cheekSmoothingPreviewBtn');
+  const cheek = () => page.evaluate(() =>
+    window.__selectricDebug.state.geometry.cheekSmoothingPreviewP5);
+  const defaultCheek = await cheek();
+  expect(defaultCheek.enabled).toBe(false);
+  expect(defaultCheek.activeRightGeometryUuid).toBe(defaultCheek.originalRightGeometryUuid);
+  expect(defaultCheek.activeLeftGeometryUuid).toBe(defaultCheek.originalLeftGeometryUuid);
+  await previewButton.click();
+  await expect(previewButton).toHaveAttribute('aria-pressed', 'true');
+  const smoothed = await cheek();
+  expect(smoothed.enabled).toBe(true);
+  expect(smoothed.activeRightGeometryUuid).not.toBe(defaultCheek.originalRightGeometryUuid);
+  expect(smoothed.activeLeftGeometryUuid).not.toBe(defaultCheek.originalLeftGeometryUuid);
+  expect(smoothed.activeRightGeometryUuid).toBe(smoothed.activeLeftGeometryUuid);
+  await page.evaluate(() => window.__selectricDebug.setServiceCover(1));
+  expect((await cheek()).enabled).toBe(true);
+  await page.evaluate(() => window.__selectricDebug.setServiceCover(0));
+  await previewButton.click();
+  const restoredCheek = await cheek();
+  expect(restoredCheek.enabled).toBe(false);
+  expect(restoredCheek.activeRightGeometryUuid).toBe(defaultCheek.originalRightGeometryUuid);
+  expect(restoredCheek.activeLeftGeometryUuid).toBe(defaultCheek.originalLeftGeometryUuid);
+  await previewButton.click();
+  await page.locator('#resetBtn').click();
+  await expect(previewButton).toHaveAttribute('aria-pressed', 'false');
+  const resetCheek = await cheek();
+  expect(resetCheek.activeRightGeometryUuid).toBe(defaultCheek.originalRightGeometryUuid);
+  expect(resetCheek.activeLeftGeometryUuid).toBe(defaultCheek.originalLeftGeometryUuid);
+  const mechanismAfterPreview = await page.evaluate(() => {
+    const s = window.__selectricDebug.state;
+    return [s.carrierX, s.cycle, s.line, s.copyControlSetting];
+  });
+  expect(mechanismAfterPreview).toEqual(fixedState);
+
   expect(captures).toHaveLength(8);
   for (const shot of captures) {
     const s = shot.mechanical;
