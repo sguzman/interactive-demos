@@ -1136,6 +1136,7 @@ window.__selectricDebug = {
   shellMeshSeparationProbe: () => model.shellMeshSeparationProbe(),
   hoodTypeElementSectionProbe: () => model.hoodTypeElementSectionProbe(),
   hoodTypeElementTriangleProbe: () => model.hoodTypeElementTriangleProbe(),
+  hoodTypeElementProjectedRectangleProbe: () => model.hoodTypeElementProjectedRectangleProbe(),
   hoodTypeElementMotionSweepProbe: () => model.hoodTypeElementMotionSweepProbe(),
   shellInternalBroadphaseProbe: () => model.shellInternalBroadphaseProbe(),
   bridgeSheetPlaneIntersectionProbe: () => model.bridgeSheetPlaneIntersectionProbe(),

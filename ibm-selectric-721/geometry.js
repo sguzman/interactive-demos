@@ -8183,6 +8183,83 @@ export function createSelectricModel() {
     };
   }
 
+  // A tighter one-way exclusion: compare the ACTUAL world Y/Z AABB rectangle
+  // of the type-element subtree with the hood's projected six-station polygon.
+  // No rectangle/polygon intersection => no 3D mesh intersection. A
+  // projected intersection, including boundary touching, is INCONCLUSIVE.
+  function hoodTypeElementProjectedRectangleProbe() {
+    root.updateMatrixWorld(true);
+    const hood = frontFascia.geometry.getAttribute('position');
+    if (hood.count !== 24) {
+      throw new Error('unexpected hood station polygon topology');
+    }
+    const lo = [], hi = [];
+    for (let i = 0; i < 6; i++) {
+      const k = i * 4;
+      const b = new THREE.Vector3(0, hood.getY(k), hood.getZ(k))
+        .applyMatrix4(frontFascia.matrixWorld);
+      const t = new THREE.Vector3(0, hood.getY(k + 2), hood.getZ(k + 2))
+        .applyMatrix4(frontFascia.matrixWorld);
+      lo.push([b.y, b.z]);hi.push([t.y,t.z]);
+    }
+    const polygon = lo.concat(hi.reverse());
+    const bounds = new THREE.Box3().setFromObject(typeElement);
+    const minY = bounds.min.y, maxY = bounds.max.y;
+    const minZ = bounds.min.z, maxZ = bounds.max.z;
+    const rect = [[minY,minZ],[maxY,minZ],[maxY,maxZ],[minY,maxZ]];
+    const eps = 1e-7;
+    const orient = (a,b,c) => (b[0]-a[0])*(c[1]-a[1]) -
+      (b[1]-a[1])*(c[0]-a[0]);
+    const onSegment = (a,b,p) => Math.abs(orient(a,b,p)) <= eps &&
+      p[0] >= Math.min(a[0],b[0])-eps && p[0] <= Math.max(a[0],b[0])+eps &&
+      p[1] >= Math.min(a[1],b[1])-eps && p[1] <= Math.max(a[1],b[1])+eps;
+    const inside = point => {
+      let crossing = false;
+      for (let i=0,j=polygon.length-1;i<polygon.length;j=i++) {
+        const a=polygon[j],b=polygon[i];
+        if(onSegment(a,b,point)) return true; // touching is a candidate
+        if ((a[0]>point[0]) !== (b[0]>point[0]) &&
+            point[1] < a[1]+(point[0]-a[0])*(b[1]-a[1])/(b[0]-a[0]))
+          crossing=!crossing;
+      }
+      return crossing;
+    };
+    const crosses = (a,b,c,d) => {
+      const o1=orient(a,b,c),o2=orient(a,b,d);
+      const o3=orient(c,d,a),o4=orient(c,d,b);
+      if (onSegment(a,b,c)||onSegment(a,b,d)||
+          onSegment(c,d,a)||onSegment(c,d,b)) return true;
+      return (o1>0)!==(o2>0) && (o3>0)!==(o4>0);
+    };
+    const inRect = p => p[0] >= minY-eps && p[0] <= maxY+eps &&
+      p[1] >= minZ-eps && p[1] <= maxZ+eps;
+    let overlaps = polygon.some(inRect) || rect.some(inside);
+    if (!overlaps) {
+      for(let i=0;i<polygon.length&&!overlaps;i++){
+        const a=polygon[i],b=polygon[(i+1)%polygon.length];
+        for(let j=0;j<4;j++){
+          if(crosses(a,b,rect[j],rect[(j+1)%4])){overlaps=true;break;}
+        }
+      }
+    }
+    if (![minY,maxY,minZ,maxZ].every(Number.isFinite))
+      throw new Error('nonfinite Y/Z type-element projected box');
+    const section=hoodTypeElementSectionProbe();
+    if (section.boundedModelPairProvenDisjoint && overlaps)
+      throw new Error('projected rectangle contradicts sphere exclusion');
+    return {
+      typeYZRectangleBoundsMm: {minY,maxY,minZ,maxZ},
+      projectedHoodVertexCount: polygon.length,
+      projectedRectanglePolygonOverlapCandidate: overlaps,
+      projectedRectangleProvesDisjoint: !overlaps,
+      originalYZSphereProvesDisjoint: section.boundedModelPairProvenDisjoint,
+      modeledIntersectionProven: false,
+      sourceCameraCalibrated: false,
+      productionCollisionCertified: false,
+      class: 'world Y/Z type-element bounding rectangle vs P4 hood 12-vertex projection; disjoint excludes modeled pair, overlap is inconclusive'
+    };
+  }
+
   // Controlled inspection of 3 carrier stops x 3 rocker phases x 5 cover
   // positions x 2 P5 cheek modes. Always restore model state even on error.
   function hoodTypeElementMotionSweepProbe() {
@@ -8204,7 +8281,10 @@ export function createSelectricModel() {
             setPrintApproach(rocker);
             for (const cover of [0, .25, .5, .75, 1]) {
               setServiceCover(cover);
-              cases.push(hoodTypeElementTriangleProbe());
+              cases.push({
+                ...hoodTypeElementTriangleProbe(),
+                ...hoodTypeElementProjectedRectangleProbe()
+              });
             }
           }
         }
@@ -9401,6 +9481,7 @@ export function createSelectricModel() {
     hoodTypeElementSectionProbe,
     hoodTypeElementTriangleProbe,
     hoodTypeElementMotionSweepProbe,
+    hoodTypeElementProjectedRectangleProbe,
     setInspectionCutaway,
     setExplosion,
     stampCharacter,
