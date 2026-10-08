@@ -258,3 +258,18 @@ A nonpositive bound remains an *unresolved candidate*, not proof of contact.
 The probe explicitly excludes factory cover-level calibration, print impact
 and the full travel/cycle sweep from its claims. This does not modify
 type-element geometry, the shell, or the optional P5 cheek preview.
+
+
+## Nonpromoting hood/type-element YZ rectangle section
+
+An explicit Y/Z plane overlap test now compares the actual world-space
+AABB rectangle of the type-element mesh subtree with the real twelve-vertex
+silhouette of the transformed P4 service-cover loft. The test includes
+rectangle corners, hood polygon vertices, edge crossings and edge touches.
+A disjoint projected pair cannot physically intersect in the P4 renderer;
+a projected overlap is INCONCLUSIVE, not a collision certificate.
+
+The independent browser suite tests 90 combinations of carrier, rocker,
+cover and cheek preview, and keeps both the older enclosing-sphere and
+new rectangle classifications. Its JSON artifact is a geometric diagnostic,
+not historical IBM cover geometry or production fit.
