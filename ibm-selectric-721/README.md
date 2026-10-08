@@ -327,3 +327,20 @@ candidate within a declared numerical tolerance, not a source-verified
 physical collision, a filled-solid containment certificate or permission
 to alter IBM geometry. The 90-pose browser artifact is independent from
 long mechanical causal and visual tests.
+
+
+## Non-promoting modeled hood/type triangle contact witnesses
+
+A separate browser diagnostic attempts to turn the 42 3D-SAT
+*potential* hood/type surface contacts into explicitly witnessed
+**P4 model** mesh intersections. It tests actual segment versus
+opposite-triangle hits in both directions and handles coplanar
+triangle overlaps in the dominant 2D projection, including all 88
+instanced type slugs and the current 44-triangle hood loft.
+
+Every witness includes the modeled submesh/instance, local triangle
+and 3D point; this is diagnostic geometry from the current
+unverified P4 machine, **not** an assertion that real IBM equipment
+contacts its service cover. Unwitnessed SAT candidates remain
+inconclusive. Filled-solid containment and actual machine production
+clearances are still unverified. No mesh is edited automatically.
