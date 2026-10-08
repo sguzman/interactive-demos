@@ -144,6 +144,7 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
   // changes the cheek Y/Z section. This is a named-mesh bound, not a global
   // machine collision certificate or production assembly tolerance.
   let referenceMargins = null;
+  const meshClearanceSamples = [];
   for (const preview of [false, true]) {
     await page.evaluate(enabled =>
       window.__selectricDebug.setCheekSmoothingPreview(enabled), preview);
@@ -151,6 +152,7 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
       await page.evaluate(value => window.__selectricDebug.setServiceCover(value), cover);
       const probe = await page.evaluate(() =>
         window.__selectricDebug.shellMeshSeparationProbe());
+      meshClearanceSamples.push(probe);
       expect(probe.previewEnabled).toBe(preview);
       expect(probe.serviceCoverOpen).toBeCloseTo(cover, 8);
       expect(probe.explosion).toBeCloseTo(0, 8);
@@ -174,6 +176,18 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
   });
   expect((await cheek()).enabled).toBe(false);
   expect((await cheek()).activeRightGeometryUuid).toBe(defaultCheek.originalRightGeometryUuid);
+
+  expect(meshClearanceSamples).toHaveLength(10);
+  await writeFile('test-results/selectric-cheek-mesh-qa.json',
+    JSON.stringify({
+      version: 1,
+      gitCommit: process.env.GITHUB_SHA || null,
+      provenance: 'actual rendered Three.js world-X AABB cheek/hood/bridge diagnostics',
+      physicalCollisionCertificate: false,
+      sourcePhotoGeometryAccepted: false,
+      geometryPromoted: false,
+      samples: meshClearanceSamples
+    }, null, 2) + '\n', 'utf8');
 
   expect(captures).toHaveLength(8);
   for (const shot of captures) {
