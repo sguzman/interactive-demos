@@ -8710,6 +8710,14 @@ export function createSelectricModel() {
                     const nearHood = hood.triangle.closestPointToPoint(contactPoint, new THREE.Vector3());
                     const typeSurfaceDistanceMmP4 = contactPoint.distanceTo(nearType);
                     const hoodSurfaceDistanceMmP4 = contactPoint.distanceTo(nearHood);
+                    if (![typeSurfaceDistanceMmP4, hoodSurfaceDistanceMmP4].every(Number.isFinite)) {
+                      throw new Error('P4 witness point-to-triangle distance nonfinite: ' +
+                        JSON.stringify({submesh:part.name,instance,hoodTriangleIndex:hood.triangleIndex,
+                          method:witness.method,point:contactPoint.toArray(),
+                          typeTriangleVertices:[typeTri.a.toArray(),typeTri.b.toArray(),typeTri.c.toArray()],
+                          hoodTriangleVertices:[hood.triangle.a.toArray(),hood.triangle.b.toArray(),hood.triangle.c.toArray()],
+                          typeSurfaceDistanceMmP4,hoodSurfaceDistanceMmP4}));
+                    }
                     if (typeSurfaceDistanceMmP4 > 1e-4 ||
                         hoodSurfaceDistanceMmP4 > 1e-4) {
                       throw new Error('P4 reported contact point not on both source triangles');
