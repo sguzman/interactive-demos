@@ -1133,6 +1133,7 @@ window.__selectricDebug = {
     syncUi();
     return enabled;
   },
+  shellMeshSeparationProbe: () => model.shellMeshSeparationProbe(),
   setServiceCover: value => {
     model.setServiceCover(value);
     syncUi();

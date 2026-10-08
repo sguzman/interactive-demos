@@ -59,6 +59,21 @@ or proof that the P4 type-element physically strikes at every setting. The
 camera, shell and keyboard geometry are not changed.
 
 
+## Renderer-world lateral cover clearance probe
+
+The browser exposes a diagnostic-only
+`window.__selectricDebug.shellMeshSeparationProbe()`. It computes the
+**actual world-space Three.js bounding-box X intervals** of the left/right
+fixed cheeks, hinged hood and rear bridge. The reference browser suite
+checks the margins in 10 assembled configurations: 5 cover fractions,
+both with and without P5 cheek-smoothing preview.
+
+This supplements Taria's nominal 2.7-mm hood / 0.2-mm rear-bridge
+source-parameter preflight. A positive X gap proves those named mesh
+AABBs do not overlap *laterally*, but does not check other internal
+components, physical tolerances, the actual service seam, or historical
+camera accuracy. Geometry remains P4; preview remains P5.
+
 ## Unpromoted smooth side-cheek preview
 
 **Preview smooth cheeks: off** is an explicit, reversible P5 inspection

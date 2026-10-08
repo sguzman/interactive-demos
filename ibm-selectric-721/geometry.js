@@ -7816,6 +7816,32 @@ export function createSelectricModel() {
     paper.clear();
   }
 
+  // Direct renderer-world-X AABB bounds, not inferred station-width proxies.
+  // Positive separation is sufficient to exclude cheek-to-hood penetration
+  // for these named meshes, but does not certify other hardware collisions.
+  function shellMeshSeparationProbe() {
+    root.updateMatrixWorld(true);
+    const xbounds = mesh => {
+      const bounds = new THREE.Box3().setFromObject(mesh);
+      return {min: bounds.min.x, max: bounds.max.x};
+    };
+    const right = xbounds(rightCheek);
+    const left = xbounds(leftCheek);
+    const hood = xbounds(frontFascia);
+    const bridge = xbounds(rearBridge);
+    return {
+      previewEnabled: state.cheekSmoothingPreview,
+      serviceCoverOpen: state.serviceCoverOpen,
+      explosion: state.explosion,
+      mainHoodRightMarginWorldXmm: right.min - hood.max,
+      mainHoodLeftMarginWorldXmm: hood.min - left.max,
+      rearBridgeRightMarginWorldXmm: right.min - bridge.max,
+      rearBridgeLeftMarginWorldXmm: bridge.min - left.max,
+      cheekMirrorEdgeErrorWorldXmm: Math.abs(right.min + left.max),
+      class: 'actual world-space mesh AABB X-separation probe for cheek/hood/bridge; not physical interpenetration with other parts or sourced cover tolerances'
+    };
+  }
+
   function geometryDiagnostics() {
     root.updateMatrixWorld(true);
     const bounds = new THREE.Box3().setFromObject(root);
@@ -8980,6 +9006,7 @@ export function createSelectricModel() {
     setCyclePhase,
     setServiceCover,
     setCheekSmoothingPreview,
+    shellMeshSeparationProbe,
     setInspectionCutaway,
     setExplosion,
     stampCharacter,

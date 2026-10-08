@@ -139,6 +139,42 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
   });
   expect(mechanismAfterPreview).toEqual(fixedState);
 
+  // Inspect real THREE.BufferGeometry world-space AABBs over a cover sweep.
+  // X-axis hinge motion must preserve separation even when smooth preview
+  // changes the cheek Y/Z section. This is a named-mesh bound, not a global
+  // machine collision certificate or production assembly tolerance.
+  let referenceMargins = null;
+  for (const preview of [false, true]) {
+    await page.evaluate(enabled =>
+      window.__selectricDebug.setCheekSmoothingPreview(enabled), preview);
+    for (const cover of [0, 0.25, 0.5, 0.75, 1]) {
+      await page.evaluate(value => window.__selectricDebug.setServiceCover(value), cover);
+      const probe = await page.evaluate(() =>
+        window.__selectricDebug.shellMeshSeparationProbe());
+      expect(probe.previewEnabled).toBe(preview);
+      expect(probe.serviceCoverOpen).toBeCloseTo(cover, 8);
+      expect(probe.explosion).toBeCloseTo(0, 8);
+      const names = [
+        'mainHoodRightMarginWorldXmm', 'mainHoodLeftMarginWorldXmm',
+        'rearBridgeRightMarginWorldXmm', 'rearBridgeLeftMarginWorldXmm'
+      ];
+      const values = names.map(name => probe[name]);
+      for (const value of values) {
+        expect(Number.isFinite(value)).toBe(true);
+        expect(value).toBeGreaterThan(0);
+      }
+      expect(probe.cheekMirrorEdgeErrorWorldXmm).toBeLessThan(0.05);
+      if (!referenceMargins) referenceMargins = values;
+      values.forEach((value, index) => expect(value).toBeCloseTo(referenceMargins[index], 4));
+    }
+  }
+  await page.evaluate(() => {
+    window.__selectricDebug.setServiceCover(0);
+    window.__selectricDebug.setCheekSmoothingPreview(false);
+  });
+  expect((await cheek()).enabled).toBe(false);
+  expect((await cheek()).activeRightGeometryUuid).toBe(defaultCheek.originalRightGeometryUuid);
+
   expect(captures).toHaveLength(8);
   for (const shot of captures) {
     const s = shot.mechanical;
