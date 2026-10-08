@@ -49,3 +49,11 @@ jobs:
           name: selectric-cheek-mesh-qa
           path: test-results/selectric-cheek-mesh-qa.json
           if-no-files-found: ignore
+
+      - name: Upload provisional service-cover internal broadphase
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selectric-cover-internal-broadphase
+          path: test-results/selectric-cover-internal-broadphase.json
+          if-no-files-found: ignore

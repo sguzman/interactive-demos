@@ -7842,6 +7842,59 @@ export function createSelectricModel() {
     };
   }
 
+  // Broadphase ONLY: world AABB distance lower bounds for the moving service
+  // hood / bridge against selected real internal meshes. A zero bound is a
+  // CANDIDATE overlap requiring exact triangle or physical-contact review.
+  // Zero cannot be interpreted as true collision; positive excludes contact
+  // between exactly those two complete named meshes at the sampled pose.
+  function shellInternalBroadphaseProbe() {
+    root.updateMatrixWorld(true);
+    const covers = [
+      ['hood', frontFascia],
+      ['rearBridge', rearBridge]
+    ];
+    const internals = [
+      ['platen', platen],
+      ['paper', paper.mesh],
+      ['bailBar', bailBar],
+      ['frontFeedRoll', frontFeedRollers[0]],
+      ['rearFeedRoll', rearFeedRollers[0]],
+      ['ribbonGuideBridge', ribbonGuideBridge],
+      ['typeElement', typeElement]
+    ];
+    const axisGap = (a0, a1, b0, b1) =>
+      Math.max(0, b0 - a1, a0 - b1);
+    const checked = [];
+    for (const [coverId, coverMesh] of covers) {
+      const a = new THREE.Box3().setFromObject(coverMesh);
+      for (const [partId, partMesh] of internals) {
+        const b = new THREE.Box3().setFromObject(partMesh);
+        const dx = axisGap(a.min.x, a.max.x, b.min.x, b.max.x);
+        const dy = axisGap(a.min.y, a.max.y, b.min.y, b.max.y);
+        const dz = axisGap(a.min.z, a.max.z, b.min.z, b.max.z);
+        checked.push({
+          cover: coverId,
+          internal: partId,
+          axisGapXmm: dx,
+          axisGapYmm: dy,
+          axisGapZmm: dz,
+          aabbSeparationLowerBoundMm: Math.hypot(dx, dy, dz),
+          possibleOverlap: dx === 0 && dy === 0 && dz === 0
+        });
+      }
+    }
+    return {
+      cheekPreviewEnabled: state.cheekSmoothingPreview,
+      serviceCoverOpen: state.serviceCoverOpen,
+      copyControlSetting: state.copyControlSetting,
+      explosion: state.explosion,
+      testedPartPairs: checked,
+      sourceGeometryCalibrated: false,
+      fullTriangleCollisionTest: false,
+      class: 'P4/P5 actual world-AABB service-cover broadphase; overlap means candidate, not collision'
+    };
+  }
+
   function geometryDiagnostics() {
     root.updateMatrixWorld(true);
     const bounds = new THREE.Box3().setFromObject(root);
@@ -9007,6 +9060,7 @@ export function createSelectricModel() {
     setServiceCover,
     setCheekSmoothingPreview,
     shellMeshSeparationProbe,
+    shellInternalBroadphaseProbe,
     setInspectionCutaway,
     setExplosion,
     stampCharacter,

@@ -189,6 +189,61 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
       samples: meshClearanceSamples
     }, null, 2) + '\n', 'utf8');
 
+  // 20 conservative broadphase poses: two cheek geometries, cover open
+  // fractions 0..1 and both end copy-control settings. These checks identify
+  // candidate proximity with actual world AABBs; they do not claim collision.
+  const internalBroadphaseSamples = [];
+  for (const cheekPreview of [false, true]) {
+    await page.evaluate(value => window.__selectricDebug.setCheekSmoothingPreview(value), cheekPreview);
+    for (const copyControl of [0, 4]) {
+      await page.evaluate(value => window.__selectricDebug.setCopyControl(value), copyControl);
+      for (const cover of [0, 0.25, 0.5, 0.75, 1]) {
+        await page.evaluate(value => window.__selectricDebug.setServiceCover(value), cover);
+        const probe = await page.evaluate(() =>
+          window.__selectricDebug.shellInternalBroadphaseProbe());
+        expect(probe.cheekPreviewEnabled).toBe(cheekPreview);
+        expect(probe.copyControlSetting).toBe(copyControl);
+        expect(probe.serviceCoverOpen).toBeCloseTo(cover, 8);
+        expect(probe.explosion).toBeCloseTo(0, 8);
+        expect(probe.sourceGeometryCalibrated).toBe(false);
+        expect(probe.fullTriangleCollisionTest).toBe(false);
+        expect(probe.testedPartPairs).toHaveLength(14);
+        for (const pair of probe.testedPartPairs) {
+          for (const field of ['axisGapXmm','axisGapYmm','axisGapZmm','aabbSeparationLowerBoundMm']) {
+            expect(Number.isFinite(pair[field])).toBe(true);
+            expect(pair[field]).toBeGreaterThanOrEqual(0);
+          }
+          expect(pair.possibleOverlap).toBe(pair.aabbSeparationLowerBoundMm === 0);
+        }
+        internalBroadphaseSamples.push(probe);
+      }
+    }
+  }
+  await page.evaluate(() => {
+    window.__selectricDebug.setServiceCover(0);
+    window.__selectricDebug.setCopyControl(0);
+    window.__selectricDebug.setCheekSmoothingPreview(false);
+  });
+  expect(internalBroadphaseSamples).toHaveLength(20);
+  expect((await cheek()).activeRightGeometryUuid).toBe(defaultCheek.originalRightGeometryUuid);
+  expect((await cheek()).activeLeftGeometryUuid).toBe(defaultCheek.originalLeftGeometryUuid);
+  const finalStable = await page.evaluate(() => {
+    const s = window.__selectricDebug.state;
+    return [s.carrierX,s.cycle,s.line,s.copyControlSetting];
+  });
+  expect(finalStable).toEqual(fixedState);
+  await writeFile('test-results/selectric-cover-internal-broadphase.json',
+    JSON.stringify({
+      version: 1,
+      gitCommit: process.env.GITHUB_SHA || null,
+      analysis: '20 renderer-world AABB poses, 2 hood parts × 7 internal meshes each',
+      sourcePhotoFit: false,
+      exactTriangleCollision: false,
+      candidateOverlapIsCollision: false,
+      geometryPromoted: false,
+      samples: internalBroadphaseSamples
+    }, null, 2) + '\n', 'utf8');
+
   expect(captures).toHaveLength(8);
   for (const shot of captures) {
     const s = shot.mechanical;
