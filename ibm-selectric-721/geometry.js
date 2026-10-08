@@ -8057,6 +8057,74 @@ export function createSelectricModel() {
     };
   }
 
+  // Conservative narrowphase: a sphere enclosing the ACTUAL type-element
+  // mesh AABB vs the projected, filled hood Y/Z section. The hood loft
+  // narrows away from the midline, so any positive section separation is
+  // sufficient to rule out collision for these two modeled assemblies.
+  // Nonpositive values are INDETERMINATE, NOT a proven collision.
+  function hoodTypeElementSectionProbe() {
+    root.updateMatrixWorld(true);
+    const hood = frontFascia.geometry.getAttribute('position');
+    const count = hood.count / 4;
+    if (!Number.isInteger(count) || count !== 6) {
+      throw new Error('hood loft section structure changed');
+    }
+    const lower = [], upper = [];
+    for (let i = 0; i < count; i++) {
+      const k = i * 4;
+      const z = hood.getZ(k);
+      const b = new THREE.Vector3(0, hood.getY(k), z).applyMatrix4(frontFascia.matrixWorld);
+      const t = new THREE.Vector3(0, hood.getY(k + 2), z).applyMatrix4(frontFascia.matrixWorld);
+      lower.push([b.y, b.z]);
+      upper.push([t.y, t.z]);
+    }
+    const polygon = lower.concat(upper.reverse());
+    // Box3.getBoundingSphere encloses the full type-element geometry,
+    // including its small type slugs, and is deliberately conservative.
+    const typeBounds = new THREE.Box3().setFromObject(typeElement);
+    const center = new THREE.Vector3(), sphere = new THREE.Sphere();
+    typeBounds.getBoundingSphere(sphere);
+    center.copy(sphere.center);
+    const p = [center.y, center.z];
+    let inside = false, minimum = Infinity;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const a = polygon[j], b = polygon[i];
+      const dy = b[0] - a[0], dz = b[1] - a[1];
+      const denominator = dy * dy + dz * dz;
+      const t = denominator <= 1e-12 ? 0 : THREE.MathUtils.clamp(
+        ((p[0]-a[0])*dy+(p[1]-a[1])*dz)/denominator, 0, 1);
+      minimum = Math.min(minimum, Math.hypot(
+        p[0]-a[0]-t*dy, p[1]-a[1]-t*dz));
+      if ((a[0] > p[0]) !== (b[0] > p[0])) {
+        const crossing = a[1]+(p[0]-a[0])*(b[1]-a[1])/(b[0]-a[0]);
+        if (crossing > p[1]) inside = !inside;
+      }
+    }
+    const sectionDistance = inside ? 0 : minimum;
+    const lowerBound = sectionDistance - sphere.radius;
+    if (![...p, sphere.radius, sectionDistance, lowerBound].every(Number.isFinite)) {
+      throw new Error('nonfinite hood / type-element conservative section');
+    }
+    return {
+      serviceCoverOpen: state.serviceCoverOpen,
+      cheekPreviewEnabled: state.cheekSmoothingPreview,
+      copyControlSetting: state.copyControlSetting,
+      sphereCenterWorldXmm: center.x,
+      sphereCenterWorldYmm: center.y,
+      sphereCenterWorldZmm: center.z,
+      enclosingTypeElementSphereRadiusMm: sphere.radius,
+      typeCenterInsideHoodYZSection: inside,
+      hoodYZSectionDistanceToSphereCenterMm: sectionDistance,
+      conservativeHoodTypeElementGapLowerBoundMm: lowerBound,
+      boundedModelPairProvenDisjoint: lowerBound > 0,
+      modelIntersectionProven: false,
+      realFactoryCoverLevelVerified: false,
+      factoryClearanceCertified: false,
+      completeCarrierMotionSweepCertified: false,
+      class: 'modeled hood YZ silhouette versus enclosing type-element AABB sphere: positive excludes pair intersection; nonpositive is inconclusive'
+    };
+  }
+
   function geometryDiagnostics() {
     root.updateMatrixWorld(true);
     const bounds = new THREE.Box3().setFromObject(root);
@@ -9225,6 +9293,7 @@ export function createSelectricModel() {
     shellInternalBroadphaseProbe,
     bridgeSheetPlaneIntersectionProbe,
     hoodPlatenCenterSectionProbe,
+    hoodTypeElementSectionProbe,
     setInspectionCutaway,
     setExplosion,
     stampCharacter,

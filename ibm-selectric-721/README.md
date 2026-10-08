@@ -247,3 +247,14 @@ wrap radius. Unlike the combined paper-group AABB, this uses the
 separate wrap geometry and yields a strictly positive lower bound in
 the 20 tested poses. It does **not** validate the original IBM paper
 contact arc, output-sheet routing or any manufacturing tolerance.
+
+## Conservative hood/type-element intersection gate
+
+The debug-only `hoodTypeElementSectionProbe()` measures a bounding sphere
+around the actual transformed type-element meshes against the modeled
+hinged hood's Y/Z silhouette. A **positive** signed lower bound excludes
+intersection between those two modeled surfaces even when their AABBs overlap.
+A nonpositive bound remains an *unresolved candidate*, not proof of contact.
+The probe explicitly excludes factory cover-level calibration, print impact
+and the full travel/cycle sweep from its claims. This does not modify
+type-element geometry, the shell, or the optional P5 cheek preview.
