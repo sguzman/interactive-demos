@@ -808,6 +808,14 @@ const presets = {
   paper: { position: [0, 175, 300], target: [0, 127, -92], cover: 1 },
   power: { position: [-70, 190, 350], target: [-80, 55, 5], cover: 1 },
   rack: { position: [0, 108, 178], target: [0, 74, -72], cover: 1 },
+  // P5 deterministic reference framing. Keep top view off the vertical pole
+  // so OrbitControls retains a stable up direction.
+  front: { position: [0, 165, 700], target: [0, 78, 10], cover: 0 },
+  rear: { position: [0, 160, -710], target: [0, 85, -20], cover: 0 },
+  left: { position: [-710, 160, 0], target: [0, 80, 0], cover: 0 },
+  right: { position: [710, 160, 0], target: [0, 80, 0], cover: 0 },
+  top: { position: [0, 710, 115], target: [0, 80, 10], cover: 0 },
+  keyboard: { position: [0, 225, 435], target: [0, 62, 95], cover: 0 },
   exploded: { position: [500, 330, 600], target: [0, 78, -18], cover: 0 }
 };
 

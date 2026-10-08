@@ -58,6 +58,19 @@ display scaling**, not a production copy thickness, platen-gap measurement,
 or proof that the P4 type-element physically strikes at every setting. The
 camera, shell and keyboard geometry are not changed.
 
+## Deterministic reference cameras
+
+Six additional P5 inspection presets provide front, rear, left, right,
+top-oblique and keyboard-close-up views. These are *repeatable public
+viewer camera poses*, **not** historically calibrated Q1/Q4 intrinsics.
+Switching presets changes only the orbit and presentation cover.
+
+A separate lightweight Playwright workflow captures six unobstructed
+reference-camera PNGs and one open-carrier P5 focus PNG. It checks that
+carrier position, line, cycle and copy-control state remain unchanged
+and uploads the images for future reviewer comparison. Image capture
+does not imply source-comparator or shell/calibration closure.
+
 ## Inspection workspace
 
 The public viewer has a presentation-only **Focus model · F2** button at the

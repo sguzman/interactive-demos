@@ -1,0 +1,41 @@
+name: IBM Selectric 721 reference-view capture
+
+concurrency:
+  group: selectric-reference
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ibm-selectric-721/**'
+      - 'tests/ibm-selectric-721-reference-views.spec.mjs'
+      - '.github/workflows/ibm-selectric-reference-views.yml'
+  workflow_dispatch:
+
+jobs:
+  visual-reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: |
+          npm install --no-save @playwright/test
+          npx playwright install --with-deps chromium
+      - name: Serve site
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/selectric-reference-http.log 2>&1 &
+          echo $! > /tmp/selectric-reference-http.pid
+      - name: Capture deterministic Selectric reference views
+        run: npx playwright test tests/ibm-selectric-721-reference-views.spec.mjs --reporter=line --workers=1
+      - name: Upload reference-view screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selectric-reference-views
+          path: test-results/selectric-reference-*.png
+          if-no-files-found: ignore
