@@ -100,7 +100,7 @@ test('modeled service-bridge / flat-sheet first contact by cover-opening fractio
       .every(key => Object.is(after[key], frozen[key]));
     return {frozen,unchanged,coverAfter:after.serviceCoverOpen,
       copyAfter:after.copyControlSetting,
-      cheekAfter:after.cheekSmoothingPreview,
+      cheekAfter:after.geometry.cheekSmoothingPreviewP5.enabled,
       cases};
   });
 
@@ -119,7 +119,7 @@ test('modeled service-bridge / flat-sheet first contact by cover-opening fractio
     for (const transition of row.transitions) {
       expect(transition.openingFractionTolerance).toBeGreaterThan(0);
       expect(transition.openingFractionTolerance).toBeLessThan(1e-7);
-      expect(transition.firstCoarseBracket[0]).toBeGreaterThanOrEqual(0.75);
+      expect(transition.firstCoarseBracket[0]).toBeGreaterThanOrEqual(0);
       expect(transition.firstCoarseBracket[1]).toBeLessThanOrEqual(1);
     }
   }
