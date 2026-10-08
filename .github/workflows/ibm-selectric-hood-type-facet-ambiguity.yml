@@ -1,0 +1,41 @@
+name: IBM Selectric hood-type residual SAT ambiguity
+
+concurrency:
+  group: selectric-hood-type-residual-ambiguity
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ibm-selectric-721/geometry.js'
+      - 'ibm-selectric-721/main.js'
+      - 'tests/ibm-selectric-721-hood-type-facet-ambiguity.spec.mjs'
+      - '.github/workflows/ibm-selectric-hood-type-facet-ambiguity.yml'
+  workflow_dispatch:
+
+jobs:
+  ambiguity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: |
+          npm install --no-save @playwright/test
+          npx playwright install --with-deps chromium
+      - name: Serve site
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/selectric-ambiguity-http.log 2>&1 &
+      - name: Evaluate unresolved closed-hood facet candidates
+        run: npx playwright test tests/ibm-selectric-721-hood-type-facet-ambiguity.spec.mjs --reporter=line --workers=1
+      - name: Upload residual SAT diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selectric-hood-type-residual-ambiguity
+          path: test-results/selectric-hood-type-facet-ambiguity.json
+          if-no-files-found: ignore

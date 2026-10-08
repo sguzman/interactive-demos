@@ -8656,6 +8656,9 @@ export function createSelectricModel() {
     let witnessedContactPrimitiveCount = 0;
     let checkedWitnessTrianglePairs = 0;
     let degenerateTrianglePairCandidates = 0;
+    let nondegenerateSATWithoutWitnessPairs = 0;
+    const degeneratePairExamples = [];
+    const nondegenerateSATWithoutWitnessExamples = [];
     const firstWitnesses = [];
     const candidateExampleNames = [];
     const typeTri = new THREE.Triangle(
@@ -8713,10 +8716,28 @@ export function createSelectricModel() {
                 // it as a SAT candidate, never as a surface-intersection witness.
                 if (typeTri.getArea() <= 1e-10 || hood.triangle.getArea() <= 1e-10) {
                   degenerateTrianglePairCandidates++;
+                  if(degeneratePairExamples.length<16)degeneratePairExamples.push({
+                    submesh:part.name||'(unnamed)',
+                    instance:part.isInstancedMesh?instance:null,
+                    typeTriangleIndex:i/3,hoodTriangleIndex:hood.triangleIndex,
+                    hoodPanelClass:hood.panelClass,
+                    typeTriangleAreaMm2:typeTri.getArea(),
+                    hoodTriangleAreaMm2:hood.triangle.getArea()
+                  });
                   continue;
                 }
                 checkedWitnessTrianglePairs++;
                 const witness = triangleSurfaceContactWitnessP4(typeTri,hood.triangle);
+                if (!witness) {
+                  nondegenerateSATWithoutWitnessPairs++;
+                  if(nondegenerateSATWithoutWitnessExamples.length<16)
+                    nondegenerateSATWithoutWitnessExamples.push({
+                      submesh:part.name||'(unnamed)',
+                      instance:part.isInstancedMesh?instance:null,
+                      typeTriangleIndex:i/3,hoodTriangleIndex:hood.triangleIndex,
+                      hoodPanelClass:hood.panelClass
+                    });
+                }
                 if (witness) {
                   witnessFound = true;
                   if (firstWitnesses.length < 12) {
@@ -8792,6 +8813,9 @@ export function createSelectricModel() {
       witnessProbeEnabled: checkContactWitnesses,
       trianglePairWitnessTests: checkedWitnessTrianglePairs,
       degenerateTrianglePairCandidates,
+      nondegenerateSATWithoutWitnessPairs,
+      degeneratePairExamples,
+      nondegenerateSATWithoutWitnessExamples,
       modeledSurfaceContactWitnessPrimitives: witnessedContactPrimitiveCount,
       contactWitnessExamples: firstWitnesses,
       modeledSurfaceContactWitnessed: witnessedContactPrimitiveCount > 0,
@@ -8971,6 +8995,44 @@ export function createSelectricModel() {
       historicalSourcePhotoCalibrated:false,OEMContactCertified:false,
       productionGeometryPromoted:false
     };
+  }
+
+  // The 3 SAT-indeterminate poses from the full 4-mask 45-pose ablation
+  // are all at closed cover and rocker rest. Isolate actual rendered
+  // triangle degeneracy from nondegenerate SAT false positives.
+  function hoodTypeElementAmbiguousFacetProbe() {
+    const saved={carrier:state.carrierX,rocker:state.printApproach,
+      cover:state.serviceCoverOpen,preview:state.cheekSmoothingPreview};
+    const positions=[-CANONICAL.writingLineMm/2,0,CANONICAL.writingLineMm/2];
+    const cases=[];
+    try{
+      setCheekSmoothingPreview(false);
+      setPrintApproach(0);
+      setServiceCover(0);
+      for(const x of positions){
+        setCarrierX(x);
+        const r=hoodTypeElementTriangleBoxSATProbe(true,true,['rear-cap','underside']);
+        cases.push({
+          carrierXmm:r.carrierXmm,printApproach:r.printApproach,
+          serviceCoverOpen:r.serviceCoverOpen,
+          diagnosticHoodTriangleCount:r.diagnosticHoodTriangleCount,
+          modeledSurfaceContactWitnessed:r.modeledSurfaceContactWitnessed,
+          satCandidatePrimitives:r.refinedTriangleCandidatePrimitives,
+          degenerateTrianglePairCandidates:r.degenerateTrianglePairCandidates,
+          nondegenerateSATWithoutWitnessPairs:r.nondegenerateSATWithoutWitnessPairs,
+          degeneratePairExamples:r.degeneratePairExamples,
+          nondegenerateSATWithoutWitnessExamples:r.nondegenerateSATWithoutWitnessExamples
+        });
+      }
+    }finally{
+      setCarrierX(saved.carrier);
+      setPrintApproach(saved.rocker);
+      setServiceCover(saved.cover);
+      setCheekSmoothingPreview(saved.preview);
+    }
+    return {cases,totalCases:cases.length,
+      diagnosticOnly:true,publicHoodMeshModified:false,
+      OEMClearanceCertified:false,productionGeometryPromoted:false};
   }
 
   function geometryDiagnostics() {
@@ -10154,6 +10216,7 @@ export function createSelectricModel() {
     syntheticTriangleContactWitnessP4,
     hoodTypeElementContactWitnessSweepProbe,
     hoodTypeElementPanelAblationSweepProbe,
+    hoodTypeElementAmbiguousFacetProbe,
     setInspectionCutaway,
     setExplosion,
     stampCharacter,
