@@ -941,6 +941,50 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.evaluate(() => window.__selectricDebug.togglePaperBail());
 
   const carrierBeforeCopyControl = feedEngaged.carrierX;
+
+  // Source-backed motion topology across ALL five discrete copy-control settings:
+  // platen + paper + front/rear feed-rolls + bail move together in Z, while the
+  // copy-control actuator shaft and the typehead do not. Metric offsets remain P5.
+  const copyControlSweep = await page.evaluate(() => {
+    const results = [];
+    for (let setting = 0; setting < 5; setting += 1) {
+      window.__selectricDebug.setCopyControl(setting);
+      const snap = window.__selectricDebug.state;
+      results.push({
+        setting,
+        carrierX: snap.carrierX,
+        ...snap.geometry.paperFeed.copyControl.registrationProbeP4
+      });
+    }
+    return results;
+  });
+  const copyControlNormalPose = copyControlSweep[0];
+  const carriageWorldFeatures = [
+    'platenAxisWorldZMmP4',
+    'paperWorldZMmP4',
+    'frontFeedRollWorldZMmP4',
+    'rearFeedRollWorldZMmP4',
+    'leftBailRollWorldZMmP4'
+  ];
+  for (const pose of copyControlSweep) {
+    const expectedP5Z = -pose.setting * 2.2;
+    expect(pose.carrierX).toBeCloseTo(carrierBeforeCopyControl, 8);
+    expect(pose.relativeCarriageTravelZMmP5).toBeCloseTo(expectedP5Z, 8);
+    expect(pose.printGapIncreaseFromForwardMmP5).toBeCloseTo(-expectedP5Z, 8);
+    for (const feature of carriageWorldFeatures) {
+      expect(pose[feature] - copyControlNormalPose[feature]).toBeCloseTo(expectedP5Z, 7);
+    }
+    expect(pose.copyControlShaftWorldZMmP4).toBeCloseTo(
+      copyControlNormalPose.copyControlShaftWorldZMmP4, 7
+    );
+    expect(pose.selectedSlugFaceWorldZMmP4).toBeCloseTo(
+      copyControlNormalPose.selectedSlugFaceWorldZMmP4, 7
+    );
+    expect(pose.selectedSlugPlatenClearanceAlongZMmP4 -
+      copyControlNormalPose.selectedSlugPlatenClearanceAlongZMmP4
+    ).toBeCloseTo(-expectedP5Z, 7);
+    expect(pose.class).toContain('not measured IBM factory clearances');
+  }
   await page.evaluate(() => window.__selectricDebug.setCopyControl(4));
   const copyRear = await page.evaluate(() => window.__selectricDebug.state);
   expect(copyRear.copyControlSetting).toBe(4);

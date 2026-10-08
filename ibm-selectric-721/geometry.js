@@ -8406,7 +8406,32 @@ export function createSelectricModel() {
           eccentricCollars: copyControlEccentrics.length,
           eccentricCollarsRotateWithShaft: copyControlEccentrics.every(eccentric => eccentric.parent === copyControlRotor),
           movesPlatenAndEntirePaperFeedCarriage: true,
-          movesCarrierTypehead: false
+          movesCarrierTypehead: false,
+          // Source-backed topology check in world coordinates: the carriage-linked
+          // platen, paper, feed rollers and bail must follow one rigid Z translation.
+          // The copy-control shaft and the typehead remain in the powerframe.
+          // These coordinates are P4 reconstruction measurements; five setting
+          // offsets are deliberately P5 and not purported factory distances.
+          registrationProbeP4: (() => {
+            const worldZ = member => {
+              const point = new THREE.Vector3();
+              member.getWorldPosition(point);
+              return point.z;
+            };
+            return {
+              platenAxisWorldZMmP4: platenCenterWorldP4.z,
+              paperWorldZMmP4: worldZ(paper.mesh),
+              frontFeedRollWorldZMmP4: worldZ(frontFeedRollers[0]),
+              rearFeedRollWorldZMmP4: worldZ(rearFeedRollers[0]),
+              leftBailRollWorldZMmP4: worldZ(paperBailRollers.left),
+              copyControlShaftWorldZMmP4: worldZ(copyControlShaft),
+              selectedSlugFaceWorldZMmP4: selectedSlugFaceWorldP4.z,
+              selectedSlugPlatenClearanceAlongZMmP4,
+              relativeCarriageTravelZMmP5: state.copyControlOffsetZ,
+              printGapIncreaseFromForwardMmP5: -state.copyControlOffsetZ,
+              class: 'world-space P4 linkage continuity; relative 5-position Z offsets are P5 presentation, not measured IBM factory clearances'
+            };
+          })()
         },
         platenVariableEngaged: state.platenVariableEngaged,
         platenRatchetCoupled: !state.platenVariableEngaged,

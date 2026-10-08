@@ -40,6 +40,24 @@ The browser model currently includes:
 - assembled / exploded inspection plus dedicated carrier/typeball, selection, ribbon/print, paper/platen, rack/support and powerframe inspection views, with click-to-inspect provenance; runtime artifacts capture every dedicated mechanism view. The explosion now separates the broad base shell downward from the outer cover assembly lifting up/rear, instead of carrying the base behind the cover where it visually swallowed the carrier/platen layers; rack/support uses an open-machine camera, while powerframe applies an inspection-only P5 cutaway that removes outer-shell/base-shell/keyboard occluders without moving the mechanical assemblies and restores all three on exit;
 - a centered P5 startup carrier pose for immediate type-element visibility; carrier return still terminates at the left writing margin.
 
+## Copy-control whole-carriage motion verification
+
+Runtime geometry diagnostics now expose a **five-setting world-space motion
+probe** under `geometry.paperFeed.copyControl.registrationProbeP4`. It samples
+the platen axis, paper, one front and rear feed-roll, and one paper-bail roller,
+plus the **stationary** copy-control shaft and selected type-element face.
+The Playwright check sweeps all five copy-control settings and verifies that
+the entire paper-feed carriage translates by one consistent rearward Z
+increment while the independent print mechanism stays put. The reported
+selected-slug-to-platen Z clearance correspondingly increases with copy
+setting.
+
+This verifies the IBM source-backed **kinematic parentage and discrete
+five-position behavior**; the numerical `2.2 mm` per position remains **P5
+display scaling**, not a production copy thickness, platen-gap measurement,
+or proof that the P4 type-element physically strikes at every setting. The
+camera, shell and keyboard geometry are not changed.
+
 ## Inspection workspace
 
 The public viewer has a presentation-only **Focus model · F2** button at the
