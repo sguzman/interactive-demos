@@ -849,7 +849,29 @@ renderer.domElement.addEventListener('pointerdown', event => {
   ui.partDescription.textContent = component.description;
 });
 
+const focusToggle = document.querySelector('#focusToggle');
+
+// Presentation-only switch: preserve camera pose, simulation state and keyboard typing.
+// F2 is intentionally non-printable: alphabetic shortcuts would steal typewriter input.
+function setFocusMode(enabled) {
+  const active = Boolean(enabled);
+  document.body.classList.toggle('focus-mode', active);
+  focusToggle.setAttribute('aria-pressed', String(active));
+  focusToggle.textContent = active ? 'Show panels · F2' : 'Focus model · F2';
+  // Moving focus out of a panel that becomes hidden keeps keyboard use predictable.
+  if (active && document.activeElement?.closest?.('.panel')) focusToggle.focus();
+}
+
+focusToggle.addEventListener('click', () => {
+  setFocusMode(!document.body.classList.contains('focus-mode'));
+});
+
 window.addEventListener('keydown', event => {
+  if (event.key === 'F2' && !event.repeat && !event.metaKey && !event.ctrlKey && !event.altKey) {
+    event.preventDefault();
+    setFocusMode(!document.body.classList.contains('focus-mode'));
+    return;
+  }
   if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement || event.target instanceof HTMLTextAreaElement) return;
 

@@ -40,6 +40,20 @@ The browser model currently includes:
 - assembled / exploded inspection plus dedicated carrier/typeball, selection, ribbon/print, paper/platen, rack/support and powerframe inspection views, with click-to-inspect provenance; runtime artifacts capture every dedicated mechanism view. The explosion now separates the broad base shell downward from the outer cover assembly lifting up/rear, instead of carrying the base behind the cover where it visually swallowed the carrier/platen layers; rack/support uses an open-machine camera, while powerframe applies an inspection-only P5 cutaway that removes outer-shell/base-shell/keyboard occluders without moving the mechanical assemblies and restores all three on exit;
 - a centered P5 startup carrier pose for immediate type-element visibility; carrier return still terminates at the left writing margin.
 
+## Inspection workspace
+
+The public viewer has a presentation-only **Focus model · F2** button at the
+lower left. It hides the header, action panel, inspector and metric legend
+temporarily so the exposed carrier, selection mechanism and keyboard can be
+inspected without overlays. F2 or **Show panels · F2** restores the panels
+without changing the model pose, camera, cycle, typewriter state, or selected
+part. The full typewriter keyboard remains active in both views.
+
+The long source/provenance notes below the controls are now collapsed under
+**Engineering notes and unresolved geometry**. All action buttons, state outputs,
+inspection presets, and notes remain available on expansion; this is not a
+mechanical fidelity or geometry promotion.
+
 ## Provenance boundary
 
 Exact source-backed dimensions are retained where available.

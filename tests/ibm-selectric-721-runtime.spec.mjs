@@ -23,6 +23,39 @@ test('IBM Selectric 721 causal foundation and gallery integration', async ({ pag
   await page.waitForFunction(() => Boolean(window.__selectricDebug?.state?.running), null, { timeout: 15_000 });
   await expect(page.locator('#loading')).toBeHidden();
 
+  // Presentation-only focus mode: hides overlays, not the mechanical model or input pipeline.
+  const focusToggle = page.locator('#focusToggle');
+  const technicalNotes = page.locator('#engineeringNotes');
+  await expect(focusToggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(technicalNotes).not.toHaveAttribute('open', '');
+  await technicalNotes.locator('summary').click();
+  await expect(technicalNotes).toHaveAttribute('open', '');
+  await technicalNotes.locator('summary').click();
+  await expect(technicalNotes).not.toHaveAttribute('open', '');
+  const beforeFocus = await page.evaluate(() => ({
+    carrierX: window.__selectricDebug.state.carrierX,
+    cycle: window.__selectricDebug.state.cycle,
+    cover: window.__selectricDebug.state.serviceCoverOpen
+  }));
+  await focusToggle.click();
+  await expect(focusToggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.controls')).toBeHidden();
+  await expect(page.locator('.topbar')).toBeHidden();
+  await expect(page.locator('.inspector')).toBeHidden();
+  await expect(page.locator('.legend')).toBeHidden();
+  await expect(page.locator('#scene')).toBeVisible();
+  await page.keyboard.press('F2');
+  await expect(focusToggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('.controls')).toBeVisible();
+  await expect(page.locator('.topbar')).toBeVisible();
+  await expect(page.locator('.inspector')).toBeVisible();
+  await expect(page.locator('.legend')).toBeVisible();
+  expect(await page.evaluate(() => ({
+    carrierX: window.__selectricDebug.state.carrierX,
+    cycle: window.__selectricDebug.state.cycle,
+    cover: window.__selectricDebug.state.serviceCoverOpen
+  }))).toEqual(beforeFocus);
+
   const initial = await page.evaluate(() => window.__selectricDebug.state);
   expect(initial.geometry.finite).toBe(true);
   expect(initial.geometry.revision).toBe('selectric-integrated-public-build');
