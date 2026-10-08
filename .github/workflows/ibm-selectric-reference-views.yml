@@ -57,3 +57,11 @@ jobs:
           name: selectric-cover-internal-broadphase
           path: test-results/selectric-cover-internal-broadphase.json
           if-no-files-found: ignore
+
+      - name: Upload analytic bridge/output-sheet geometry QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selectric-bridge-sheet-narrowphase
+          path: test-results/selectric-bridge-sheet-plane-qa.json
+          if-no-files-found: ignore

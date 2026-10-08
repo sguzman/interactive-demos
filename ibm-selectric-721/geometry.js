@@ -7900,6 +7900,69 @@ export function createSelectricModel() {
     };
   }
 
+  // Exact geometric intersection in THIS P4/P5 renderer between the finite,
+  // flat output-sheet PlaneGeometry and the rotated rectangular bridge box.
+  // Not a factory paper path: the sheet is a P5 flat presentation and has
+  // zero physical thickness; the bridge is reconstructed P4.
+  function bridgeSheetPlaneIntersectionProbe() {
+    root.updateMatrixWorld(true);
+    const sheet = paper.sheet;
+    const paperParams = sheet.geometry.parameters;
+    const boxParams = rearBridge.geometry.parameters;
+    const transformed = (mesh, x, y, z) =>
+      new THREE.Vector3(x, y, z).applyMatrix4(mesh.matrixWorld);
+    const sheetCorners = [];
+    for (const x of [-paperParams.width / 2, paperParams.width / 2]) {
+      for (const y of [-paperParams.height / 2, paperParams.height / 2]) {
+        sheetCorners.push(transformed(sheet, x, y, 0));
+      }
+    }
+    const sheetZs = sheetCorners.map(p => p.z);
+    const flatness = Math.max(...sheetZs) - Math.min(...sheetZs);
+    const sheetZ = sheetZs.reduce((a, b) => a + b, 0) / sheetZs.length;
+    const sheetX = [Math.min(...sheetCorners.map(p => p.x)), Math.max(...sheetCorners.map(p => p.x))];
+    const sheetY = [Math.min(...sheetCorners.map(p => p.y)), Math.max(...sheetCorners.map(p => p.y))];
+    const bridgeBounds = new THREE.Box3().setFromObject(rearBridge);
+    const overlapX = Math.max(0, Math.min(sheetX[1], bridgeBounds.max.x) - Math.max(sheetX[0], bridgeBounds.min.x));
+    const outline = [
+      [-boxParams.height / 2, -boxParams.depth / 2],
+      [boxParams.height / 2, -boxParams.depth / 2],
+      [boxParams.height / 2, boxParams.depth / 2],
+      [-boxParams.height / 2, boxParams.depth / 2]
+    ].map(([y,z]) => transformed(rearBridge, 0, y, z));
+    const slicesY = [];
+    for (let i = 0; i < outline.length; i++) {
+      const a = outline[i], b = outline[(i + 1) % outline.length];
+      if (Math.abs(a.z - b.z) < 1e-10) {
+        if (Math.abs(sheetZ - a.z) < 1e-8) slicesY.push(a.y, b.y);
+      } else {
+        const t = (sheetZ - a.z) / (b.z - a.z);
+        if (t >= 0 && t <= 1) slicesY.push(a.y + t * (b.y - a.y));
+      }
+    }
+    const intervalY = slicesY.length ?
+      [Math.min(...slicesY), Math.max(...slicesY)] : null;
+    const overlapY = intervalY ?
+      Math.max(0, Math.min(sheetY[1], intervalY[1]) - Math.max(sheetY[0], intervalY[0])) : 0;
+    const patchArea = overlapX * overlapY;
+    return {
+      copyControlSetting: state.copyControlSetting,
+      serviceCoverOpen: state.serviceCoverOpen,
+      cheekPreviewEnabled: state.cheekSmoothingPreview,
+      explosion: state.explosion,
+      sheetPlaneFlatnessMm: flatness,
+      sheetPlaneWorldZmm: sheetZ,
+      bridgePlaneSectionWorldYmm: intervalY,
+      overlapWidthWorldXmm: overlapX,
+      overlapLengthWorldYmm: overlapY,
+      modelPlaneBoxIntersectionAreaMm2: patchArea,
+      modelRepresentationIntersects: patchArea > 1e-8,
+      factoryPaperPathVerified: false,
+      physicalPaperThicknessVerified: false,
+      class: 'Exact finite P5 flat-output-sheet plane vs rotated P4 bridge-box model intersection; not factory clearance'
+    };
+  }
+
   function geometryDiagnostics() {
     root.updateMatrixWorld(true);
     const bounds = new THREE.Box3().setFromObject(root);
@@ -9066,6 +9129,7 @@ export function createSelectricModel() {
     setCheekSmoothingPreview,
     shellMeshSeparationProbe,
     shellInternalBroadphaseProbe,
+    bridgeSheetPlaneIntersectionProbe,
     setInspectionCutaway,
     setExplosion,
     stampCharacter,

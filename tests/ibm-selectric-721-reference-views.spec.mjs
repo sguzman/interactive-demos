@@ -244,6 +244,54 @@ test('13-view reference QA: cardinal and keyboard captures do not change mechani
       samples: internalBroadphaseSamples
     }, null, 2) + '\n', 'utf8');
 
+  // Narrow test for the compound-paper-AABB false-positive ambiguity.
+  // The output sheet is an actual finite XY plane (P5 billboard); the
+  // rear cover bridge is a reconstructed P4 rotating rectangular box.
+  const bridgeSheetSamples = [];
+  for (const preview of [false, true]) {
+    await page.evaluate(value => window.__selectricDebug.setCheekSmoothingPreview(value), preview);
+    for (const copyControl of [0, 4]) {
+      await page.evaluate(value => window.__selectricDebug.setCopyControl(value), copyControl);
+      for (const cover of [0, 0.25, 0.5, 0.75, 1]) {
+        await page.evaluate(value => window.__selectricDebug.setServiceCover(value), cover);
+        const probe = await page.evaluate(() => window.__selectricDebug.bridgeSheetPlaneIntersectionProbe());
+        expect(probe.cheekPreviewEnabled).toBe(preview);
+        expect(probe.copyControlSetting).toBe(copyControl);
+        expect(probe.serviceCoverOpen).toBeCloseTo(cover, 8);
+        expect(probe.explosion).toBe(0);
+        expect(probe.factoryPaperPathVerified).toBe(false);
+        expect(probe.physicalPaperThicknessVerified).toBe(false);
+        expect(probe.sheetPlaneFlatnessMm).toBeLessThan(0.0001);
+        for (const k of ['sheetPlaneWorldZmm','overlapWidthWorldXmm',
+                         'overlapLengthWorldYmm','modelPlaneBoxIntersectionAreaMm2']) {
+          expect(Number.isFinite(probe[k])).toBe(true);
+        }
+        expect(probe.overlapWidthWorldXmm).toBeGreaterThanOrEqual(0);
+        expect(probe.overlapLengthWorldYmm).toBeGreaterThanOrEqual(0);
+        expect(probe.modelRepresentationIntersects).toBe(
+          probe.modelPlaneBoxIntersectionAreaMm2 > 1e-8);
+        bridgeSheetSamples.push(probe);
+      }
+    }
+  }
+  await page.evaluate(() => {
+    window.__selectricDebug.setServiceCover(0);
+    window.__selectricDebug.setCopyControl(0);
+    window.__selectricDebug.setCheekSmoothingPreview(false);
+  });
+  expect(bridgeSheetSamples).toHaveLength(20);
+  expect((await cheek()).activeRightGeometryUuid).toBe(defaultCheek.originalRightGeometryUuid);
+  await writeFile('test-results/selectric-bridge-sheet-plane-qa.json',
+    JSON.stringify({
+      version: 1,
+      gitCommit: process.env.GITHUB_SHA || null,
+      provenance: 'actual world geometry of P5 flat sheet and P4 service-cover bridge',
+      sheetIsPhysicalPaperThickness: false,
+      factoryClearanceCertified: false,
+      publicGeometryPromoted: false,
+      samples: bridgeSheetSamples
+    }, null, 2) + '\n', 'utf8');
+
   expect(captures).toHaveLength(8);
   for (const shot of captures) {
     const s = shot.mechanical;

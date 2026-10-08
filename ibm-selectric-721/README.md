@@ -73,6 +73,20 @@ hashes establish a visible renderer difference, not a higher-fidelity
 historical profile or manufactured clearance. This experimental preview
 cannot change the official P4 geometry without Taria's source gates.
 
+## Exact P4 bridge / P5 output-sheet geometry test
+
+The browser exposes `window.__selectricDebug.bridgeSheetPlaneIntersectionProbe()`.
+It intersects the actual finite P5 output-sheet plane with the
+rotated P4 rear-bridge box, using their live world transforms. Twenty
+cover, copy-control and cheek-preview combinations are checked.
+
+A positive model intersection is **real geometric overlap in this
+presentation**, but is not an IBM factory paper-path or material-thickness
+measurement. Its results are uploaded as the distinct
+`selectric-bridge-sheet-narrowphase` diagnostic artifact. Do not
+silently move the paper or hinge to eliminate contact without
+source-backed service geometry and visual comparisons.
+
 ## Provisional service-cover internal broadphase
 
 The public reference-view regression probes the actual Three.js world-space

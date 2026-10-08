@@ -1135,6 +1135,7 @@ window.__selectricDebug = {
   },
   shellMeshSeparationProbe: () => model.shellMeshSeparationProbe(),
   shellInternalBroadphaseProbe: () => model.shellInternalBroadphaseProbe(),
+  bridgeSheetPlaneIntersectionProbe: () => model.bridgeSheetPlaneIntersectionProbe(),
   inspectionCameraPose: () => ({
     position: camera.position.toArray(),
     target: orbit.target.toArray(),
