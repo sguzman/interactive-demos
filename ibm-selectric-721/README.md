@@ -329,6 +329,22 @@ to alter IBM geometry. The 90-pose browser artifact is independent from
 long mechanical causal and visual tests.
 
 
+## Diagnostic-only hood-facet ablation
+
+The new `hoodTypeElementPanelAblationSweepProbe()` reruns 45 distinct
+carrier/rocker/cover poses with four hood-triangle selection masks:
+all faces; without generated rear cap; without underside; and without
+either. These masks apply only to the **collision tester's list of
+candidate triangles**. The public cover mesh, hinge, source geometry,
+default visual inspection and typing state are unchanged.
+
+A separate Chromium artifact reports modeled surface witnesses,
+remaining SAT candidates and triangle exclusions per mask. It is
+a local counterfactual of P4 geometry, not proof that removing a hood
+face is mechanically or historically correct. The decisive next
+step remains source-backed identification of the original cover
+underside, relief and exact 721 cover configuration.
+
 ## Degenerate primitive triangles are not surface-contact evidence
 
 The renderer exposes some intentionally or incidentally zero-area triangles

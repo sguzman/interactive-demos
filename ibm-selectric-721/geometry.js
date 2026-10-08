@@ -8610,7 +8610,8 @@ export function createSelectricModel() {
   // same necessary test in reverse: hood triangle vs type triangle AABB.
   // Failing either SAT test proves *that triangle pair* cannot intersect.
   // Passing both is only a CANDIDATE, not an exact triangle intersection.
-  function hoodTypeElementTriangleBoxSATProbe(refineTrianglePairs = false, checkContactWitnesses = false) {
+  function hoodTypeElementTriangleBoxSATProbe(refineTrianglePairs = false, checkContactWitnesses = false,
+    excludedPanelClasses = []) {
     root.updateMatrixWorld(true);
     const hoodGeom = frontFascia.geometry;
     const hoodIdx = hoodGeom.index, hoodPos = hoodGeom.getAttribute('position');
@@ -8634,6 +8635,12 @@ export function createSelectricModel() {
         box: new THREE.Box3().setFromPoints(vertices)
       });
     }
+    const allowedLabels = ['underside','right-wall','top-panel','left-wall','front-cap','rear-cap'];
+    if(!Array.isArray(excludedPanelClasses) || excludedPanelClasses.some(p=>!allowedLabels.includes(p))){
+      throw new Error('invalid nonpromoting hood-facet ablation set');
+    }
+    const excludedHoodPanels = new Set(excludedPanelClasses);
+    const diagnosticHoodTriangles = hoodTriangles.filter(h=>!excludedHoodPanels.has(h.panelClass));
     const meshParts = [];
     typeElement.traverse(node => {
       if (node.isMesh && node.geometry?.getAttribute?.('position')) meshParts.push(node);
@@ -8674,7 +8681,7 @@ export function createSelectricModel() {
           worldMatrix.copy(part.matrixWorld);
         }
         const instanceBox = geometry.boundingBox.clone().applyMatrix4(worldMatrix);
-        const touchedHoods = hoodTriangles.filter(h => instanceBox.intersectsBox(h.box));
+        const touchedHoods = diagnosticHoodTriangles.filter(h => instanceBox.intersectsBox(h.box));
         if (!touchedHoods.length) continue;
         primitiveHoodBoundsCandidates++;
         let aabbCandidate = false, satCandidate = false, trianglePairCandidate = false, witnessFound = false;
@@ -8770,6 +8777,8 @@ export function createSelectricModel() {
       parentSubmeshCount: meshParts.length,
       renderedTypePrimitiveCount: primitiveCount,
       hoodTriangleCount: hoodTriangles.length,
+      diagnosticHoodTriangleCount: diagnosticHoodTriangles.length,
+      excludedHoodPanelClasses: [...excludedHoodPanels],
       priorSubmeshAABBCandidates: initialSubmeshCandidates,
       primitiveHoodBoundsCandidates,
       primitiveTriangleAABBCandidates,
@@ -8905,6 +8914,63 @@ export function createSelectricModel() {
       historicSourceGeometryCalibrated:false,
       fullSolidCollisionCertified:false,
       publicGeometryPromoted:false};
+  }
+
+  // Diagnostic-only panel-family ablation, no changes to visible mesh geometry.
+  // Each of four masks samples 3 carrier x 3 rocker x 5 cover states; cheek
+  // preview is held off because it does not enter the hood/type pair.
+  function hoodTypeElementPanelAblationSweepProbe() {
+    const saved={carrier:state.carrierX,rocker:state.printApproach,
+      cover:state.serviceCoverOpen,preview:state.cheekSmoothingPreview};
+    const carrierPositionsMm=[-CANONICAL.writingLineMm/2,0,CANONICAL.writingLineMm/2];
+    const rockerPhases=[0,.9,1],coverFractions=[0,.25,.5,.75,1];
+    const masks=[
+      {name:'all-faces',excluded:[]},
+      {name:'without-rear-cap',excluded:['rear-cap']},
+      {name:'without-underside',excluded:['underside']},
+      {name:'without-rear-cap-and-underside',excluded:['rear-cap','underside']}
+    ];
+    const cases=[];
+    try{
+      setCheekSmoothingPreview(false);
+      for(const mask of masks){
+        for(const carrier of carrierPositionsMm){
+          setCarrierX(carrier);
+          for(const rocker of rockerPhases){
+            setPrintApproach(rocker);
+            for(const cover of coverFractions){
+              setServiceCover(cover);
+              const raw=hoodTypeElementTriangleBoxSATProbe(true,true,mask.excluded);
+              cases.push({
+                mask:mask.name,carrierXmm:carrier,printApproach:rocker,
+                serviceCoverOpen:cover,excludedHoodPanelClasses:raw.excludedHoodPanelClasses,
+                originalHoodTriangles:raw.hoodTriangleCount,
+                diagnosticHoodTriangles:raw.diagnosticHoodTriangleCount,
+                modeledSurfaceContactWitnessed:raw.modeledSurfaceContactWitnessed,
+                witnessedPrimitiveCount:raw.modeledSurfaceContactWitnessPrimitives,
+                satCandidatePrimitiveCount:raw.refinedTriangleCandidatePrimitives,
+                degeneratePairCount:raw.degenerateTrianglePairCandidates,
+                exampleHoodPanels:raw.contactWitnessExamples.map(e=>e.hoodPanelClassP4),
+                exampleHoodTriangleIndices:raw.contactWitnessExamples.map(e=>e.hoodTriangleIndex),
+                sourceProductionGeometryAccepted:false,visibleMeshAltered:false
+              });
+            }
+          }
+        }
+      }
+    }finally{
+      setCarrierX(saved.carrier);
+      setPrintApproach(saved.rocker);
+      setServiceCover(saved.cover);
+      setCheekSmoothingPreview(saved.preview);
+    }
+    return {
+      totalCases:cases.length,uniquePhysicalPoseCount:45,
+      masks,carrierPositionsMm,rockerPhases,coverFractions,
+      cases,visibleHoodMeshModified:false,
+      historicalSourcePhotoCalibrated:false,OEMContactCertified:false,
+      productionGeometryPromoted:false
+    };
   }
 
   function geometryDiagnostics() {
@@ -10087,6 +10153,7 @@ export function createSelectricModel() {
     syntheticTriangleSATRegressionP4,
     syntheticTriangleContactWitnessP4,
     hoodTypeElementContactWitnessSweepProbe,
+    hoodTypeElementPanelAblationSweepProbe,
     setInspectionCutaway,
     setExplosion,
     stampCharacter,

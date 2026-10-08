@@ -1145,6 +1145,7 @@ window.__selectricDebug = {
   syntheticTriangleSATRegressionP4: () => model.syntheticTriangleSATRegressionP4(),
   syntheticTriangleContactWitnessP4: () => model.syntheticTriangleContactWitnessP4(),
   hoodTypeElementContactWitnessSweepProbe: () => model.hoodTypeElementContactWitnessSweepProbe(),
+  hoodTypeElementPanelAblationSweepProbe: () => model.hoodTypeElementPanelAblationSweepProbe(),
   hoodTypeElementMotionSweepProbe: () => model.hoodTypeElementMotionSweepProbe(),
   shellInternalBroadphaseProbe: () => model.shellInternalBroadphaseProbe(),
   bridgeSheetPlaneIntersectionProbe: () => model.bridgeSheetPlaneIntersectionProbe(),
