@@ -236,3 +236,14 @@ warnings without changing meshes. An independent browser workflow
 samples normal/far-rear copy-control, cover opening, and smooth-cheek
 preview. Positive values are *section-level* separation, not a blanket
 factory shell collision clearance or physical cover-level assignment.
+
+## Concentric paper-wrap separation bound
+
+The public P4 platen-wrap presentation surface is a concentric arc of
+radius `platenRadius + 0.65 mm`. The actual hood central-section
+probe now also reports a conservative radial separation bound from
+that arc to the hood: minimum model centerline distance minus the
+wrap radius. Unlike the combined paper-group AABB, this uses the
+separate wrap geometry and yields a strictly positive lower bound in
+the 20 tested poses. It does **not** validate the original IBM paper
+contact arc, output-sheet routing or any manufacturing tolerance.

@@ -8013,6 +8013,18 @@ export function createSelectricModel() {
       }
     }
     const platenRadius = CANONICAL.platen.radiusMm;
+    // paper.wrap is a 2D radial arc on the concentric circle
+    // radius platenRadius + 0.65. Any point on this arc must be
+    // at least (minimum central-hood distance - wrap radius)
+    // away from the hood's central Y/Z polygon. Since the public
+    // loft only NARROWS laterally away from x=0, positive central
+    // radial separation also excludes this bounded wrap mesh from
+    // the named hood loft everywhere in X. No source paper thickness
+    // or true sheet exit geometry is implied.
+    const paperWrapRadius = paper.wrapRadiusMmP4;
+    const wrapSectionLowerBound = centerInsideHood ?
+      -(minSurfaceDistance + paperWrapRadius) :
+      (minSurfaceDistance - paperWrapRadius);
     const signedSectionSurfaceGap = centerInsideHood ?
       -(minSurfaceDistance + platenRadius) :
       (minSurfaceDistance - platenRadius);
@@ -8032,6 +8044,11 @@ export function createSelectricModel() {
       platenAxisCenterWithinHoodSection: centerInsideHood,
       minHoodSurfaceToPlatenAxisMm: minSurfaceDistance,
       signedHoodSurfaceToPlatenCylinderMmP4: signedSectionSurfaceGap,
+      paperWrapRadiusMmP4: paperWrapRadius,
+      paperWrapSectionDistanceLowerBoundMmP4: wrapSectionLowerBound,
+      paperWrapIsConcentricP4Arc: true,
+      originalPaperWrapArcConfirmed: false,
+      fullOutputPaperCollisionCertified: false,
       centralSectionIndicatesModelOverlap: signedSectionSurfaceGap <= 0,
       factoryClearanceCertified: false,
       sourceCoverLevelVerified: false,

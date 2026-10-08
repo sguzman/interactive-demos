@@ -37,6 +37,13 @@ test('platen/hood central cross section preserves source geometry and returns fi
           }
           if(!(p.platenRadiusMmP4>0) || p.hoodCentralStationCount!==6
              || p.sectionPolygonEdgeCount!==12)throw new Error('loft station anatomy drift');
+          expect(p.paperWrapRadiusMmP4 - p.platenRadiusMmP4).toBeCloseTo(0.65,8);
+          expect(p.paperWrapIsConcentricP4Arc).toBe(true);
+          expect(p.originalPaperWrapArcConfirmed).toBe(false);
+          expect(p.fullOutputPaperCollisionCertified).toBe(false);
+          expect(p.paperWrapSectionDistanceLowerBoundMmP4).toBeGreaterThan(0);
+          expect(p.paperWrapSectionDistanceLowerBoundMmP4)
+            .toBeCloseTo(p.signedHoodSurfaceToPlatenCylinderMmP4 - 0.65, 6);
           if(p.factoryClearanceCertified!==false || p.sourceCoverLevelVerified!==false
               || p.whole3DMeshCollisionCertified!==false){
             throw new Error('unearned factory certification');
