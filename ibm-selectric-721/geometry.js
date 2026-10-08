@@ -8997,6 +8997,95 @@ export function createSelectricModel() {
     };
   }
 
+
+  // Research-only continuous-opening contact-phase brackets. Does not
+  // remove any visible service hood face, alter factory geometry, or
+  // assume modeled intersection is a real IBM production interference.
+  // A 1/8-step grid detects coarse intervals; bracket bisection resolves
+  // only transitions visible on that grid, not hidden contact islands.
+  function hoodTypeFacetContactPhaseProbe() {
+    const saved = {
+      carrier: state.carrierX, rocker: state.printApproach,
+      cover: state.serviceCoverOpen, preview: state.cheekSmoothingPreview
+    };
+    const carrier = 0;
+    const rockerPhases = [0, 0.9, 1];
+    const coverFractions = Array.from({ length: 9 }, (_, i) => i / 8);
+    const refinementIterations = 10;
+    const masks = [
+      { name: 'all-faces', excluded: [] },
+      { name: 'without-rear-cap', excluded: ['rear-cap'] },
+      { name: 'without-underside', excluded: ['underside'] },
+      { name: 'without-rear-cap-and-underside', excluded: ['rear-cap', 'underside'] }
+    ];
+    const coarseCases = [], brackets = [];
+    function sample(mask, rocker, fraction) {
+      setServiceCover(fraction);
+      const r = hoodTypeElementTriangleBoxSATProbe(true, true, mask.excluded);
+      return {
+        mask: mask.name,
+        excludedHoodPanelClasses: r.excludedHoodPanelClasses,
+        carrierXmm: state.carrierX,
+        printApproach: rocker,
+        serviceCoverOpen: fraction,
+        hoodTrianglesInDiagnostic: r.diagnosticHoodTriangleCount,
+        modeledSurfaceContactWitnessed: r.modeledSurfaceContactWitnessed,
+        nondegenerateSATWithoutWitnessPairs: r.nondegenerateSATWithoutWitnessPairs,
+        degenerateTrianglePairCandidates: r.degenerateTrianglePairCandidates,
+        refinedTriangleCandidatePrimitives: r.refinedTriangleCandidatePrimitives,
+        witnessPrimitiveCount: r.modeledSurfaceContactWitnessPrimitives,
+        exampleHoodPanels: r.contactWitnessExamples.map(e => e.hoodPanelClassP4)
+      };
+    }
+    try {
+      setCheekSmoothingPreview(false);
+      setCarrierX(carrier);
+      for (const rocker of rockerPhases) {
+        setPrintApproach(rocker);
+        for (const mask of masks) {
+          const row = coverFractions.map(fraction => sample(mask, rocker, fraction));
+          coarseCases.push(...row);
+          for (let i = 0; i < row.length - 1; i++) {
+            const start = row[i], end = row[i + 1];
+            if (start.modeledSurfaceContactWitnessed === end.modeledSurfaceContactWitnessed) continue;
+            let lo = start.serviceCoverOpen, hi = end.serviceCoverOpen;
+            const loContact = start.modeledSurfaceContactWitnessed;
+            for (let j = 0; j < refinementIterations; j++) {
+              const mid = (lo + hi) / 2;
+              const midSample = sample(mask, rocker, mid);
+              if (midSample.modeledSurfaceContactWitnessed === loContact) lo = mid;
+              else hi = mid;
+            }
+            const close = sample(mask, rocker, lo);
+            const open = sample(mask, rocker, hi);
+            brackets.push({
+              mask: mask.name, carrierXmm: carrier, printApproach: rocker,
+              lowerCoverFraction: lo, upperCoverFraction: hi,
+              lowerWitnessed: close.modeledSurfaceContactWitnessed,
+              upperWitnessed: open.modeledSurfaceContactWitnessed,
+              residualWidthFraction: hi - lo,
+              diagnosticOnly: true
+            });
+          }
+        }
+      }
+    } finally {
+      setCarrierX(saved.carrier);
+      setPrintApproach(saved.rocker);
+      setServiceCover(saved.cover);
+      setCheekSmoothingPreview(saved.preview);
+    }
+    return {
+      coarseCases, brackets, masks, carrierXmm: carrier,
+      rockerPhases, coverFractions, refinementIterations,
+      coarseCaseCount: coarseCases.length,
+      broadGridCannotExcludeUnobservedContactIslands: true,
+      publicHoodMeshesModified: false, historicalOriginalCoverVerified: false,
+      filledSolidCollisionCertified: false, OEMContactCertified: false,
+      productionGeometryPromoted: false
+    };
+  }
+
   // The 3 SAT-indeterminate poses from the full 4-mask 45-pose ablation
   // are all at closed cover and rocker rest. Isolate actual rendered
   // triangle degeneracy from nondegenerate SAT false positives.
@@ -10216,6 +10305,7 @@ export function createSelectricModel() {
     syntheticTriangleContactWitnessP4,
     hoodTypeElementContactWitnessSweepProbe,
     hoodTypeElementPanelAblationSweepProbe,
+    hoodTypeFacetContactPhaseProbe,
     hoodTypeElementAmbiguousFacetProbe,
     setInspectionCutaway,
     setExplosion,

@@ -1,0 +1,42 @@
+name: IBM Selectric hood/type model contact-phase brackets
+
+concurrency:
+  group: selectric-hood-contact-phase
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ibm-selectric-721/geometry.js'
+      - 'ibm-selectric-721/main.js'
+      - 'ibm-selectric-721/spec.js'
+      - 'tests/ibm-selectric-721-hood-type-contact-phase.spec.mjs'
+      - '.github/workflows/ibm-selectric-hood-type-contact-phase.yml'
+  workflow_dispatch:
+
+jobs:
+  contact-phase:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: |
+          npm install --no-save @playwright/test
+          npx playwright install --with-deps chromium
+      - name: Serve site
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/selectric-hood-contact-phase.log 2>&1 &
+      - name: Diagnose hood contact phases without editing modeled shell
+        run: npx playwright test tests/ibm-selectric-721-hood-type-contact-phase.spec.mjs --reporter=line --workers=1
+      - name: Upload phase brackets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selectric-hood-type-contact-phase
+          path: test-results/selectric-hood-type-contact-phase.json
+          if-no-files-found: ignore

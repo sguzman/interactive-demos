@@ -389,3 +389,15 @@ unverified P4 machine, **not** an assertion that real IBM equipment
 contacts its service cover. Unwitnessed SAT candidates remain
 inconclusive. Filled-solid containment and actual machine production
 clearances are still unverified. No mesh is edited automatically.
+
+## Hood/type opening-phase research (not a geometry promotion)
+
+The diagnostic `hoodTypeFacetContactPhaseProbe()` compares original rendered
+hood facets with three non-mutating tester masks (rear cap, underside,
+and both excluded) through three representative rocker phases at a fixed
+center carrier. A nine-fraction service-cover grid locates detectable
+surface-contact state transitions, then ten binary refinement steps bound
+each transition in the **P5 opening fraction**. This is deliberately a
+model-facet sensitivity experiment, not an assertion about original IBM
+hood relief, level, factory clearance, or hidden contact islands between
+samples. The visible shell and typing mechanism are always restored.
