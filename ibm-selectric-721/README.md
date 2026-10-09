@@ -452,3 +452,15 @@ surface witnesses, then validates each reported point against both source
 surfaces within 0.0001 mm. It records model-only witnesses and
 remaining SAT candidates separately. It does **not** certify original
 IBM knobs, as-built cover level, filled-solid contact or clearance.
+
+## Source-unpromoted rear-bridge face attribution
+
+The strict platen-knob triangle witness diagnostic now records the **actual
+local P4 box-face orientation** of every witnessed rear-bridge contact:
+local positive/negative X end, Y horizontal, or Z longitudinal faces.
+This categorization uses the original BoxGeometry triangle normals before
+hinge transforms, so opening the service cover cannot change the label.
+The full contact count must equal the sum over these facets. An intersection
+on a generated P4 box face does not prove the real 721 has that surface;
+original cover level, bridge relief, knob placement, and manufacturing
+clearance remain source-gated.

@@ -1,0 +1,41 @@
+name: IBM Selectric rear-bridge knob contact facet attribution
+
+concurrency:
+  group: selectric-knob-bridge-facets
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ibm-selectric-721/geometry.js'
+      - 'ibm-selectric-721/main.js'
+      - 'tests/ibm-selectric-721-platen-knob-contact-facets.spec.mjs'
+      - '.github/workflows/ibm-selectric-platen-knob-contact-facets.yml'
+  workflow_dispatch:
+
+jobs:
+  bridge-facets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: |
+          npm install --no-save @playwright/test
+          npx playwright install --with-deps chromium
+      - name: Serve demo
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/selectric-knob-facets.log 2>&1 &
+      - name: Attribute all strict modeled contacts by box-face local normal
+        run: npx playwright test tests/ibm-selectric-721-platen-knob-contact-facets.spec.mjs --reporter=line --workers=1
+      - name: Upload nonpromoting bridge-face contact evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selectric-platen-knob-contact-facets
+          path: test-results/selectric-platen-knob-contact-facets.json
+          if-no-files-found: ignore

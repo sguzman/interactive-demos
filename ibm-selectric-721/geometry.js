@@ -8033,6 +8033,21 @@ export function createSelectricModel() {
   // metrology, nor a complete filled-solid containment certificate.
   function hoodPlatenKnobSurfaceContactProbe() {
     root.updateMatrixWorld(true);
+    // Attribute actual BoxGeometry triangles by their LOCAL face normals,
+    // not by transient world orientations as the service cover pivots.
+    // These labels describe the P4 box only; no original IBM bridge facet
+    // has been established from service parts drawings.
+    function rearBridgeLocalFacet(pos,pick) {
+      const local=[0,1,2].map(k=>new THREE.Vector3()
+        .fromBufferAttribute(pos,pick(k)));
+      const n=new THREE.Triangle(...local).getNormal(new THREE.Vector3());
+      if(n.lengthSq()<=1e-16)return 'bridge-degenerate';
+      const axes=['x','y','z'];
+      let axis='x';
+      for(const candidate of axes)if(Math.abs(n[candidate])>Math.abs(n[axis]))axis=candidate;
+      return 'bridge-local-'+axis+(n[axis]>=0?'-positive':'-negative');
+    }
+
     const broad=hoodPlatenKnobCoverBroadphaseProbe();
     const facetClass=(part,i)=>part==='lofted-service-hood'?
       (i>=40?(i<42?'front-cap':'rear-cap'):
@@ -8053,7 +8068,8 @@ export function createSelectricModel() {
           const tri=new THREE.Triangle(...verts);
           out.push({
             part:node.name,triangleIndex:i/3,
-            facet:facetClass(part,i/3),
+            facet:part==='rear-service-bridge'?
+              rearBridgeLocalFacet(pos,pick):facetClass(part,i/3),
             triangle:tri,box:new THREE.Box3().setFromPoints(verts),
             degenerate:tri.getArea()<=1e-10
           });
@@ -8076,6 +8092,7 @@ export function createSelectricModel() {
       if(!parent)throw new Error('missing knob broadphase identity');
       let triangleAabbPairs=0,satPairs=0,degeneratePairs=0;
       let surfaceWitnessPairs=0,satWithoutWitness=0;
+      const witnessesByCoverFacet={};
       const examples=[];
       if(parent.worldAabbCandidate){
         for(const k of knob.meshes)for(const h of cover.meshes){
@@ -8101,6 +8118,7 @@ export function createSelectricModel() {
             throw new Error('invalid platen knob surface witness');
           }
           surfaceWitnessPairs++;
+          witnessesByCoverFacet[h.facet]=(witnessesByCoverFacet[h.facet]||0)+1;
           if(examples.length<8)examples.push({
             knobSubmesh:k.part,knobTriangleIndex:k.triangleIndex,
             coverFacet:h.facet,coverTriangleIndex:h.triangleIndex,
@@ -8116,6 +8134,7 @@ export function createSelectricModel() {
         coverTriangleCount:cover.meshes.length,
         triangleAabbPairs,satPairs,degeneratePairs,
         surfaceWitnessPairs,satWithoutWitness,
+        witnessesByCoverFacet,
         modeledNondegenerateSurfaceContactWitnessed:surfaceWitnessPairs>0,
         noSurfaceWitnessDoesNotCertifyFilledSolids:true,
         examples
