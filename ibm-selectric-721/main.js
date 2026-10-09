@@ -1152,6 +1152,7 @@ window.__selectricDebug = {
   shellInternalBroadphaseProbe: () => model.shellInternalBroadphaseProbe(),
   bridgeSheetPlaneIntersectionProbe: () => model.bridgeSheetPlaneIntersectionProbe(),
   hoodPlatenCenterSectionProbe: () => model.hoodPlatenCenterSectionProbe(),
+  hoodPlatenKnobCoverBroadphaseProbe: () => model.hoodPlatenKnobCoverBroadphaseProbe(),
   inspectionCameraPose: () => ({
     position: camera.position.toArray(),
     target: orbit.target.toArray(),

@@ -7969,6 +7969,64 @@ export function createSelectricModel() {
   // at every station, so its central cross-section can be constructed
   // directly from the existing hood BufferGeometry. This remains a MODEL
   // sectional test, not an IBM factory cover/print clearance certificate.
+  // Outboard P4 knob/cover broadphase: real Three.js world AABBs of
+  // the two multi-piece platen knobs against separately named hood
+  // and rear bridge. Three overlapping intervals => possible collision,
+  // NEVER confirmation of triangle contact or OEM cover clearance.
+  function hoodPlatenKnobCoverBroadphaseProbe() {
+    root.updateMatrixWorld(true);
+    const pairBounds = object => {
+      const box = new THREE.Box3().setFromObject(object);
+      const coords = [box.min.x, box.min.y, box.min.z,
+        box.max.x, box.max.y, box.max.z];
+      if (!coords.every(Number.isFinite)) {
+        throw new Error('nonfinite P4 platen knob / hood AABB');
+      }
+      return box;
+    };
+    const axisSignedGap = (a, b, axis) =>
+      Math.max(a.min[axis] - b.max[axis], b.min[axis] - a.max[axis]);
+    const hoodParts = [
+      { name: 'lofted-service-hood', mesh: frontFascia },
+      { name: 'rear-service-bridge', mesh: rearBridge }
+    ];
+    const knobs = [
+      { name: 'left-platen-knob', mesh: platenKnobPivots[0] },
+      { name: 'right-platen-knob', mesh: platenKnobPivots[1] }
+    ];
+    const results = [];
+    for (const knob of knobs) {
+      const knobBox = pairBounds(knob.mesh);
+      for (const part of hoodParts) {
+        const coverBox = pairBounds(part.mesh);
+        const gapX = axisSignedGap(knobBox, coverBox, 'x');
+        const gapY = axisSignedGap(knobBox, coverBox, 'y');
+        const gapZ = axisSignedGap(knobBox, coverBox, 'z');
+        results.push({
+          knob: knob.name,
+          coverPart: part.name,
+          signedWorldAabbGapMm: { x: gapX, y: gapY, z: gapZ },
+          worldAabbCandidate: gapX <= 0 && gapY <= 0 && gapZ <= 0,
+          actualTriangleContactEstablished: false
+        });
+      }
+    }
+    return {
+      copyControlSetting: state.copyControlSetting,
+      serviceCoverOpen: state.serviceCoverOpen,
+      cheekSmoothingPreview: state.cheekSmoothingPreview,
+      explosion: state.explosion,
+      pairCount: results.length,
+      pairs: results,
+      P4ProductionKnobDimensionsVerified: false,
+      original721CoverLevelAssigned: false,
+      exact3DMeshContactCertified: false,
+      fullOriginalPlatenClearanceCertified: false,
+      publicGeometryPromoted: false,
+      class: 'world-space P4 knob/hood/bridge AABB broadphase; overlap is inconclusive, separation excludes named mesh contact'
+    };
+  }
+
   function hoodPlatenCenterSectionProbe() {
     root.updateMatrixWorld(true);
     const pos = frontFascia.geometry.getAttribute('position');
@@ -10292,6 +10350,7 @@ export function createSelectricModel() {
     shellInternalBroadphaseProbe,
     bridgeSheetPlaneIntersectionProbe,
     hoodPlatenCenterSectionProbe,
+    hoodPlatenKnobCoverBroadphaseProbe,
     hoodTypeElementSectionProbe,
     hoodTypeElementTriangleProbe,
     hoodTypeElementMotionSweepProbe,

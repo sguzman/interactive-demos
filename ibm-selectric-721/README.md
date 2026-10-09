@@ -422,3 +422,21 @@ The original model-721 cover level remains unidentified.
 
 The corresponding JSON report uploads as a separate workflow artifact;
 neither P4 shell nor typewriter mechanism geometry is modified.
+
+## Outboard platen knob / service-cover broadphase
+
+The dedicated `ibm-selectric-721-platen-knob-hood.spec.mjs`
+samples **actual world-transformed bounding boxes** of both complete
+platen knob assemblies (core, end cap, grip ribs and phase cue)
+against two separate modeled cover parts: the main lofted hood and
+the rear bridge. All 50 combinations of five copy detents, five
+cover-opening fractions and two cheek-display modes are classified.
+
+Three overlapping axis intervals mark an **AABB contact candidate**;
+this is never a proof of true mesh collision. A positive separation
+on any world axis *does* exclude contact between that named mesh pair.
+All classifications, signed X/Y/Z gaps, source limitations and
+original-state restoration are exported to a separate browser artifact.
+The published machine and the optional P5 cheek surfaces are not
+modified by this analysis. OEM knob span, cover level and actual
+manufacturing clearance remain unverified.
