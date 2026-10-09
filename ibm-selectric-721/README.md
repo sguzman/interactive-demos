@@ -464,3 +464,11 @@ The full contact count must equal the sum over these facets. An intersection
 on a generated P4 box face does not prove the real 721 has that surface;
 original cover level, bridge relief, knob placement, and manufacturing
 clearance remain source-gated.
+
+## Platen-knob/rear-bridge contact release study
+
+The separate `ibm-selectric-721-platen-knob-transition.spec.mjs` regression
+samples model surface contact in copy settings 0/1/2 through the first 25%
+of cover opening, and bisects observed changes to localize contact onset/release.
+It exports nonpromoting modeled triangle evidence; no OEM cover or knob
+clearance, factory copy-control travel, or production collision is claimed.
