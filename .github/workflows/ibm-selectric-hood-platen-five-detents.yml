@@ -1,0 +1,42 @@
+name: IBM Selectric five-detent platen/cover section
+
+concurrency:
+  group: selectric-platen-five-detents
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ibm-selectric-721/geometry.js'
+      - 'ibm-selectric-721/main.js'
+      - 'ibm-selectric-721/spec.js'
+      - 'tests/ibm-selectric-721-hood-platen-five-detents.spec.mjs'
+      - '.github/workflows/ibm-selectric-hood-platen-five-detents.yml'
+  workflow_dispatch:
+
+jobs:
+  platen-five-detents:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: |
+          npm install --no-save @playwright/test
+          npx playwright install --with-deps chromium
+      - name: Serve demo
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/selectric-five-detent-http.log 2>&1 &
+      - name: Check all five copy-control positions against the model hood
+        run: npx playwright test tests/ibm-selectric-721-hood-platen-five-detents.spec.mjs --reporter=line --workers=1
+      - name: Upload nonpromoting five-detent section measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selectric-hood-platen-five-detents
+          path: test-results/selectric-hood-platen-five-detents.json
+          if-no-files-found: ignore

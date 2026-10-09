@@ -401,3 +401,24 @@ each transition in the **P5 opening fraction**. This is deliberately a
 model-facet sensitivity experiment, not an assertion about original IBM
 hood relief, level, factory clearance, or hidden contact islands between
 samples. The visible shell and typing mechanism are always restored.
+
+## Five-detent service-cover/platen section gate
+
+The separate `ibm-selectric-721-hood-platen-five-detents.spec.mjs`
+suite samples the **actual** P4 hood middle-plane section and platen
+cylinder at every copy-control setting (0 through 4), five hood-opening
+fractions and both default/P5 cheek display modes: **50 cases**.
+It asserts positive central-section cylinder and concentric P4
+paper-wrap separation, invariant output between cheek modes, full
+mechanical-state restoration, and the five-setting rearward movement.
+
+IBM's service requirement is **cover clearance at the far front and
+far rear copy-control positions**; the additional intermediate
+samples are renderer QA. The 2.2 mm display increment is P5 and must
+not be described as an OEM setting dimension. A positive central
+section is **not** enough to certify every platen knob/end fitting,
+full three-dimensional hood sweep, rear bridge, or real paper exit.
+The original model-721 cover level remains unidentified.
+
+The corresponding JSON report uploads as a separate workflow artifact;
+neither P4 shell nor typewriter mechanism geometry is modified.
