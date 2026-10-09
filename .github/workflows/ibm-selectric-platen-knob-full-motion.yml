@@ -1,0 +1,41 @@
+name: IBM Selectric knob-bridge full hinge sweep
+
+concurrency:
+  group: selectric-knob-bridge-full-motion
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ibm-selectric-721/geometry.js'
+      - 'ibm-selectric-721/main.js'
+      - 'tests/ibm-selectric-721-platen-knob-full-motion.spec.mjs'
+      - '.github/workflows/ibm-selectric-platen-knob-full-motion.yml'
+  workflow_dispatch:
+
+jobs:
+  full-motion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser dependencies
+        run: |
+          npm install --no-save @playwright/test
+          npx playwright install --with-deps chromium
+      - name: Serve viewer
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/selectric-knob-full-motion.log 2>&1 &
+      - name: Sweep all P5 copy detents and full cover motion
+        run: npx playwright test tests/ibm-selectric-721-platen-knob-full-motion.spec.mjs --reporter=line --workers=1
+      - name: Upload full P4 surface-contact evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selectric-platen-knob-full-motion
+          path: test-results/selectric-platen-knob-full-motion.json
+          if-no-files-found: ignore
