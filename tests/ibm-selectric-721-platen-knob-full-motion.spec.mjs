@@ -101,6 +101,32 @@ test('P4 left/right knob to rear bridge full cover-motion contact windows', asyn
     expect(copy2.some(x => x.pairs[knob].witnessed)).toBe(true);
     expect(copy2.at(-1).pairs[knob].witnessed).toBe(false);
   }
+  // Frozen CURRENT-P4 model regression only, not measured IBM geometry.
+  // Intentional source-backed bridge/knob correction must update this contract.
+  const expectedCurrentP4Brackets = [
+    [0, 'left-platen-knob', true, false, .20904541015625, .209075927734375],
+    [0, 'right-platen-knob', true, false, .20904541015625, .209075927734375],
+    [1, 'left-platen-knob', true, false, .129852294921875, .1298828125],
+    [1, 'right-platen-knob', true, false, .129852294921875, .1298828125],
+    [2, 'left-platen-knob', false, true, .030975341796875, .031005859375],
+    [2, 'left-platen-knob', true, false, .10302734375, .103057861328125],
+    [2, 'right-platen-knob', false, true, .030975341796875, .031005859375],
+    [2, 'right-platen-knob', true, false, .10302734375, .103057861328125]
+  ];
+  expect(outcome.transitions).toHaveLength(expectedCurrentP4Brackets.length);
+  for (let i=0; i<expectedCurrentP4Brackets.length; i++) {
+    const actual=outcome.transitions[i], expected=expectedCurrentP4Brackets[i];
+    expect([actual.copy,actual.knob,actual.from,actual.to]).toEqual(expected.slice(0,4));
+    expect(actual.refined[0]).toBeCloseTo(expected[4],10);
+    expect(actual.refined[1]).toBeCloseTo(expected[5],10);
+  }
+  for (const record of outcome.observations) {
+    if (record.copy >= 3 || record.fraction > .25) {
+      for (const pair of Object.values(record.pairs)) {
+        expect(pair.witnessed).toBe(false);
+      }
+    }
+  }
   for (const x of outcome.transitions) {
     expect(x.refined[1]-x.refined[0]).toBeLessThanOrEqual(1/(64*512)+1e-12);
     expect(x.lower.witnessed).not.toBe(x.upper.witnessed);
