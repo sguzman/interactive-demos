@@ -440,3 +440,15 @@ original-state restoration are exported to a separate browser artifact.
 The published machine and the optional P5 cheek surfaces are not
 modified by this analysis. OEM knob span, cover level and actual
 manufacturing clearance remain unverified.
+
+## Outboard platen-knob 3D surface contact witnesses
+
+The independent platen-knob contact suite now checks the actual triangles
+of both modeled knob assemblies against the P4 hood and rear bridge,
+using only 38 AABB-candidate pair poses across five copy-control detents
+and five cover fractions (default cheek mode). It skips zero-area
+triangles, applies two-way triangle/box SAT and robust triangle/triangle
+surface witnesses, then validates each reported point against both source
+surfaces within 0.0001 mm. It records model-only witnesses and
+remaining SAT candidates separately. It does **not** certify original
+IBM knobs, as-built cover level, filled-solid contact or clearance.

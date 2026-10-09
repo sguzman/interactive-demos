@@ -8027,6 +8027,116 @@ export function createSelectricModel() {
     };
   }
 
+  // Non-promoting actual surface narrowphase for knob/cover AABB candidates.
+  // A zero-area triangle can never serve as positive surface evidence.
+  // A witnessed P4 triangle/triangle contact is not original IBM hardware
+  // metrology, nor a complete filled-solid containment certificate.
+  function hoodPlatenKnobSurfaceContactProbe() {
+    root.updateMatrixWorld(true);
+    const broad=hoodPlatenKnobCoverBroadphaseProbe();
+    const facetClass=(part,i)=>part==='lofted-service-hood'?
+      (i>=40?(i<42?'front-cap':'rear-cap'):
+        ['underside','right-wall','top-panel','left-wall'][Math.floor(i/2)%4]):
+      'rear-bridge-box';
+    function allTriangles(group,part) {
+      const out=[];
+      group.traverse(node=>{
+        if(!node.isMesh || !node.geometry?.getAttribute?.('position'))return;
+        if(node.isInstancedMesh)throw new Error('unexpected instanced platen knob');
+        const geo=node.geometry,pos=geo.getAttribute('position'),idx=geo.index;
+        const count=idx?idx.count:pos.count;
+        if(count%3!==0)throw new Error('incomplete knob/cover triangle list');
+        for(let i=0;i<count;i+=3){
+          const pick=k=>idx?idx.getX(i+k):i+k;
+          const verts=[0,1,2].map(k=>new THREE.Vector3()
+            .fromBufferAttribute(pos,pick(k)).applyMatrix4(node.matrixWorld));
+          const tri=new THREE.Triangle(...verts);
+          out.push({
+            part:node.name,triangleIndex:i/3,
+            facet:facetClass(part,i/3),
+            triangle:tri,box:new THREE.Box3().setFromPoints(verts),
+            degenerate:tri.getArea()<=1e-10
+          });
+        }
+      });
+      return out;
+    }
+    const coverParts=[
+      {name:'lofted-service-hood',meshes:allTriangles(frontFascia,'lofted-service-hood')},
+      {name:'rear-service-bridge',meshes:allTriangles(rearBridge,'rear-service-bridge')}
+    ];
+    const knobParts=[
+      {name:'left-platen-knob',meshes:allTriangles(platenKnobPivots[0],'knob')},
+      {name:'right-platen-knob',meshes:allTriangles(platenKnobPivots[1],'knob')}
+    ];
+    const pairs=[];
+    for(const knob of knobParts)for(const cover of coverParts){
+      const parent=broad.pairs.find(x=>
+        x.knob===knob.name && x.coverPart===cover.name);
+      if(!parent)throw new Error('missing knob broadphase identity');
+      let triangleAabbPairs=0,satPairs=0,degeneratePairs=0;
+      let surfaceWitnessPairs=0,satWithoutWitness=0;
+      const examples=[];
+      if(parent.worldAabbCandidate){
+        for(const k of knob.meshes)for(const h of cover.meshes){
+          if(!k.box.intersectsBox(h.box))continue;
+          triangleAabbPairs++;
+          if(k.degenerate || h.degenerate){
+            degeneratePairs++;
+            continue;
+          }
+          if(!h.box.intersectsTriangle(k.triangle) ||
+             !k.box.intersectsTriangle(h.triangle))continue;
+          if(!triangleTrianglePossibleContactSAT(k.triangle,h.triangle))continue;
+          satPairs++;
+          const witness=triangleSurfaceContactWitnessP4(k.triangle,h.triangle);
+          if(!witness){satWithoutWitness++;continue;}
+          const point=new THREE.Vector3(...witness.worldPointMmP4);
+          const kd=point.distanceTo(k.triangle.closestPointToPoint(
+            point,new THREE.Vector3()));
+          const hd=point.distanceTo(h.triangle.closestPointToPoint(
+            point,new THREE.Vector3()));
+          if(!Number.isFinite(kd) || !Number.isFinite(hd) ||
+             kd>1e-4 || hd>1e-4){
+            throw new Error('invalid platen knob surface witness');
+          }
+          surfaceWitnessPairs++;
+          if(examples.length<8)examples.push({
+            knobSubmesh:k.part,knobTriangleIndex:k.triangleIndex,
+            coverFacet:h.facet,coverTriangleIndex:h.triangleIndex,
+            worldPointMmP4:witness.worldPointMmP4,
+            knobSurfacePointErrorMm:kd,coverSurfacePointErrorMm:hd
+          });
+        }
+      }
+      pairs.push({
+        knob:knob.name,coverPart:cover.name,
+        parentAabbCandidate:parent.worldAabbCandidate,
+        knobTriangleCount:knob.meshes.length,
+        coverTriangleCount:cover.meshes.length,
+        triangleAabbPairs,satPairs,degeneratePairs,
+        surfaceWitnessPairs,satWithoutWitness,
+        modeledNondegenerateSurfaceContactWitnessed:surfaceWitnessPairs>0,
+        noSurfaceWitnessDoesNotCertifyFilledSolids:true,
+        examples
+      });
+    }
+    return {
+      copyControlSetting:state.copyControlSetting,
+      serviceCoverOpen:state.serviceCoverOpen,
+      cheekSmoothingPreview:state.cheekSmoothingPreview,
+      explosion:state.explosion,
+      pairCount:pairs.length,
+      pairs,
+      exactOriginal721CoverLevelIdentified:false,
+      OEMKnobDimensionsMeasured:false,
+      actualProductionCollisionAsserted:false,
+      completeFilledSolidContactCertified:false,
+      geometryChanged:false,
+      class:'P4 world-space nondegenerate knob triangle/hood or bridge triangle contact witnesses; no OEM claim'
+    };
+  }
+
   function hoodPlatenCenterSectionProbe() {
     root.updateMatrixWorld(true);
     const pos = frontFascia.geometry.getAttribute('position');
@@ -10351,6 +10461,7 @@ export function createSelectricModel() {
     bridgeSheetPlaneIntersectionProbe,
     hoodPlatenCenterSectionProbe,
     hoodPlatenKnobCoverBroadphaseProbe,
+    hoodPlatenKnobSurfaceContactProbe,
     hoodTypeElementSectionProbe,
     hoodTypeElementTriangleProbe,
     hoodTypeElementMotionSweepProbe,

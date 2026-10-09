@@ -1,0 +1,42 @@
+name: IBM Selectric platen-knob hood surface witnesses
+
+concurrency:
+  group: selectric-knob-hood-contact
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ibm-selectric-721/geometry.js'
+      - 'ibm-selectric-721/main.js'
+      - 'ibm-selectric-721/spec.js'
+      - 'tests/ibm-selectric-721-platen-knob-contact.spec.mjs'
+      - '.github/workflows/ibm-selectric-platen-knob-contact.yml'
+  workflow_dispatch:
+
+jobs:
+  knob-surface:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: |
+          npm install --no-save @playwright/test
+          npx playwright install --with-deps chromium
+      - name: Serve demo
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/selectric-knob-contact.log 2>&1 &
+      - name: Verify modeled nondegenerate platen knob/cover triangle surface witnesses
+        run: npx playwright test tests/ibm-selectric-721-platen-knob-contact.spec.mjs --reporter=line --workers=1
+      - name: Upload nonpromoting triangle contact report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selectric-platen-knob-contact-witnesses
+          path: test-results/selectric-platen-knob-contact-witnesses.json
+          if-no-files-found: ignore
