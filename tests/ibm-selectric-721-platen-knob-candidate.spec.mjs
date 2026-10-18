@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { writeFile } from 'node:fs/promises';
 
 // NEVER run this on the promoted public baseline as a replacement for the
 // historically frozen 325-pose regression. Candidate activates only via URL.
@@ -116,4 +117,20 @@ test('optional P4 knob candidate: bridge clearance, phases, and reversible basel
   expect(finalState.meshCounts).toEqual([28, 28, 28]);
   expect(finalState.baselineVisibility).toEqual([26, 0, 26]);
   expect(errors).toEqual([]);
+  await writeFile('test-results/selectric-knob-experimental-envelope.json',
+    JSON.stringify({
+      version: 1,
+      sourceCommit: process.env.GITHUB_SHA || null,
+      scope: 'opt-in hypothetical P4 whole knob, real Three.js surface witnesses',
+      phaseValuesRad: [0, Math.PI/24, Math.PI/12],
+      coverFractions: Array.from({ length: 9 }, (_, i) => i/8),
+      copySettings: [0,1,2,3,4],
+      originalIBMKnobProfileIdentified: false,
+      factoryClearanceCertified: false,
+      publicDefaultChanged: false,
+      baselineRestored: finalState.defaultRestored,
+      baselineContactPairs: result.baselineContacts,
+      reversibleMeshCounts: finalState.meshCounts,
+      samples: result.observations
+    }, null, 2) + '\n', 'utf8');
 });
