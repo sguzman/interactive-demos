@@ -1691,6 +1691,7 @@ export function createSelectricModel() {
     printApproach: 0,
     printCamFollowerLiftP5: 0,
     platenIndex: 0,
+    platenKnobCandidateP4: false,
     paperAdvanceMm: 0,
     manualPaperAlignmentMmP5: 0,
     feedRollPhaseRad: 0,
@@ -4429,6 +4430,10 @@ export function createSelectricModel() {
   const platenKnobPivots = [];
   const platenKnobGripRibCountP4 = platenKnobP4.gripRibCount;
   const platenKnobGripRibs = [];
+  // Candidate geometry is allocated lazily. Default product mode must retain
+  // the unchanged original P4 mesh count, positions, and contact witnesses.
+  const platenKnobBaselineMeshes = [];
+  const platenKnobCandidateMeshes = [];
   const platenKnobOuterExtensionMmP4 = Math.max(
     platenKnobP4.coreLengthMm / 2,
     platenKnobP4.outerCapCenterOffsetMm + platenKnobP4.outerCapLengthMm / 2,
@@ -4456,6 +4461,7 @@ export function createSelectricModel() {
     );
     addPickable(knob, COMPONENTS.platen, pickables);
     pivot.add(knob);
+    platenKnobBaselineMeshes.push(knob);
 
     const outerCap = shaft(
       platenKnobP4.outerCapLengthMm,
@@ -4486,6 +4492,7 @@ export function createSelectricModel() {
       addPickable(rib, COMPONENTS.platen, pickables);
       pivot.add(rib);
       platenKnobGripRibs.push(rib);
+      platenKnobBaselineMeshes.push(rib);
     }
 
     const phaseCue = box(8.5, 1.2, 1.8, metal, x < 0 ? 'left platen phase cue' : 'right platen phase cue');
@@ -4495,6 +4502,73 @@ export function createSelectricModel() {
 
     paperFeedCarriage.add(pivot);
     platenKnobPivots.push(pivot);
+  }
+
+
+  // Explicit opt-in engineering hypothesis, NOT an original IBM platen knob.
+  // The 2026-10-18 Taria certified radial/axial envelope requires an <=8 mm
+  // inboard neck and no full-radius material reaching X=[-154,+154] mm.
+  // The baseline is never deleted, moved, or changed; both alternatives
+  // rotate through the SAME existing platen phase pivots.
+  function setPlatenKnobCandidateP4(enabled) {
+    const next = Boolean(enabled);
+    if (next && platenKnobCandidateMeshes.length === 0) {
+      const test = {
+        neckRadiusMm: 8.0,
+        neckLengthMm: platenKnobP4.coreLengthMm,
+        gripRadiusMm: platenKnobP4.coreRadiusMm,
+        gripLengthMm: 20.0,
+        outwardGripOffsetMm: 5.5
+      };
+      // With knob axes at +/-159 mm and bridge end faces at +/-154 mm,
+      // an outward grip centered 5.5 mm from the knob axis with 20 mm
+      // axial width begins 0.5 mm beyond the P4 bridge on each side.
+      const bridgeHalfWidth = P4.serviceCover.rearBridge.width / 2;
+      const gripInnerWorldX = platenKnobP4.centerHalfSpanMm
+        + test.outwardGripOffsetMm - test.gripLengthMm / 2;
+      if (!(test.neckRadiusMm <= 8.0 && gripInnerWorldX - bridgeHalfWidth >= 0.5 - 1e-9)) {
+        throw new Error('P4 experimental knob violates the frozen clearance envelope');
+      }
+      for (let index = 0; index < platenKnobPivots.length; index += 1) {
+        const sign = index === 0 ? -1 : 1;
+        const side = sign < 0 ? 'left' : 'right';
+        const pivot = platenKnobPivots[index];
+
+        const neck = shaft(test.neckLengthMm, test.neckRadiusMm, shellDark,
+          side + ' P4 experimental narrow platen hub');
+        neck.userData.candidateP4 = true;
+        addPickable(neck, COMPONENTS.platen, pickables);
+        pivot.add(neck);
+        platenKnobCandidateMeshes.push(neck);
+
+        const grip = shaft(test.gripLengthMm, test.gripRadiusMm, shellDark,
+          side + ' P4 experimental outboard knob grip');
+        grip.position.x = sign * test.outwardGripOffsetMm;
+        grip.userData.candidateP4 = true;
+        addPickable(grip, COMPONENTS.platen, pickables);
+        pivot.add(grip);
+        platenKnobCandidateMeshes.push(grip);
+
+        for (let i = 0; i < platenKnobGripRibCountP4; i += 1) {
+          const angle = i * Math.PI * 2 / platenKnobGripRibCountP4;
+          const rib = box(test.gripLengthMm, platenKnobP4.gripRibThicknessMm,
+            platenKnobP4.gripRibDepthMm, shellDark,
+            side + ' P4 experimental outboard grip rib');
+          rib.position.set(sign * test.outwardGripOffsetMm,
+            Math.cos(angle) * platenKnobP4.gripRibRadialOffsetMm,
+            Math.sin(angle) * platenKnobP4.gripRibRadialOffsetMm);
+          rib.rotation.x = angle;
+          rib.userData.candidateP4 = true;
+          addPickable(rib, COMPONENTS.platen, pickables);
+          pivot.add(rib);
+          platenKnobCandidateMeshes.push(rib);
+        }
+      }
+    }
+    platenKnobBaselineMeshes.forEach(mesh => { mesh.visible = !next; });
+    platenKnobCandidateMeshes.forEach(mesh => { mesh.visible = next; });
+    state.platenKnobCandidateP4 = next;
+    return next;
   }
 
   function setPlatenPhysicalAngle(angle) {
@@ -7976,7 +8050,15 @@ export function createSelectricModel() {
   function hoodPlatenKnobCoverBroadphaseProbe() {
     root.updateMatrixWorld(true);
     const pairBounds = object => {
-      const box = new THREE.Box3().setFromObject(object);
+      // Three.js Box3.setFromObject(group) includes hidden meshes. The
+      // experimental toggle preserves baseline meshes invisibly for undo;
+      // only the actual visible surface set may drive this broadphase.
+      const box = new THREE.Box3().makeEmpty();
+      object.traverse(node => {
+        if (node.isMesh && node.visible) {
+          box.union(new THREE.Box3().setFromObject(node));
+        }
+      });
       const coords = [box.min.x, box.min.y, box.min.z,
         box.max.x, box.max.y, box.max.z];
       if (!coords.every(Number.isFinite)) {
@@ -8056,7 +8138,8 @@ export function createSelectricModel() {
     function allTriangles(group,part) {
       const out=[];
       group.traverse(node=>{
-        if(!node.isMesh || !node.geometry?.getAttribute?.('position'))return;
+        // Hidden source meshes are retained for reversibility, not witnesses.
+        if(!node.visible || !node.isMesh || !node.geometry?.getAttribute?.('position'))return;
         if(node.isInstancedMesh)throw new Error('unexpected instanced platen knob');
         const geo=node.geometry,pos=geo.getAttribute('position'),idx=geo.index;
         const count=idx?idx.count:pos.count;
@@ -10009,8 +10092,10 @@ export function createSelectricModel() {
         platenPhysicalAngleRad: state.platenIndex + state.manualPlatenAngle,
         platenPhaseCueAngleRad: platenKnobPivots[0].rotation.x,
         platenPhaseCueCount: platenKnobPivots.length,
-        platenKnobConstructionClass:
-          'P4 reduced core + outer cap + repeated radial grip ribs; exact production geometry unresolved',
+        platenKnobConstructionClass: state.platenKnobCandidateP4
+          ? 'OPT-IN P4 HYPOTHESIS: 8 mm narrow neck + axially outboard grip; NOT original IBM geometry'
+          : 'P4 reduced core + outer cap + repeated radial grip ribs; exact production geometry unresolved',
+        platenKnobCandidateP4Enabled: state.platenKnobCandidateP4,
         platenKnobCenterHalfSpanMmP4: platenKnobP4.centerHalfSpanMm,
         platenKnobOuterExtensionMmP4,
         platenKnobOuterEdgeHalfSpanMmP4,
@@ -10470,6 +10555,7 @@ export function createSelectricModel() {
     setLineSpacingMode,
     setIndexPawlPhase,
     setPlatenIndex,
+    setPlatenKnobCandidateP4,
     setMotorPhase,
     setOperationalCam,
     setCyclePhase,

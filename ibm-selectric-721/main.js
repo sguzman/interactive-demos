@@ -58,6 +58,11 @@ floor.receiveShadow = true;
 scene.add(floor);
 
 const model = createSelectricModel();
+// Explicit, experimental, source-unpromoted knob geometry. Plain URL is
+// deliberately ALWAYS the frozen baseline; this does not alter gallery users.
+if (new URLSearchParams(window.location.search).get('platenKnobCandidate') === '1') {
+  model.setPlatenKnobCandidateP4(true);
+}
 scene.add(model.root);
 
 const ui = {
@@ -1154,6 +1159,7 @@ window.__selectricDebug = {
   hoodPlatenCenterSectionProbe: () => model.hoodPlatenCenterSectionProbe(),
   hoodPlatenKnobCoverBroadphaseProbe: () => model.hoodPlatenKnobCoverBroadphaseProbe(),
   hoodPlatenKnobSurfaceContactProbe: () => model.hoodPlatenKnobSurfaceContactProbe(),
+  setPlatenKnobCandidateP4: enabled => model.setPlatenKnobCandidateP4(enabled),
   inspectionCameraPose: () => ({
     position: camera.position.toArray(),
     target: orbit.target.toArray(),

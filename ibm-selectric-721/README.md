@@ -472,3 +472,27 @@ samples model surface contact in copy settings 0/1/2 through the first 25%
 of cover opening, and bisects observed changes to localize contact onset/release.
 It exports nonpromoting modeled triangle evidence; no OEM cover or knob
 clearance, factory copy-control travel, or production collision is claimed.
+
+
+## Experimental platen-knob radial/axial envelope (nonpromoting branch)
+
+The **ordinary public model is unchanged**. On the isolated experimental branch
+`engineering/selectric-knob-candidate-20261018`, add
+`?platenKnobCandidate=1` to a locally served Selectric URL to explicitly
+instantiate a reversible geometry hypothesis. It uses an 8-mm-radius
+inner hub/neck and shifts the larger grip/ribs outboard: 20-mm grip
+width, 5.5-mm outward offset, leaving >=0.5 mm axial separation from
+the **synthetic** 308-mm P4 rear bridge. Original cap and phase cue remain
+on the existing platen pivots; the original cores/ribs are preserved and
+can be restored through `__selectricDebug.setPlatenKnobCandidateP4(false)`.
+
+This is **not manufacturer geometry**, not a 1961 Model 721 production
+knob, not a corrected bridge, and not an authorized default replacement.
+Existing contact probes now skip hidden meshes so an opt-in run checks
+the *actual enabled candidate*, not a combined candidate/baseline union.
+`tests/ibm-selectric-721-platen-knob-candidate.spec.mjs` checks the
+modeled bridge at 135 candidate poses (five detents, nine cover opening
+fractions, three platen phases) and a legacy positive-contact baseline.
+The exact all-phase continuous certificate remains in Taria Engineering.
+The browser test must be run before any claim of browser QA success, and
+other 3D contacts/printing/interlock checks remain separate.
