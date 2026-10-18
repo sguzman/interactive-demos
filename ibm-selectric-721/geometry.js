@@ -9448,7 +9448,21 @@ export function createSelectricModel() {
 
   function geometryDiagnostics() {
     root.updateMatrixWorld(true);
-    const bounds = new THREE.Box3().setFromObject(root);
+    // Three.js group Box3 includes invisible objects; candidate mode retains
+    // baseline meshes invisibly. Report only the enabled geometry in that mode.
+    const bounds = state.platenKnobCandidateP4
+      ? (() => {
+          const visible = new THREE.Box3().makeEmpty();
+          root.traverse(node => {
+            if (!node.isMesh || !node.visible) return;
+            for (let parent = node.parent; parent; parent = parent.parent) {
+              if (!parent.visible) return;
+            }
+            visible.union(new THREE.Box3().setFromObject(node));
+          });
+          return visible;
+        })()
+      : new THREE.Box3().setFromObject(root);
     const size = new THREE.Vector3();
     bounds.getSize(size);
     const indicatorWorld = new THREE.Vector3();
