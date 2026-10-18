@@ -22,7 +22,7 @@ concurrency:
 jobs:
   candidate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -40,12 +40,18 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Serve experimental viewer locally
         run: python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/selectric-knob-candidate.log 2>&1 &
-      - name: Run opt-in reversible candidate geometry QA
-        run: npx playwright test tests/ibm-selectric-721-platen-knob-candidate.spec.mjs --reporter=line --workers=1
-      - name: Upload Playwright failure diagnostics
-        if: failure()
+      - name: Run candidate, frozen baseline, and complete operating regressions
+        run: |
+          npx playwright test \
+            tests/ibm-selectric-721-platen-knob-candidate.spec.mjs \
+            tests/ibm-selectric-721-platen-knob-contact.spec.mjs \
+            tests/ibm-selectric-721-platen-knob-full-motion.spec.mjs \
+            tests/ibm-selectric-721-runtime.spec.mjs \
+            --reporter=line --workers=1
+      - name: Upload Selectric actual browser evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: experimental-selectric-knob-browser-qa
+          name: experimental-selectric-knob-full-regression
           path: test-results/
           if-no-files-found: ignore
