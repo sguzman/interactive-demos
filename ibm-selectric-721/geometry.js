@@ -4523,7 +4523,7 @@ export function createSelectricModel() {
       // With knob axes at +/-159 mm and bridge end faces at +/-154 mm,
       // an outward grip centered 5.5 mm from the knob axis with 20 mm
       // axial width begins 0.5 mm beyond the P4 bridge on each side.
-      const bridgeHalfWidth = P4.serviceCover.rearBridge.width / 2;
+      const bridgeHalfWidth = rearBridge.geometry.parameters.width / 2;
       const gripInnerWorldX = platenKnobP4.centerHalfSpanMm
         + test.outwardGripOffsetMm - test.gripLengthMm / 2;
       if (!(test.neckRadiusMm <= 8.0 && gripInnerWorldX - bridgeHalfWidth >= 0.5 - 1e-9)) {
