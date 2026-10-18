@@ -1160,6 +1160,7 @@ window.__selectricDebug = {
   hoodPlatenKnobCoverBroadphaseProbe: () => model.hoodPlatenKnobCoverBroadphaseProbe(),
   hoodPlatenKnobSurfaceContactProbe: () => model.hoodPlatenKnobSurfaceContactProbe(),
   setPlatenKnobCandidateP4: enabled => model.setPlatenKnobCandidateP4(enabled),
+  platenKnobCandidateEnvelopeProbeP4: () => model.platenKnobCandidateEnvelopeProbeP4(),
   inspectionCameraPose: () => ({
     position: camera.position.toArray(),
     target: orbit.target.toArray(),

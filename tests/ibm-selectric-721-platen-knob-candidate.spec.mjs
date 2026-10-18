@@ -18,6 +18,7 @@ test('optional P4 knob candidate: bridge clearance, phases, and reversible basel
     const read = () => d.hoodPlatenKnobSurfaceContactProbe().pairs.filter(
       row => row.coverPart === 'rear-service-bridge'
     );
+    const readAll = () => d.hoodPlatenKnobSurfaceContactProbe().pairs;
     const originalVariable = d.state.platenVariableEngaged;
     let phase = 0;
     const observations = [];
@@ -35,6 +36,17 @@ test('optional P4 knob candidate: bridge clearance, phases, and reversible basel
         throw new Error('Frozen original P4 closed-cover baseline no longer collides');
       }
       d.setPlatenKnobCandidateP4(true);
+      const initialEnvelope = d.platenKnobCandidateEnvelopeProbeP4();
+      if (initialEnvelope.candidateMeshCount !== 28 ||
+          initialEnvelope.candidateVisibleCount !== 28 ||
+          initialEnvelope.baselineVisibleCount !== 0 ||
+          initialEnvelope.outboardPartsPerSide.left !== 13 ||
+          initialEnvelope.outboardPartsPerSide.right !== 13 ||
+          initialEnvelope.minimumVisibleOutboardBridgeXGapMmP4 < 0.499999 ||
+          initialEnvelope.segments.some(s => !['inboard-neck','outboard-grip','outboard-rib'].includes(s.role)) ||
+          initialEnvelope.segments.filter(s => s.role === 'inboard-neck').length !== 2) {
+        throw new Error('Actual candidate mesh topology or world bounds violate the experiment');
+      }
       if (!originalVariable) d.togglePlatenVariable();
       for (const targetPhase of [0, Math.PI/24, Math.PI/12]) {
         if (Math.abs(targetPhase-phase) > 1e-12) {
@@ -49,12 +61,14 @@ test('optional P4 knob candidate: bridge clearance, phases, and reversible basel
             const opening = f/8;
             d.setServiceCover(opening);
             const pairs = read();
-            if (pairs.length !== 2 ||
-                pairs.some(row => row.surfaceWitnessPairs !== 0 ||
-                  row.satPairs !== 0 || row.degeneratePairs !== 0 ||
-                  row.satWithoutWitness !== 0)) {
-              throw new Error('Candidate triangle collision at phase '+phase+
-                ' copy '+copy+' open '+opening+': '+JSON.stringify(pairs));
+            const allPairs = readAll();
+            const liveEnvelope = d.platenKnobCandidateEnvelopeProbeP4();
+            if (pairs.length !== 2 || allPairs.length !== 4 ||
+                liveEnvelope.minimumVisibleOutboardBridgeXGapMmP4 < 0.499999 ||
+                allPairs.some(row => row.surfaceWitnessPairs !== 0 ||
+                  row.satWithoutWitness !== 0 || row.degeneratePairs !== 0)) {
+              throw new Error('Candidate cover contact or axial bound violation at phase '+phase+
+                ' copy '+copy+' open '+opening+': '+JSON.stringify(allPairs));
             }
             observations.push({phase, copy, opening,
               pairs: pairs.map(p => ({
@@ -83,7 +97,23 @@ test('optional P4 knob candidate: bridge clearance, phases, and reversible basel
       p.witnesses === 0 && p.satPairs === 0))).toBe(true);
   expect(result.sourceGeometryPromoted).toBe(false);
   expect(result.originalIBMPartIdentified).toBe(false);
-  expect(await page.evaluate(() =>
-    window.__selectricDebug.state.geometry.platenKnobCandidateP4Enabled)).toBe(false);
+  const finalState = await page.evaluate(() => {
+    const d = window.__selectricDebug;
+    const base = d.hoodPlatenKnobSurfaceContactProbe().pairs.filter(
+      p => p.coverPart === 'rear-service-bridge');
+    const first = d.platenKnobCandidateEnvelopeProbeP4();
+    d.setPlatenKnobCandidateP4(true);
+    const second = d.platenKnobCandidateEnvelopeProbeP4();
+    d.setPlatenKnobCandidateP4(false);
+    const third = d.platenKnobCandidateEnvelopeProbeP4();
+    return { defaultRestored: !d.state.geometry.platenKnobCandidateP4Enabled,
+      baselineContacts: base.map(p => p.surfaceWitnessPairs),
+      meshCounts: [first.candidateMeshCount, second.candidateMeshCount, third.candidateMeshCount],
+      baselineVisibility: [first.baselineVisibleCount, second.baselineVisibleCount, third.baselineVisibleCount] };
+  });
+  expect(finalState.defaultRestored).toBe(true);
+  expect(finalState.baselineContacts).toEqual(result.baselineContacts);
+  expect(finalState.meshCounts).toEqual([28, 28, 28]);
+  expect(finalState.baselineVisibility).toEqual([26, 0, 26]);
   expect(errors).toEqual([]);
 });

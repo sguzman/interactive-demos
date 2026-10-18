@@ -4537,6 +4537,8 @@ export function createSelectricModel() {
         const neck = shaft(test.neckLengthMm, test.neckRadiusMm, shellDark,
           side + ' P4 experimental narrow platen hub');
         neck.userData.candidateP4 = true;
+        neck.userData.candidateRoleP4 = 'inboard-neck';
+        neck.userData.candidateSideP4 = side;
         addPickable(neck, COMPONENTS.platen, pickables);
         pivot.add(neck);
         platenKnobCandidateMeshes.push(neck);
@@ -4545,6 +4547,8 @@ export function createSelectricModel() {
           side + ' P4 experimental outboard knob grip');
         grip.position.x = sign * test.outwardGripOffsetMm;
         grip.userData.candidateP4 = true;
+        grip.userData.candidateRoleP4 = 'outboard-grip';
+        grip.userData.candidateSideP4 = side;
         addPickable(grip, COMPONENTS.platen, pickables);
         pivot.add(grip);
         platenKnobCandidateMeshes.push(grip);
@@ -4559,6 +4563,8 @@ export function createSelectricModel() {
             Math.sin(angle) * platenKnobP4.gripRibRadialOffsetMm);
           rib.rotation.x = angle;
           rib.userData.candidateP4 = true;
+          rib.userData.candidateRoleP4 = 'outboard-rib';
+          rib.userData.candidateSideP4 = side;
           addPickable(rib, COMPONENTS.platen, pickables);
           pivot.add(rib);
           platenKnobCandidateMeshes.push(rib);
@@ -8043,6 +8049,52 @@ export function createSelectricModel() {
   // at every station, so its central cross-section can be constructed
   // directly from the existing hood BufferGeometry. This remains a MODEL
   // sectional test, not an IBM factory cover/print clearance certificate.
+
+  // Actual Three.js world X bounds, not a restatement of the 0.5-mm
+  // algebraic candidate assumption. Designed for candidate-only QA.
+  function platenKnobCandidateEnvelopeProbeP4() {
+    root.updateMatrixWorld(true);
+    const bridgeBounds = new THREE.Box3().setFromObject(rearBridge);
+    const segments = platenKnobCandidateMeshes.map(mesh => {
+      const b = new THREE.Box3().setFromObject(mesh);
+      const side = mesh.userData.candidateSideP4;
+      const gap = side === 'left'
+        ? bridgeBounds.min.x - b.max.x
+        : b.min.x - bridgeBounds.max.x;
+      return {
+        name: mesh.name,
+        role: mesh.userData.candidateRoleP4,
+        side,
+        visible: mesh.visible,
+        positiveWorldAxialGapMmP4: gap,
+        meshWorldXmmP4: [b.min.x, b.max.x]
+      };
+    });
+    const outboard = segments.filter(row => row.role !== 'inboard-neck');
+    const visibleOutboard = outboard.filter(row => row.visible);
+    return {
+      activeCandidate: state.platenKnobCandidateP4,
+      candidateAllocated: segments.length > 0,
+      candidateMeshCount: segments.length,
+      baselineMeshCount: platenKnobBaselineMeshes.length,
+      baselineVisibleCount: platenKnobBaselineMeshes.filter(mesh => mesh.visible).length,
+      candidateVisibleCount: segments.filter(row => row.visible).length,
+      outboardPartsPerSide: {
+        left: outboard.filter(row => row.side === 'left').length,
+        right: outboard.filter(row => row.side === 'right').length
+      },
+      minimumVisibleOutboardBridgeXGapMmP4: visibleOutboard.length
+        ? Math.min(...visibleOutboard.map(row => row.positiveWorldAxialGapMmP4))
+        : null,
+      segments,
+      originalIBMKnobDimensionsVerified: false,
+      originalBridgeShapeVerified: false,
+      fullSolidCollisionCertified: false,
+      candidatePromotedToDefault: false,
+      class: 'actual visible P4 optional knob submesh bounds; bridge-only axial-exclusion diagnostic'
+    };
+  }
+
   // Outboard P4 knob/cover broadphase: real Three.js world AABBs of
   // the two multi-piece platen knobs against separately named hood
   // and rear bridge. Three overlapping intervals => possible collision,
@@ -10567,6 +10619,7 @@ export function createSelectricModel() {
     hoodPlatenCenterSectionProbe,
     hoodPlatenKnobCoverBroadphaseProbe,
     hoodPlatenKnobSurfaceContactProbe,
+    platenKnobCandidateEnvelopeProbeP4,
     hoodTypeElementSectionProbe,
     hoodTypeElementTriangleProbe,
     hoodTypeElementMotionSweepProbe,

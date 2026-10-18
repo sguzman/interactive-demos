@@ -496,3 +496,5 @@ fractions, three platen phases) and a legacy positive-contact baseline.
 The exact all-phase continuous certificate remains in Taria Engineering.
 The browser test must be run before any claim of browser QA success, and
 other 3D contacts/printing/interlock checks remain separate.
+
+The experimental branch also exposes `__selectricDebug.platenKnobCandidateEnvelopeProbeP4()`: it computes **actual transformed Three.js mesh X bounds** for all 28 lazily created candidate pieces, checks mirror-side outboard reach and visible/hidden baseline counts, and never asserts OEM provenance. The candidate regression now checks all 4 knob/cover face pairs (hood and bridge) at its 135 sampled poses and checks restoration of the exact original contact counts after two variant toggles. This is a prepared test, **not a completed Chromium run**.
