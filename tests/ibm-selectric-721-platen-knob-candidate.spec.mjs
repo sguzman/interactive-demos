@@ -26,7 +26,7 @@ test('optional P4 knob candidate: bridge clearance, phases, and reversible basel
     d.setCheekSmoothingPreview(false);
     d.setCopyControl(0);
     d.setServiceCover(0);
-    if (!d.state.geometry.platenKnobCandidateP4Enabled) {
+    if (!d.state.geometry.paperFeed.platenKnobCandidateP4Enabled) {
       throw new Error('Query flag did not activate candidate');
     }
     try {
@@ -106,7 +106,7 @@ test('optional P4 knob candidate: bridge clearance, phases, and reversible basel
     const second = d.platenKnobCandidateEnvelopeProbeP4();
     d.setPlatenKnobCandidateP4(false);
     const third = d.platenKnobCandidateEnvelopeProbeP4();
-    return { defaultRestored: !d.state.geometry.platenKnobCandidateP4Enabled,
+    return { defaultRestored: !d.state.geometry.paperFeed.platenKnobCandidateP4Enabled,
       baselineContacts: base.map(p => p.surfaceWitnessPairs),
       meshCounts: [first.candidateMeshCount, second.candidateMeshCount, third.candidateMeshCount],
       baselineVisibility: [first.baselineVisibleCount, second.baselineVisibleCount, third.baselineVisibleCount] };
