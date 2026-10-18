@@ -60,8 +60,8 @@ test('optional P4 knob candidate: bridge clearance, phases, and reversible basel
           for (let f = 0; f <= 8; f++) {
             const opening = f/8;
             d.setServiceCover(opening);
-            const pairs = read();
             const allPairs = readAll();
+            const pairs = allPairs.filter(row => row.coverPart === 'rear-service-bridge');
             const liveEnvelope = d.platenKnobCandidateEnvelopeProbeP4();
             if (pairs.length !== 2 || allPairs.length !== 4 ||
                 liveEnvelope.minimumVisibleOutboardBridgeXGapMmP4 < 0.499999 ||
