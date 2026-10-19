@@ -20,6 +20,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write  # Report exact push-run outcome to the candidate commit.
 
 concurrency:
   group: experimental-selectric-knob-${{ github.ref }}
@@ -74,3 +75,22 @@ jobs:
           name: experimental-selectric-knob-full-regression
           path: test-results/
           if-no-files-found: ignore
+
+      - name: Publish source-bound CI status for auditability
+        # The GitHub connector cannot enumerate push-only workflow runs by SHA.
+        # A classic commit status provides a read-only, source-bound QA result.
+        if: ${{ always() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FINISHED_JOB_STATUS: ${{ job.status }}
+        run: |
+          case "$FINISHED_JOB_STATUS" in
+            success) STATE=success ;;
+            failure) STATE=failure ;;
+            *) STATE=error ;;
+          esac
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state="$STATE" \
+            -f context="engineering/selectric-p6-chromium" \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            -f description="Opt-in P6 geometry, mechanical suite, full typewriter runtime and evidence"
