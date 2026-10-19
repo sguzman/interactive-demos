@@ -755,3 +755,139 @@ test('P6 linearized unilateral clearance rates distinguish axial and angular geo
     JSON.stringify({version:1,sourceCommit:process.env.GITHUB_SHA||null,
       notAnAppliedForceOrTimeIntegratedTrajectory:true,...result},null,2)+'\n','utf8');
 });
+
+test('P6 all 180 plug-tooth SAT constraints remain source-limited and state-immutable',async({page})=>{
+  test.setTimeout(180000);
+  const errors=[];
+  page.on('pageerror',e=>errors.push(String(e)));
+  page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+  await page.goto('http://127.0.0.1:4173/ibm-selectric-721/?platenKnobCandidate=1&platenInternals=1&platenFineClutch=1',
+    {waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>Boolean(window.__selectricDebug?.state?.running),
+    null,{timeout:20000});
+  expect(await page.evaluate(()=>window.__selectricDebug.setPower(false))).toBe(true);
+  const result=await page.evaluate(()=>{
+    const d=window.__selectricDebug;
+    d.setExplosion(0);d.setServiceCover(0);d.setCopyControl(0);
+    const snapshot=()=>{
+      const s=d.state,m=d.platenVariableInternalsProbeP5();
+      return {
+        platenIndex:s.platenIndex,
+        platenPhysicalAngleRad:s.geometry.paperFeed.platenPhysicalAngleRad,
+        platenVariableEngaged:s.platenVariableEngaged,
+        axialPressMm:s.leftKnobAxialPressP5Mm,
+        selectedP6:s.platenFineClutchP6,
+        selectedP4:s.platenKnobCandidateP4,
+        platenPlugRotationRad:m.platenRotationRadP5,
+        ratchetRotationRad:m.ratchetRotationRadP5,
+        variableDriverLocalXmm:m.driverLocalXmmP5
+      };
+    };
+    const before=snapshot();
+    const audit=d.platenFineClutchAllToothConstraintsP6();
+    const after=snapshot();
+    let rejectedNegative=false,rejectedOutOfRange=false,
+      rejectedNonInteger=false;
+    try{d.platenFineClutchSolidProbeP6(0,0,false,-1);}
+    catch(e){rejectedNegative=/plug tooth index/.test(String(e));}
+    try{d.platenFineClutchSolidProbeP6(0,0,false,180);}
+    catch(e){rejectedOutOfRange=/plug tooth index/.test(String(e));}
+    try{d.platenFineClutchSolidProbeP6(0,0,false,0.5);}
+    catch(e){rejectedNonInteger=/plug tooth index/.test(String(e));}
+    const representativeChecks=audit.samples.map(sample=>
+      sample.samplesToInspect.map(witness=>{
+        const direct=d.platenFineClutchSolidProbeP6(
+          sample.pressMm,sample.phaseDegrees*Math.PI/180,
+          true,witness.plugToothIndex);
+        const nearest=[...direct.satComparisons].sort((a,b)=>
+          Math.abs(a.separatingGapMm)-Math.abs(b.separatingGapMm))[0];
+        return {plugToothIndex:witness.plugToothIndex,
+          driverToothIndex:nearest.driverToothIndex,
+          signedGapMm:nearest.separatingGapMm,
+          originalContactPairCount:direct.actualConvexSolidContactPairs,
+          realIndexReported:direct.plugToothIndex};
+      })
+    );
+    d.setPlatenFineClutchP6(false);
+    const disabled=d.platenFineClutchAllToothConstraintsP6();
+    d.setPlatenKnobCandidateP4(false);
+    return {before,after,audit,representativeChecks,disabled,
+      rejectedNegative,rejectedOutOfRange,rejectedNonInteger};
+  });
+  expect(result.before).toEqual(result.after);
+  expect(result.before.selectedP6).toBe(true);
+  expect(result.before.selectedP4).toBe(true);
+  expect(result.before.axialPressMm).toBe(0);
+  for(const k of ['platenPhysicalAngleRad','axialPressMm',
+    'platenPlugRotationRad','ratchetRotationRad','variableDriverLocalXmm'])
+    expect(Number.isFinite(result.before[k])).toBe(true);
+  expect(result.disabled.active).toBe(false);
+  for(const k of ['rejectedNegative','rejectedOutOfRange','rejectedNonInteger'])
+    expect(result[k]).toBe(true);
+  const audit=result.audit;
+  expect(audit.active).toBe(true);
+  expect(audit.plugToothCount).toBe(180);
+  expect(audit.nearbyDriversPerTooth).toBe(5);
+  expect(audit.candidateInstancePairTests).toBe(3600);
+  expect(audit.solidProbeCount).toBe(740);
+  expect(audit.samples).toHaveLength(4);
+  expect(audit.samples.map(x=>x.phaseDegrees)).toEqual([1,0.5,1.5,1]);
+  expect(audit.samples.map(x=>x.pressMm)).toEqual(
+    [0.699996996,0.10961,0.10961,0.75]);
+  for(const [sampleIndex,sample] of audit.samples.entries()){
+    expect(sample.fullCircleActuallySampled).toBe(true);
+    expect(sample.plugToothCount).toBe(180);
+    expect(sample.individualNearestSignedGapsMm).toHaveLength(180);
+    expect(sample.individualSolidContactPairCounts).toHaveLength(180);
+    expect(sample.individualNearestDriverToothIndices).toHaveLength(180);
+    expect(sample.samplesToInspect.map(x=>x.plugToothIndex))
+      .toEqual([0,45,90,135,179]);
+    expect(sample.spreadMm).toBeCloseTo(
+      sample.extremalGaps.maximum-sample.extremalGaps.minimum,10);
+    expect(sample.spreadMm).toBeGreaterThanOrEqual(0);
+    expect(sample.nearZeroGapToleranceMm).toBe(1e-7);
+    expect(sample.withinSatContactToleranceToothCount).toBe(
+      sample.individualSolidContactPairCounts.filter(x=>x>0).length);
+    expect(sample.strictlyNegativeNearestGapCount).toBe(
+      sample.individualNearestSignedGapsMm.filter(x=>x<0).length);
+    expect(sample.simultaneouslyActiveCount).toBe(
+      sample.individualNearestSignedGapsMm.filter(x=>Math.abs(x)<=1e-7).length);
+    for(let i=0;i<180;i++){
+      expect(Number.isFinite(sample.individualNearestSignedGapsMm[i])).toBe(true);
+      expect(sample.individualNearestDriverToothIndices[i]).toBeGreaterThanOrEqual(0);
+      expect(sample.individualNearestDriverToothIndices[i]).toBeLessThan(180);
+      expect(Number.isInteger(sample.individualSolidContactPairCounts[i])).toBe(true);
+    }
+    expect(sample.wholeAssemblyCollisionCertified).toBe(false);
+    for(const [i,witness] of sample.samplesToInspect.entries()){
+      const check=result.representativeChecks[sampleIndex][i];
+      expect(check.realIndexReported).toBe(witness.plugToothIndex);
+      expect(check.driverToothIndex).toBe(witness.driverToothIndex);
+      expect(check.signedGapMm).toBe(witness.signedGapMm);
+      expect(check.originalContactPairCount).toBe(
+        sample.individualSolidContactPairCounts[witness.plugToothIndex]);
+      expect(witness.competingAxisDirections).toBeGreaterThanOrEqual(1);
+      expect(witness.axis.candidateNormalOnly).toBe(true);
+      expect(witness.axis.actualContactNormalCertified).toBe(false);
+    }
+  }
+  expect(audit.samples[0].simultaneouslyActiveCount).toBeGreaterThan(1);
+  expect(audit.samples[3].simultaneouslyActiveCount).toBe(0);
+  expect(audit.samples[3].withinSatContactToleranceToothCount).toBe(0);
+  expect(audit.samples[3].strictlyNegativeNearestGapCount).toBe(0);
+  for(const k of ['simultaneousContactConstraintSolutionComputed',
+    'forceEquilibriumOrContactMultipliersSolved',
+    'frictionOrSpringStiffnessSpecified',
+    'completeContinuousMotionCertified',
+    'original721ToothProfileAuthenticated','defaultPublicGeometryModified'])
+    expect(audit[k]).toBe(false);
+  for(const k of ['fixedRatchetCaseDefined',
+    'rotatableRelativePlatenOnlyConditional',
+    'driverBackdriveFromIBMSourceUnknown',
+    'physicalPlatenRatchetUnchanged'])
+    expect(audit[k]).toBe(true);
+  expect(errors).toEqual([]);
+  await writeFile('test-results/selectric-p6-all-ring-solid-constraints.json',
+    JSON.stringify({version:1,sourceCommit:process.env.GITHUB_SHA||null,
+      simultaneousSATContactNotPhysicalForceSolution:true,...result},null,2)+'\n','utf8');
+});
