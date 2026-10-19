@@ -331,13 +331,24 @@ test('P6 actual mesh SAT support witnesses report axes and signed gaps without s
   const result=await page.evaluate(()=>{
     const d=window.__selectricDebug;
     d.setExplosion(0);d.setServiceCover(0);d.setCopyControl(0);
-    const snapshot=()=>({
-      platenIndex:d.state.platenIndex,
-      platenPhysicalAngleRad:d.state.geometry.paperFeed.platenPhysicalAngleRad,
-      variableEngaged:d.state.platenVariableEngaged,
-      physicalAxialPressMm:d.state.leftKnobAxialPressP5Mm,
-      fineClutchSelected:d.state.platenFineClutchP6
-    });
+    const snapshot=()=>{
+      const current=d.state;
+      const mechanism=d.platenVariableInternalsProbeP5();
+      const solid=d.platenFineClutchSolidProbeP6(0);
+      return {
+        platenIndex:current.platenIndex,
+        platenPhysicalAngleRad:current.geometry.paperFeed.platenPhysicalAngleRad,
+        variableEngaged:current.platenVariableEngaged,
+        physicalAxialPressMm:current.leftKnobAxialPressP5Mm,
+        fineClutchSelected:current.platenFineClutchP6,
+        knobCandidateSelected:current.platenKnobCandidateP4,
+        actualPhysicalPressFromSolidMm:solid.actualPhysicalPressMm,
+        physicalMechanismPressMm:mechanism.leftPressMmP5,
+        platenPlugRotationRad:mechanism.platenRotationRadP5,
+        ratchetRotationRad:mechanism.ratchetRotationRadP5,
+        variableDriverLocalXmm:mechanism.driverLocalXmmP5
+      };
+    };
     const before=snapshot();
     const audit=d.platenFineClutchContactWitnessesP6();
     const after=snapshot();
@@ -349,6 +360,18 @@ test('P6 actual mesh SAT support witnesses report axes and signed gaps without s
     return {before,after,audit,basic,detailed,disabled};
   });
   expect(result.before).toEqual(result.after);
+  expect(result.before.knobCandidateSelected).toBe(true);
+  expect(result.before.fineClutchSelected).toBe(true);
+  expect(result.before.variableEngaged).toBe(false);
+  expect(result.before.physicalAxialPressMm).toBe(0);
+  expect(result.before.actualPhysicalPressFromSolidMm)
+    .toBe(result.before.physicalAxialPressMm);
+  expect(result.before.physicalMechanismPressMm)
+    .toBe(result.before.physicalAxialPressMm);
+  for(const name of ['platenIndex','platenPhysicalAngleRad',
+    'physicalAxialPressMm','platenPlugRotationRad',
+    'ratchetRotationRad','variableDriverLocalXmm'])
+    expect(Number.isFinite(result.before[name])).toBe(true);
   expect(result.disabled.active).toBe(false);
   expect(result.audit.active).toBe(true);
   expect(result.audit.probes).toHaveLength(6);
