@@ -105,3 +105,70 @@ test('P6 provisional fine clutch: real convex solids, phase risk and reversible 
       OEMInstalledToothCountVerified:false,actualSpringDrivenSeating:false,
       ...result},null,2)+'\n','utf8');
 });
+
+test('P6 sampled axial seating map: phase sensitivity, released obstruction and immutable physical state',async({page})=>{
+  const errors=[];
+  page.on('pageerror',e=>errors.push(String(e)));
+  page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+  await page.goto('http://127.0.0.1:4173/ibm-selectric-721/?platenKnobCandidate=1&platenInternals=1&platenFineClutch=1',
+    {waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>Boolean(window.__selectricDebug?.state?.running),
+    null,{timeout:20000});
+  expect(await page.evaluate(()=>window.__selectricDebug.setPower(false))).toBe(true);
+  const result=await page.evaluate(()=>{
+    const d=window.__selectricDebug;
+    d.setExplosion(0);d.setServiceCover(0);d.setCopyControl(0);
+    const snapshot=()=>({
+      platenIndex:d.state.platenIndex,
+      platenPhysicalAngleRad:d.state.geometry.paperFeed.platenPhysicalAngleRad,
+      variableEngaged:d.state.platenVariableEngaged,
+      physicalAxialPressMm:d.state.leftKnobAxialPressP5Mm,
+      fineClutchSelected:d.state.platenFineClutchP6
+    });
+    const before=snapshot();
+    const probeBefore=d.platenFineClutchSolidProbeP6(0);
+    const envelope=d.platenFineClutchSeatingEnvelopeP6();
+    const probeAfter=d.platenFineClutchSolidProbeP6(0);
+    const after=snapshot();
+    let invalidOffsetRejected=false;
+    try{d.platenFineClutchSolidProbeP6(0,Number.NaN);}
+    catch(e){invalidOffsetRejected=/virtual phase/.test(String(e));}
+    d.setPlatenFineClutchP6(false);
+    const disabled=d.platenFineClutchSeatingEnvelopeP6();
+    return {before,after,probeBefore,probeAfter,envelope,disabled,invalidOffsetRejected};
+  });
+  const {envelope}=result;
+  expect(result.before).toEqual(result.after);
+  expect(result.probeBefore).toEqual(result.probeAfter);
+  expect(result.invalidOffsetRejected).toBe(true);
+  expect(envelope.active).toBe(true);
+  expect(envelope.phaseSampleCount).toBe(13);
+  expect(envelope.axialSampleCount).toBe(9);
+  expect(envelope.totalSolidProbes).toBe(117);
+  expect(envelope.axialStrokesMm[0]).toBe(2);
+  expect(envelope.axialStrokesMm.at(-1)).toBe(0);
+  expect(envelope.phaseRows[0].phaseOffsetDegrees).toBeCloseTo(0,8);
+  expect(envelope.phaseRows[6].phaseOffsetDegrees).toBeCloseTo(1,8);
+  expect(envelope.phaseRows.at(-1).phaseOffsetDegrees).toBeCloseTo(2,8);
+  expect(envelope.phaseRows[0].sampledRestFree).toBe(true);
+  expect(envelope.phaseRows[6].sampledRestFree).toBe(false);
+  expect(envelope.phaseRows[6].sampledFullPressFree).toBe(true);
+  expect(envelope.phaseRows.at(-1).sampledRestFree).toBe(true);
+  for(const row of envelope.phaseRows){
+    expect(row.samples.length).toBe(9);
+    expect(row.sampledStraightReleaseClear).toBe(
+      row.samples.every(s=>s.actualConvexSolidContactPairs===0));
+    expect(row.sampledRestFree).toBe(row.samples.at(-1).sampledSolidFree);
+  }
+  for(const field of ['sourceCalibratedToothCount','profileSourceCalibrated',
+    'continuousAxialPathCertified','compliantLeadInSimulated',
+    'springTorqueAndFrictionSolved','physicalClutchLockVerified',
+    'automaticAngularSnapIntroduced','factoryMeshingCertified',
+    'defaultPublicGeometryModified'])expect(envelope[field]).toBe(false);
+  expect(envelope.virtualOnlyNoStateMutation).toBe(true);
+  expect(result.disabled.active).toBe(false);
+  expect(errors).toEqual([]);
+  await writeFile('test-results/selectric-p6-sampled-seating-envelope.json',
+    JSON.stringify({version:1,sourceCommit:process.env.GITHUB_SHA||null,
+      noContinuousPathOrSelfSeatingClaim:true,...result},null,2)+'\\n','utf8');
+});
