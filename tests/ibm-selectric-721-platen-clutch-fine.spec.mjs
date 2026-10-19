@@ -170,5 +170,5 @@ test('P6 sampled axial seating map: phase sensitivity, released obstruction and 
   expect(errors).toEqual([]);
   await writeFile('test-results/selectric-p6-sampled-seating-envelope.json',
     JSON.stringify({version:1,sourceCommit:process.env.GITHUB_SHA||null,
-      noContinuousPathOrSelfSeatingClaim:true,...result},null,2)+'\\n','utf8');
+      noContinuousPathOrSelfSeatingClaim:true,...result},null,2)+'\n','utf8');
 });
