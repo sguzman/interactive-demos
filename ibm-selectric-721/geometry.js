@@ -5157,7 +5157,7 @@ export function createSelectricModel() {
   // Exact convex-solid separation by SAT on actual 3D instanced wedge
   // vertices and all face normals + edge-cross-edge axes. No approximate
   // circular disk screen is used here. Source profile still experimental.
-  function platenFineClutchSolidProbeP6(strokeOverrideMm=null, virtualPhaseOffsetRad=0) {
+  function platenFineClutchSolidProbeP6(strokeOverrideMm=null, virtualPhaseOffsetRad=0, includeContactWitnesses=false) {
     const mech=platenVariableInternalsP5, fine=mech.fineClutchP6;
     if(!fine || !state.platenFineClutchP6)return {
       active:false,originalFactoryToothCountKnown:false,
@@ -5186,46 +5186,104 @@ export function createSelectricModel() {
     const driverAngle=ratchetGroup.rotation.x;
     const center=Math.round((plugAngle-driverAngle)/fine.pitch-0.5);
     const normalize=i=>(i%fine.count+fine.count)%fine.count;
-    const axesFrom=(v)=>{
+    const axesFrom=(v,side)=>{
       const axes=[];
-      for(const quad of fine.faces){
-        const [a,b,c]=quad;
-        const axis=new THREE.Vector3().subVectors(v[b],v[a])
+      for(let featureIndex=0;featureIndex<fine.faces.length;featureIndex++){
+        const [a,b,c]=fine.faces[featureIndex];
+        const vector=new THREE.Vector3().subVectors(v[b],v[a])
           .cross(new THREE.Vector3().subVectors(v[c],v[a]));
-        if(axis.lengthSq()>1e-16)axes.push(axis.normalize());
+        if(vector.lengthSq()>1e-16){
+          vector.normalize();
+          axes.push({vector,kind:side+'-face',featureIndex});
+        }
       }
       return axes;
     };
     const edgeVectors=(v)=>fine.edges.map(([a,b])=>
       new THREE.Vector3().subVectors(v[b],v[a]));
-    const axesPlug=axesFrom(worldPlug),edgesPlug=edgeVectors(worldPlug);
-    const sat=(v)=>{
-      const axes=[...axesPlug,...axesFrom(v)];
+    const axesPlug=axesFrom(worldPlug,'plug'),edgesPlug=edgeVectors(worldPlug);
+    const plugCenter=new THREE.Vector3();
+    for(const v of worldPlug)plugCenter.add(v);
+    plugCenter.divideScalar(worldPlug.length);
+    const plugAxisWorld=new THREE.Vector3().setFromMatrixPosition(virtualPlugWorld);
+    const radialAngle=Math.atan2(plugCenter.z-plugAxisWorld.z,
+      plugCenter.y-plugAxisWorld.y);
+    const tangentUnitWorld=new THREE.Vector3(
+      0,-Math.sin(radialAngle),Math.cos(radialAngle));
+    const radialUnitWorld=new THREE.Vector3(
+      0,Math.cos(radialAngle),Math.sin(radialAngle));
+    const sat=(v,driverToothIndex)=>{
+      const axes=[...axesPlug,...axesFrom(v,'driver')];
       const edgesDriver=edgeVectors(v);
-      for(const e of edgesPlug)for(const d of edgesDriver){
-        const axis=new THREE.Vector3().crossVectors(e,d);
-        if(axis.lengthSq()>1e-16)axes.push(axis.normalize());
+      for(let plugEdgeIndex=0;plugEdgeIndex<edgesPlug.length;plugEdgeIndex++){
+        for(let driverEdgeIndex=0;driverEdgeIndex<edgesDriver.length;driverEdgeIndex++){
+          const vector=new THREE.Vector3().crossVectors(
+            edgesPlug[plugEdgeIndex],edgesDriver[driverEdgeIndex]);
+          if(vector.lengthSq()>1e-16)axes.push({
+            vector:vector.normalize(),kind:'edge-cross',
+            plugEdgeIndex,driverEdgeIndex
+          });
+        }
       }
       let bestSeparatingGap=-Infinity;
       let minimumPenetration=Infinity;
-      for(const axis of axes){
+      let bestWitnessAxis=null;
+      for(const axisInfo of axes){
+        const axis=axisInfo.vector;
         const ap=worldPlug.map(p=>p.dot(axis)),bp=v.map(p=>p.dot(axis));
         const amin=Math.min(...ap),amax=Math.max(...ap);
         const bmin=Math.min(...bp),bmax=Math.max(...bp);
-        const separating=Math.max(bmin-amax,amin-bmax);
-        bestSeparatingGap=Math.max(bestSeparatingGap,separating);
+        const plus=bmin-amax,minus=amin-bmax;
+        const separating=Math.max(plus,minus);
+        if(separating>bestSeparatingGap){
+          bestSeparatingGap=separating;
+          if(includeContactWitnesses){
+            const normal=plus>=minus?axis:axis.clone().negate();
+            const projectedPlug=worldPlug.map(p=>p.dot(normal));
+            const projectedDriver=v.map(p=>p.dot(normal));
+            const plugVertexIndex=projectedPlug.indexOf(Math.max(...projectedPlug));
+            const driverVertexIndex=projectedDriver.indexOf(Math.min(...projectedDriver));
+            const plugSupportWorld=worldPlug[plugVertexIndex].toArray();
+            const driverSupportWorld=v[driverVertexIndex].toArray();
+            bestWitnessAxis={
+              axisKind:axisInfo.kind,
+              featureIndex:axisInfo.featureIndex??null,
+              plugEdgeIndex:axisInfo.plugEdgeIndex??null,
+              driverEdgeIndex:axisInfo.driverEdgeIndex??null,
+              plugToDriverAxisUnitWorld:normal.toArray(),
+              plugSupportVertexIndex:plugVertexIndex,
+              driverSupportVertexIndex:driverVertexIndex,
+              plugSupportWorldMm:plugSupportWorld,
+              driverSupportWorldMm:driverSupportWorld,
+              signedProjectedGapMm:
+                new THREE.Vector3(...driverSupportWorld)
+                  .sub(new THREE.Vector3(...plugSupportWorld)).dot(normal),
+              axialNormalComponent:normal.x,
+              tangentialNormalComponent:normal.dot(tangentUnitWorld),
+              radialNormalComponent:normal.dot(radialUnitWorld),
+              candidateNormalOnly:true,
+              actualContactNormalCertified:false,
+              meshSupportNotActualClosestPoint:true
+            };
+          }
+        }
         minimumPenetration=Math.min(minimumPenetration,-separating);
       }
-      return {intersects:bestSeparatingGap<=1e-7,
+      const result={intersects:bestSeparatingGap<=1e-7,
         separatingGapMm:bestSeparatingGap,
         penetrationAxisMinimumMm:minimumPenetration,
         axesTested:axes.length};
+      if(includeContactWitnesses)result.candidateAxisWitness={
+        driverToothIndex,
+        modeledSignedGapMm:bestSeparatingGap,
+        ...bestWitnessAxis};
+      return result;
     };
     const comparisons=[];
     for(let d=-2;d<=2;d++){
       const i=normalize(center+d);
       const verts=getVertices(fine.driver,fine.driverShape.verts,i,press-current);
-      comparisons.push({driverToothIndex:i,...sat(verts)});
+      comparisons.push({driverToothIndex:i,...sat(verts,i)});
     }
     const contacts=comparisons.filter(x=>x.intersects);
     return {
@@ -5250,9 +5308,48 @@ export function createSelectricModel() {
       alignedCandidatePairCount:comparisons.length,
       satComparisons:comparisons,
       actualConvexSolidContactPairs:contacts.length,
+      contactWitnessesRequested:Boolean(includeContactWitnesses),
+      witnessAxisMethod:includeContactWitnesses?
+        'maximum SAT signed projection gap over face normals and edge cross axes':null,
       conservativeCurrentCandidateCanSeat:contacts.length===0,
       // Absence of interpenetration never certifies required contact/locking.
       physicalClutchLockVerified:false,automaticAngularSnapIntroduced:false
+    };
+  }
+
+  // Audit the candidate SAT axis and transformed support vertices at a
+  // handful of explicit P6 poses. Report geometric normals in world space,
+  // not spring forces or unique real-world mechanical contact normals.
+  function platenFineClutchContactWitnessesP6() {
+    if(!state.platenFineClutchP6)return {
+      active:false,physicalContactCertified:false
+    };
+    const poses=[
+      {phaseDegrees:0,pressMm:0,role:'nominal interleaved rest'},
+      {phaseDegrees:0.5,pressMm:0,role:'near entry edge, modeled obstruction'},
+      {phaseDegrees:1,pressMm:0,role:'half-pitch obstructed rest'},
+      {phaseDegrees:1,pressMm:0.5,role:'half-pitch obstructed lead-in'},
+      {phaseDegrees:1,pressMm:0.75,role:'half-pitch disengaged clearance'},
+      {phaseDegrees:1.5,pressMm:0,role:'opposite entry edge obstruction'}
+    ];
+    const probes=poses.map(pose=>{
+      const solid=platenFineClutchSolidProbeP6(
+        pose.pressMm,pose.phaseDegrees*Math.PI/180,true);
+      return {...pose,actualConvexSolidContactPairs:
+        solid.actualConvexSolidContactPairs,
+        comparisons:solid.satComparisons};
+    });
+    return {
+      active:true,mode:'P6 real convex-solid SAT support-axis witness audit',
+      probes,
+      sourceCalibratedToothCount:false,
+      actualContactNormalCertified:false,
+      forceMagnitudeOrSpringResponseCalculated:false,
+      virtualOnlyNoStateMutation:true,
+      automaticAngularSnapIntroduced:false,
+      factoryClutchGeometryCertified:false,
+      fullAssemblyClearanceCertified:false,
+      defaultPublicGeometryModified:false
     };
   }
 
@@ -11627,6 +11724,7 @@ export function createSelectricModel() {
     platenVariableClutchSeatingProbeP5,
     setPlatenFineClutchP6,
     platenFineClutchSolidProbeP6,
+    platenFineClutchContactWitnessesP6,
     platenFineClutchBoundaryRefinementP6,
     platenFineClutchSeatingEnvelopeP6,
     platenFineClutchAngularCoverageP6,
