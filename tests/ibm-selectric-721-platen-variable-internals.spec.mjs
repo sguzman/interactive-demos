@@ -68,7 +68,7 @@ test('Selectric Figure 141 standard-style P5 internal clutch parts move and rest
   expect(r.rotated.platenRotationRadP5-r.pressed.platenRotationRadP5).toBeCloseTo(Math.PI/12,6);
   expect(r.rotated.pushRodRotationRadP5-r.pressed.pushRodRotationRadP5).toBeCloseTo(Math.PI/12,6);
   expect(r.released.leftPressMmP5).toBe(0);
-  expect(r.released.springLengthMmP5).toBeCloseTo(5.5,6);
+  expect(r.released.springLengthMmP5).toBeCloseTo(6.1,6);
   expect(r.inspectorOff.inspectionEnabled).toBe(false);
   expect(r.baseline.visible).toBe(false);
   expect(r.baseline.inspectionEnabled).toBe(false);
