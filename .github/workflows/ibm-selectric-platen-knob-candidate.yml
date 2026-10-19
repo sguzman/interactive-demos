@@ -46,7 +46,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Serve experimental viewer locally
         run: python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/selectric-knob-candidate.log 2>&1 &
-      - name: Run candidate, frozen baseline, and complete operating regressions
+      - name: Run short candidate and historical mechanical regressions
         run: |
           npx playwright test \
             tests/ibm-selectric-721-platen-knob-candidate.spec.mjs \
@@ -55,8 +55,9 @@ jobs:
             tests/ibm-selectric-721-platen-shaft-freeplay.spec.mjs \
             tests/ibm-selectric-721-platen-knob-contact.spec.mjs \
             tests/ibm-selectric-721-platen-knob-full-motion.spec.mjs \
-            tests/ibm-selectric-721-runtime.spec.mjs \
             --reporter=line --workers=1
+      - name: Run complete typewriter causal runtime and gallery smoke
+        run: npx playwright test tests/ibm-selectric-721-runtime.spec.mjs --reporter=line --workers=1
       - name: Upload Selectric actual browser evidence
         if: always()
         uses: actions/upload-artifact@v4
