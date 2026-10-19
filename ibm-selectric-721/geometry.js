@@ -4438,6 +4438,7 @@ export function createSelectricModel() {
   // Lazily created only when the experimental knob is deliberately enabled.
   const platenVariableInternalsP5 = {
     rod: null, plug: null, driver: null, spring: null,
+    freePlaySpring: null, freePlaySeat: null, freePlayCollar: null,
     lugCount: 0, serrationCount: 0,
     platenOriginalMaterial: platen.material, platenGhostMaterial: null
   };
@@ -4767,6 +4768,58 @@ export function createSelectricModel() {
     spring.position.x=-0.6;
     ratchetGroup.add(tag(spring,'variable-compression-spring'));
 
+    platenVariableInternalsP5.freePlaySeat=freePlaySeat;
+    platenVariableInternalsP5.freePlayCollar=freePlayCollar;
+    platenVariableInternalsP5.freePlaySpring=freePlaySpring;
+    // IBM 1966 p.59 separately specifies a LIGHT compression spring that
+    // holds the sliding knob shaft toward +X (right), preventing axial free
+    // play. Distinct from the heavy variable-driver engagement spring.
+    // A fixed annular seat follows the platen; an annular shaft collar
+    // follows the sliding rod. Every dimension below is P5 hypothetical.
+    function ringSleeve(innerR, outerR, thickness, name) {
+      const outline=new THREE.Shape();
+      outline.absarc(0,0,outerR,0,2*Math.PI,false);
+      const inner=new THREE.Path();
+      inner.absarc(0,0,innerR,0,2*Math.PI,true);
+      outline.holes.push(inner);
+      const geom=new THREE.ExtrudeGeometry(outline,{
+        depth:thickness,bevelEnabled:false,curveSegments:32,steps:1
+      });
+      geom.translate(0,0,-thickness/2);
+      const ring=new THREE.Mesh(geom,metal);
+      ring.name=name;
+      ring.rotation.y=Math.PI/2;
+      return ring;
+    }
+    // The fixed seat's right face is X=-140 mm; the collar's left
+    // face is X=-136+s mm for the hypothetical knob press s in [0,2].
+    const freePlaySeat=ringSleeve(1.55,3.45,1,
+      'P5 free-play spring stationary platen shaft seat');
+    freePlaySeat.position.x=-140.5;
+    plug.add(tag(freePlaySeat,'free-play-spring-fixed-seat'));
+
+    const freePlayCollar=ringSleeve(1.35,3.45,1,
+      'P5 free-play spring sliding shaft collar');
+    freePlayCollar.position.x=-135.5;
+    rod.add(tag(freePlayCollar,'free-play-spring-moving-collar'));
+
+    const lightPoints=[];
+    const lightCoils=3, lightSteps=90;
+    for(let i=0;i<=lightSteps;i++){
+      const t=i/lightSteps,theta=2*Math.PI*lightCoils*t;
+      lightPoints.push(new THREE.Vector3(
+        4*t,2.65*Math.cos(theta),2.65*Math.sin(theta)
+      ));
+    }
+    const freePlaySpring=new THREE.Mesh(
+      new THREE.TubeGeometry(
+        new THREE.CatmullRomCurve3(lightPoints),lightSteps,0.26,6,false),
+      metal
+    );
+    freePlaySpring.name='P5 independent left shaft free-play compression spring';
+    freePlaySpring.position.x=-140;
+    plug.add(tag(freePlaySpring,'free-play-compression-spring'));
+
     platenVariableInternalsP5.rod=rod;
     platenVariableInternalsP5.plug=plug;
     platenVariableInternalsP5.driver=driver;
@@ -4785,6 +4838,9 @@ export function createSelectricModel() {
     mech.plug.visible=on;
     mech.driver.visible=on;
     mech.spring.visible=on;
+    mech.freePlaySpring.visible=on;
+    mech.freePlaySeat.visible=on;
+    mech.freePlayCollar.visible=on;
     // Channel lugs have been added to ratchetGroup and retain their own
     // candidate-only visibility via role annotations.
     ratchetGroup.children.filter(child=>
@@ -4797,6 +4853,10 @@ export function createSelectricModel() {
     // and compresses without jumping when the driver is driven rightward.
     mech.spring.position.x=-0.6+press;
     mech.spring.scale.x=(6.1-press)/6.1;
+    // Distinct +X shaft-bias spring: the shaft collar travels right away
+    // from its fixed seat. Both P5 states remain compressed versus an
+    // illustrative 8-mm free length (4-mm rest / 6-mm held lengths).
+    mech.freePlaySpring.scale.x=(4+press)/4;
   }
 
   function setPlatenVariableInternalsInspectionP5(enabled) {
@@ -4834,6 +4894,10 @@ export function createSelectricModel() {
     const driverBodyBounds=new THREE.Box3().setFromObject(driverBody);
     const pinEndX=Math.max(...pinMeshes.map(x=>new THREE.Box3().setFromObject(x).max.x));
     // Derive real-world contact relationships from rendered mesh bounds.
+    const fixedSeatBounds=new THREE.Box3().setFromObject(mech.freePlaySeat);
+    const movingCollarBounds=new THREE.Box3().setFromObject(mech.freePlayCollar);
+    const freePlayWorldStart=position(mech.freePlaySpring);
+    const freePlayLoadedLengthMm=4*mech.freePlaySpring.scale.x;
     const pinsDriverAxialGapMm=driverBodyBounds.min.x-pinEndX;
     const driverSpringAxialGapMm=springWorld[0]-driverBodyBounds.max.x;
     // The spring's far end remains anchored to the ratchet at local X=5.5.
@@ -4854,6 +4918,27 @@ export function createSelectricModel() {
       driverToSpringAxialGapMmP5:driverSpringAxialGapMm,
       platenSerrationCountP5:mech.serrationCount,
       driverSerrationCountP5:mech.serrationCount,
+      lightFreePlaySpringPresentP5:!!mech.freePlaySpring,
+      lightFreePlaySpringVisibleP5:mech.freePlaySpring.visible,
+      freePlaySpringParentedToPlatenP5:mech.freePlaySpring.parent===mech.plug,
+      fixedSeatParentedToPlatenP5:mech.freePlaySeat.parent===mech.plug,
+      slidingCollarParentedToRodP5:mech.freePlayCollar.parent===mech.rod,
+      freePlayBiasDirectionP5:'right / +X',
+      freePlaySpringLoadedLengthMmP5:freePlayLoadedLengthMm,
+      freePlaySpringHypotheticalFreeLengthMmP5:8,
+      freePlaySpringRemainingCompressionMmP5:8-freePlayLoadedLengthMm,
+      freePlaySpringWorldStartXmmP5:freePlayWorldStart[0],
+      freePlaySpringWorldEndXmmP5:freePlayWorldStart[0]+freePlayLoadedLengthMm,
+      freePlayFixedSeatToCoilGapMmP5:
+        freePlayWorldStart[0]-fixedSeatBounds.max.x,
+      freePlayCoilToMovingCollarGapMmP5:
+        movingCollarBounds.min.x-(freePlayWorldStart[0]+freePlayLoadedLengthMm),
+      lightShaftSpringDistinctFromVariableDriverSpringP5:
+        mech.freePlaySpring!==mech.spring &&
+        mech.freePlaySpring.parent!==mech.spring.parent,
+      factoryLightFreePlaySpringLengthMeasured:false,
+      factoryLightFreePlaySpringForceMeasured:false,
+      lightFreePlaySpringForcesSimulated:false,
       compressionSpringWorldStart:springWorld,
       springLengthMmP5:6.1*mech.spring.scale.x,
       springWorldEndXmmP5:springWorld[0]+6.1*mech.spring.scale.x,

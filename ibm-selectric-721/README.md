@@ -566,3 +566,24 @@ All values and tooth count remain unsourced P5, but the surfaces
 are no longer invented overlapping solid material or disconnected
 actuators. The browser test verifies **actual world-space bounding
 contacts** of pin-to-driver and driver-to-spring during both states.
+
+
+## Separate left-shaft free-play spring (Fig. 141, experimental P5)
+
+IBM form 241-5032-2 printed p.59 explicitly describes a *light
+compression spring* that biases the long sliding left knob shaft **right**
+to prevent free play. This is not the larger ratchet-driver spring, which
+biases the driver left to mesh with the end plug. A separate visible coil
+is now fitted around the long shaft, between a fixed platen-parented
+annular seat and a sliding shaft-parented annular collar. Both annuli
+have explicit through-shaft bores. The hypothetical preload geometry
+has a 4-mm loaded length at rest, increases to 6 mm when the left knob
+is held +2 mm, and remains shorter than an *arbitrary 8-mm unloaded
+reference length*. The spring therefore remains conceptually pushing
+right at both endpoints; no real spring force, constant, travel,
+installation part or IBM measurement is asserted. The separate
+ratchet-driver spring simultaneously shortens from 6.1 to 4.1 mm.
+The lightweight coil rotates with the platen; the driver return spring
+rotates with the ratchet. A new browser test verifies both preloads,
+parent identities, real spring-to-seat/collar geometry and default-mode
+restoration.
