@@ -66,6 +66,15 @@ jobs:
             tests/ibm-selectric-721-platen-knob-contact.spec.mjs \
             tests/ibm-selectric-721-platen-knob-full-motion.spec.mjs \
             --reporter=line --workers=1
+      - name: Preserve mechanical JSON before second Playwright invocation
+        # Playwright clears test-results at the start of each independent run.
+        # Keep audited diagnostic outputs outside its cleanup directory.
+        run: |
+          test -s test-results/selectric-p6-sampled-seating-envelope.json
+          python3 -m json.tool test-results/selectric-p6-sampled-seating-envelope.json >/dev/null
+          mkdir -p mechanical-evidence
+          find test-results -maxdepth 1 -type f -name '*.json' -exec cp -t mechanical-evidence {} +
+
       - name: Run complete typewriter causal runtime and gallery smoke
         run: npx playwright test tests/ibm-selectric-721-runtime.spec.mjs --reporter=line --workers=1
       - name: Upload Selectric actual browser evidence
@@ -73,8 +82,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: experimental-selectric-knob-full-regression
-          path: test-results/
-          if-no-files-found: ignore
+          path: |
+            test-results/
+            mechanical-evidence/
+          if-no-files-found: error
 
       - name: Publish source-bound CI status for auditability
         # The GitHub connector cannot enumerate push-only workflow runs by SHA.
