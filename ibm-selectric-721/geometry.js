@@ -1692,6 +1692,7 @@ export function createSelectricModel() {
     printCamFollowerLiftP5: 0,
     platenIndex: 0,
     platenKnobCandidateP4: false,
+    platenClutchContactInspectionP5: false,
     leftKnobAxialPressP5Mm: 0,
     paperAdvanceMm: 0,
     manualPaperAlignmentMmP5: 0,
@@ -4594,9 +4595,13 @@ export function createSelectricModel() {
       marker.position.x = next ? (index===0 ? -1:1)*candidateGripOutboardP5Mm : 0;
     });
     state.platenKnobCandidateP4 = next;
-    if (!next) setPlatenVariableInternalsInspectionP5(false);
+    if (!next) {
+      setPlatenClutchContactInspectionP5(false);
+      setPlatenVariableInternalsInspectionP5(false);
+    }
     applyPlatenVariableAxialP5();
     updatePlatenVariableInternalsP5();
+    updatePlatenClutchSerrationInspectionP5();
     return next;
   }
 
@@ -4621,6 +4626,7 @@ export function createSelectricModel() {
     platenKnobPivots.forEach(pivot => {
       pivot.rotation.x = a;
     });
+    if(state.platenClutchContactInspectionP5)updatePlatenClutchSerrationInspectionP5();
   }
 
   const paper = makePaper(pickables);
@@ -4860,6 +4866,7 @@ export function createSelectricModel() {
     // from its fixed seat. Both P5 states remain compressed versus an
     // illustrative 8-mm free length (4-mm rest / 6-mm held lengths).
     mech.freePlaySpring.scale.x=(4+press)/4;
+    if(state.platenClutchContactInspectionP5)updatePlatenClutchSerrationInspectionP5();
   }
 
   function setPlatenVariableInternalsInspectionP5(enabled) {
@@ -4961,6 +4968,84 @@ export function createSelectricModel() {
       legacyCausalCouplingIsStillAnAbstraction:true,
       actualSerrationFaceEngagementCertified:false,
       automaticSnapOrRatchetAdvanceInvented:false
+    };
+  }
+
+
+  // Diagnostic colors use the source-frozen P5 presentation teeth.
+  // Amber: conservative YZ disk flag for possible blocking (NOT confirmed
+  // triangle contact). Teal: positive planar/axial exclusion for the
+  // closest tooth pair. Never drives clutch seating or automatic rotation.
+  function updatePlatenClutchSerrationInspectionP5() {
+    const mech=platenVariableInternalsP5;
+    if(!mech.plug || !mech.driver) return;
+    const teeth=[
+      ...mech.plug.children.filter(x=>x.userData.platenVariableRoleP5==='plug-serration'),
+      ...mech.driver.children.filter(x=>x.userData.platenVariableRoleP5==='driver-serration')
+    ];
+    for(const tooth of teeth){
+      tooth.material=tooth.userData.clutchP5OriginalMaterial || tooth.material;
+      tooth.userData.clutchP5Highlight='none';
+    }
+    if(!state.platenClutchContactInspectionP5 || !state.platenKnobCandidateP4) return;
+    const measured=platenVariableClutchSeatingProbeP5();
+    if(!measured.active) return;
+    const roleGroups=[
+      mech.plug.children.filter(x=>x.userData.platenVariableRoleP5==='plug-serration'),
+      mech.driver.children.filter(x=>x.userData.platenVariableRoleP5==='driver-serration')
+    ];
+    const [pi,di]=measured.closestToothIndices;
+    const warning=measured.potentialProxyToothBlockingOnRelease;
+    const status=measured.toothAxialSeparated?'axially-separated':
+      warning?'possible-block':'conservatively-clear';
+    const color=warning?0xffaa45:0x45c3bc;
+    for(const tooth of [roleGroups[0][pi],roleGroups[1][di]]){
+      if(!tooth)throw new Error('P5 clutch overlay missing nearest tooth');
+      if(!tooth.userData.clutchP5OriginalMaterial)
+        tooth.userData.clutchP5OriginalMaterial=tooth.material;
+      if(!tooth.userData.clutchP5OverlayMaterial){
+        const cloned=tooth.material.clone();
+        tooth.userData.clutchP5OverlayMaterial=cloned;
+      }
+      const material=tooth.userData.clutchP5OverlayMaterial;
+      material.color.setHex(color);
+      if('emissive' in material)material.emissive.setHex(color);
+      if('emissiveIntensity' in material)material.emissiveIntensity=0.34;
+      tooth.material=material;
+      tooth.userData.clutchP5Highlight=status;
+    }
+  }
+
+  function setPlatenClutchContactInspectionP5(enabled) {
+    const next=Boolean(enabled) && state.platenKnobCandidateP4;
+    state.platenClutchContactInspectionP5=next;
+    updatePlatenClutchSerrationInspectionP5();
+    return next;
+  }
+
+  function platenClutchContactInspectionProbeP5() {
+    const mech=platenVariableInternalsP5;
+    if(!mech.plug)return {allocated:false,enabled:false,productionToothGeometryVerified:false};
+    const plugTeeth=mech.plug.children.filter(x=>x.userData.platenVariableRoleP5==='plug-serration');
+    const driverTeeth=mech.driver.children.filter(x=>x.userData.platenVariableRoleP5==='driver-serration');
+    const all=[...plugTeeth,...driverTeeth];
+    return {
+      allocated:true, enabled:state.platenClutchContactInspectionP5,
+      candidateActive:state.platenKnobCandidateP4,
+      toothCount:all.length,
+      coloredTeeth:all.filter(x=>x.userData.clutchP5Highlight!=='none').length,
+      originalMaterialsUntouched:all.every(x=>
+        !x.userData.clutchP5OriginalMaterial ||
+        x.userData.clutchP5OriginalMaterial!==x.userData.clutchP5OverlayMaterial),
+      decorated:all.map(x=>({
+        role:x.userData.platenVariableRoleP5,
+        highlight:x.userData.clutchP5Highlight || 'none',
+        activeMaterialIsOverlay:x.material===x.userData.clutchP5OverlayMaterial
+      })),
+      actualContactVerified:false,
+      actualFactorySerrationCountKnown:false,
+      angularSnapPhysicsImplemented:false,
+      originalPublicMeshPromoted:false
     };
   }
 
@@ -8174,6 +8259,7 @@ export function createSelectricModel() {
     state.platenIndex = next;
     setPlatenPhysicalAngle(next + state.manualPlatenAngle);
     ratchetGroup.rotation.x = next;
+    if(state.platenClutchContactInspectionP5)updatePlatenClutchSerrationInspectionP5();
     if (state.feedRollsEngaged) {
       const deltaPaperMm = delta * CANONICAL.platen.radiusMm;
       state.paperAdvanceMm += deltaPaperMm;
@@ -11069,6 +11155,8 @@ export function createSelectricModel() {
     platenKnobCandidateEnvelopeProbeP4,
     platenVariableInternalsProbeP5,
     platenVariableClutchSeatingProbeP5,
+    platenClutchContactInspectionProbeP5,
+    setPlatenClutchContactInspectionP5,
     setPlatenVariableInternalsInspectionP5,
     hoodTypeElementSectionProbe,
     hoodTypeElementTriangleProbe,

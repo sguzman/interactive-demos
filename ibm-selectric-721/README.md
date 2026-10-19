@@ -614,3 +614,30 @@ well-tested causal free-platen control, or equate this conservative probe
 with certification of real IBM seating. New Playwright regression samples
 13 angular offsets across one illustrative 30-degree pitch, includes
 rest/pressed states, and records both unobstructed and possible-clash sectors.
+
+
+## Provisional serration contact inspection (opt-in and nonpromoting)
+
+On the experimental branch, use
+`?platenKnobCandidate=1&platenInternals=1&platenContact=1` to highlight
+the nearest physical P5 plug and driver teeth: **amber** means possible
+blocking under the conservative 2D radial disk screen, **teal** means
+either axial separation or positive conservative planar clearance. This
+is a visual investigation of the unsourced twelve-tooth proxy, not exact
+triangle contact or a factory production clutch. As platen rotation or
+left-knob press changes, actual mesh transforms drive color selection.
+There is no angle snapping, driver torque or auto-engagement simulation.
+
+`__selectricDebug.setPlatenClutchContactInspectionP5(false)` turns it
+off. Cloned inspection materials are created once and reused;
+original materials are restored when disabling the candidate and the
+ordinary default is not affected. The dedicated Chromium test verifies
+actual colored tooth identities, state-dependent warning, and restoring
+the original material references.
+
+**Source correction:** R. D. Mathews's 1968 IBM paper describes ordinary
+Selectric **0.025-inch paper adjustment capability**, without explicitly
+saying this is the angular pitch of individual clutch serrations. The
+conditional ~180 increments from the *synthetic* model platen radius
+must therefore not be used as a verified OEM tooth count or a reason
+to replace the P5 twelve-tooth proxies with 180 manufactured teeth.

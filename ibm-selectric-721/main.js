@@ -65,6 +65,9 @@ if (new URLSearchParams(window.location.search).get('platenKnobCandidate') === '
   if (new URLSearchParams(window.location.search).get('platenInternals') === '1') {
     model.setPlatenVariableInternalsInspectionP5(true);
   }
+  if(new URLSearchParams(window.location.search).get('platenContact')==='1') {
+    model.setPlatenClutchContactInspectionP5(true);
+  }
 }
 scene.add(model.root);
 
@@ -1166,6 +1169,8 @@ window.__selectricDebug = {
   platenKnobCandidateEnvelopeProbeP4: () => model.platenKnobCandidateEnvelopeProbeP4(),
   platenVariableInternalsProbeP5: () => model.platenVariableInternalsProbeP5(),
   platenVariableClutchSeatingProbeP5: () => model.platenVariableClutchSeatingProbeP5(),
+  platenClutchContactInspectionProbeP5: () => model.platenClutchContactInspectionProbeP5(),
+  setPlatenClutchContactInspectionP5: enabled => model.setPlatenClutchContactInspectionP5(enabled),
   setPlatenVariableInternalsInspectionP5: enabled =>
     model.setPlatenVariableInternalsInspectionP5(enabled),
   inspectionCameraPose: () => ({
