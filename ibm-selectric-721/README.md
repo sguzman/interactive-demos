@@ -645,3 +645,36 @@ Our synthetic 18.1864-mm platen radius would imply approximately 180
 positions per revolution under the original paper-increment interpretation,
 but genuine production radius, matching part level and tooth count
 remain to be independently verified. Neither 180 nor 12 is promoted.
+
+
+## P6 optional fine-serration convex solid experiment (NOT OEM geometry)
+
+An independent opt-in P6 branch experiment adds **two instanced meshes of
+180 separate convex tapered wedges** (360 synthetic teeth total), placed
+inside the existing standard-style Figure 141 clutch. The manufacturer
+reports ordinary Selectric 0.025-inch paper travel **indexed between
+serrations** (Mathews, IBM JRD 1968 printed p83). Dividing our *synthetic*
+platen circumference by this travel gives ~180 positions per revolution,
+**not** a verified 1961 Model 721 installed number/profile. All dimensions,
+lead-in taper, 5.75-mm construction radius and 0.37-pitch root width are
+explicit research choices, not period IBM part specifications.
+
+Enable using `?platenKnobCandidate=1&platenInternals=1&platenFineClutch=1`
+on a locally served **experimental branch**. This hides but preserves the
+original illustrative 12+12 rectangular teeth; disabling via
+`__selectricDebug.setPlatenFineClutchP6(false)` restores them. It does
+not modify the ratchet/platen logic or the public viewer.
+
+`__selectricDebug.platenFineClutchSolidProbeP6(strokeMm)` tests **actual
+instanced geometry** using convex 3D separating-axis tests (all face
+normals and cross-products of edges), checking neighboring driver teeth
+against an original plug tooth. Optional `strokeMm` performs a virtual
+press-depth probe in [0,2] without changing the current visual state.
+The geometry uses narrower leading tips and wider roots to embody a
+hypothetical axial lead-in, but this does not imply that a rigid,
+misaligned pair can self-seat. A positive separating axis certifies
+non-intersection of those **synthetic convex teeth**; SAT overlap
+identifies model solid interference. This is not a whole-machine or
+source-authentic clutch engagement guarantee. New Playwright QA checks
+aligned clearance, half-pitch interference, depressed separation,
+intermediate press depths, and reversible original 12-tooth control.

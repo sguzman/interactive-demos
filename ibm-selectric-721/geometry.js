@@ -1693,6 +1693,7 @@ export function createSelectricModel() {
     platenIndex: 0,
     platenKnobCandidateP4: false,
     platenClutchContactInspectionP5: false,
+    platenFineClutchP6: false,
     leftKnobAxialPressP5Mm: 0,
     paperAdvanceMm: 0,
     manualPaperAlignmentMmP5: 0,
@@ -4440,6 +4441,7 @@ export function createSelectricModel() {
   const platenVariableInternalsP5 = {
     rod: null, plug: null, driver: null, spring: null,
     freePlaySpring: null, freePlaySeat: null, freePlayCollar: null,
+    fineClutchP6: null,
     lugCount: 0, serrationCount: 0,
     platenOriginalMaterial: platen.material, platenGhostMaterial: null
   };
@@ -4596,6 +4598,7 @@ export function createSelectricModel() {
     });
     state.platenKnobCandidateP4 = next;
     if (!next) {
+      setPlatenFineClutchP6(false);
       setPlatenClutchContactInspectionP5(false);
       setPlatenVariableInternalsInspectionP5(false);
     }
@@ -5046,6 +5049,199 @@ export function createSelectricModel() {
       actualFactorySerrationCountKnown:false,
       angularSnapPhysicsImplemented:false,
       originalPublicMeshPromoted:false
+    };
+  }
+
+
+  // Independently selectable, P6 ONLY, source-limited indexing candidate.
+  // 180 is conditional on the reconstructed platen radius and 1968 IBM's
+  // 0.025-inch serration-indexed paper motion. It is NOT a measured 721
+  // count, tooth section, pitch diameter, spring compliance or factory fit.
+  function ensurePlatenFineClutchP6() {
+    const mech=platenVariableInternalsP5;
+    if(mech.fineClutchP6) return mech.fineClutchP6;
+    if(!mech.plug || !mech.driver)throw new Error('P6 requires enabled P5 internals');
+    const count=180, pitch=2*Math.PI/count, ringRadius=5.75;
+    const tangentPitch=ringRadius*pitch;
+    const baseHalf=0.37*tangentPitch/2,tipHalf=0.18*tangentPitch/2;
+    const radialHalf=0.32, axialHalf=0.5;
+    // An axially tapered convex wedge: narrow tip, wide root. All dimensions
+    // hypothetical. Two complementary phase-shifted meshes can physically
+    // interdigitate only for a subset of relative platen/ratchet phases.
+    function shape(dir) {
+      const verts=[
+        [-dir*axialHalf,-radialHalf,-baseHalf],
+        [-dir*axialHalf, radialHalf,-baseHalf],
+        [-dir*axialHalf, radialHalf, baseHalf],
+        [-dir*axialHalf,-radialHalf, baseHalf],
+        [ dir*axialHalf,-radialHalf,-tipHalf],
+        [ dir*axialHalf, radialHalf,-tipHalf],
+        [ dir*axialHalf, radialHalf, tipHalf],
+        [ dir*axialHalf,-radialHalf, tipHalf]
+      ];
+      const quads=[[0,1,2,3],[4,5,6,7],[0,1,5,4],
+        [1,2,6,5],[2,3,7,6],[3,0,4,7]];
+      const positions=[],indices=[];
+      for(const p of verts)positions.push(...p);
+      for(const [a,b,c,d] of quads)indices.push(a,b,c,a,c,d);
+      const geo=new THREE.BufferGeometry();
+      geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+      geo.setIndex(indices);
+      geo.computeVertexNormals();
+      geo.computeBoundingBox();
+      return {geo,verts,quads};
+    }
+    const plugShape=shape(1),driverShape=shape(-1);
+    const material=metal.clone();
+    material.side=THREE.DoubleSide;
+    const plug=new THREE.InstancedMesh(plugShape.geo,material,count);
+    const driver=new THREE.InstancedMesh(driverShape.geo,material,count);
+    plug.name='P6 opt-in 180 tapered plug serration wedges — hypothetical';
+    driver.name='P6 opt-in 180 tapered driver serration wedges — hypothetical';
+    plug.userData.provisionalFineClutchP6=true;
+    driver.userData.provisionalFineClutchP6=true;
+    plug.frustumCulled=false;
+    driver.frustumCulled=false;
+    const spinAxis=new THREE.Vector3(1,0,0);
+    const scale=new THREE.Vector3(1,1,1);
+    const q=new THREE.Quaternion();
+    const matrix=new THREE.Matrix4();
+    for(let i=0;i<count;i++){
+      const pa=i*pitch,da=(i+0.5)*pitch;
+      q.setFromAxisAngle(spinAxis,pa);
+      matrix.compose(new THREE.Vector3(137.2,
+        ringRadius*Math.cos(pa),ringRadius*Math.sin(pa)),q,scale);
+      plug.setMatrixAt(i,matrix);
+      q.setFromAxisAngle(spinAxis,da);
+      matrix.compose(new THREE.Vector3(-1.2,
+        ringRadius*Math.cos(da),ringRadius*Math.sin(da)),q,scale);
+      driver.setMatrixAt(i,matrix);
+    }
+    plug.instanceMatrix.needsUpdate=true;
+    driver.instanceMatrix.needsUpdate=true;
+    mech.plug.add(plug);
+    mech.driver.add(driver);
+    mech.fineClutchP6={plug,driver,count,pitch,ringRadius,
+      plugShape,driverShape,faces:plugShape.quads,
+      edges:[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],
+        [0,4],[1,5],[2,6],[3,7]]};
+    plug.visible=false;driver.visible=false;
+    return mech.fineClutchP6;
+  }
+
+  function setPlatenFineClutchP6(enabled) {
+    const next=Boolean(enabled)&&state.platenKnobCandidateP4;
+    const mech=platenVariableInternalsP5;
+    if(next)ensurePlatenFineClutchP6();
+    state.platenFineClutchP6=next;
+    if(next)setPlatenClutchContactInspectionP5(false);
+    if(mech.plug){
+      for(const tooth of mech.plug.children.filter(x=>x.userData.platenVariableRoleP5==='plug-serration')){
+        tooth.visible=state.platenKnobCandidateP4&&!next;
+      }
+      for(const tooth of mech.driver.children.filter(x=>x.userData.platenVariableRoleP5==='driver-serration')){
+        tooth.visible=state.platenKnobCandidateP4&&!next;
+      }
+    }
+    if(mech.fineClutchP6){
+      mech.fineClutchP6.plug.visible=next;
+      mech.fineClutchP6.driver.visible=next;
+    }
+    return next;
+  }
+
+  // Exact convex-solid separation by SAT on actual 3D instanced wedge
+  // vertices and all face normals + edge-cross-edge axes. No approximate
+  // circular disk screen is used here. Source profile still experimental.
+  function platenFineClutchSolidProbeP6(strokeOverrideMm=null) {
+    const mech=platenVariableInternalsP5, fine=mech.fineClutchP6;
+    if(!fine || !state.platenFineClutchP6)return {
+      active:false,originalFactoryToothCountKnown:false,
+      profileSourceCalibrated:false
+    };
+    const current=state.leftKnobAxialPressP5Mm;
+    const press=strokeOverrideMm===null?current:Number(strokeOverrideMm);
+    if(!Number.isFinite(press)||press<0||press>2)
+      throw new Error('P6 inspection stroke outside hypothetical 0..2 mm');
+    root.updateMatrixWorld(true);
+    const instance=new THREE.Matrix4(),world=new THREE.Matrix4();
+    const getVertices=(mesh,verts,index,xAdjustment)=>{
+      mesh.getMatrixAt(index,instance);
+      world.multiplyMatrices(mesh.matrixWorld,instance);
+      return verts.map(p=>new THREE.Vector3(...p).applyMatrix4(world)
+        .add(new THREE.Vector3(xAdjustment,0,0)));
+    };
+    const worldPlug=getVertices(fine.plug,fine.plugShape.verts,0,0);
+    const plugAngle=mech.plug.rotation.x;
+    const driverAngle=ratchetGroup.rotation.x;
+    const center=Math.round((plugAngle-driverAngle)/fine.pitch-0.5);
+    const normalize=i=>(i%fine.count+fine.count)%fine.count;
+    const axesFrom=(v)=>{
+      const axes=[];
+      for(const quad of fine.faces){
+        const [a,b,c]=quad;
+        const axis=new THREE.Vector3().subVectors(v[b],v[a])
+          .cross(new THREE.Vector3().subVectors(v[c],v[a]));
+        if(axis.lengthSq()>1e-16)axes.push(axis.normalize());
+      }
+      return axes;
+    };
+    const edgeVectors=(v)=>fine.edges.map(([a,b])=>
+      new THREE.Vector3().subVectors(v[b],v[a]));
+    const axesPlug=axesFrom(worldPlug),edgesPlug=edgeVectors(worldPlug);
+    const sat=(v)=>{
+      const axes=[...axesPlug,...axesFrom(v)];
+      const edgesDriver=edgeVectors(v);
+      for(const e of edgesPlug)for(const d of edgesDriver){
+        const axis=new THREE.Vector3().crossVectors(e,d);
+        if(axis.lengthSq()>1e-16)axes.push(axis.normalize());
+      }
+      let bestSeparatingGap=-Infinity;
+      let minimumPenetration=Infinity;
+      for(const axis of axes){
+        const ap=worldPlug.map(p=>p.dot(axis)),bp=v.map(p=>p.dot(axis));
+        const amin=Math.min(...ap),amax=Math.max(...ap);
+        const bmin=Math.min(...bp),bmax=Math.max(...bp);
+        const separating=Math.max(bmin-amax,amin-bmax);
+        bestSeparatingGap=Math.max(bestSeparatingGap,separating);
+        minimumPenetration=Math.min(minimumPenetration,-separating);
+      }
+      return {intersects:bestSeparatingGap<=1e-7,
+        separatingGapMm:bestSeparatingGap,
+        penetrationAxisMinimumMm:minimumPenetration,
+        axesTested:axes.length};
+    };
+    const comparisons=[];
+    for(let d=-2;d<=2;d++){
+      const i=normalize(center+d);
+      const verts=getVertices(fine.driver,fine.driverShape.verts,i,press-current);
+      comparisons.push({driverToothIndex:i,...sat(verts)});
+    }
+    const contacts=comparisons.filter(x=>x.intersects);
+    return {
+      active:true,mode:'hypothetical 180-index complementary tapered solid wedges',
+      originalFactoryToothCountKnown:false,modelPlatenRadiusMm:18.1864,
+      sourcePaperIncrementMm:0.635,sourceDoesNotIdentifyOriginal721ToothCount:true,
+      profileSourceCalibrated:false,axialLeadInSlopeExperimental:true,
+      physicalSpringForcesSolved:false,
+      factoryMeshingCertified:false,defaultPublicGeometryModified:false,
+      sourceP5TwelveToothControlPreserved:true,
+      candidateToothCountPerFace:fine.count,
+      candidateTotalInstances:fine.count*2,
+      plugInstanceCount:fine.plug.count,driverInstanceCount:fine.driver.count,
+      originalP5ToothMeshesHidden:mech.plug.children.filter(
+        x=>x.userData.platenVariableRoleP5==='plug-serration').every(x=>!x.visible)
+        &&mech.driver.children.filter(
+        x=>x.userData.platenVariableRoleP5==='driver-serration').every(x=>!x.visible),
+      pressMm:press,actualPhysicalPressMm:current,
+      toothPitchRad:fine.pitch,halfPitchRad:fine.pitch/2,
+      relativePhaseRad:((plugAngle-driverAngle)%(Math.PI*2)+Math.PI*2)%(Math.PI*2),
+      alignedCandidatePairCount:comparisons.length,
+      satComparisons:comparisons,
+      actualConvexSolidContactPairs:contacts.length,
+      conservativeCurrentCandidateCanSeat:contacts.length===0,
+      // Absence of interpenetration never certifies required contact/locking.
+      physicalClutchLockVerified:false,automaticAngularSnapIntroduced:false
     };
   }
 
@@ -11155,6 +11351,8 @@ export function createSelectricModel() {
     platenKnobCandidateEnvelopeProbeP4,
     platenVariableInternalsProbeP5,
     platenVariableClutchSeatingProbeP5,
+    setPlatenFineClutchP6,
+    platenFineClutchSolidProbeP6,
     platenClutchContactInspectionProbeP5,
     setPlatenClutchContactInspectionP5,
     setPlatenVariableInternalsInspectionP5,
