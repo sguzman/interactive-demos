@@ -4878,6 +4878,92 @@ export function createSelectricModel() {
     return on;
   }
 
+
+  // Source-bound functional discriminator for the 1966 Figure 141 clutch.
+  // Real IBM serration pitch/profile is UNKNOWN. Evaluate *actual placed*
+  // P5 demonstration tooth centers and each tooth's conservative YZ disk.
+  // A positive disk gap proves the rectangular proxy teeth apart in YZ;
+  // nonpositive gap flags potential blocking (not exact triangle collision).
+  // This diagnostic never rewrites the valid legacy platen-variable mode.
+  function platenVariableClutchSeatingProbeP5() {
+    const mechanism=platenVariableInternalsP5;
+    if (!mechanism.plug || !state.platenKnobCandidateP4) {
+      return {active:false, originalFactorySerrationVerified:false};
+    }
+    root.updateMatrixWorld(true);
+    const plugTeeth=mechanism.plug.children.filter(
+      mesh=>mesh.userData.platenVariableRoleP5==='plug-serration');
+    const driverTeeth=mechanism.driver.children.filter(
+      mesh=>mesh.userData.platenVariableRoleP5==='driver-serration');
+    const center=mesh=>{
+      const point=new THREE.Vector3();
+      mesh.getWorldPosition(point);
+      return point;
+    };
+    const plugCenters=plugTeeth.map(center), driverCenters=driverTeeth.map(center);
+    // Each presentation tooth is a 0.75 x 1.15 mm rectangular YZ section;
+    // its circumscribing disk encloses it even after X rotation.
+    const toothDiskRadiusMmP5=0.5*Math.hypot(0.75,1.15);
+    let minimumCenterDistanceMm=Infinity,closestPlug=-1,closestDriver=-1;
+    let candidateAabbPairs=0;
+    for(let i=0;i<plugTeeth.length;i++){
+      const a=plugCenters[i];
+      const aBox=new THREE.Box3().setFromObject(plugTeeth[i]);
+      for(let j=0;j<driverTeeth.length;j++){
+        const b=driverCenters[j];
+        const separation=Math.hypot(a.y-b.y,a.z-b.z);
+        if(separation<minimumCenterDistanceMm){
+          minimumCenterDistanceMm=separation;
+          closestPlug=i;closestDriver=j;
+        }
+        if(aBox.intersectsBox(new THREE.Box3().setFromObject(driverTeeth[j])))
+          candidateAabbPairs++;
+      }
+    }
+    const plugBox=new THREE.Box3().makeEmpty();
+    const driverBox=new THREE.Box3().makeEmpty();
+    plugTeeth.forEach(x=>plugBox.union(new THREE.Box3().setFromObject(x)));
+    driverTeeth.forEach(x=>driverBox.union(new THREE.Box3().setFromObject(x)));
+    const axialOverlapMm=Math.min(plugBox.max.x,driverBox.max.x)-
+      Math.max(plugBox.min.x,driverBox.min.x);
+    const conservativeRadialGapMm=minimumCenterDistanceMm-2*toothDiskRadiusMmP5;
+    const axialSeparated=axialOverlapMm<=0;
+    const potentialToothBlock=!axialSeparated && conservativeRadialGapMm<=0;
+    const twoPi=Math.PI*2;
+    const angularDelta=((mechanism.plug.rotation.x-ratchetGroup.rotation.x)%twoPi+twoPi)%twoPi;
+    const toothPitchRad=twoPi/plugTeeth.length;
+    const normalizedPhase=((angularDelta%toothPitchRad)+toothPitchRad)%toothPitchRad;
+    return {
+      active:true, source:'IBM 241-5032-2 p59 Fig141 standard-style',
+      publicDefaultChanged:false, originalFactorySerrationVerified:false,
+      toothProfileP5:'unsourced rectangular demonstration teeth',
+      illustratedToothCountP5:plugTeeth.length,
+      factoryToothCountKnown:false,
+      plugAndDriverHaveEqualToothCount:plugTeeth.length===driverTeeth.length,
+      actualPlugToothCount:plugTeeth.length,
+      actualDriverToothCount:driverTeeth.length,
+      plugRotationRad:mechanism.plug.rotation.x,
+      driverRotationRad:ratchetGroup.rotation.x,
+      relativePhaseRad:angularDelta,
+      moduloPitchPhaseRad:normalizedPhase,
+      presentationPitchRad:toothPitchRad,
+      leftPressMm:state.leftKnobAxialPressP5Mm,
+      actualToothAxialOverlapMm:axialOverlapMm,
+      toothAxialSeparated:axialSeparated,
+      minimumActualWorldYZCenterDistanceMm:minimumCenterDistanceMm,
+      conservativeToothDiskRadiusMmP5:toothDiskRadiusMmP5,
+      conservativePlanarClearanceMm:conservativeRadialGapMm,
+      toothWorldAabbOverlapPairs:candidateAabbPairs,
+      closestToothIndices:[closestPlug,closestDriver],
+      potentialProxyToothBlockingOnRelease:potentialToothBlock,
+      geometricProxyInsertionUnobstructed:axialSeparated || conservativeRadialGapMm>0,
+      legacyLogicalVariableEngaged:state.platenVariableEngaged,
+      legacyCausalCouplingIsStillAnAbstraction:true,
+      actualSerrationFaceEngagementCertified:false,
+      automaticSnapOrRatchetAdvanceInvented:false
+    };
+  }
+
   function platenVariableInternalsProbeP5() {
     root.updateMatrixWorld(true);
     const mech=platenVariableInternalsP5;
@@ -10982,6 +11068,7 @@ export function createSelectricModel() {
     hoodPlatenKnobSurfaceContactProbe,
     platenKnobCandidateEnvelopeProbeP4,
     platenVariableInternalsProbeP5,
+    platenVariableClutchSeatingProbeP5,
     setPlatenVariableInternalsInspectionP5,
     hoodTypeElementSectionProbe,
     hoodTypeElementTriangleProbe,

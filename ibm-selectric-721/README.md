@@ -587,3 +587,30 @@ The lightweight coil rotates with the platen; the driver return spring
 rotates with the ratchet. A new browser test verifies both preloads,
 parent identities, real spring-to-seat/collar geometry and default-mode
 restoration.
+
+
+## Provisional serration-phase obstruction audit (nonpromoting)
+
+The IBM 1966 manual (241-5032-2, p.59, Fig.141) requires a spring-driven
+axial driver that can re-engage **different** serrations after the platen
+has been rotated independently. It does **not** provide the manufactured
+tooth count, pitch, exact section or allowed seating slack. Our 12-tooth
+rectangular demonstration geometry is not factory geometry and cannot
+silently stand in for an all-phase self-seating clutch.
+
+The experimental debug probe `platenVariableClutchSeatingProbeP5()`
+examines all 24 **actual Three.js tooth meshes** and their world-space
+axial projections and YZ center distances. The rectangular tooth's
+circumscribed disk provides a conservative non-contact screen for the
+current synthetic 2D section: positive disk gap proves no YZ tooth overlap;
+nonpositive means **possible obstruction**, not verified triangle contact.
+When the left knob is pressed, axial separation is sufficient regardless of
+relative phase. On release, the P5 tooth proxies overlap in X, and some
+relative angles have potential physical interference. This is a documented
+**design insufficiency**: source-correct tooth meshing and any spring-driven
+settling must be reconstructed before promoting a mechanical-clutch claim.
+We do **not** snap platen angle, create ratchet advance, rewrite the
+well-tested causal free-platen control, or equate this conservative probe
+with certification of real IBM seating. New Playwright regression samples
+13 angular offsets across one illustrative 30-degree pitch, includes
+rest/pressed states, and records both unobstructed and possible-clash sectors.

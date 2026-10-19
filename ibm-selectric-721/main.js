@@ -1165,6 +1165,7 @@ window.__selectricDebug = {
   setPlatenKnobCandidateP4: enabled => model.setPlatenKnobCandidateP4(enabled),
   platenKnobCandidateEnvelopeProbeP4: () => model.platenKnobCandidateEnvelopeProbeP4(),
   platenVariableInternalsProbeP5: () => model.platenVariableInternalsProbeP5(),
+  platenVariableClutchSeatingProbeP5: () => model.platenVariableClutchSeatingProbeP5(),
   setPlatenVariableInternalsInspectionP5: enabled =>
     model.setPlatenVariableInternalsInspectionP5(enabled),
   inspectionCameraPose: () => ({

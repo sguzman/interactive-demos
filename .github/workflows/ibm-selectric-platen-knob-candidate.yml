@@ -13,6 +13,7 @@ on:
       - 'tests/ibm-selectric-721-platen-knob-axial.spec.mjs'
       - 'tests/ibm-selectric-721-platen-variable-internals.spec.mjs'
       - 'tests/ibm-selectric-721-platen-shaft-freeplay.spec.mjs'
+      - 'tests/ibm-selectric-721-platen-clutch-seating.spec.mjs'
       - '.github/workflows/ibm-selectric-platen-knob-candidate.yml'
 
 permissions:
@@ -40,6 +41,7 @@ jobs:
           node --check tests/ibm-selectric-721-platen-knob-axial.spec.mjs
           node --check tests/ibm-selectric-721-platen-variable-internals.spec.mjs
           node --check tests/ibm-selectric-721-platen-shaft-freeplay.spec.mjs
+          node --check tests/ibm-selectric-721-platen-clutch-seating.spec.mjs
       - name: Install headless Chromium/Playwright
         run: |
           npm install --no-save @playwright/test
@@ -53,6 +55,7 @@ jobs:
             tests/ibm-selectric-721-platen-knob-axial.spec.mjs \
             tests/ibm-selectric-721-platen-variable-internals.spec.mjs \
             tests/ibm-selectric-721-platen-shaft-freeplay.spec.mjs \
+            tests/ibm-selectric-721-platen-clutch-seating.spec.mjs \
             tests/ibm-selectric-721-platen-knob-contact.spec.mjs \
             tests/ibm-selectric-721-platen-knob-full-motion.spec.mjs \
             --reporter=line --workers=1
