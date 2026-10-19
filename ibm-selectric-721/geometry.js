@@ -5228,6 +5228,7 @@ export function createSelectricModel() {
       let bestSeparatingGap=-Infinity;
       let minimumPenetration=Infinity;
       let bestWitnessAxis=null;
+      const axisRecords=includeContactWitnesses?[]:null;
       for(const axisInfo of axes){
         const axis=axisInfo.vector;
         const ap=worldPlug.map(p=>p.dot(axis)),bp=v.map(p=>p.dot(axis));
@@ -5235,6 +5236,17 @@ export function createSelectricModel() {
         const bmin=Math.min(...bp),bmax=Math.max(...bp);
         const plus=bmin-amax,minus=amin-bmax;
         const separating=Math.max(plus,minus);
+        if(axisRecords){
+          const directed=plus>=minus?axis:axis.clone().negate();
+          axisRecords.push({
+            axisUnitWorld:directed.toArray(),
+            signedGapMm:separating,
+            kind:axisInfo.kind,
+            featureIndex:axisInfo.featureIndex??null,
+            plugEdgeIndex:axisInfo.plugEdgeIndex??null,
+            driverEdgeIndex:axisInfo.driverEdgeIndex??null
+          });
+        }
         if(separating>bestSeparatingGap){
           bestSeparatingGap=separating;
           if(includeContactWitnesses){
@@ -5273,10 +5285,65 @@ export function createSelectricModel() {
         separatingGapMm:bestSeparatingGap,
         penetrationAxisMinimumMm:minimumPenetration,
         axesTested:axes.length};
-      if(includeContactWitnesses)result.candidateAxisWitness={
-        driverToothIndex,
-        modeledSignedGapMm:bestSeparatingGap,
-        ...bestWitnessAxis};
+      if(includeContactWitnesses){
+        const nearBestGapToleranceMm=0.0005;
+        const orientationUniqueTolerance=1e-5;
+        const supportPlaneToleranceMm=1e-7;
+        const competitiveAxes=axisRecords.filter(a=>
+          a.signedGapMm>=bestSeparatingGap-nearBestGapToleranceMm);
+        // Co-planar face axes and parallel edge-cross axes count only once
+        // for this *direction* analysis, but preserve origin multiplicity.
+        const distinctAxisClasses=[];
+        for(const entry of competitiveAxes){
+          const direction=new THREE.Vector3(...entry.axisUnitWorld);
+          let group=distinctAxisClasses.find(x=>
+            Math.abs(direction.dot(
+              new THREE.Vector3(...x.axisUnitWorld)))>=
+              1-orientationUniqueTolerance);
+          if(!group){
+            group={
+              axisUnitWorld:entry.axisUnitWorld,
+              signedGapMm:entry.signedGapMm,
+              kinds:[],
+              featureOrigins:0
+            };
+            distinctAxisClasses.push(group);
+          }
+          if(!group.kinds.includes(entry.kind))group.kinds.push(entry.kind);
+          group.featureOrigins++;
+          group.signedGapMm=Math.max(group.signedGapMm,entry.signedGapMm);
+        }
+        const n=new THREE.Vector3(...bestWitnessAxis.plugToDriverAxisUnitWorld);
+        const plugProjected=worldPlug.map(p=>p.dot(n));
+        const driverProjected=v.map(p=>p.dot(n));
+        const plugExtreme=Math.max(...plugProjected);
+        const driverExtreme=Math.min(...driverProjected);
+        const plugSupportVertexIndices=plugProjected.flatMap(
+          (x,i)=>plugExtreme-x<=supportPlaneToleranceMm?[i]:[]);
+        const driverSupportVertexIndices=driverProjected.flatMap(
+          (x,i)=>x-driverExtreme<=supportPlaneToleranceMm?[i]:[]);
+        result.candidateAxisWitness={
+          driverToothIndex,
+          modeledSignedGapMm:bestSeparatingGap,
+          ...bestWitnessAxis
+        };
+        result.supportPlaneTopology={
+          plugSupportVertexIndices,
+          driverSupportVertexIndices,
+          plugSupportDimensionUpperBound:
+            Math.min(2,plugSupportVertexIndices.length-1),
+          driverSupportDimensionUpperBound:
+            Math.min(2,driverSupportVertexIndices.length-1),
+          supportPlaneToleranceMm,
+          competingAxisGapToleranceMm:nearBestGapToleranceMm,
+          competitiveAxisCount:competitiveAxes.length,
+          distinctAxisDirections:distinctAxisClasses.length,
+          competingAxisClasses:distinctAxisClasses,
+          manifoldPolygonComputed:false,
+          uniquePhysicalNormalCertified:false,
+          forceClosureCertified:false
+        };
+      }
       return result;
     };
     const comparisons=[];
@@ -5350,6 +5417,59 @@ export function createSelectricModel() {
       factoryClutchGeometryCertified:false,
       fullAssemblyClearanceCertified:false,
       defaultPublicGeometryModified:false
+    };
+  }
+
+  // Sample candidate geometric feature changes either side of the
+  // P6 synthetic 1-degree / ~0.700-mm first-interference threshold.
+  // This is a support-plane/topology audit, NOT a contact manifold solver.
+  function platenFineClutchThresholdTopologyP6() {
+    if(!state.platenFineClutchP6)return {
+      active:false,uniquePhysicalNormalCertified:false
+    };
+    const positions=[
+      {phaseDegrees:1,pressMm:0.695},
+      {phaseDegrees:1,pressMm:0.699},
+      {phaseDegrees:1,pressMm:0.6999},
+      {phaseDegrees:1,pressMm:0.7001},
+      {phaseDegrees:1,pressMm:0.701},
+      {phaseDegrees:1,pressMm:0.705},
+      {phaseDegrees:0.5,pressMm:0.109},
+      {phaseDegrees:0.5,pressMm:0.110},
+      {phaseDegrees:1.5,pressMm:0.109},
+      {phaseDegrees:1.5,pressMm:0.110}
+    ];
+    const probes=positions.map(pose=>{
+      const solid=platenFineClutchSolidProbeP6(
+        pose.pressMm,pose.phaseDegrees*Math.PI/180,true);
+      const pairs=solid.satComparisons.map(pair=>({
+        driverToothIndex:pair.driverToothIndex,
+        intersects:pair.intersects,
+        separatingGapMm:pair.separatingGapMm,
+        axesTested:pair.axesTested,
+        axis:pair.candidateAxisWitness,
+        topology:pair.supportPlaneTopology
+      }));
+      const nearestPair=[...pairs].sort((a,b)=>
+        Math.abs(a.separatingGapMm)-Math.abs(b.separatingGapMm))[0];
+      return {...pose,actualConvexSolidContactPairs:
+        solid.actualConvexSolidContactPairs,
+        nearestPair,pairs};
+    });
+    return {
+      active:true,
+      mode:'P6 fixed-phase synthetic convex-body support-plane feature audit',
+      probes,readOnlyVirtualPoses:true,
+      sourceCalibratedToothProfile:false,
+      supportPlaneToleranceMm:1e-7,
+      competingAxisGapToleranceMm:0.0005,
+      uniquePhysicalNormalCertified:false,
+      realContactManifoldComputed:false,
+      dynamicNormalForceResolved:false,
+      springTorqueOrSelfSeatingSolved:false,
+      original721MaterialOrToleranceVerified:false,
+      platenOrRatchetAutomaticallyRotated:false,
+      publicDefaultModified:false
     };
   }
 
@@ -11725,6 +11845,7 @@ export function createSelectricModel() {
     setPlatenFineClutchP6,
     platenFineClutchSolidProbeP6,
     platenFineClutchContactWitnessesP6,
+    platenFineClutchThresholdTopologyP6,
     platenFineClutchBoundaryRefinementP6,
     platenFineClutchSeatingEnvelopeP6,
     platenFineClutchAngularCoverageP6,
