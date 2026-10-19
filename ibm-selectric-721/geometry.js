@@ -5157,7 +5157,7 @@ export function createSelectricModel() {
   // Exact convex-solid separation by SAT on actual 3D instanced wedge
   // vertices and all face normals + edge-cross-edge axes. No approximate
   // circular disk screen is used here. Source profile still experimental.
-  function platenFineClutchSolidProbeP6(strokeOverrideMm=null) {
+  function platenFineClutchSolidProbeP6(strokeOverrideMm=null, virtualPhaseOffsetRad=0) {
     const mech=platenVariableInternalsP5, fine=mech.fineClutchP6;
     if(!fine || !state.platenFineClutchP6)return {
       active:false,originalFactoryToothCountKnown:false,
@@ -5167,16 +5167,22 @@ export function createSelectricModel() {
     const press=strokeOverrideMm===null?current:Number(strokeOverrideMm);
     if(!Number.isFinite(press)||press<0||press>2)
       throw new Error('P6 inspection stroke outside hypothetical 0..2 mm');
+    if(!Number.isFinite(virtualPhaseOffsetRad))
+      throw new Error('P6 virtual phase offset must be finite');
     root.updateMatrixWorld(true);
     const instance=new THREE.Matrix4(),world=new THREE.Matrix4();
-    const getVertices=(mesh,verts,index,xAdjustment)=>{
+    // Apply a virtual platen rotation within the plug's local YZ frame.
+    // The rendered assembly and physical platen/ratchet state remain untouched.
+    const virtualPlugWorld=new THREE.Matrix4().multiplyMatrices(
+      fine.plug.matrixWorld,new THREE.Matrix4().makeRotationX(virtualPhaseOffsetRad));
+    const getVertices=(mesh,verts,index,xAdjustment,virtualPlug=false)=>{
       mesh.getMatrixAt(index,instance);
-      world.multiplyMatrices(mesh.matrixWorld,instance);
+      world.multiplyMatrices(virtualPlug?virtualPlugWorld:mesh.matrixWorld,instance);
       return verts.map(p=>new THREE.Vector3(...p).applyMatrix4(world)
         .add(new THREE.Vector3(xAdjustment,0,0)));
     };
-    const worldPlug=getVertices(fine.plug,fine.plugShape.verts,0,0);
-    const plugAngle=mech.plug.rotation.x;
+    const worldPlug=getVertices(fine.plug,fine.plugShape.verts,0,0,true);
+    const plugAngle=mech.plug.rotation.x+virtualPhaseOffsetRad;
     const driverAngle=ratchetGroup.rotation.x;
     const center=Math.round((plugAngle-driverAngle)/fine.pitch-0.5);
     const normalize=i=>(i%fine.count+fine.count)%fine.count;
@@ -5238,6 +5244,7 @@ export function createSelectricModel() {
         &&mech.driver.children.filter(
         x=>x.userData.platenVariableRoleP5==='driver-serration').every(x=>!x.visible),
       pressMm:press,actualPhysicalPressMm:current,
+      virtualPhaseOffsetRad,virtualPhaseOverrideOnly:true,
       toothPitchRad:fine.pitch,halfPitchRad:fine.pitch/2,
       relativePhaseRad:((plugAngle-driverAngle)%(Math.PI*2)+Math.PI*2)%(Math.PI*2),
       alignedCandidatePairCount:comparisons.length,
@@ -5249,7 +5256,45 @@ export function createSelectricModel() {
     };
   }
 
-  function platenVariableInternalsProbeP5() {
+  // Finite-resolution, read-only phase/stroke feasibility map for the real
+  // P6 convex wedge instances. It tests straight axial re-entry without
+  // rotating the platen, at 13 phases across one synthetic 2-degree pitch
+  // and 9 depths on the hypothetical 2-mm travel. This is NOT a compliant
+  // self-seating, spring/torque, tolerance or continuous-path simulation.
+  function platenFineClutchSeatingEnvelopeP6() {
+    const fine=platenVariableInternalsP5.fineClutchP6;
+    if(!fine || !state.platenFineClutchP6)return {
+      active:false,profileSourceCalibrated:false
+    };
+    const axialStrokesMm=Array.from({length:9},(_,i)=>2-i*0.25);
+    const phaseOffsetsRad=Array.from({length:13},(_,i)=>fine.pitch*i/12);
+    const phaseRows=phaseOffsetsRad.map(phaseOffsetRad=>{
+      const samples=axialStrokesMm.map(strokeMm=>{
+        const solid=platenFineClutchSolidProbeP6(strokeMm,phaseOffsetRad);
+        return {strokeMm,actualConvexSolidContactPairs:solid.actualConvexSolidContactPairs,
+          sampledSolidFree:solid.actualConvexSolidContactPairs===0};
+      });
+      const firstObstructed=samples.find(x=>!x.sampledSolidFree);
+      return {phaseOffsetRad,phaseOffsetDegrees:phaseOffsetRad*180/Math.PI,
+        samples,sampledStraightReleaseClear:samples.every(x=>x.sampledSolidFree),
+        sampledFullPressFree:samples[0].sampledSolidFree,
+        sampledRestFree:samples.at(-1).sampledSolidFree,
+        firstSampledObstructionStrokeMm:firstObstructed?.strokeMm??null};
+    });
+    return {active:true,mode:'P6 finite axial/phase solid-interference map',
+      phaseRows,phaseOffsetsRad,axialStrokesMm,
+      phaseSampleCount:phaseRows.length,axialSampleCount:axialStrokesMm.length,
+      totalSolidProbes:phaseRows.length*axialStrokesMm.length,
+      phasePitchRad:fine.pitch,nominalPlatenPressMm:state.leftKnobAxialPressP5Mm,
+      sourceCalibratedToothCount:false,profileSourceCalibrated:false,
+      hypotheticalGeometryOnly:true,virtualOnlyNoStateMutation:true,
+      sampledStraightReleaseOnly:true,continuousAxialPathCertified:false,
+      compliantLeadInSimulated:false,springTorqueAndFrictionSolved:false,
+      physicalClutchLockVerified:false,automaticAngularSnapIntroduced:false,
+      factoryMeshingCertified:false,defaultPublicGeometryModified:false};
+  }
+
+    function platenVariableInternalsProbeP5() {
     root.updateMatrixWorld(true);
     const mech=platenVariableInternalsP5;
     if (!mech.rod) return {
@@ -11357,6 +11402,7 @@ export function createSelectricModel() {
     platenVariableClutchSeatingProbeP5,
     setPlatenFineClutchP6,
     platenFineClutchSolidProbeP6,
+    platenFineClutchSeatingEnvelopeP6,
     platenClutchContactInspectionProbeP5,
     setPlatenClutchContactInspectionP5,
     setPlatenVariableInternalsInspectionP5,
