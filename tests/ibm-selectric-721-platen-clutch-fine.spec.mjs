@@ -172,3 +172,61 @@ test('P6 sampled axial seating map: phase sensitivity, released obstruction and 
     JSON.stringify({version:1,sourceCommit:process.env.GITHUB_SHA||null,
       noContinuousPathOrSelfSeatingClaim:true,...result},null,2)+'\n','utf8');
 });
+
+test('P6 all-ring conservative tooth-sector coverage prevents missed distant pairs',async({page})=>{
+  const errors=[];
+  page.on('pageerror',e=>errors.push(String(e)));
+  page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+  await page.goto('http://127.0.0.1:4173/ibm-selectric-721/?platenKnobCandidate=1&platenInternals=1&platenFineClutch=1',
+    {waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>Boolean(window.__selectricDebug?.state?.running),
+    null,{timeout:20000});
+  expect(await page.evaluate(()=>window.__selectricDebug.setPower(false))).toBe(true);
+  const result=await page.evaluate(()=>{
+    const d=window.__selectricDebug;
+    d.setExplosion(0);d.setServiceCover(0);d.setCopyControl(0);
+    const snapshot=()=>({
+      platenIndex:d.state.platenIndex,
+      platenPhysicalAngleRad:d.state.geometry.paperFeed.platenPhysicalAngleRad,
+      variableEngaged:d.state.platenVariableEngaged,
+      physicalAxialPressMm:d.state.leftKnobAxialPressP5Mm
+    });
+    const before=snapshot();
+    const scans=[0,0.5,1,1.5,2].map(degrees=>({
+      degrees,...d.platenFineClutchAngularCoverageP6(degrees*Math.PI/180)
+    }));
+    const after=snapshot();
+    let invalidPhaseRejected=false;
+    try{d.platenFineClutchAngularCoverageP6(Infinity);}
+    catch(e){invalidPhaseRejected=/virtual phase/.test(String(e));}
+    d.setPlatenFineClutchP6(false);
+    const disabled=d.platenFineClutchAngularCoverageP6();
+    d.setPlatenKnobCandidateP4(false);
+    return {before,after,scans,disabled,invalidPhaseRejected};
+  });
+  expect(result.before).toEqual(result.after);
+  expect(result.invalidPhaseRejected).toBe(true);
+  expect(result.disabled.active).toBe(false);
+  for(const sample of result.scans){
+    expect(sample.active).toBe(true);
+    expect(sample.inspectedPlugInstances).toBe(180);
+    expect(sample.inspectedDriverInstances).toBe(180);
+    expect(sample.allPairsAudited).toBe(32400);
+    expect(sample.concentricYZGapMm).toBeLessThan(1e-4);
+    expect(sample.ringRegularityVerified).toBe(true);
+    expect(sample.fiveNeighborCoverageVerified).toBe(true);
+    expect(sample.outsideFiveToothWindow).toBe(0);
+    expect(sample.angularOverlapPairs).toBe(sample.withinFiveToothWindow);
+    expect(sample.furthestCandidateIndexSteps).toBeLessThanOrEqual(2);
+    expect(sample.virtualOnlyNoStateMutation).toBe(true);
+    for(const k of ['actualFullRingSolidSatPerformed',
+      'fullAssemblyClearanceCertified','originalFactoryToothCountVerified',
+      'springDrivenSeatingProven','publicDefaultModified'])
+      expect(sample[k]).toBe(false);
+  }
+  expect(result.scans[2].angularOverlapPairs).toBeGreaterThan(0);
+  expect(errors).toEqual([]);
+  await writeFile('test-results/selectric-p6-whole-ring-angular-coverage.json',
+    JSON.stringify({version:1,sourceCommit:process.env.GITHUB_SHA||null,
+      sourceCalibratedToothCount:false,...result},null,2)+'\n','utf8');
+});
