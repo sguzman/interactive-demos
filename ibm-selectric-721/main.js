@@ -993,6 +993,11 @@ function snapshot() {
     copyControlSetting: model.state.copyControlSetting,
     copyControlOffsetZ: model.state.copyControlOffsetZ,
     platenVariableEngaged: model.state.platenVariableEngaged,
+    // Expose real opt-in mechanism state. QA must not compare undefined
+    // snapshot fields and mistake missing observations for immutability.
+    platenKnobCandidateP4: model.state.platenKnobCandidateP4,
+    platenFineClutchP6: model.state.platenFineClutchP6,
+    leftKnobAxialPressP5Mm: model.state.leftKnobAxialPressP5Mm,
     geometry: model.geometryDiagnostics(),
     rendering: {
       shadowMapType: 'PCFSoftShadowMap',
