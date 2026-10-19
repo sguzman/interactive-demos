@@ -4768,9 +4768,6 @@ export function createSelectricModel() {
     spring.position.x=-0.6;
     ratchetGroup.add(tag(spring,'variable-compression-spring'));
 
-    platenVariableInternalsP5.freePlaySeat=freePlaySeat;
-    platenVariableInternalsP5.freePlayCollar=freePlayCollar;
-    platenVariableInternalsP5.freePlaySpring=freePlaySpring;
     // IBM 1966 p.59 separately specifies a LIGHT compression spring that
     // holds the sliding knob shaft toward +X (right), preventing axial free
     // play. Distinct from the heavy variable-driver engagement spring.
@@ -4819,6 +4816,12 @@ export function createSelectricModel() {
     freePlaySpring.name='P5 independent left shaft free-play compression spring';
     freePlaySpring.position.x=-140;
     plug.add(tag(freePlaySpring,'free-play-compression-spring'));
+
+    // Assign only AFTER const initialization: otherwise experimental URL
+    // startup throws a TDZ ReferenceError before debug state is available.
+    platenVariableInternalsP5.freePlaySeat=freePlaySeat;
+    platenVariableInternalsP5.freePlayCollar=freePlayCollar;
+    platenVariableInternalsP5.freePlaySpring=freePlaySpring;
 
     platenVariableInternalsP5.rod=rod;
     platenVariableInternalsP5.plug=plug;
