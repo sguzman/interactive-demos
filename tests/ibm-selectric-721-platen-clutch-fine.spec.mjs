@@ -649,3 +649,109 @@ test('P6 opposing face projections form a finite candidate footprint at numerica
     JSON.stringify({version:1,sourceCommit:process.env.GITHUB_SHA||null,
       projectedFootprintNotActualForceOrDeformation:true,...result},null,2)+'\n','utf8');
 });
+
+test('P6 linearized unilateral clearance rates distinguish axial and angular geometry',async({page})=>{
+  const errors=[];
+  page.on('pageerror',e=>errors.push(String(e)));
+  page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+  await page.goto('http://127.0.0.1:4173/ibm-selectric-721/?platenKnobCandidate=1&platenInternals=1&platenFineClutch=1',
+    {waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>Boolean(window.__selectricDebug?.state?.running),
+    null,{timeout:20000});
+  expect(await page.evaluate(()=>window.__selectricDebug.setPower(false))).toBe(true);
+  const result=await page.evaluate(()=>{
+    const d=window.__selectricDebug;
+    d.setExplosion(0);d.setServiceCover(0);d.setCopyControl(0);
+    const snapshot=()=>{
+      const s=d.state,m=d.platenVariableInternalsProbeP5();
+      return {platenIndex:s.platenIndex,
+        platenPhysicalAngleRad:s.geometry.paperFeed.platenPhysicalAngleRad,
+        knobCandidateSelected:s.platenKnobCandidateP4,
+        fineClutchSelected:s.platenFineClutchP6,
+        physicalAxialPressMm:s.leftKnobAxialPressP5Mm,
+        platenPlugRotationRad:m.platenRotationRadP5,
+        ratchetRotationRad:m.ratchetRotationRadP5,
+        variableDriverLocalXmm:m.driverLocalXmmP5};
+    };
+    const before=snapshot();
+    const audit=d.platenFineClutchLinearizedClearanceP6();
+    const after=snapshot();
+    const centerRechecks=audit.cases.map(c=>{
+      const original=d.platenFineClutchSolidProbeP6(
+        c.pressMm,c.phaseDegrees*Math.PI/180);
+      return {phaseDegrees:c.phaseDegrees,pressMm:c.pressMm,
+        gapMm:original.satComparisons.find(
+          x=>x.driverToothIndex===c.driverToothIndex).separatingGapMm};
+    });
+    d.setPlatenFineClutchP6(false);
+    const disabled=d.platenFineClutchLinearizedClearanceP6();
+    d.setPlatenKnobCandidateP4(false);
+    return {before,after,audit,centerRechecks,disabled};
+  });
+  expect(result.before).toEqual(result.after);
+  expect(result.before.fineClutchSelected).toBe(true);
+  expect(result.disabled.active).toBe(false);
+  const {audit}=result;
+  expect(audit.active).toBe(true);
+  expect(audit.cases).toHaveLength(3);
+  expect(audit.solidProbeCount).toBe(15);
+  expect(audit.axialStepMm).toBeCloseTo(0.00001,12);
+  expect(audit.phaseStepDeg).toBeCloseTo(0.0001,12);
+  expect(audit.cases.map(c=>c.phaseDegrees)).toEqual([1,0.5,1.5]);
+  for(const [index,c] of audit.cases.entries()){
+    expect(Number.isFinite(c.gapMm)).toBe(true);
+    expect(c.gapMm).toBe(result.centerRechecks[index].gapMm);
+    expect(c.driverToothIndex).toBe(0);
+    expect(c.axialOnlyGapRateMmPerUnit).toBeCloseTo(
+      c.axial.symmetric*c.hypotheticalReleaseRateMmPerUnit,9);
+    expect(c.axialOnlyApproachesContact).toBe(
+      c.axialOnlyGapRateMmPerUnit<0);
+    for(const d of [c.axial,c.phase]){
+      for(const name of ['negativeSide','positiveSide',
+        'symmetric','sideDifference'])
+        expect(Number.isFinite(d[name])).toBe(true);
+      expect(d.symmetric).toBeCloseTo(
+        (d.negativeSide+d.positiveSide)/2,9);
+      expect(d.sideDifference).toBeCloseTo(
+        Math.abs(d.negativeSide-d.positiveSide),9);
+      expect(d.sideDifference).toBeGreaterThanOrEqual(0);
+    }
+    expect(c.derivativeStable).toBe(
+      c.axial.sideDifference<=0.01 &&
+      c.phase.sideDifference<=0.01);
+    expect(c.nonSmoothContactMayInvalidateFirstOrderModel)
+      .toBe(!c.derivativeStable);
+    expect(c.angularCanOffsetLinearRelease).toBe(
+      c.derivativeStable&&Math.abs(c.phase.symmetric)>=1e-4);
+    if(c.angularCanOffsetLinearRelease){
+      expect(c.requiredAngularRateDegPerUnit).toBeCloseTo(
+        Math.max(0,-c.axialOnlyGapRateMmPerUnit)/
+        Math.abs(c.phase.symmetric),6);
+      expect(c.angularRateDirectionToOpen).toBe(
+        Math.sign(c.phase.symmetric));
+    }else{
+      expect(c.requiredAngularRateDegPerUnit).toBeNull();
+      expect(c.angularRateDirectionToOpen).toBeNull();
+    }
+    expect(c.neitherSpringRateNorFrictionSpecified).toBe(true);
+    expect(c.actualPartOrContactNormalCertified).toBe(false);
+    expect(c.feasibleForceEquilibriumSolved).toBe(false);
+  }
+  expect(audit.cases[0].gapMm).toBeGreaterThan(-1e-6);
+  expect(audit.cases[0].gapMm).toBeLessThan(1e-6);
+  expect(audit.cases[0].axial.symmetric).toBeCloseTo(1,3);
+  expect(audit.cases[0].axialOnlyApproachesContact).toBe(true);
+  expect(audit.cases[1].axialOnlyApproachesContact).toBe(true);
+  expect(audit.cases[2].axialOnlyApproachesContact).toBe(true);
+  for(const flag of ['noTimeScaleOrAppliedLoad',
+    'noSpringForceOrFrictionOrTorque','noContactForceComplementaritySolved',
+    'noContinuousMotionOrSelfSeatingSolved','publicDefaultModified'])
+    expect(audit[flag]).toBe(flag==='publicDefaultModified'?false:true);
+  expect(audit.candidateToothCountNotFactoryVerified).toBe(true);
+  expect(audit.conditionalLinearizationOnly).toBe(true);
+  expect(audit.physicalPlatenRatchetUnchanged).toBe(true);
+  expect(errors).toEqual([]);
+  await writeFile('test-results/selectric-p6-linearized-clearance-rates.json',
+    JSON.stringify({version:1,sourceCommit:process.env.GITHUB_SHA||null,
+      notAnAppliedForceOrTimeIntegratedTrajectory:true,...result},null,2)+'\n','utf8');
+});
