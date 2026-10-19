@@ -635,9 +635,13 @@ ordinary default is not affected. The dedicated Chromium test verifies
 actual colored tooth identities, state-dependent warning, and restoring
 the original material references.
 
-**Source correction:** R. D. Mathews's 1968 IBM paper describes ordinary
-Selectric **0.025-inch paper adjustment capability**, without explicitly
-saying this is the angular pitch of individual clutch serrations. The
-conditional ~180 increments from the *synthetic* model platen radius
-must therefore not be used as a verified OEM tooth count or a reason
-to replace the P5 twelve-tooth proxies with 180 manufactured teeth.
+**IBM source reconciliation:** Mathews's 1968 paper introduces the ordinary
+Selectric's **0.025-inch paper adjustment**, and on printed **page 83**
+under **Platen variable** explicitly states that the increment indexed
+**between serrations** is 0.025 inch. This establishes a genuine
+serration-indexed **paper-travel** increment, not factory tooth count or
+actual physical tooth profile for any identified 1961 Model 721.
+Our synthetic 18.1864-mm platen radius would imply approximately 180
+positions per revolution under the original paper-increment interpretation,
+but genuine production radius, matching part level and tooth count
+remain to be independently verified. Neither 180 nor 12 is promoted.
