@@ -5157,7 +5157,7 @@ export function createSelectricModel() {
   // Exact convex-solid separation by SAT on actual 3D instanced wedge
   // vertices and all face normals + edge-cross-edge axes. No approximate
   // circular disk screen is used here. Source profile still experimental.
-  function platenFineClutchSolidProbeP6(strokeOverrideMm=null, virtualPhaseOffsetRad=0, includeContactWitnesses=false) {
+  function platenFineClutchSolidProbeP6(strokeOverrideMm=null, virtualPhaseOffsetRad=0, includeContactWitnesses=false, plugToothIndex=0) {
     const mech=platenVariableInternalsP5, fine=mech.fineClutchP6;
     if(!fine || !state.platenFineClutchP6)return {
       active:false,originalFactoryToothCountKnown:false,
@@ -5169,6 +5169,9 @@ export function createSelectricModel() {
       throw new Error('P6 inspection stroke outside hypothetical 0..2 mm');
     if(!Number.isFinite(virtualPhaseOffsetRad))
       throw new Error('P6 virtual phase offset must be finite');
+    if(!Number.isInteger(plugToothIndex)||plugToothIndex<0||
+       plugToothIndex>=fine.count)
+      throw new Error('P6 requested plug tooth index outside candidate ring');
     root.updateMatrixWorld(true);
     const instance=new THREE.Matrix4(),world=new THREE.Matrix4();
     // Apply a virtual platen rotation within the plug's local YZ frame.
@@ -5181,11 +5184,12 @@ export function createSelectricModel() {
       return verts.map(p=>new THREE.Vector3(...p).applyMatrix4(world)
         .add(new THREE.Vector3(xAdjustment,0,0)));
     };
-    const worldPlug=getVertices(fine.plug,fine.plugShape.verts,0,0,true);
+    const worldPlug=getVertices(fine.plug,fine.plugShape.verts,plugToothIndex,0,true);
     const plugAngle=mech.plug.rotation.x+virtualPhaseOffsetRad;
     const driverAngle=ratchetGroup.rotation.x;
-    const center=Math.round((plugAngle-driverAngle)/fine.pitch-0.5);
     const normalize=i=>(i%fine.count+fine.count)%fine.count;
+    const center=normalize(plugToothIndex+
+      Math.round((plugAngle-driverAngle)/fine.pitch-0.5));
     const axesFrom=(v,side)=>{
       const axes=[];
       for(let featureIndex=0;featureIndex<fine.faces.length;featureIndex++){
@@ -5460,6 +5464,7 @@ export function createSelectricModel() {
       factoryMeshingCertified:false,defaultPublicGeometryModified:false,
       sourceP5TwelveToothControlPreserved:true,
       candidateToothCountPerFace:fine.count,
+      plugToothIndex,
       candidateTotalInstances:fine.count*2,
       plugInstanceCount:fine.plug.count,driverInstanceCount:fine.driver.count,
       originalP5ToothMeshesHidden:mech.plug.children.filter(
@@ -5514,6 +5519,86 @@ export function createSelectricModel() {
       automaticAngularSnapIntroduced:false,
       factoryClutchGeometryCertified:false,
       fullAssemblyClearanceCertified:false,
+      defaultPublicGeometryModified:false
+    };
+  }
+
+  // Evaluate the actual 180-member P6 plug ring; a one-tooth SAT result
+  // cannot establish simultaneous global no-penetration. Each plug instance
+  // is transformed independently and checked against its OWN five closest
+  // driver instances using the original convex 3D SAT.
+  function platenFineClutchAllToothConstraintsP6() {
+    const fine=platenVariableInternalsP5.fineClutchP6;
+    if(!fine||!state.platenFineClutchP6)return {
+      active:false,original721GeometryAuthenticated:false
+    };
+    const positions=[
+      {phaseDegrees:1,pressMm:0.699996996,
+        label:'near-coplanar axial face boundary'},
+      {phaseDegrees:0.5,pressMm:0.10961,
+        label:'left synthetic flank near edge'},
+      {phaseDegrees:1.5,pressMm:0.10961,
+        label:'right synthetic flank near edge'},
+      {phaseDegrees:1,pressMm:0.75,
+        label:'disengaged clearance control'}
+    ];
+    let solidProbeCount=0;
+    const samples=positions.map(pose=>{
+      const gaps=[],counts=[],candidateIndices=[];
+      const actualVirtualPhase=pose.phaseDegrees*Math.PI/180;
+      for(let plugToothIndex=0;plugToothIndex<fine.count;plugToothIndex++){
+        const probe=platenFineClutchSolidProbeP6(
+          pose.pressMm,actualVirtualPhase,false,plugToothIndex);
+        solidProbeCount++;
+        counts.push(probe.actualConvexSolidContactPairs);
+        const nearest=[...probe.satComparisons].sort((a,b)=>
+          Math.abs(a.separatingGapMm)-Math.abs(b.separatingGapMm))[0];
+        gaps.push(nearest.separatingGapMm);
+        candidateIndices.push(nearest.driverToothIndex);
+      }
+      const extremalGaps={minimum:Math.min(...gaps),
+        maximum:Math.max(...gaps)};
+      const nearZeroGapToleranceMm=1e-7;
+      const simultaneouslyActiveCount=gaps.filter(
+        x=>Math.abs(x)<=nearZeroGapToleranceMm).length;
+      const penetratingToothCount=counts.filter(x=>x>0).length;
+      const samplesToInspect=[0,45,90,135,179].map(plugToothIndex=>{
+        const witness=platenFineClutchSolidProbeP6(
+          pose.pressMm,actualVirtualPhase,true,plugToothIndex);
+        const closest=[...witness.satComparisons].sort((a,b)=>
+          Math.abs(a.separatingGapMm)-Math.abs(b.separatingGapMm))[0];
+        return {plugToothIndex,
+          driverToothIndex:closest.driverToothIndex,
+          signedGapMm:closest.separatingGapMm,
+          axis:closest.candidateAxisWitness,
+          competingAxisDirections:
+            closest.supportPlaneTopology.distinctAxisDirections};
+      });
+      solidProbeCount+=samplesToInspect.length;
+      return {...pose,plugToothCount:fine.count,
+        individualNearestSignedGapsMm:gaps,
+        individualSolidContactPairCounts:counts,
+        individualNearestDriverToothIndices:candidateIndices,
+        extremalGaps,spreadMm:extremalGaps.maximum-extremalGaps.minimum,
+        nearZeroGapToleranceMm,simultaneouslyActiveCount,
+        penetratingToothCount,samplesToInspect,
+        fullCircleActuallySampled:true,
+        wholeAssemblyCollisionCertified:false};
+    });
+    return {
+      active:true,mode:'P6 all 180 synthetic plug instances actual convex SAT',
+      samples,solidProbeCount,
+      plugToothCount:fine.count,nearbyDriversPerTooth:5,
+      candidateInstancePairTests:positions.length*fine.count*5,
+      fixedRatchetCaseDefined:true,
+      rotatableRelativePlatenOnlyConditional:true,
+      driverBackdriveFromIBMSourceUnknown:true,
+      simultaneousContactConstraintSolutionComputed:false,
+      forceEquilibriumOrContactMultipliersSolved:false,
+      frictionOrSpringStiffnessSpecified:false,
+      completeContinuousMotionCertified:false,
+      physicalPlatenRatchetUnchanged:true,
+      original721ToothProfileAuthenticated:false,
       defaultPublicGeometryModified:false
     };
   }
@@ -12046,6 +12131,7 @@ export function createSelectricModel() {
     platenFineClutchContactWitnessesP6,
     platenFineClutchThresholdTopologyP6,
     platenFineClutchLinearizedClearanceP6,
+    platenFineClutchAllToothConstraintsP6,
     platenFineClutchBoundaryRefinementP6,
     platenFineClutchSeatingEnvelopeP6,
     platenFineClutchAngularCoverageP6,
