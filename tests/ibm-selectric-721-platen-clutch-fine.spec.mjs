@@ -554,3 +554,98 @@ test('P6 near-threshold support planes expose competing SAT axes without snappin
     JSON.stringify({version:1,sourceCommit:process.env.GITHUB_SHA||null,
       finiteDiscretePosesOnly:true,notAUniqueNormalOrForceSolution:true,...result},null,2)+'\n','utf8');
 });
+
+test('P6 opposing face projections form a finite candidate footprint at numerical coincidence',async({page})=>{
+  const errors=[];
+  page.on('pageerror',e=>errors.push(String(e)));
+  page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+  await page.goto('http://127.0.0.1:4173/ibm-selectric-721/?platenKnobCandidate=1&platenInternals=1&platenFineClutch=1',
+    {waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>Boolean(window.__selectricDebug?.state?.running),
+    null,{timeout:20000});
+  expect(await page.evaluate(()=>window.__selectricDebug.setPower(false))).toBe(true);
+  const result=await page.evaluate(()=>{
+    const d=window.__selectricDebug;
+    d.setExplosion(0);d.setServiceCover(0);d.setCopyControl(0);
+    const snapshot=()=>{
+      const s=d.state,m=d.platenVariableInternalsProbeP5();
+      return {platenIndex:s.platenIndex,
+        platenPhysicalAngleRad:s.geometry.paperFeed.platenPhysicalAngleRad,
+        knobCandidateSelected:s.platenKnobCandidateP4,
+        fineClutchSelected:s.platenFineClutchP6,
+        physicalAxialPressMm:s.leftKnobAxialPressP5Mm,
+        platenPlugRotationRad:m.platenRotationRadP5,
+        ratchetRotationRad:m.ratchetRotationRadP5,
+        variableDriverLocalXmm:m.driverLocalXmmP5};
+    };
+    const before=snapshot();
+    const strokes=[0.6999,0.699996996,0.7001];
+    const faces=strokes.map(pressMm=>{
+      const solid=d.platenFineClutchSolidProbeP6(pressMm,Math.PI/180,true);
+      const pair=solid.satComparisons.find(x=>x.driverToothIndex===0);
+      return {pressMm,pair,contactCount:solid.actualConvexSolidContactPairs,
+        plainGaps:d.platenFineClutchSolidProbeP6(
+          pressMm,Math.PI/180).satComparisons.map(x=>x.separatingGapMm),
+        witnessedGaps:solid.satComparisons.map(x=>x.separatingGapMm)};
+    });
+    const edgeSolid=d.platenFineClutchSolidProbeP6(
+      0.109,0.5*Math.PI/180,true);
+    const edgePair=edgeSolid.satComparisons.find(x=>x.driverToothIndex===0);
+    const after=snapshot();
+    d.setPlatenFineClutchP6(false);
+    const disabled=d.platenFineClutchSolidProbeP6(0,0,true);
+    d.setPlatenKnobCandidateP4(false);
+    return {before,after,faces,edgePair,disabled};
+  });
+  expect(result.before).toEqual(result.after);
+  expect(result.before.fineClutchSelected).toBe(true);
+  expect(result.disabled.active).toBe(false);
+  const area=polygon=>{
+    let n=0;
+    for(let i=0;i<polygon.length;i++){
+      const p=polygon[i],q=polygon[(i+1)%polygon.length];
+      n+=p[0]*q[1]-p[1]*q[0];
+    }
+    return Math.abs(n)/2;
+  };
+  expect(result.faces[0].contactCount).toBeGreaterThan(0);
+  expect(result.faces[2].contactCount).toBe(0);
+  for(const pose of result.faces){
+    expect(pose.plainGaps).toEqual(pose.witnessedGaps);
+    const pair=pose.pair,t=pair.supportPlaneTopology,
+      patch=t.projectedFaceFootprint;
+    expect(t.plugSupportVertexIndices.length).toBe(4);
+    expect(t.driverSupportVertexIndices.length).toBe(4);
+    expect(patch.computed).toBe(true);
+    expect(patch.physicalContactPatchCertified).toBe(false);
+    expect(patch.noForceOrPressureDistribution).toBe(true);
+    expect(patch.nonzeroPenetrationNotPhysicalContact).toBe(true);
+    expect(patch.plugPolygon).toHaveLength(4);
+    expect(patch.driverPolygon).toHaveLength(4);
+    expect(patch.overlapPolygon.length).toBeGreaterThanOrEqual(3);
+    expect(patch.plugPolygonAreaMm2).toBeGreaterThan(0);
+    expect(patch.driverPolygonAreaMm2).toBeGreaterThan(0);
+    expect(patch.overlapAreaMm2).toBeGreaterThan(0);
+    expect(patch.overlapAreaMm2).toBeLessThanOrEqual(
+      Math.min(patch.plugPolygonAreaMm2,patch.driverPolygonAreaMm2)+1e-8);
+    expect(area(patch.plugPolygon)).toBeCloseTo(patch.plugPolygonAreaMm2,8);
+    expect(area(patch.driverPolygon)).toBeCloseTo(patch.driverPolygonAreaMm2,8);
+    expect(area(patch.overlapPolygon)).toBeCloseTo(patch.overlapAreaMm2,8);
+    expect(patch.signedPlaneGapMm).toBeCloseTo(pair.separatingGapMm,9);
+  }
+  expect(result.faces[0].pair.supportPlaneTopology
+    .projectedFaceFootprint.candidateCoincidentFacePatch).toBe(false);
+  const near=result.faces[1].pair.supportPlaneTopology.projectedFaceFootprint;
+  expect(near.candidateCoincidentFacePatch).toBe(true);
+  expect(Math.abs(near.signedPlaneGapMm)).toBeLessThan(1e-6);
+  expect(result.faces[2].pair.supportPlaneTopology
+    .projectedFaceFootprint.candidateCoincidentFacePatch).toBe(false);
+  expect(result.edgePair.supportPlaneTopology
+    .projectedFaceFootprint.computed).toBe(false);
+  expect(result.edgePair.supportPlaneTopology
+    .projectedFaceFootprint.physicalContactPatchCertified).toBe(false);
+  expect(errors).toEqual([]);
+  await writeFile('test-results/selectric-p6-face-projected-overlap.json',
+    JSON.stringify({version:1,sourceCommit:process.env.GITHUB_SHA||null,
+      projectedFootprintNotActualForceOrDeformation:true,...result},null,2)+'\n','utf8');
+});
