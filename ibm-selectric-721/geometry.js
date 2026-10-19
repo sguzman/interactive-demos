@@ -5256,6 +5256,104 @@ export function createSelectricModel() {
     };
   }
 
+  // Localize observed contact-state transitions with bounded bisection
+  // around a fixed deterministic grid. Each decision is the real P6 3D
+  // convex-solid SAT, not a projected 2D disk estimate or angular snap.
+  // Multiple transitions are retained; monotonicity is never presumed.
+  // Brackets are numerically refined but intervals between grid points are
+  // NOT exhaustively certified against arbitrarily narrow missed contacts.
+  function platenFineClutchBoundaryRefinementP6() {
+    const fine=platenVariableInternalsP5.fineClutchP6;
+    if(!fine || !state.platenFineClutchP6)return {
+      active:false,profileSourceCalibrated:false
+    };
+    const phasePitchDegrees=fine.pitch*180/Math.PI;
+    const phaseStepDegrees=phasePitchDegrees/48;
+    const pressStepMm=0.1;
+    const phaseToleranceDegrees=1e-4;
+    const axialToleranceMm=1e-4;
+    let actualSolidProbeCalls=0;
+    const blocked=(pressMm,phaseDegrees)=>{
+      actualSolidProbeCalls++;
+      return platenFineClutchSolidProbeP6(
+        pressMm,phaseDegrees*Math.PI/180).actualConvexSolidContactPairs>0;
+    };
+    const refine=(samples,inspect,tolerance)=>{
+      const boundaries=[];
+      for(let i=0;i<samples.length-1;i++){
+        const first=samples[i],second=samples[i+1];
+        if(first.blocked===second.blocked)continue;
+        let lower=Math.min(first.coordinate,second.coordinate);
+        let upper=Math.max(first.coordinate,second.coordinate);
+        const lowerBlocked=first.coordinate<second.coordinate?
+          first.blocked:second.blocked;
+        const upperBlocked=!lowerBlocked;
+        let refinementIterations=0;
+        while(upper-lower>tolerance && refinementIterations<24){
+          const midpoint=(lower+upper)/2;
+          if(inspect(midpoint)===lowerBlocked)lower=midpoint;
+          else upper=midpoint;
+          refinementIterations++;
+        }
+        boundaries.push({
+          lower,upper,width:upper-lower,
+          lowerBlocked,upperBlocked,refinementIterations,
+          gridIntervalLower:Math.min(first.coordinate,second.coordinate),
+          gridIntervalUpper:Math.max(first.coordinate,second.coordinate)
+        });
+      }
+      return boundaries;
+    };
+    const atPressMm=[0,0.25,0.5,0.75].map(pressMm=>{
+      const samples=Array.from({length:49},(_,i)=>{
+        const coordinate=i*phaseStepDegrees;
+        return {coordinate,blocked:blocked(pressMm,coordinate)};
+      });
+      return {
+        pressMm,phaseDegreesRange:[0,phasePitchDegrees],
+        samples,
+        boundaries:refine(samples,d=>blocked(pressMm,d),
+          phaseToleranceDegrees),
+        gridBlockedCount:samples.filter(x=>x.blocked).length
+      };
+    });
+    const atPhaseDegrees=[0,0.5,1,1.5,2].map(phaseDegrees=>{
+      const samples=Array.from({length:21},(_,i)=>{
+        const coordinate=2-i*pressStepMm;
+        return {coordinate,blocked:blocked(coordinate,phaseDegrees)};
+      });
+      return {
+        phaseDegrees,axialPressMmRange:[2,0],samples,
+        boundaries:refine(samples,s=>blocked(s,phaseDegrees),
+          axialToleranceMm),
+        gridBlockedCount:samples.filter(x=>x.blocked).length
+      };
+    });
+    return {
+      active:true,mode:'P6 discrete-grid SAT transition brackets',
+      atPressMm,atPhaseDegrees,
+      actualSolidProbeCalls,
+      sampledPhaseGridNodes:49,sampledAxialGridNodes:21,
+      phaseToleranceDegrees,axialToleranceMm,
+      rootPhasePitchDegrees:phasePitchDegrees,
+      phaseBoundaryCount:atPressMm.reduce(
+        (n,row)=>n+row.boundaries.length,0),
+      axialBoundaryCount:atPhaseDegrees.reduce(
+        (n,row)=>n+row.boundaries.length,0),
+      virtualOnlyNoStateMutation:true,
+      usesActualConvexSolidSat:true,
+      bracketEndpointsOppositeStates:true,
+      finiteGridOnly:true,
+      allContactComponentsDetected:false,
+      continuousPhaseAxialPathCertified:false,
+      contactNormalForceCalibrated:false,
+      compliantSelfSeatingSimulated:false,
+      physicalClutchLockVerified:false,
+      factorySerrationGeometryCertified:false,
+      publicDefaultModified:false
+    };
+  }
+
   // Finite-resolution, read-only phase/stroke feasibility map for the real
   // P6 convex wedge instances. It tests straight axial re-entry without
   // rotating the platen, at 13 phases across one synthetic 2-degree pitch
@@ -11529,6 +11627,7 @@ export function createSelectricModel() {
     platenVariableClutchSeatingProbeP5,
     setPlatenFineClutchP6,
     platenFineClutchSolidProbeP6,
+    platenFineClutchBoundaryRefinementP6,
     platenFineClutchSeatingEnvelopeP6,
     platenFineClutchAngularCoverageP6,
     platenClutchContactInspectionProbeP5,
