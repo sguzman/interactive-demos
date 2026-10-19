@@ -318,3 +318,97 @@ test('P6 actual-solid angular and axial contact transition brackets are reversib
     JSON.stringify({version:1,sourceCommit:process.env.GITHUB_SHA||null,
       noContinuousSweepOrSpringSelfSeatingClaim:true,...result},null,2)+'\n','utf8');
 });
+
+test('P6 actual mesh SAT support witnesses report axes and signed gaps without state mutation',async({page})=>{
+  const errors=[];
+  page.on('pageerror',e=>errors.push(String(e)));
+  page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+  await page.goto('http://127.0.0.1:4173/ibm-selectric-721/?platenKnobCandidate=1&platenInternals=1&platenFineClutch=1',
+    {waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>Boolean(window.__selectricDebug?.state?.running),
+    null,{timeout:20000});
+  expect(await page.evaluate(()=>window.__selectricDebug.setPower(false))).toBe(true);
+  const result=await page.evaluate(()=>{
+    const d=window.__selectricDebug;
+    d.setExplosion(0);d.setServiceCover(0);d.setCopyControl(0);
+    const snapshot=()=>({
+      platenIndex:d.state.platenIndex,
+      platenPhysicalAngleRad:d.state.geometry.paperFeed.platenPhysicalAngleRad,
+      variableEngaged:d.state.platenVariableEngaged,
+      physicalAxialPressMm:d.state.leftKnobAxialPressP5Mm,
+      fineClutchSelected:d.state.platenFineClutchP6
+    });
+    const before=snapshot();
+    const audit=d.platenFineClutchContactWitnessesP6();
+    const after=snapshot();
+    const basic=d.platenFineClutchSolidProbeP6(0,Math.PI/180);
+    const detailed=d.platenFineClutchSolidProbeP6(0,Math.PI/180,true);
+    d.setPlatenFineClutchP6(false);
+    const disabled=d.platenFineClutchContactWitnessesP6();
+    d.setPlatenKnobCandidateP4(false);
+    return {before,after,audit,basic,detailed,disabled};
+  });
+  expect(result.before).toEqual(result.after);
+  expect(result.disabled.active).toBe(false);
+  expect(result.audit.active).toBe(true);
+  expect(result.audit.probes).toHaveLength(6);
+  expect(result.basic.contactWitnessesRequested).toBe(false);
+  expect(result.detailed.contactWitnessesRequested).toBe(true);
+  expect(result.basic.actualConvexSolidContactPairs)
+    .toBe(result.detailed.actualConvexSolidContactPairs);
+  expect(result.basic.satComparisons.map(x=>x.separatingGapMm))
+    .toEqual(result.detailed.satComparisons.map(x=>x.separatingGapMm));
+  expect(result.audit.probes[0].actualConvexSolidContactPairs).toBe(0);
+  expect(result.audit.probes[1].actualConvexSolidContactPairs).toBeGreaterThan(0);
+  expect(result.audit.probes[2].actualConvexSolidContactPairs).toBeGreaterThan(0);
+  expect(result.audit.probes[3].actualConvexSolidContactPairs).toBeGreaterThan(0);
+  expect(result.audit.probes[4].actualConvexSolidContactPairs).toBe(0);
+  expect(result.audit.probes[5].actualConvexSolidContactPairs).toBeGreaterThan(0);
+  for(const sample of result.audit.probes){
+    expect(sample.comparisons).toHaveLength(5);
+    for(const pair of sample.comparisons){
+      expect(pair.axesTested).toBeGreaterThanOrEqual(12);
+      const w=pair.candidateAxisWitness;
+      expect(w.driverToothIndex).toBe(pair.driverToothIndex);
+      expect(['plug-face','driver-face','edge-cross']).toContain(w.axisKind);
+      expect(w.candidateNormalOnly).toBe(true);
+      expect(w.actualContactNormalCertified).toBe(false);
+      expect(w.meshSupportNotActualClosestPoint).toBe(true);
+      const n=w.plugToDriverAxisUnitWorld;
+      expect(n).toHaveLength(3);
+      const length=Math.hypot(...n);
+      expect(length).toBeCloseTo(1,7);
+      for(const p of [w.plugSupportWorldMm,w.driverSupportWorldMm]){
+        expect(p).toHaveLength(3);
+        expect(p.every(Number.isFinite)).toBe(true);
+      }
+      const dot=n.reduce((sum,v,i)=>sum+
+        v*(w.driverSupportWorldMm[i]-w.plugSupportWorldMm[i]),0);
+      expect(dot).toBeCloseTo(w.signedProjectedGapMm,7);
+      expect(dot).toBeCloseTo(pair.separatingGapMm,7);
+      expect(w.modeledSignedGapMm).toBeCloseTo(pair.separatingGapMm,7);
+      expect(w.axialNormalComponent).toBeCloseTo(n[0],7);
+      expect(Math.abs(w.tangentialNormalComponent)).toBeLessThanOrEqual(1.0000001);
+      expect(Math.abs(w.radialNormalComponent)).toBeLessThanOrEqual(1.0000001);
+      expect(Math.hypot(w.axialNormalComponent,
+        w.tangentialNormalComponent,w.radialNormalComponent)).toBeCloseTo(1,6);
+      if(w.axisKind==='edge-cross'){
+        expect(w.plugEdgeIndex).toBeGreaterThanOrEqual(0);
+        expect(w.driverEdgeIndex).toBeGreaterThanOrEqual(0);
+      }else{
+        expect(w.featureIndex).toBeGreaterThanOrEqual(0);
+      }
+    }
+  }
+  for(const field of ['sourceCalibratedToothCount',
+    'actualContactNormalCertified','forceMagnitudeOrSpringResponseCalculated',
+    'automaticAngularSnapIntroduced','factoryClutchGeometryCertified',
+    'fullAssemblyClearanceCertified','defaultPublicGeometryModified'])
+    expect(result.audit[field]).toBe(false);
+  expect(result.audit.virtualOnlyNoStateMutation).toBe(true);
+  expect(errors).toEqual([]);
+  await writeFile('test-results/selectric-p6-solid-support-axis-witnesses.json',
+    JSON.stringify({version:1,sourceCommit:process.env.GITHUB_SHA||null,
+      proofOfPhysicalContactNormal:false,
+      proofOfSpringTorqueOrSelfSeating:false,...result},null,2)+'\n','utf8');
+});
