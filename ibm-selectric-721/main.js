@@ -1173,7 +1173,9 @@ window.__selectricDebug = {
   platenVariableInternalsProbeP5: () => model.platenVariableInternalsProbeP5(),
   platenVariableClutchSeatingProbeP5: () => model.platenVariableClutchSeatingProbeP5(),
   setPlatenFineClutchP6: enabled => model.setPlatenFineClutchP6(enabled),
-  platenFineClutchSolidProbeP6: pressMm => model.platenFineClutchSolidProbeP6(pressMm),
+  platenFineClutchSolidProbeP6: (pressMm,phaseOffsetRad=0) =>
+    model.platenFineClutchSolidProbeP6(pressMm,phaseOffsetRad),
+  platenFineClutchSeatingEnvelopeP6: () => model.platenFineClutchSeatingEnvelopeP6(),
   platenClutchContactInspectionProbeP5: () => model.platenClutchContactInspectionProbeP5(),
   setPlatenClutchContactInspectionP5: enabled => model.setPlatenClutchContactInspectionP5(enabled),
   setPlatenVariableInternalsInspectionP5: enabled =>
