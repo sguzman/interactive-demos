@@ -45,8 +45,19 @@ test('P6 provisional fine clutch: real convex solids, phase risk and reversible 
       const oldRestored=d.platenVariableClutchSeatingProbeP5();
       d.setPlatenFineClutchP6(true);
       const repeated=read(0);
+      // Toggle the *whole* candidate with P6 still selected. It must reset
+      // to P5 control on re-entry, without duplicating instanced meshes.
+      d.setPlatenKnobCandidateP4(false);
+      const fineAfterGlobalDisable=read(0);
+      d.setPlatenKnobCandidateP4(true);
+      const p5AfterGlobalReenable=d.platenVariableClutchSeatingProbeP5();
+      const fineNotImplicitlyRestored=read(0);
+      d.setPlatenFineClutchP6(true);
+      const reselected=read(0);
       return {rest,source12,pressedAligned,pressedClash,collided,axialSweep,
-        off,oldRestored,repeated,ratchetStable:d.state.platenIndex===originalRatchet};
+        off,oldRestored,repeated,fineAfterGlobalDisable,p5AfterGlobalReenable,
+        fineNotImplicitlyRestored,reselected,
+        ratchetStable:d.state.platenIndex===originalRatchet};
     }finally{
       if(!d.state.platenVariableEngaged)d.togglePlatenVariable();
       if(delta)d.rotatePlatenManually(-delta);
@@ -70,6 +81,11 @@ test('P6 provisional fine clutch: real convex solids, phase risk and reversible 
   expect(result.off.active).toBe(false);
   expect(result.oldRestored.active).toBe(true);
   expect(result.repeated.candidateTotalInstances).toBe(360);
+  expect(result.fineAfterGlobalDisable.active).toBe(false);
+  expect(result.fineNotImplicitlyRestored.active).toBe(false);
+  expect(result.p5AfterGlobalReenable.active).toBe(true);
+  expect(result.reselected.candidateTotalInstances).toBe(360);
+  expect(result.reselected.actualConvexSolidContactPairs).toBeGreaterThan(0);
   expect(result.ratchetStable).toBe(true);
   for(const sample of [result.rest,result.pressedAligned,
                        result.pressedClash,result.collided,...result.axialSweep]){
