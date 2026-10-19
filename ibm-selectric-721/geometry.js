@@ -5518,6 +5518,107 @@ export function createSelectricModel() {
     };
   }
 
+  // Clearance rates at sampled virtual configurations, using the *same*
+  // real-mesh 3D SAT pair gap, NOT a contact force or an integration step.
+  // On a gap==0 unilateral rigid-body boundary, a differentiable motion
+  // must satisfy dg/dt >= 0. Near edge/kink contacts the gradient can be
+  // nonsmooth; return the left/right differences instead of inventing one.
+  function platenFineClutchLinearizedClearanceP6() {
+    if(!state.platenFineClutchP6)return {
+      active:false,original721GeometryAuthenticated:false
+    };
+    const axialStepMm=0.00001;
+    const phaseStepDeg=0.0001;
+    const samplePairs=[
+      {phaseDegrees:1,pressMm:0.699996996,driverToothIndex:0,
+        label:'center face near axial coincidence'},
+      {phaseDegrees:0.5,pressMm:0.10961,driverToothIndex:0,
+        label:'left angular flank near edge'},
+      {phaseDegrees:1.5,pressMm:0.10961,driverToothIndex:0,
+        label:'right angular flank near edge'}
+    ];
+    let solidProbeCount=0;
+    const getGap=(pressMm,phaseDegrees,index)=>{
+      solidProbeCount++;
+      const solid=platenFineClutchSolidProbeP6(
+        pressMm,phaseDegrees*Math.PI/180);
+      const pair=solid.satComparisons.find(
+        item=>item.driverToothIndex===index);
+      if(!pair)throw new Error('P6 selected comparison tooth missing');
+      return pair.separatingGapMm;
+    };
+    const derivative=(minus,origin,plus,h)=>({
+      negativeSide:(origin-minus)/h,
+      positiveSide:(plus-origin)/h,
+      symmetric:(plus-minus)/(2*h),
+      sideDifference:Math.abs((origin-minus)/h-
+        (plus-origin)/h)
+    });
+    const cases=samplePairs.map(p=>{
+      const gapMm=getGap(p.pressMm,p.phaseDegrees,p.driverToothIndex);
+      const axial=derivative(
+        getGap(p.pressMm-axialStepMm,p.phaseDegrees,p.driverToothIndex),
+        gapMm,
+        getGap(p.pressMm+axialStepMm,p.phaseDegrees,p.driverToothIndex),
+        axialStepMm);
+      const phase=derivative(
+        getGap(p.pressMm,p.phaseDegrees-phaseStepDeg,p.driverToothIndex),
+        gapMm,
+        getGap(p.pressMm,p.phaseDegrees+phaseStepDeg,p.driverToothIndex),
+        phaseStepDeg);
+      const hypotheticalReleaseRateMmPerUnit=-1;
+      // This is the *linearized geometric* gap rate if axial press
+      // decreases 1 mm per abstract unit. No actual time or spring
+      // dynamics has been specified or implied.
+      const axialOnlyGapRateMmPerUnit=
+        axial.symmetric*hypotheticalReleaseRateMmPerUnit;
+      const differentiabilityTolerance=0.01;
+      const derivativeStable=
+        axial.sideDifference<=differentiabilityTolerance &&
+        phase.sideDifference<=differentiabilityTolerance;
+      const minimumAngularSlopeMagnitude=1e-4; // mm per degree
+      const angularCanOffsetLinearRelease=
+        derivativeStable &&
+        Math.abs(phase.symmetric)>=minimumAngularSlopeMagnitude;
+      const requiredAngularRateDegPerUnit=
+        angularCanOffsetLinearRelease?
+          Math.max(0,-axialOnlyGapRateMmPerUnit)/
+            Math.abs(phase.symmetric):null;
+      const angularRateDirectionToOpen=
+        angularCanOffsetLinearRelease?
+          Math.sign(phase.symmetric):null;
+      return {
+        ...p,gapMm,axial,phase,
+        hypotheticalReleaseRateMmPerUnit,
+        axialOnlyGapRateMmPerUnit,
+        axialOnlyApproachesContact:axialOnlyGapRateMmPerUnit<0,
+        derivativeStable,angularCanOffsetLinearRelease,
+        requiredAngularRateDegPerUnit,
+        angularRateDirectionToOpen,
+        // These are derivatives of the SAT *max-gap function*, which
+        // can be nondifferentiable at feature transitions.
+        nonSmoothContactMayInvalidateFirstOrderModel:!derivativeStable,
+        neitherSpringRateNorFrictionSpecified:true,
+        actualPartOrContactNormalCertified:false,
+        feasibleForceEquilibriumSolved:false
+      };
+    });
+    return {
+      active:true,
+      mode:'P6 source-limited real-solid SAT unilateral gap-rate check',
+      cases,solidProbeCount,
+      axialStepMm,phaseStepDeg,
+      candidateToothCountNotFactoryVerified:true,
+      conditionalLinearizationOnly:true,
+      noTimeScaleOrAppliedLoad:true,
+      noSpringForceOrFrictionOrTorque:true,
+      noContactForceComplementaritySolved:true,
+      noContinuousMotionOrSelfSeatingSolved:true,
+      physicalPlatenRatchetUnchanged:true,
+      publicDefaultModified:false
+    };
+  }
+
   // Sample candidate geometric feature changes either side of the
   // P6 synthetic 1-degree / ~0.700-mm first-interference threshold.
   // This is a support-plane/topology audit, NOT a contact manifold solver.
@@ -11944,6 +12045,7 @@ export function createSelectricModel() {
     platenFineClutchSolidProbeP6,
     platenFineClutchContactWitnessesP6,
     platenFineClutchThresholdTopologyP6,
+    platenFineClutchLinearizedClearanceP6,
     platenFineClutchBoundaryRefinementP6,
     platenFineClutchSeatingEnvelopeP6,
     platenFineClutchAngularCoverageP6,
