@@ -4434,6 +4434,14 @@ export function createSelectricModel() {
   // P5 design-inspection stroke only. Actual IBM 721 push-rod travel unknown.
   const leftKnobPushStrokeP5Mm = 2;
   const candidateGripOutboardP5Mm = 8;
+  // Figure 141 standard-style internal mechanism; dimensions are P5 hypotheses.
+  // Lazily created only when the experimental knob is deliberately enabled.
+  const platenVariableInternalsP5 = {
+    rod: null, plug: null, driver: null, spring: null,
+    lugCount: 0, serrationCount: 0,
+    platenOriginalMaterial: platen.material, platenGhostMaterial: null
+  };
+  state.platenVariableInternalsInspectionP5 = false;
   // Candidate geometry is allocated lazily. Default product mode must retain
   // the unchanged original P4 mesh count, positions, and contact witnesses.
   const platenKnobBaselineMeshes = [];
@@ -4574,6 +4582,7 @@ export function createSelectricModel() {
         }
       }
     }
+    if (next) ensurePlatenVariableInternalsP5();
     platenKnobBaselineMeshes.forEach(mesh => { mesh.visible = !next; });
     platenKnobCandidateMeshes.forEach(mesh => { mesh.visible = next; });
     // A visual phase marker is part of each exterior grip and must not enter
@@ -4584,7 +4593,9 @@ export function createSelectricModel() {
       marker.position.x = next ? (index===0 ? -1:1)*candidateGripOutboardP5Mm : 0;
     });
     state.platenKnobCandidateP4 = next;
+    if (!next) setPlatenVariableInternalsInspectionP5(false);
     applyPlatenVariableAxialP5();
+    updatePlatenVariableInternalsP5();
     return next;
   }
 
@@ -4596,11 +4607,16 @@ export function createSelectricModel() {
     platenKnobPivots[0].position.x = -platenKnobP4.centerHalfSpanMm + press;
     platenKnobPivots[1].position.x = platenKnobP4.centerHalfSpanMm;
     state.leftKnobAxialPressP5Mm = press;
+    updatePlatenVariableInternalsP5();
   }
 
   function setPlatenPhysicalAngle(angle) {
     const a = Number(angle) || 0;
     platen.rotation.x = a;
+    if (platenVariableInternalsP5.plug) {
+      platenVariableInternalsP5.plug.rotation.x = a;
+      platenVariableInternalsP5.rod.rotation.x = a;
+    }
     platenKnobPivots.forEach(pivot => {
       pivot.rotation.x = a;
     });
@@ -4643,6 +4659,181 @@ export function createSelectricModel() {
   ratchetTeeth.castShadow = true;
   pickables.push(ratchetTeeth);
   ratchetGroup.add(ratchetTeeth);
+
+  // Standard-style IBM Figure 141 topology: LEFT sliding knob -> through-platen
+  // shaft -> two pins -> right-side sliding driver -> ratchet-biased spring.
+  // The diagram does NOT establish any of these P5 dimensions or serration count.
+  function ensurePlatenVariableInternalsP5() {
+    if (platenVariableInternalsP5.rod) return;
+    const tag = (mesh,role) => {
+      mesh.userData.component = COMPONENTS.platenRatchet;
+      mesh.userData.platenVariableRoleP5 = role;
+      mesh.userData.sourceTopology = 'IBM 241-5032-2 Figure 141 standard-style';
+      mesh.userData.dimensionsMeasured = false;
+      mesh.castShadow = true;
+      pickables.push(mesh);
+      return mesh;
+    };
+    const rod = new THREE.Group();
+    rod.name = 'P5 left knob sliding through-platen variable push rod';
+    rod.position.set(0, P4.platen.y, P4.platen.z);
+    paperFeedCarriage.add(rod);
+    const shaftMesh = shaft(292, 1.35, darkMetal, 'variable left-to-right sliding shaft');
+    shaftMesh.position.x = -10;
+    rod.add(tag(shaftMesh,'sliding-shaft'));
+    for (const sign of [-1,1]) {
+      const pin = shaft(7.2, 0.85, metal, 'variable end-plug actuator pin');
+      pin.position.set(135.0, sign*3.0, 0);
+      rod.add(tag(pin,'push-pin'));
+    }
+
+    const plug = new THREE.Group();
+    plug.name = 'P5 platen end-plug serration coupling';
+    plug.position.set(0, P4.platen.y, P4.platen.z);
+    paperFeedCarriage.add(plug);
+    const plugRing = shaft(1.4, 6.2, metal, 'platen end plug face');
+    plugRing.position.x = 136;
+    plug.add(tag(plugRing,'platen-plug'));
+    const serrations = 12; // arbitrary low-poly witness, NOT factory tooth count.
+    for (let i=0;i<serrations;i++) {
+      const angle=2*Math.PI*i/serrations;
+      const tooth = box(1.1,0.75,1.15,metal,'platen-end-plug serration');
+      tooth.position.set(137.2,Math.cos(angle)*5.75,Math.sin(angle)*5.75);
+      tooth.rotation.x=angle;
+      plug.add(tag(tooth,'plug-serration'));
+    }
+
+    const driver = new THREE.Group();
+    driver.name='P5 axially sliding ratchet-keyed variable driver';
+    driver.position.set(-1.3,0,0);
+    ratchetGroup.add(driver);
+    driver.add(tag(shaft(1.4,6.2,darkMetal,'sliding variable clutch driver'),'driver'));
+    for (let i=0;i<serrations;i++) {
+      const angle=2*Math.PI*(i+0.5)/serrations;
+      const tooth=box(1.1,0.75,1.15,darkMetal,'variable-driver serration');
+      tooth.position.set(-1.2,Math.cos(angle)*5.75,Math.sin(angle)*5.75);
+      tooth.rotation.x=angle;
+      driver.add(tag(tooth,'driver-serration'));
+    }
+    // The two longitudinal lugs are anchored to the ratchet, not the
+    // independently rotating platen. Together they guide the sliding driver.
+    for (const sign of [-1,1]) {
+      const lug=box(6.5,1.0,2.0,metal,'ratchet variable-driver channel lug');
+      lug.position.set(0,sign*8.1,0);
+      ratchetGroup.add(tag(lug,'ratchet-guide-lug'));
+    }
+
+    const coils=[];
+    const springTurns=5;
+    const divisions=120;
+    for (let i=0;i<=divisions;i++) {
+      const fraction=i/divisions;
+      const angle=2*Math.PI*springTurns*fraction;
+      coils.push(new THREE.Vector3(
+        fraction*5.5,3.2*Math.cos(angle),3.2*Math.sin(angle)
+      ));
+    }
+    const spring=new THREE.Mesh(
+      new THREE.TubeGeometry(new THREE.CatmullRomCurve3(coils),divisions,0.32,6,false),
+      metal
+    );
+    spring.name='P5 ratchet-to-variable-driver compression spring';
+    spring.position.x=0;
+    ratchetGroup.add(tag(spring,'variable-compression-spring'));
+
+    platenVariableInternalsP5.rod=rod;
+    platenVariableInternalsP5.plug=plug;
+    platenVariableInternalsP5.driver=driver;
+    platenVariableInternalsP5.spring=spring;
+    platenVariableInternalsP5.lugCount=2;
+    platenVariableInternalsP5.serrationCount=serrations;
+    updatePlatenVariableInternalsP5();
+    setPlatenVariableInternalsInspectionP5(state.platenVariableInternalsInspectionP5);
+  }
+
+  function updatePlatenVariableInternalsP5() {
+    const mech=platenVariableInternalsP5;
+    if (!mech.rod) return;
+    const on=state.platenKnobCandidateP4;
+    mech.rod.visible=on;
+    mech.plug.visible=on;
+    mech.driver.visible=on;
+    mech.spring.visible=on;
+    // Channel lugs have been added to ratchetGroup and retain their own
+    // candidate-only visibility via role annotations.
+    ratchetGroup.children.filter(child=>
+      child.userData.platenVariableRoleP5==='ratchet-guide-lug'
+    ).forEach(lug=>{lug.visible=on;});
+    const press=on?state.leftKnobAxialPressP5Mm:0;
+    mech.rod.position.x=press;
+    mech.driver.position.x=-1.3+press;
+    // Spring remains anchored to the right-side ratchet at local X=+5.5
+    // and compresses without jumping when the driver is driven rightward.
+    mech.spring.position.x=press;
+    mech.spring.scale.x=(5.5-press)/5.5;
+  }
+
+  function setPlatenVariableInternalsInspectionP5(enabled) {
+    const on=Boolean(enabled)&&state.platenKnobCandidateP4;
+    state.platenVariableInternalsInspectionP5=on;
+    if (on && !platenVariableInternalsP5.platenGhostMaterial) {
+      const ghost=platenVariableInternalsP5.platenOriginalMaterial.clone();
+      ghost.transparent=true;
+      ghost.opacity=0.16;
+      ghost.depthWrite=false;
+      ghost.side=THREE.DoubleSide;
+      platenVariableInternalsP5.platenGhostMaterial=ghost;
+    }
+    platen.material=on?platenVariableInternalsP5.platenGhostMaterial:
+      platenVariableInternalsP5.platenOriginalMaterial;
+    return on;
+  }
+
+  function platenVariableInternalsProbeP5() {
+    root.updateMatrixWorld(true);
+    const mech=platenVariableInternalsP5;
+    if (!mech.rod) return {
+      allocated:false, experimentalOnly:true, factoryDimensionsCertified:false
+    };
+    const position=object=>{
+      const out=new THREE.Vector3();
+      object.getWorldPosition(out);
+      return out.toArray();
+    };
+    const springWorld=position(mech.spring);
+    // The spring end position is derived from its actual scale and its
+    // transformed X-axis. Its free end remains ratchet-anchored at 5.5.
+    return {
+      allocated:true,
+      visible:mech.rod.visible && mech.driver.visible && mech.plug.visible && mech.spring.visible,
+      inspectionEnabled:state.platenVariableInternalsInspectionP5,
+      leftPressMmP5:state.leftKnobAxialPressP5Mm,
+      pushRodWorldPosition:position(mech.rod),
+      endPlugWorldPosition:position(mech.plug),
+      driverWorldPosition:position(mech.driver),
+      ratchetWorldPosition:position(ratchetGroup),
+      ratchetChannelLugs:mech.lugCount,
+      twoActuatorPins:mech.rod.children.filter(x=>x.userData.platenVariableRoleP5==='push-pin').length,
+      platenSerrationCountP5:mech.serrationCount,
+      driverSerrationCountP5:mech.serrationCount,
+      compressionSpringWorldStart:springWorld,
+      springLengthMmP5:5.5*mech.spring.scale.x,
+      springWorldEndXmmP5:springWorld[0]+5.5*mech.spring.scale.x,
+      platenRotationRadP5:mech.plug.rotation.x,
+      ratchetRotationRadP5:ratchetGroup.rotation.x,
+      pushRodRotationRadP5:mech.rod.rotation.x,
+      driverLocalXmmP5:mech.driver.position.x,
+      variableDriverRatchetParented:mech.driver.parent===ratchetGroup,
+      platenPlugCarriageParented:mech.plug.parent===paperFeedCarriage,
+      rodCarriageParented:mech.rod.parent===paperFeedCarriage,
+      sourceTopology:'IBM January 1966 form 241-5032-2 Fig.141 standard style',
+      productionKnobStrokeKnown:false,
+      productionSerrationCountKnown:false,
+      geometricallyCertifiedSerrationEngagement:false,
+      exactIBMPartsMeasured:false,
+      publicDefaultModified:false
+    };
+  }
 
   const feedRollXs = [-90, -30, 30, 90];
   const frontFeedRollers = [];
@@ -10664,6 +10855,8 @@ export function createSelectricModel() {
     hoodPlatenKnobCoverBroadphaseProbe,
     hoodPlatenKnobSurfaceContactProbe,
     platenKnobCandidateEnvelopeProbeP4,
+    platenVariableInternalsProbeP5,
+    setPlatenVariableInternalsInspectionP5,
     hoodTypeElementSectionProbe,
     hoodTypeElementTriangleProbe,
     hoodTypeElementMotionSweepProbe,

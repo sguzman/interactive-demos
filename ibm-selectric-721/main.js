@@ -62,6 +62,9 @@ const model = createSelectricModel();
 // deliberately ALWAYS the frozen baseline; this does not alter gallery users.
 if (new URLSearchParams(window.location.search).get('platenKnobCandidate') === '1') {
   model.setPlatenKnobCandidateP4(true);
+  if (new URLSearchParams(window.location.search).get('platenInternals') === '1') {
+    model.setPlatenVariableInternalsInspectionP5(true);
+  }
 }
 scene.add(model.root);
 
@@ -1161,6 +1164,9 @@ window.__selectricDebug = {
   hoodPlatenKnobSurfaceContactProbe: () => model.hoodPlatenKnobSurfaceContactProbe(),
   setPlatenKnobCandidateP4: enabled => model.setPlatenKnobCandidateP4(enabled),
   platenKnobCandidateEnvelopeProbeP4: () => model.platenKnobCandidateEnvelopeProbeP4(),
+  platenVariableInternalsProbeP5: () => model.platenVariableInternalsProbeP5(),
+  setPlatenVariableInternalsInspectionP5: enabled =>
+    model.setPlatenVariableInternalsInspectionP5(enabled),
   inspectionCameraPose: () => ({
     position: camera.position.toArray(),
     target: orbit.target.toArray(),

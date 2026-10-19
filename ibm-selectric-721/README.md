@@ -522,3 +522,30 @@ All prior P4 default mesh positions are restored on toggle-off.
 5 copy detents x 65 cover openings x 2 axial endpoints = **650 poses**
 source-topology test, plus platen/ratchet decoupling and automatic
 restoration. No original 1961 factory profile or OEM stroke claimed.
+
+
+## Figure 141: experimental internal standard-style platen-variable clutch
+
+The 1966 IBM Series-72 Instruction Manual (241-5032-2) p.59 Fig.141
+identifies **two** pins at the right tip of the left-knob sliding
+shaft, a driver constrained in two ratchet lugs, serrations in the
+platen end plug, and a return compression spring. This branch now
+contains actual P5 meshes for the through-platen rod, two actuator
+pins, platen end plug/serrations, ratchet-parented slider/serrations,
+two guide lugs and a helix spring. The shaft moves +2 mm on the
+source-directed hypothetical left press, driver translates with the
+actuator while remaining ratchet-parented, and the spring contracts
+from 5.5 to 3.5 mm. Independent platen rotation drives the rod and
+end-plug but **not** the ratchet and driver during variable mode.
+
+**All dimensions, 12 presentation serrations, metal profiles, spring
+travel, and precise axial registration are experimental**, not IBM
+measurements. Serration *contact/meshing* at arbitrary angular phases
+is not certified. These submeshes exist only under the opt-in
+experimental knob flag. Use `?platenKnobCandidate=1&platenInternals=1`
+on the experimental branch to ghost the rubber platen and inspect
+the internal mechanism; default public page continues unchanged.
+The same mode can be toggled with
+`__selectricDebug.setPlatenVariableInternalsInspectionP5(true/false)`.
+A new Playwright regression checks actual rod, driver and spring
+motions, parented rotations and full original-mode restoration.
