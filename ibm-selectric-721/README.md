@@ -498,3 +498,27 @@ The browser test must be run before any claim of browser QA success, and
 other 3D contacts/printing/interlock checks remain separate.
 
 The experimental branch also exposes `__selectricDebug.platenKnobCandidateEnvelopeProbeP4()`: it computes **actual transformed Three.js mesh X bounds** for all 28 lazily created candidate pieces, checks mirror-side outboard reach and visible/hidden baseline counts, and never asserts OEM provenance. The candidate regression now checks all 4 knob/cover face pairs (hood and bridge) at its 135 sampled poses and checks restoration of the exact original contact counts after two variant toggles. This is a prepared test, **not a completed Chromium run**.
+
+## Experimental platen-variable axial push (unmeasured P5)
+
+The original IBM Series-72 1966 Instruction Manual 241-5032-2, p.59
+Figure 141 documents an inward LEFT-knob push to release a platen
+driver through a push rod and spring, allowing platen rotation while
+the ratchet stays stationary. The right knob does not participate in
+this axial press. On this **isolated branch only**, the optional
+candidate now embodies left axial press and release at a deliberately
+**hypothetical 2.0-mm P5 stroke**. Actual IBM knob stroke is unknown.
+
+The previous 0.5-mm rest-position bridge-gap experiment could not
+certify an inward knob press. The *new optional candidate* moves
+the larger grip/ribs to an **8.0-mm outboard offset**, giving a
+3.0-mm bridge X gap at rest and **1.0 mm fully pressed**. The
+8-mm-radius neck retains its original all-cover-angle sufficient
+P4 bridge clearance bound. The right knob is fixed in X, and
+the synthetic phase cues move outboard with the candidate grip.
+All prior P4 default mesh positions are restored on toggle-off.
+
+`tests/ibm-selectric-721-platen-knob-axial.spec.mjs` is a separate
+5 copy detents x 65 cover openings x 2 axial endpoints = **650 poses**
+source-topology test, plus platen/ratchet decoupling and automatic
+restoration. No original 1961 factory profile or OEM stroke claimed.

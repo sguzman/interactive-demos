@@ -1692,6 +1692,7 @@ export function createSelectricModel() {
     printCamFollowerLiftP5: 0,
     platenIndex: 0,
     platenKnobCandidateP4: false,
+    leftKnobAxialPressP5Mm: 0,
     paperAdvanceMm: 0,
     manualPaperAlignmentMmP5: 0,
     feedRollPhaseRad: 0,
@@ -4430,6 +4431,9 @@ export function createSelectricModel() {
   const platenKnobPivots = [];
   const platenKnobGripRibCountP4 = platenKnobP4.gripRibCount;
   const platenKnobGripRibs = [];
+  // P5 design-inspection stroke only. Actual IBM 721 push-rod travel unknown.
+  const leftKnobPushStrokeP5Mm = 2;
+  const candidateGripOutboardP5Mm = 8;
   // Candidate geometry is allocated lazily. Default product mode must retain
   // the unchanged original P4 mesh count, positions, and contact witnesses.
   const platenKnobBaselineMeshes = [];
@@ -4518,15 +4522,14 @@ export function createSelectricModel() {
         neckLengthMm: platenKnobP4.coreLengthMm,
         gripRadiusMm: platenKnobP4.coreRadiusMm,
         gripLengthMm: 20.0,
-        outwardGripOffsetMm: 5.5
+        outwardGripOffsetMm: candidateGripOutboardP5Mm
       };
-      // With knob axes at +/-159 mm and bridge end faces at +/-154 mm,
-      // an outward grip centered 5.5 mm from the knob axis with 20 mm
-      // axial width begins 0.5 mm beyond the P4 bridge on each side.
+      // 8-mm outboard offset gives 3-mm bridge gap at rest and 1-mm gap
+      // under full 2-mm P5 axial press. Neither parameter is an IBM dimension.
       const bridgeHalfWidth = rearBridge.geometry.parameters.width / 2;
       const gripInnerWorldX = platenKnobP4.centerHalfSpanMm
         + test.outwardGripOffsetMm - test.gripLengthMm / 2;
-      if (!(test.neckRadiusMm <= 8.0 && gripInnerWorldX - bridgeHalfWidth >= 0.5 - 1e-9)) {
+      if (!(test.neckRadiusMm <= 8.0 && gripInnerWorldX - bridgeHalfWidth - leftKnobPushStrokeP5Mm >= 1 - 1e-9)) {
         throw new Error('P4 experimental knob violates the frozen clearance envelope');
       }
       for (let index = 0; index < platenKnobPivots.length; index += 1) {
@@ -4573,8 +4576,26 @@ export function createSelectricModel() {
     }
     platenKnobBaselineMeshes.forEach(mesh => { mesh.visible = !next; });
     platenKnobCandidateMeshes.forEach(mesh => { mesh.visible = next; });
+    // A visual phase marker is part of each exterior grip and must not enter
+    // the rear bridge as the left knob slides. Restore exact source P4 at exit.
+    platenKnobPivots.forEach((pivot,index) => {
+      const marker = pivot.children.find(child=>child.name.endsWith('platen phase cue'));
+      if(!marker) throw new Error('Missing original platen phase marker');
+      marker.position.x = next ? (index===0 ? -1:1)*candidateGripOutboardP5Mm : 0;
+    });
     state.platenKnobCandidateP4 = next;
+    applyPlatenVariableAxialP5();
     return next;
+  }
+
+  function applyPlatenVariableAxialP5() {
+    // IBM Figure 141: push LEFT knob toward machine-right; ratchet remains
+    // stationary while pressed. P5 travel is arbitrary, not production CAD.
+    const press = state.platenKnobCandidateP4 && state.platenVariableEngaged
+      ? leftKnobPushStrokeP5Mm : 0;
+    platenKnobPivots[0].position.x = -platenKnobP4.centerHalfSpanMm + press;
+    platenKnobPivots[1].position.x = platenKnobP4.centerHalfSpanMm;
+    state.leftKnobAxialPressP5Mm = press;
   }
 
   function setPlatenPhysicalAngle(angle) {
@@ -7703,6 +7724,7 @@ export function createSelectricModel() {
 
   function setPlatenVariable(engaged) {
     state.platenVariableEngaged = Boolean(engaged);
+    applyPlatenVariableAxialP5();
   }
 
   function rotatePlatenManually(delta) {
@@ -8074,6 +8096,11 @@ export function createSelectricModel() {
     const visibleOutboard = outboard.filter(row => row.visible);
     return {
       activeCandidate: state.platenKnobCandidateP4,
+      leftAxialPressP5Mm: state.leftKnobAxialPressP5Mm,
+      rightAxialPressP5Mm: platenKnobPivots[1].position.x - platenKnobP4.centerHalfSpanMm,
+      originalIBMStrokeMeasured: false,
+      sourceFigure141LeftPushRodTopology: true,
+      sourceFigure141RatchetUncoupledWhenHeld: state.platenVariableEngaged,
       candidateAllocated: segments.length > 0,
       candidateMeshCount: segments.length,
       baselineMeshCount: platenKnobBaselineMeshes.length,
@@ -10162,6 +10189,9 @@ export function createSelectricModel() {
           ? 'OPT-IN P4 HYPOTHESIS: 8 mm narrow neck + axially outboard grip; NOT original IBM geometry'
           : 'P4 reduced core + outer cap + repeated radial grip ribs; exact production geometry unresolved',
         platenKnobCandidateP4Enabled: state.platenKnobCandidateP4,
+        leftKnobAxialPressP5Mm: state.leftKnobAxialPressP5Mm,
+        sourceRatchetAndPlatenCoupled: !state.platenVariableEngaged,
+        factoryLeftKnobStrokeMeasured: false,
         platenKnobCenterHalfSpanMmP4: platenKnobP4.centerHalfSpanMm,
         platenKnobOuterExtensionMmP4,
         platenKnobOuterEdgeHalfSpanMmP4,
