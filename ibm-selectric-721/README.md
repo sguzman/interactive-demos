@@ -549,3 +549,20 @@ The same mode can be toggled with
 `__selectricDebug.setPlatenVariableInternalsInspectionP5(true/false)`.
 A new Playwright regression checks actual rod, driver and spring
 motions, parented rotations and full original-mode restoration.
+
+
+### Internal contact-topology correction
+
+The experimental *platen end plug* now uses an extruded 3-bore disk
+geometry, not an intersecting solid disk: central bore for the long
+shaft (1.55-mm radius) and two pin bores at +/-3 mm (1.05-mm
+radius for 0.85-mm pins). A small rigid yoke joins both pins to
+the central shaft. The pin tips touch the left face of the sliding
+driver at both axial endpoints (without penetrating its body).
+The compression spring now begins at the driver's right face,
+with hypothetical 6.1-mm free assembly length, 4.1 mm compressed
+under the P5 2-mm press and a fixed right-side ratchet anchor.
+All values and tooth count remain unsourced P5, but the surfaces
+are no longer invented overlapping solid material or disconnected
+actuators. The browser test verifies **actual world-space bounding
+contacts** of pin-to-driver and driver-to-spring during both states.

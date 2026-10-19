@@ -52,13 +52,17 @@ test('Selectric Figure 141 standard-style P5 internal clutch parts move and rest
     expect(a.geometricallyCertifiedSerrationEngagement).toBe(false);
     expect(a.publicDefaultModified).toBe(false);
     expect(a.springWorldEndXmmP5).toBeCloseTo(145.5,6);
+    expect(a.pinTipsToDriverAxialGapMmP5).toBeCloseTo(0,5);
+    expect(a.driverToSpringAxialGapMmP5).toBeCloseTo(0,5);
+    expect(a.transversePinBoreRadialClearanceMmP5).toBeCloseTo(0.2,6);
+    expect(a.centralShaftBoreRadialClearanceMmP5).toBeCloseTo(0.2,6);
   }
   expect(r.atRest.leftPressMmP5).toBe(0);
-  expect(r.atRest.springLengthMmP5).toBeCloseTo(5.5,6);
+  expect(r.atRest.springLengthMmP5).toBeCloseTo(6.1,6);
   expect(r.pressed.leftPressMmP5).toBe(2);
   expect(r.pressed.driverLocalXmmP5-r.atRest.driverLocalXmmP5).toBeCloseTo(2,6);
   expect(r.pressed.pushRodWorldPosition[0]-r.atRest.pushRodWorldPosition[0]).toBeCloseTo(2,6);
-  expect(r.pressed.springLengthMmP5).toBeCloseTo(3.5,6);
+  expect(r.pressed.springLengthMmP5).toBeCloseTo(4.1,6);
   expect(r.pressed.compressionSpringWorldStart[0]-r.atRest.compressionSpringWorldStart[0]).toBeCloseTo(2,6);
   expect(r.rotated.ratchetRotationRadP5).toBeCloseTo(r.pressed.ratchetRotationRadP5,6);
   expect(r.rotated.platenRotationRadP5-r.pressed.platenRotationRadP5).toBeCloseTo(Math.PI/12,6);

@@ -4681,9 +4681,16 @@ export function createSelectricModel() {
     const shaftMesh = shaft(292, 1.35, darkMetal, 'variable left-to-right sliding shaft');
     shaftMesh.position.x = -10;
     rod.add(tag(shaftMesh,'sliding-shaft'));
+    // Small yoke connects the two source-identified pins to the sliding
+    // central shaft instead of letting them float independently.
+    const crosshead=box(2.0,6.0,1.2,darkMetal,'variable shaft two-pin crosshead');
+    crosshead.position.x=131.5;
+    rod.add(tag(crosshead,'push-pin-crosshead'));
     for (const sign of [-1,1]) {
       const pin = shaft(7.2, 0.85, metal, 'variable end-plug actuator pin');
-      pin.position.set(135.0, sign*3.0, 0);
+      // The right pin tips exactly seat against the driver's left face,
+      // at x=138.0 when not pressed, with no P5 driver-body penetration.
+      pin.position.set(134.4, sign*3.0, 0);
       rod.add(tag(pin,'push-pin'));
     }
 
@@ -4691,8 +4698,25 @@ export function createSelectricModel() {
     plug.name = 'P5 platen end-plug serration coupling';
     plug.position.set(0, P4.platen.y, P4.platen.z);
     paperFeedCarriage.add(plug);
-    const plugRing = shaft(1.4, 6.2, metal, 'platen end plug face');
-    plugRing.position.x = 136;
+    // True axial bores through the end plug: one for the central shaft
+    // and TWO for IBM's pair of projecting actuator pins. A solid proxy
+    // would wrongly occupy the same volume as the moving pins.
+    const diskProfile=new THREE.Shape();
+    diskProfile.absarc(0,0,6.2,0,Math.PI*2,false);
+    for(const [zLocal,yLocal,r] of [[0,0,1.55],[0,-3,1.05],[0,3,1.05]]){
+      const opening=new THREE.Path();
+      opening.absarc(zLocal,yLocal,r,0,Math.PI*2,true);
+      diskProfile.holes.push(opening);
+    }
+    const plugGeometry=new THREE.ExtrudeGeometry(diskProfile,{
+      depth:1.4,bevelEnabled:false,curveSegments:32,steps:1
+    });
+    plugGeometry.translate(0,0,-0.7);
+    const plugRing=new THREE.Mesh(plugGeometry,metal);
+    plugRing.name='platen end plug with shaft and two actuator bores';
+    plugRing.rotation.y=Math.PI/2;
+    plugRing.position.x=136;
+    plugRing.userData.boreRadiiP5Mm=[1.55,1.05,1.05];
     plug.add(tag(plugRing,'platen-plug'));
     const serrations = 12; // arbitrary low-poly witness, NOT factory tooth count.
     for (let i=0;i<serrations;i++) {
@@ -4730,7 +4754,7 @@ export function createSelectricModel() {
       const fraction=i/divisions;
       const angle=2*Math.PI*springTurns*fraction;
       coils.push(new THREE.Vector3(
-        fraction*5.5,3.2*Math.cos(angle),3.2*Math.sin(angle)
+        fraction*6.1,3.2*Math.cos(angle),3.2*Math.sin(angle)
       ));
     }
     const spring=new THREE.Mesh(
@@ -4738,7 +4762,9 @@ export function createSelectricModel() {
       metal
     );
     spring.name='P5 ratchet-to-variable-driver compression spring';
-    spring.position.x=0;
+    // Rest spring face sits against the driver body's right face:
+    // ratchet x=140, driver rest center=138.7, radius in X=0.7 =>139.4.
+    spring.position.x=-0.6;
     ratchetGroup.add(tag(spring,'variable-compression-spring'));
 
     platenVariableInternalsP5.rod=rod;
@@ -4769,8 +4795,8 @@ export function createSelectricModel() {
     mech.driver.position.x=-1.3+press;
     // Spring remains anchored to the right-side ratchet at local X=+5.5
     // and compresses without jumping when the driver is driven rightward.
-    mech.spring.position.x=press;
-    mech.spring.scale.x=(5.5-press)/5.5;
+    mech.spring.position.x=-0.6+press;
+    mech.spring.scale.x=(6.1-press)/6.1;
   }
 
   function setPlatenVariableInternalsInspectionP5(enabled) {
@@ -4801,8 +4827,16 @@ export function createSelectricModel() {
       return out.toArray();
     };
     const springWorld=position(mech.spring);
-    // The spring end position is derived from its actual scale and its
-    // transformed X-axis. Its free end remains ratchet-anchored at 5.5.
+    const pinMeshes=mech.rod.children.filter(x=>
+      x.userData.platenVariableRoleP5==='push-pin');
+    const driverBody=mech.driver.children.find(x=>
+      x.userData.platenVariableRoleP5==='driver');
+    const driverBodyBounds=new THREE.Box3().setFromObject(driverBody);
+    const pinEndX=Math.max(...pinMeshes.map(x=>new THREE.Box3().setFromObject(x).max.x));
+    // Derive real-world contact relationships from rendered mesh bounds.
+    const pinsDriverAxialGapMm=driverBodyBounds.min.x-pinEndX;
+    const driverSpringAxialGapMm=springWorld[0]-driverBodyBounds.max.x;
+    // The spring's far end remains anchored to the ratchet at local X=5.5.
     return {
       allocated:true,
       visible:mech.rod.visible && mech.driver.visible && mech.plug.visible && mech.spring.visible,
@@ -4813,12 +4847,16 @@ export function createSelectricModel() {
       driverWorldPosition:position(mech.driver),
       ratchetWorldPosition:position(ratchetGroup),
       ratchetChannelLugs:mech.lugCount,
-      twoActuatorPins:mech.rod.children.filter(x=>x.userData.platenVariableRoleP5==='push-pin').length,
+      twoActuatorPins:pinMeshes.length,
+      transversePinBoreRadialClearanceMmP5:1.05-0.85,
+      centralShaftBoreRadialClearanceMmP5:1.55-1.35,
+      pinTipsToDriverAxialGapMmP5:pinsDriverAxialGapMm,
+      driverToSpringAxialGapMmP5:driverSpringAxialGapMm,
       platenSerrationCountP5:mech.serrationCount,
       driverSerrationCountP5:mech.serrationCount,
       compressionSpringWorldStart:springWorld,
-      springLengthMmP5:5.5*mech.spring.scale.x,
-      springWorldEndXmmP5:springWorld[0]+5.5*mech.spring.scale.x,
+      springLengthMmP5:6.1*mech.spring.scale.x,
+      springWorldEndXmmP5:springWorld[0]+6.1*mech.spring.scale.x,
       platenRotationRadP5:mech.plug.rotation.x,
       ratchetRotationRadP5:ratchetGroup.rotation.x,
       pushRodRotationRadP5:mech.rod.rotation.x,
