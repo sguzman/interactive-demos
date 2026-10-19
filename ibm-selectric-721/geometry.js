@@ -5322,6 +5322,103 @@ export function createSelectricModel() {
           (x,i)=>plugExtreme-x<=supportPlaneToleranceMm?[i]:[]);
         const driverSupportVertexIndices=driverProjected.flatMap(
           (x,i)=>x-driverExtreme<=supportPlaneToleranceMm?[i]:[]);
+        // Project both real transformed support-vertex sets onto the
+        // winning candidate plane, construct their convex 2D hulls and
+        // clip them. This is a possible face-contact *footprint* ONLY:
+        // interpenetrating solids have no admissible physical contact
+        // patch until constraints have been resolved.
+        const projectedFaceFootprint=(()=>{
+          if(plugSupportVertexIndices.length<3 ||
+             driverSupportVertexIndices.length<3)return {
+            computed:false,reason:'support sets are not both face-like',
+            physicalContactPatchCertified:false
+          };
+          const fixedAxis=Math.abs(n.x)<0.9?
+            new THREE.Vector3(1,0,0):new THREE.Vector3(0,1,0);
+          const u=new THREE.Vector3().crossVectors(fixedAxis,n).normalize();
+          const w=new THREE.Vector3().crossVectors(n,u).normalize();
+          const project=p=>[p.dot(u),p.dot(w)];
+          const cross=(a,b,c)=>
+            (b[0]-a[0])*(c[1]-a[1])-
+            (b[1]-a[1])*(c[0]-a[0]);
+          const hull=indices=>{
+            const points=indices.map(x=>x).sort(
+              (a,b)=>a[0]-b[0]||a[1]-b[1]);
+            if(points.length<=2)return points;
+            const lower=[],upper=[];
+            for(const p of points){
+              while(lower.length>=2 &&
+                cross(lower.at(-2),lower.at(-1),p)<=1e-10)lower.pop();
+              lower.push(p);
+            }
+            for(let i=points.length-1;i>=0;i--){
+              const p=points[i];
+              while(upper.length>=2 &&
+                cross(upper.at(-2),upper.at(-1),p)<=1e-10)upper.pop();
+              upper.push(p);
+            }
+            lower.pop();upper.pop();
+            return [...lower,...upper];
+          };
+          const area=polygon=>{
+            let twice=0;
+            for(let i=0;i<polygon.length;i++){
+              const p=polygon[i],q=polygon[(i+1)%polygon.length];
+              twice+=p[0]*q[1]-p[1]*q[0];
+            }
+            return Math.abs(twice)/2;
+          };
+          const plugPolygon=hull(plugSupportVertexIndices.map(i=>
+            project(worldPlug[i])));
+          const driverPolygon=hull(driverSupportVertexIndices.map(i=>
+            project(v[i])));
+          if(plugPolygon.length<3||driverPolygon.length<3)return {
+            computed:false,reason:'degenerate projected support hull',
+            physicalContactPatchCertified:false
+          };
+          let overlapPolygon=plugPolygon.slice();
+          for(let i=0;i<driverPolygon.length;i++){
+            const a=driverPolygon[i],
+              b=driverPolygon[(i+1)%driverPolygon.length];
+            const input=overlapPolygon;
+            overlapPolygon=[];
+            if(input.length===0)break;
+            for(let j=0;j<input.length;j++){
+              const p=input[j],q=input[(j+1)%input.length];
+              const dp=cross(a,b,p),dq=cross(a,b,q);
+              const insideP=dp>=-1e-12,insideQ=dq>=-1e-12;
+              if(insideP!==insideQ){
+                const denom=dp-dq;
+                if(Math.abs(denom)>1e-15){
+                  const t=THREE.MathUtils.clamp(dp/denom,0,1);
+                  overlapPolygon.push([
+                    p[0]+t*(q[0]-p[0]),
+                    p[1]+t*(q[1]-p[1])
+                  ]);
+                }
+              }
+              if(insideQ)overlapPolygon.push(q);
+            }
+          }
+          const overlapAreaMm2=overlapPolygon.length>=3?
+            area(overlapPolygon):0;
+          const zeroGapToleranceMm=1e-6;
+          return {
+            computed:true,plugPolygon,driverPolygon,overlapPolygon,
+            plugPolygonAreaMm2:area(plugPolygon),
+            driverPolygonAreaMm2:area(driverPolygon),
+            overlapAreaMm2,
+            winningSupportAxisWorld:n.toArray(),
+            signedPlaneGapMm:bestSeparatingGap,
+            candidateCoincidentFacePatch:
+              overlapAreaMm2>1e-9 &&
+              Math.abs(bestSeparatingGap)<=zeroGapToleranceMm,
+            zeroGapToleranceMm,
+            nonzeroPenetrationNotPhysicalContact:true,
+            physicalContactPatchCertified:false,
+            noForceOrPressureDistribution:true
+          };
+        })();
         result.candidateAxisWitness={
           driverToothIndex,
           modeledSignedGapMm:bestSeparatingGap,
@@ -5339,6 +5436,7 @@ export function createSelectricModel() {
           competitiveAxisCount:competitiveAxes.length,
           distinctAxisDirections:distinctAxisClasses.length,
           competingAxisClasses:distinctAxisClasses,
+          projectedFaceFootprint,
           manifoldPolygonComputed:false,
           uniquePhysicalNormalCertified:false,
           forceClosureCertified:false
