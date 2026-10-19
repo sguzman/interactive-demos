@@ -435,3 +435,122 @@ test('P6 actual mesh SAT support witnesses report axes and signed gaps without s
       proofOfPhysicalContactNormal:false,
       proofOfSpringTorqueOrSelfSeating:false,...result},null,2)+'\n','utf8');
 });
+
+test('P6 near-threshold support planes expose competing SAT axes without snapping',async({page})=>{
+  const errors=[];
+  page.on('pageerror',e=>errors.push(String(e)));
+  page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+  await page.goto('http://127.0.0.1:4173/ibm-selectric-721/?platenKnobCandidate=1&platenInternals=1&platenFineClutch=1',
+    {waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>Boolean(window.__selectricDebug?.state?.running),
+    null,{timeout:20000});
+  expect(await page.evaluate(()=>window.__selectricDebug.setPower(false))).toBe(true);
+  const result=await page.evaluate(()=>{
+    const d=window.__selectricDebug;
+    d.setExplosion(0);d.setServiceCover(0);d.setCopyControl(0);
+    const snapshot=()=>{
+      const s=d.state,mechanism=d.platenVariableInternalsProbeP5();
+      return {
+        platenIndex:s.platenIndex,
+        platenPhysicalAngleRad:s.geometry.paperFeed.platenPhysicalAngleRad,
+        variableEngaged:s.platenVariableEngaged,
+        fineClutchSelected:s.platenFineClutchP6,
+        knobCandidateSelected:s.platenKnobCandidateP4,
+        physicalAxialPressMm:s.leftKnobAxialPressP5Mm,
+        platenPlugRotationRad:mechanism.platenRotationRadP5,
+        ratchetRotationRad:mechanism.ratchetRotationRadP5,
+        variableDriverLocalXmm:mechanism.driverLocalXmmP5
+      };
+    };
+    const before=snapshot();
+    const audit=d.platenFineClutchThresholdTopologyP6();
+    const after=snapshot();
+    const verify=audit.probes.map(pose=>{
+      const basic=d.platenFineClutchSolidProbeP6(
+        pose.pressMm,pose.phaseDegrees*Math.PI/180);
+      return {phaseDegrees:pose.phaseDegrees,pressMm:pose.pressMm,
+        originalContactPairs:basic.actualConvexSolidContactPairs,
+        originalSignedGaps:basic.satComparisons.map(x=>x.separatingGapMm)};
+    });
+    d.setPlatenFineClutchP6(false);
+    const disabled=d.platenFineClutchThresholdTopologyP6();
+    d.setPlatenKnobCandidateP4(false);
+    return {before,after,audit,verify,disabled};
+  });
+  expect(result.before).toEqual(result.after);
+  expect(result.before.fineClutchSelected).toBe(true);
+  expect(result.before.physicalAxialPressMm).toBe(0);
+  expect(result.disabled.active).toBe(false);
+  const {audit}=result;
+  expect(audit.active).toBe(true);
+  expect(audit.probes).toHaveLength(10);
+  expect(audit.probes[2].phaseDegrees).toBe(1);
+  expect(audit.probes[2].pressMm).toBe(0.6999);
+  expect(audit.probes[2].actualConvexSolidContactPairs).toBeGreaterThan(0);
+  expect(audit.probes[3].pressMm).toBe(0.7001);
+  expect(audit.probes[3].actualConvexSolidContactPairs).toBe(0);
+  expect(audit.probes[6].actualConvexSolidContactPairs).toBeGreaterThan(0);
+  expect(audit.probes[7].actualConvexSolidContactPairs).toBe(0);
+  expect(audit.probes[8].actualConvexSolidContactPairs).toBeGreaterThan(0);
+  expect(audit.probes[9].actualConvexSolidContactPairs).toBe(0);
+  for(let i=0;i<audit.probes.length;i++){
+    const probe=audit.probes[i],comparison=result.verify[i];
+    expect(probe.pairs).toHaveLength(5);
+    expect(probe.actualConvexSolidContactPairs).toBe(comparison.originalContactPairs);
+    expect(probe.pairs.map(x=>x.separatingGapMm)).toEqual(comparison.originalSignedGaps);
+    expect(probe.nearestPair).not.toBeNull();
+    expect(probe.pairs.some(x=>x.driverToothIndex===
+      probe.nearestPair.driverToothIndex)).toBe(true);
+    for(const pair of probe.pairs){
+      expect(pair.axesTested).toBeGreaterThanOrEqual(12);
+      expect(pair.axis.driverToothIndex).toBe(pair.driverToothIndex);
+      const t=pair.topology;
+      expect(t.manifoldPolygonComputed).toBe(false);
+      expect(t.uniquePhysicalNormalCertified).toBe(false);
+      expect(t.forceClosureCertified).toBe(false);
+      expect(t.competitiveAxisCount).toBeGreaterThanOrEqual(1);
+      expect(t.distinctAxisDirections).toBeGreaterThanOrEqual(1);
+      expect(t.distinctAxisDirections).toBeLessThanOrEqual(t.competitiveAxisCount);
+      for(const field of ['plugSupportVertexIndices','driverSupportVertexIndices']){
+        expect(t[field].length).toBeGreaterThanOrEqual(1);
+        expect(t[field].length).toBeLessThanOrEqual(8);
+        expect(new Set(t[field]).size).toBe(t[field].length);
+        for(const idx of t[field]){
+          expect(Number.isInteger(idx)).toBe(true);
+          expect(idx).toBeGreaterThanOrEqual(0);
+          expect(idx).toBeLessThan(8);
+        }
+      }
+      expect(t.plugSupportVertexIndices).toContain(
+        pair.axis.plugSupportVertexIndex);
+      expect(t.driverSupportVertexIndices).toContain(
+        pair.axis.driverSupportVertexIndex);
+      expect(t.plugSupportDimensionUpperBound).toBe(
+        Math.min(2,t.plugSupportVertexIndices.length-1));
+      expect(t.driverSupportDimensionUpperBound).toBe(
+        Math.min(2,t.driverSupportVertexIndices.length-1));
+      for(const axisClass of t.competingAxisClasses){
+        expect(Math.hypot(...axisClass.axisUnitWorld)).toBeCloseTo(1,7);
+        expect(axisClass.signedGapMm).toBeLessThanOrEqual(
+          pair.separatingGapMm+1e-7);
+        expect(axisClass.signedGapMm).toBeGreaterThanOrEqual(
+          pair.separatingGapMm-t.competingAxisGapToleranceMm-1e-7);
+        expect(axisClass.featureOrigins).toBeGreaterThanOrEqual(1);
+        expect(axisClass.kinds.length).toBeGreaterThanOrEqual(1);
+        for(const kind of axisClass.kinds)
+          expect(['plug-face','driver-face','edge-cross']).toContain(kind);
+      }
+    }
+  }
+  for(const flag of ['sourceCalibratedToothProfile',
+    'uniquePhysicalNormalCertified','realContactManifoldComputed',
+    'dynamicNormalForceResolved','springTorqueOrSelfSeatingSolved',
+    'original721MaterialOrToleranceVerified',
+    'platenOrRatchetAutomaticallyRotated','publicDefaultModified'])
+    expect(audit[flag]).toBe(false);
+  expect(audit.readOnlyVirtualPoses).toBe(true);
+  expect(errors).toEqual([]);
+  await writeFile('test-results/selectric-p6-threshold-support-topology.json',
+    JSON.stringify({version:1,sourceCommit:process.env.GITHUB_SHA||null,
+      finiteDiscretePosesOnly:true,notAUniqueNormalOrForceSolution:true,...result},null,2)+'\n','utf8');
+});
