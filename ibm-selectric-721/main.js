@@ -1182,6 +1182,7 @@ window.__selectricDebug = {
     model.platenFineClutchSolidProbeP6(pressMm,phaseOffsetRad,withWitnesses),
   platenFineClutchContactWitnessesP6: () => model.platenFineClutchContactWitnessesP6(),
   platenFineClutchThresholdTopologyP6: () => model.platenFineClutchThresholdTopologyP6(),
+  platenFineClutchLinearizedClearanceP6: () => model.platenFineClutchLinearizedClearanceP6(),
   platenFineClutchSeatingEnvelopeP6: () => model.platenFineClutchSeatingEnvelopeP6(),
   platenFineClutchBoundaryRefinementP6: () => model.platenFineClutchBoundaryRefinementP6(),
   platenFineClutchAngularCoverageP6: phaseOffsetRad =>
