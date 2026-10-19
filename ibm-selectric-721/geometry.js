@@ -5294,7 +5294,134 @@ export function createSelectricModel() {
       factoryMeshingCertified:false,defaultPublicGeometryModified:false};
   }
 
-    function platenVariableInternalsProbeP5() {
+    // Inspect ALL real P6 tooth instances using a conservative polar-sector
+  // exclusion. A convex tooth's projected vertices lie inside its angular
+  // wedge: if wedges do not overlap, the corresponding full 3D solids cannot
+  // intersect regardless of axial position. This checks whether the current
+  // five-neighbor narrowphase window covers every potentially contacting pair.
+  // The test is conditional on exact P6 instance regularity and concentricity,
+  // NOT an IBM factory tooth-count, tolerance or physical seating proof.
+  function platenFineClutchAngularCoverageP6(virtualPhaseOffsetRad=0) {
+    const mech=platenVariableInternalsP5, fine=mech.fineClutchP6;
+    if(!fine || !state.platenFineClutchP6)return {
+      active:false,sourceCalibrated:false
+    };
+    if(!Number.isFinite(virtualPhaseOffsetRad))
+      throw new Error('P6 angular sector virtual phase must be finite');
+    root.updateMatrixWorld(true);
+    const virtualPlugWorld=new THREE.Matrix4().multiplyMatrices(
+      fine.plug.matrixWorld,new THREE.Matrix4().makeRotationX(virtualPhaseOffsetRad));
+    const plugAxis=new THREE.Vector3().setFromMatrixPosition(virtualPlugWorld);
+    const driverAxis=new THREE.Vector3().setFromMatrixPosition(fine.driver.matrixWorld);
+    const concentricYZGapMm=Math.hypot(
+      plugAxis.y-driverAxis.y,plugAxis.z-driverAxis.z);
+    const wrapAngle=a=>Math.atan2(Math.sin(a),Math.cos(a));
+    const sectors=(mesh,baseWorld,shape,axis)=>{
+      const inst=new THREE.Matrix4(),world=new THREE.Matrix4();
+      const result=[];
+      for(let i=0;i<fine.count;i++){
+        mesh.getMatrixAt(i,inst);
+        world.multiplyMatrices(baseWorld,inst);
+        const verts=shape.verts.map(v=>
+          new THREE.Vector3(...v).applyMatrix4(world));
+        const c=new THREE.Vector3();
+        for(const v of verts)c.add(v);
+        c.divideScalar(verts.length);
+        const angle=Math.atan2(c.z-axis.z,c.y-axis.y);
+        const halfAngleRad=Math.max(...verts.map(v=>
+          Math.abs(wrapAngle(Math.atan2(v.z-axis.z,v.y-axis.y)-angle))));
+        result.push({
+          index:i,angle,halfAngleRad,x:c.x,
+          radiusMm:Math.hypot(c.y-axis.y,c.z-axis.z)
+        });
+      }
+      return result;
+    };
+    const plugSectors=sectors(fine.plug,virtualPlugWorld,
+      fine.plugShape,plugAxis);
+    const driverSectors=sectors(fine.driver,fine.driver.matrixWorld,
+      fine.driverShape,driverAxis);
+    const regularity=arr=>{
+      const origin=arr[0];
+      let pitchError=0,radiusErrorMm=0,axialErrorMm=0,sectorErrorRad=0;
+      for(const tooth of arr){
+        pitchError=Math.max(pitchError,
+          Math.abs(wrapAngle(tooth.angle-origin.angle-tooth.index*fine.pitch)));
+        radiusErrorMm=Math.max(radiusErrorMm,
+          Math.abs(tooth.radiusMm-origin.radiusMm));
+        axialErrorMm=Math.max(axialErrorMm,Math.abs(tooth.x-origin.x));
+        sectorErrorRad=Math.max(sectorErrorRad,
+          Math.abs(tooth.halfAngleRad-origin.halfAngleRad));
+      }
+      return {maxPitchErrorRad:pitchError,maxRadiusErrorMm:radiusErrorMm,
+        maxAxialErrorMm:axialErrorMm,maxSectorErrorRad:sectorErrorRad,
+        firstCenterRadiusMm:origin.radiusMm,
+        maxToothAngularHalfWidthRad:Math.max(...arr.map(t=>t.halfAngleRad))};
+    };
+    const plugRegularity=regularity(plugSectors);
+    const driverRegularity=regularity(driverSectors);
+    const normalize=i=>(i%fine.count+fine.count)%fine.count;
+    const relativeOffset=(mech.plug.rotation.x+virtualPhaseOffsetRad-
+      ratchetGroup.rotation.x);
+    const windowOffset=Math.round(relativeOffset/fine.pitch-0.5);
+    let angularOverlapPairs=0,withinFiveToothWindow=0;
+    let outsideFiveToothWindow=0,minimumExcludedAngularGapRad=Infinity;
+    let furthestCandidateIndexSteps=0;
+    const tolerance=1e-8;
+    for(const a of plugSectors){
+      const center=normalize(a.index+windowOffset);
+      for(const b of driverSectors){
+        const gap=Math.abs(wrapAngle(a.angle-b.angle))-
+          a.halfAngleRad-b.halfAngleRad;
+        const forward=normalize(b.index-center);
+        const steps=Math.min(forward,fine.count-forward);
+        if(gap<=tolerance){
+          angularOverlapPairs++;
+          if(steps<=2)withinFiveToothWindow++;
+          else outsideFiveToothWindow++;
+          furthestCandidateIndexSteps=Math.max(furthestCandidateIndexSteps,steps);
+        } else {
+          minimumExcludedAngularGapRad=Math.min(
+            minimumExcludedAngularGapRad,gap);
+        }
+      }
+    }
+    const dimensionToleranceMm=1e-4,angleToleranceRad=1e-5;
+    const ringRegularityVerified=[plugRegularity,driverRegularity].every(r=>
+      r.maxPitchErrorRad<angleToleranceRad &&
+      r.maxRadiusErrorMm<dimensionToleranceMm &&
+      r.maxAxialErrorMm<dimensionToleranceMm &&
+      r.maxSectorErrorRad<angleToleranceRad &&
+      r.maxToothAngularHalfWidthRad<Math.PI/2
+    );
+    return {
+      active:true,mode:'P6 all-instance angular-sector conservative broadphase',
+      virtualPhaseOffsetRad,virtualOnlyNoStateMutation:true,
+      inspectedPlugInstances:plugSectors.length,
+      inspectedDriverInstances:driverSectors.length,
+      allPairsAudited:plugSectors.length*driverSectors.length,
+      concentricYZGapMm,
+      plugRegularity,driverRegularity,
+      ringRegularityVerified,
+      angularOverlapPairs,withinFiveToothWindow,
+      outsideFiveToothWindow,furthestCandidateIndexSteps,
+      minimumExcludedAngularGapRad:
+        Number.isFinite(minimumExcludedAngularGapRad)?
+          minimumExcludedAngularGapRad:null,
+      fiveNeighborCoverageVerified:
+        ringRegularityVerified &&
+        concentricYZGapMm<dimensionToleranceMm &&
+        outsideFiveToothWindow===0 &&
+        angularOverlapPairs===withinFiveToothWindow,
+      actualFullRingSolidSatPerformed:false,
+      fullAssemblyClearanceCertified:false,
+      originalFactoryToothCountVerified:false,
+      springDrivenSeatingProven:false,
+      publicDefaultModified:false
+    };
+  }
+
+  function platenVariableInternalsProbeP5() {
     root.updateMatrixWorld(true);
     const mech=platenVariableInternalsP5;
     if (!mech.rod) return {
@@ -11403,6 +11530,7 @@ export function createSelectricModel() {
     setPlatenFineClutchP6,
     platenFineClutchSolidProbeP6,
     platenFineClutchSeatingEnvelopeP6,
+    platenFineClutchAngularCoverageP6,
     platenClutchContactInspectionProbeP5,
     setPlatenClutchContactInspectionP5,
     setPlatenVariableInternalsInspectionP5,
