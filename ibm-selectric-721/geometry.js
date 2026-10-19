@@ -4528,6 +4528,7 @@ export function createSelectricModel() {
   // rotate through the SAME existing platen phase pivots.
   function setPlatenKnobCandidateP4(enabled) {
     const next = Boolean(enabled);
+    const previouslyEnabled = state.platenKnobCandidateP4;
     if (next && platenKnobCandidateMeshes.length === 0) {
       const test = {
         neckRadiusMm: 8.0,
@@ -4597,6 +4598,9 @@ export function createSelectricModel() {
       marker.position.x = next ? (index===0 ? -1:1)*candidateGripOutboardP5Mm : 0;
     });
     state.platenKnobCandidateP4 = next;
+    // Re-enable the preexisting 12-tooth control after leaving fine mode.
+    // A variant switch must not leave the standard P5 meshes invisible.
+    if (next && !previouslyEnabled) setPlatenFineClutchP6(false);
     if (!next) {
       setPlatenFineClutchP6(false);
       setPlatenClutchContactInspectionP5(false);
