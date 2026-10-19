@@ -5561,7 +5561,8 @@ export function createSelectricModel() {
       const nearZeroGapToleranceMm=1e-7;
       const simultaneouslyActiveCount=gaps.filter(
         x=>Math.abs(x)<=nearZeroGapToleranceMm).length;
-      const penetratingToothCount=counts.filter(x=>x>0).length;
+      const withinSatContactToleranceToothCount=counts.filter(x=>x>0).length;
+      const strictlyNegativeNearestGapCount=gaps.filter(x=>x<0).length;
       const samplesToInspect=[0,45,90,135,179].map(plugToothIndex=>{
         const witness=platenFineClutchSolidProbeP6(
           pose.pressMm,actualVirtualPhase,true,plugToothIndex);
@@ -5581,7 +5582,8 @@ export function createSelectricModel() {
         individualNearestDriverToothIndices:candidateIndices,
         extremalGaps,spreadMm:extremalGaps.maximum-extremalGaps.minimum,
         nearZeroGapToleranceMm,simultaneouslyActiveCount,
-        penetratingToothCount,samplesToInspect,
+        withinSatContactToleranceToothCount,
+        strictlyNegativeNearestGapCount,samplesToInspect,
         fullCircleActuallySampled:true,
         wholeAssemblyCollisionCertified:false};
     });
