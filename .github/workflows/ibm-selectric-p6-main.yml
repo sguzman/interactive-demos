@@ -1,0 +1,50 @@
+name: IBM Selectric P6 opt-in geometry regression
+
+# The regular typewriter runtime is tested by its own main-branch workflow.
+# This gate protects optional, NON-OEM P6 geometry after public integration.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ibm-selectric-721/geometry.js'
+      - 'ibm-selectric-721/main.js'
+      - 'ibm-selectric-721/spec.js'
+      - 'tests/ibm-selectric-721-platen-clutch-fine.spec.mjs'
+      - '.github/workflows/ibm-selectric-p6-main.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: selectric-p6-main-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  p6-geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate P6 browser source syntax
+        run: |
+          node --check ibm-selectric-721/geometry.js
+          node --check ibm-selectric-721/main.js
+          node --check tests/ibm-selectric-721-platen-clutch-fine.spec.mjs
+      - name: Install headless Chromium
+        run: |
+          npm install --no-save @playwright/test
+          npx playwright install --with-deps chromium
+      - name: Serve public viewer locally
+        run: python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/selectric-p6-main.log 2>&1 &
+      - name: Test opt-in solid contacts and restoration
+        run: npx playwright test tests/ibm-selectric-721-platen-clutch-fine.spec.mjs --reporter=line --workers=1
+      - name: Preserve source-bound P6 diagnostic JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selectric-p6-main-contact-evidence
+          path: test-results/
+          if-no-files-found: ignore
