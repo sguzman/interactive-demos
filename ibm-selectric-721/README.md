@@ -13,6 +13,26 @@ This is a source-aware mechanical reconstruction of an original IBM Selectric Mo
 - NRB/S backspace branch;
 - local Level-2 carrier-support geometry.
 
+## Bounded public v1 — October 20, 2026
+
+The ordinary viewer at
+[IBM Selectric 721](https://sguzman.github.io/interactive-demos/ibm-selectric-721/)
+remains the historical P4 explanatory reconstruction by default.
+The P4/P5/P6 alternate platen knob, axial mechanism and fine-clutch
+research are available **only by explicit opt-in**; they are not
+manufacturer-certified IBM geometry.
+
+Public main includes the previously isolated P6 work at source
+[`1031ec5`](https://github.com/sguzman/interactive-demos/commit/1031ec54e4b13884344b33375405ac49f5595868).
+Its [17 mechanical plus one full runtime test](https://github.com/sguzman/interactive-demos/actions/runs/39323633198)
+passed. A second [production run](https://github.com/sguzman/interactive-demos/actions/runs/39449491580)
+passed **both** the no-query lazy-allocation/restoration test and the complete
+typewriter runtime. GitHub Pages deployed the release successfully.
+
+This is a complete **bounded educational/public viewer release**, not an
+original Model-721 factory CAD model, source-verified P6 tooth count,
+friction/spring-force solver or all-assembly collision certificate.
+
 ## Current public tranche
 
 The browser model currently includes:
@@ -224,7 +244,9 @@ The Playwright smoke test checks:
 - carrier return to left margin plus one index;
 - browser error absence.
 
-This remains an active build. Visual/mechanical refinement continues before Taria can close the public-projection milestone.
+The explanatory public v1 is released and browser-tested. Historically exact
+manufacturing geometry and Taria's full research/projection milestones remain
+open pending new original-source measurements and separate source validation.
 
 ## Platen-to-service-hood central-section diagnostic
 
@@ -474,14 +496,14 @@ It exports nonpromoting modeled triangle evidence; no OEM cover or knob
 clearance, factory copy-control travel, or production collision is claimed.
 
 
-## Experimental platen-knob radial/axial envelope (nonpromoting branch)
+## Optional platen-knob radial/axial envelope (not OEM geometry)
 
-The **ordinary public model is unchanged**. On the isolated experimental branch
-`engineering/selectric-knob-candidate-20261018`, add
-`?platenKnobCandidate=1` to a locally served Selectric URL to explicitly
+The **ordinary public model remains the default**. On public main, add
+`?platenKnobCandidate=1` to the Selectric URL to explicitly
 instantiate a reversible geometry hypothesis. It uses an 8-mm-radius
-inner hub/neck and shifts the larger grip/ribs outboard: 20-mm grip
-width, 5.5-mm outward offset, leaving >=0.5 mm axial separation from
+inner hub/neck and moves the larger grip/ribs outboard: 20-mm grip
+width, 8.0-mm outboard offset, with >=1.0 mm axial gap under
+the illustrated full 2-mm inward press from
 the **synthetic** 308-mm P4 rear bridge. Original cap and phase cue remain
 on the existing platen pivots; the original cores/ribs are preserved and
 can be restored through `__selectricDebug.setPlatenKnobCandidateP4(false)`.
@@ -494,10 +516,11 @@ the *actual enabled candidate*, not a combined candidate/baseline union.
 modeled bridge at 135 candidate poses (five detents, nine cover opening
 fractions, three platen phases) and a legacy positive-contact baseline.
 The exact all-phase continuous certificate remains in Taria Engineering.
-The browser test must be run before any claim of browser QA success, and
-other 3D contacts/printing/interlock checks remain separate.
+The 135-pose candidate and original-mode comparison passed actual Chromium
+QA; other 3D contacts/printing/interlock checks remain separate.
 
-The experimental branch also exposes `__selectricDebug.platenKnobCandidateEnvelopeProbeP4()`: it computes **actual transformed Three.js mesh X bounds** for all 28 lazily created candidate pieces, checks mirror-side outboard reach and visible/hidden baseline counts, and never asserts OEM provenance. The candidate regression now checks all 4 knob/cover face pairs (hood and bridge) at its 135 sampled poses and checks restoration of the exact original contact counts after two variant toggles. This is a prepared test, **not a completed Chromium run**.
+The opt-in implementation also exposes `__selectricDebug.platenKnobCandidateEnvelopeProbeP4()`: it computes **actual transformed Three.js mesh X bounds** for all 28 lazily created candidate pieces, checks mirror-side outboard reach and visible/hidden baseline counts, and never asserts OEM provenance. The candidate regression now checks all 4 knob/cover face pairs (hood and bridge) at its 135 sampled poses and checks restoration of the exact original contact counts after two variant toggles. This regression passed in the experimental Chromium suite and is now
+available on main with the default variant still off.
 
 ## Experimental platen-variable axial push (unmeasured P5)
 
@@ -505,8 +528,8 @@ The original IBM Series-72 1966 Instruction Manual 241-5032-2, p.59
 Figure 141 documents an inward LEFT-knob push to release a platen
 driver through a push rod and spring, allowing platen rotation while
 the ratchet stays stationary. The right knob does not participate in
-this axial press. On this **isolated branch only**, the optional
-candidate now embodies left axial press and release at a deliberately
+this axial press. The **opt-in main-branch candidate** embodies
+left axial press and release at a deliberately
 **hypothetical 2.0-mm P5 stroke**. Actual IBM knob stroke is unknown.
 
 The previous 0.5-mm rest-position bridge-gap experiment could not
@@ -529,13 +552,13 @@ restoration. No original 1961 factory profile or OEM stroke claimed.
 The 1966 IBM Series-72 Instruction Manual (241-5032-2) p.59 Fig.141
 identifies **two** pins at the right tip of the left-knob sliding
 shaft, a driver constrained in two ratchet lugs, serrations in the
-platen end plug, and a return compression spring. This branch now
-contains actual P5 meshes for the through-platen rod, two actuator
+platen end plug, and a return compression spring. The optional
+implementation contains actual P5 meshes for the through-platen rod, two actuator
 pins, platen end plug/serrations, ratchet-parented slider/serrations,
 two guide lugs and a helix spring. The shaft moves +2 mm on the
 source-directed hypothetical left press, driver translates with the
 actuator while remaining ratchet-parented, and the spring contracts
-from 5.5 to 3.5 mm. Independent platen rotation drives the rod and
+from 6.1 to 4.1 mm. Independent platen rotation drives the rod and
 end-plug but **not** the ratchet and driver during variable mode.
 
 **All dimensions, 12 presentation serrations, metal profiles, spring
@@ -543,7 +566,7 @@ travel, and precise axial registration are experimental**, not IBM
 measurements. Serration *contact/meshing* at arbitrary angular phases
 is not certified. These submeshes exist only under the opt-in
 experimental knob flag. Use `?platenKnobCandidate=1&platenInternals=1`
-on the experimental branch to ghost the rubber platen and inspect
+on the public viewer to ghost the rubber platen and inspect
 the internal mechanism; default public page continues unchanged.
 The same mode can be toggled with
 `__selectricDebug.setPlatenVariableInternalsInspectionP5(true/false)`.
@@ -618,7 +641,7 @@ rest/pressed states, and records both unobstructed and possible-clash sectors.
 
 ## Provisional serration contact inspection (opt-in and nonpromoting)
 
-On the experimental branch, use
+On public main, use
 `?platenKnobCandidate=1&platenInternals=1&platenContact=1` to highlight
 the nearest physical P5 plug and driver teeth: **amber** means possible
 blocking under the conservative 2D radial disk screen, **teal** means
@@ -649,7 +672,7 @@ remain to be independently verified. Neither 180 nor 12 is promoted.
 
 ## P6 optional fine-serration convex solid experiment (NOT OEM geometry)
 
-An independent opt-in P6 branch experiment adds **two instanced meshes of
+The opt-in P6 geometric study adds **two instanced meshes of
 180 separate convex tapered wedges** (360 synthetic teeth total), placed
 inside the existing standard-style Figure 141 clutch. The manufacturer
 reports ordinary Selectric 0.025-inch paper travel **indexed between
@@ -660,10 +683,10 @@ lead-in taper, 5.75-mm construction radius and 0.37-pitch root width are
 explicit research choices, not period IBM part specifications.
 
 Enable using `?platenKnobCandidate=1&platenInternals=1&platenFineClutch=1`
-on a locally served **experimental branch**. This hides but preserves the
+on the public main viewer. This hides but preserves the
 original illustrative 12+12 rectangular teeth; disabling via
 `__selectricDebug.setPlatenFineClutchP6(false)` restores them. It does
-not modify the ratchet/platen logic or the public viewer.
+not modify the ratchet/platen logic or the default viewer.
 
 `__selectricDebug.platenFineClutchSolidProbeP6(strokeMm)` tests **actual
 instanced geometry** using convex 3D separating-axis tests (all face
